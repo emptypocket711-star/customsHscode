@@ -32,8 +32,8 @@ function progressStages(form: HTMLFormElement, label: string) {
     return withResultStage([
       query ? `품명 입력값 확인: ${query}` : "품명 입력값을 확인하고 있습니다",
       hasModelLikeToken ? "제품코드·모델명 단서를 해석하고 있습니다" : "오타와 동의어를 정규화하고 있습니다",
-      "AI 보조 검색어와 HS 후보 힌트를 확장하고 있습니다",
-      "공식 HS 데이터에서 류·호·소호 후보를 대조하고 있습니다",
+      "AI가 제품 성격과 후보 HS4·HS6를 도출하고 있습니다",
+      "후보별 국내 HSK와 상대국 HS 연결 가능성을 구성하고 있습니다",
       "후보별 관세율, 내국세, 수입요건을 함께 불러오고 있습니다"
     ]);
   }

@@ -7,6 +7,7 @@ import { SourceFooter } from "@/components/ui/source-footer";
 import { buildDutyEstimatorHref } from "@/features/duty-estimator/url-params";
 import { countryCodeAliases, destinationCountryOptions, exportCountryLabel, exportCountryOptions } from "@/features/export-diagnosis/country-options";
 import { mockExportDestinationTariffRates } from "@/features/export-diagnosis/mock-export-data";
+import { DestinationCountryPicker } from "@/features/hs/destination-country-picker";
 import { HsCopySummaryButton } from "@/features/hs/hs-copy-summary-button";
 import { destinationAgreementRateDisplayItems, destinationDisplayAgreementRates, destinationDisplayBaseRate } from "@/features/hs/export-destination-tariff-display";
 import { DestinationAgreementRateDialog } from "@/features/hs/destination-agreement-rate-dialog";
@@ -94,10 +95,10 @@ function QueryField({
   placeholder?: string;
 }) {
   return (
-    <label className="grid gap-1 text-sm font-medium text-slate-700">
+    <label className="grid min-w-0 gap-1 text-sm font-medium text-slate-700">
       {label}
       <input
-        className="focus-ring rounded-md border border-slate-300 px-3 py-2"
+        className="focus-ring w-full min-w-0 rounded-md border border-slate-300 px-3 py-2"
         defaultValue={defaultValue}
         name={name}
         placeholder={placeholder}
@@ -109,9 +110,9 @@ function QueryField({
 
 function DirectionSelect({ defaultValue }: { defaultValue: "import" | "export" }) {
   return (
-    <label className="grid gap-1 text-sm font-medium text-slate-700">
+    <label className="grid min-w-0 gap-1 text-sm font-medium text-slate-700">
       거래구분
-      <select className="focus-ring rounded-md border border-slate-300 px-3 py-2" defaultValue={defaultValue} name="direction">
+      <select className="focus-ring w-full min-w-0 rounded-md border border-slate-300 px-3 py-2" defaultValue={defaultValue} name="direction">
         <option value="import">수입</option>
         <option value="export">수출</option>
       </select>
@@ -125,9 +126,9 @@ function DirectionHiddenField({ value }: { value: "import" | "export" }) {
 
 function DestinationCountrySelect({ defaultValue, direction }: { defaultValue: string; direction: "import" | "export" }) {
   return (
-    <label className="grid gap-1 text-sm font-medium text-slate-700">
+    <label className="grid min-w-0 gap-1 text-sm font-medium text-slate-700">
       {direction === "import" ? "수입국가" : "목적국"}
-      <select className="focus-ring rounded-md border border-slate-300 px-3 py-2" defaultValue={defaultValue} name="destinationCountry">
+      <select className="focus-ring w-full min-w-0 rounded-md border border-slate-300 px-3 py-2" defaultValue={defaultValue} name="destinationCountry">
         {destinationCountryOptions.map((country) => (
           <option key={country.code} value={country.code}>
             {country.label}
@@ -142,9 +143,9 @@ function OriginCountrySelect({ defaultValue, direction }: { defaultValue: string
   if (direction !== "export") return null;
 
   return (
-    <label className="grid gap-1 text-sm font-medium text-slate-700">
+    <label className="grid min-w-0 gap-1 text-sm font-medium text-slate-700">
       원산지
-      <select className="focus-ring rounded-md border border-slate-300 px-3 py-2" defaultValue={defaultValue} name="originCountry">
+      <select className="focus-ring w-full min-w-0 rounded-md border border-slate-300 px-3 py-2" defaultValue={defaultValue} name="originCountry">
         <option value="ALL">모든 원산지</option>
         {exportCountryOptions.filter((country) => country.code !== "ALL").map((country) => (
           <option key={country.code} value={country.code}>
@@ -153,6 +154,29 @@ function OriginCountrySelect({ defaultValue, direction }: { defaultValue: string
         ))}
       </select>
     </label>
+  );
+}
+
+function BasisDateOptions({ defaultValue }: { defaultValue: string }) {
+  return (
+    <details className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 lg:col-span-full">
+      <summary className="cursor-pointer text-sm font-semibold text-slate-700">
+        조회 옵션
+        <span className="ml-2 text-xs font-medium text-slate-500">기준일 {defaultValue}</span>
+      </summary>
+      <label className="mt-3 grid max-w-xs gap-1 text-sm font-medium text-slate-700">
+        조회기준일
+        <input
+          className="focus-ring w-full rounded-md border border-slate-300 bg-white px-3 py-2"
+          defaultValue={defaultValue}
+          name="basisDate"
+          type="date"
+        />
+      </label>
+      <p className="mt-2 text-xs leading-5 text-slate-500">
+        세율과 수입요건은 시행일이 달라질 수 있어 기본적으로 오늘 날짜 기준으로 조회합니다. 예상 신고일이 다르면 이 날짜만 바꾸면 됩니다.
+      </p>
+    </details>
   );
 }
 
@@ -401,9 +425,9 @@ function productCandidateHierarchyLines(candidate: HsCandidateRecommendation, lo
 
 function productCandidateLookupBasisLabel(candidate: HsCandidateRecommendation) {
   if (candidate.lookupBasis === "user_hs_hint") return "입력 HS 힌트";
-  if (candidate.lookupBasis === "ai_hs_hint") return "AI HS 후보";
-  if (candidate.lookupBasis === "ai_term_match") return "AI 검색어";
-  if (candidate.lookupBasis === "official_name_match") return "품명 검색";
+  if (candidate.lookupBasis === "ai_hs_hint") return "GPT 예비 HS";
+  if (candidate.lookupBasis === "ai_term_match") return "GPT 품명 단서";
+  if (candidate.lookupBasis === "official_name_match") return "품명 단서";
   if (candidate.lookupBasis === "customs_api") return "HS부호검색";
   if (candidate.lookupBasis === "internal_tax_rule") return "내국세 단서";
   if (candidate.lookupBasis === "ambiguous_abbreviation") return "약어 후보";
@@ -417,8 +441,8 @@ function productCandidateEvidenceText(candidate: HsCandidateRecommendation) {
 
   if (evidence.length) return evidence.join(" / ");
   return candidate.lookupBasis === "ai_hs_hint"
-    ? "AI가 만든 HS 조회 힌트를 공식 HS 데이터에서 확인"
-    : "입력 품명과 공식 HS 데이터 대조";
+    ? "AI가 제품 성격을 기준으로 제시한 HS 후보입니다"
+    : "입력 품명과 제품 단서를 기준으로 구성한 HS 후보입니다";
 }
 
 function productCandidateCopySummaryText({
@@ -702,93 +726,131 @@ function DestinationHsHierarchyTrail({
   );
 }
 
-function HsHierarchyNavigator({
-  nodes,
-  currentCode,
-  basisDate,
-  direction,
-  destinationCountry
+function splitHskNavigatorCode(value: string) {
+  const normalized = normalizeHsInput(value);
+
+  return {
+    hs4: normalized.slice(0, 4),
+    hs6Tail: normalized.length >= 6 ? normalized.slice(4, 6) : "",
+    digit78: normalized.length >= 8 ? normalized.slice(6, 8) : "",
+    digit910: normalized.length >= 10 ? normalized.slice(8, 10) : ""
+  };
+}
+
+function HsNavigatorCodeCell({
+  className,
+  href,
+  value
 }: {
-  nodes: HsHierarchyNode[];
-  currentCode: string;
-  basisDate: string;
-  direction: "import" | "export";
-  destinationCountry: string;
+  className: string;
+  href: string;
+  value: string;
 }) {
-  if (!nodes.length) return null;
-
-  const normalizedCurrent = normalizeHsInput(currentCode);
-
   return (
-    <div className="border-b border-slate-200 bg-white">
-      <div className="bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-500">상위 HS CODE</div>
-      <nav className="grid gap-1 p-2" aria-label="상위 HS CODE">
-        {nodes.map((node) => {
-          const isCurrent = normalizeHsInput(node.code) === normalizedCurrent;
-          const content = (
-            <>
-              <span className="block font-mono text-xs font-semibold">{formatHsCode(node.code)}</span>
-              <span className="mt-0.5 line-clamp-2 block text-xs leading-5">{node.label}</span>
-            </>
-          );
-
-          return isCurrent ? (
-            <div className="rounded bg-red-50 px-3 py-2 text-red-700" key={`${node.level}-${node.code}`}>
-              {content}
-            </div>
-          ) : (
-            <Link
-              className="rounded px-3 py-2 text-slate-700 hover:bg-slate-50"
-              href={hsLookupHref({
-                hskCode: node.code,
-                direction,
-                destinationCountry,
-                basisDate
-              })}
-              key={`${node.level}-${node.code}`}
-            >
-              {content}
-            </Link>
-          );
-        })}
-      </nav>
-    </div>
+    <td className={className}>
+      {value ? (
+        <Link className="block h-full w-full underline-offset-2 hover:underline" href={href}>
+          {value}
+        </Link>
+      ) : null}
+    </td>
   );
 }
 
-function Hs4ContextNavigation({
-  nodes,
-  basisDate,
-  direction,
-  destinationCountry
+function HsCodeSideNavigator({
+  result,
+  destinationCountry,
+  direction
 }: {
-  nodes: HsHierarchyNode[];
-  basisDate: string;
-  direction: "import" | "export";
+  result: HsDirectLookupResult;
   destinationCountry: string;
+  direction: "import" | "export";
 }) {
-  const hs4Node = nodes.find((node) => normalizeHsInput(node.code).length === 4);
-
-  if (!hs4Node) return null;
+  const currentCode = normalizeHsInput(result.hskCode);
 
   return (
-    <div className="border-r border-slate-200 bg-slate-50">
-      <div className="bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-500">해당 HS4</div>
-      <div className="p-2">
-        <Link
-          className="block rounded bg-white px-3 py-2 text-slate-700 shadow-sm hover:bg-blue-50"
-          href={hsLookupHref({
-            hskCode: hs4Node.code,
-            direction,
-            destinationCountry,
-            basisDate
-          })}
-        >
-          <span className="block font-mono text-xs font-semibold text-blue-700">{formatHsCode(hs4Node.code)}</span>
-          <span className="mt-0.5 line-clamp-4 block text-xs leading-5 text-slate-600">{hs4Node.label}</span>
-        </Link>
+    <aside className="border-b border-slate-200 bg-white lg:border-b-0 lg:border-r">
+      <div>
+        <div className="grid h-10 grid-cols-[144px_minmax(0,1fr)] items-center bg-blue-700 text-sm font-semibold text-white">
+          <div className="border-r border-blue-500 px-3 py-2 text-center">HSK</div>
+          <div className="px-3 py-2 text-center">품명</div>
+        </div>
+        <div className="max-h-[calc(100vh-150px)] overflow-auto">
+          <table className="w-full table-fixed border-collapse text-left text-xs">
+            <colgroup>
+              <col className="w-14" />
+              <col className="w-8" />
+              <col className="w-8" />
+              <col className="w-8" />
+              <col />
+            </colgroup>
+            <tbody>
+              {result.hierarchyPath.map((node) => {
+                const normalized = normalizeHsInput(node.code);
+                const parts = splitHskNavigatorCode(normalized);
+                const isCurrent = normalized === currentCode;
+                const codeClass = "border-r border-slate-200 px-1.5 py-1.5 text-right align-top font-mono font-semibold text-slate-700";
+                const rowClass = isCurrent ? "bg-red-50 text-red-600" : "text-slate-800 hover:bg-blue-50";
+                const labelClass = node.level <= 4 ? "font-semibold" : "font-medium";
+                const href = hsLookupHref({
+                  hskCode: node.code,
+                  direction,
+                  destinationCountry,
+                  basisDate: result.basisDate
+                });
+
+                return (
+                  <tr className={rowClass} key={`${node.level}-${node.code}`}>
+                    <HsNavigatorCodeCell className={codeClass} href={href} value={node.level <= 4 ? formatHsCode(node.code) : parts.hs4} />
+                    <HsNavigatorCodeCell className={codeClass} href={href} value={node.level >= 6 ? parts.hs6Tail : ""} />
+                    <HsNavigatorCodeCell className={codeClass} href={href} value={node.level >= 8 ? parts.digit78 : ""} />
+                    <HsNavigatorCodeCell className={codeClass} href={href} value={node.level >= 10 ? parts.digit910 : ""} />
+                    <td className={`px-2 py-1.5 align-top leading-5 ${labelClass}`}>
+                      <Link
+                        className="block truncate"
+                        href={href}
+                      >
+                        {node.label}
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
+              {result.classificationSiblings
+                .filter((sibling) => normalizeHsInput(sibling.hskCode) !== currentCode)
+                .map((sibling) => {
+                const parts = splitHskNavigatorCode(sibling.hskCode);
+                const rowClass = sibling.isSelected ? "bg-red-50 text-red-600" : "text-slate-800 hover:bg-blue-50";
+                const codeClass = "border-r border-slate-200 px-1.5 py-1.5 text-right align-top font-mono font-semibold";
+                const href = hsLookupHref({
+                  hskCode: sibling.hskCode,
+                  direction,
+                  destinationCountry,
+                  basisDate: result.basisDate
+                });
+
+                return (
+                  <tr className={rowClass} key={sibling.hskCode}>
+                    <HsNavigatorCodeCell className={codeClass} href={href} value={parts.hs4} />
+                    <HsNavigatorCodeCell className={codeClass} href={href} value={parts.hs6Tail} />
+                    <HsNavigatorCodeCell className={codeClass} href={href} value={parts.digit78} />
+                    <HsNavigatorCodeCell className={codeClass} href={href} value={parts.digit910} />
+                    <td className="px-2 py-1.5 align-top font-medium leading-5">
+                      <Link
+                        className="block truncate"
+                        href={href}
+                      >
+                        {sibling.koreanName}
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    </aside>
   );
 }
 
@@ -1840,56 +1902,6 @@ function HsSupplementGuidancePanel({
   );
 }
 
-function ProductCandidateDetailLookupPanel({
-  basisDate,
-  candidates,
-  destinationCountry,
-  direction,
-  originCountry
-}: {
-  basisDate: string;
-  candidates: HsCandidateRecommendation[];
-  destinationCountry: string;
-  direction: "import" | "export";
-  originCountry: string;
-}) {
-  if (!candidates.length) return null;
-
-  return (
-    <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-3">
-      <p className="text-sm font-semibold text-slate-900">후보 HS 상세조회</p>
-      <p className="mt-1 text-xs leading-5 text-slate-600">
-        후보 중 하나를 선택하면 해당 HS CODE 기준 상세조회 화면으로 이동합니다.
-      </p>
-      <div className="mt-3 grid gap-3 lg:grid-cols-2">
-        {candidates.slice(0, 4).map((candidate) => (
-          <div className="rounded-md border border-slate-200 bg-white p-3" key={candidate.hskCode}>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="font-mono text-sm font-semibold text-blue-700">{formatHsCode(candidate.hskCode)}</span>
-              <span className="text-xs font-semibold text-slate-500">{(candidate.confidenceScore * 100).toFixed(0)}%</span>
-            </div>
-            <p className="mt-1 text-sm font-medium text-slate-900">{candidate.koreanName}</p>
-            <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-600">{candidate.reason}</p>
-            <Link
-              className="focus-ring mt-3 inline-flex w-full items-center justify-center rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-800"
-              data-navigation-progress="상세조회"
-              href={hsLookupHref({
-                hskCode: candidate.hskCode,
-                direction,
-                destinationCountry,
-                originCountry,
-                basisDate
-              })}
-            >
-              이 코드로 상세조회
-            </Link>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function ExportDomesticDiagnosisSection({
   results,
   destinationCountry,
@@ -2098,7 +2110,7 @@ function AiClarificationPanel({
               );
             }) : (
               <div className="rounded-md border border-violet-100 bg-white px-3 py-2 text-sm text-slate-600">
-                공식 데이터 후보가 부족하여 우선 검토 후보를 표시할 수 없습니다.
+                입력 정보가 부족하여 우선 검토 후보를 표시할 수 없습니다.
               </div>
             )}
           </div>
@@ -2183,30 +2195,53 @@ function Hs6Navigation({
   if (!items.length) return null;
 
   return (
-    <aside className="border-b border-slate-200 bg-slate-50 lg:border-b-0 lg:border-r">
-      <div className="border-b border-slate-200 bg-blue-700 px-3 py-2 text-sm font-semibold text-white">HS6 목록</div>
-      <nav className="max-h-[560px] overflow-auto p-2">
-        {items.map((item) => {
-          const isActive = item.hs6 === activeHs6;
-
-          return (
-            <Link
-              className={`block rounded px-3 py-2 text-sm hover:bg-white ${isActive ? "bg-white font-semibold text-red-700 shadow-sm" : "text-slate-700"}`}
-              href={hsLookupHref({
+    <aside className="border-b border-slate-200 bg-white lg:border-b-0 lg:border-r">
+      <div className="grid grid-cols-[144px_minmax(0,1fr)] border-b border-blue-800 bg-blue-700 text-sm font-semibold text-white">
+        <div className="border-r border-blue-500 px-3 py-2 text-center">HSK</div>
+        <div className="px-3 py-2 text-center">품명</div>
+      </div>
+      <div className="max-h-[560px] overflow-auto">
+        <table className="w-full table-fixed border-collapse text-left text-xs">
+          <colgroup>
+            <col className="w-14" />
+            <col className="w-8" />
+            <col className="w-8" />
+            <col className="w-8" />
+            <col />
+          </colgroup>
+          <tbody>
+            {items.map((item) => {
+              const isActive = item.hs6 === activeHs6;
+              const parts = splitHskNavigatorCode(item.hs6);
+              const rowClass = isActive ? "bg-red-50 font-semibold text-red-600" : "text-slate-800 hover:bg-blue-50";
+              const codeClass = "border-r border-slate-200 px-1.5 py-1.5 text-right align-top font-mono font-semibold";
+              const href = hsLookupHref({
                 hskCode: item.hs6,
                 direction,
                 destinationCountry,
                 basisDate
-              })}
-              key={item.hs6}
-            >
-              <span className="block font-mono">{formatHsCode(item.hs6)}</span>
-              <span className="mt-0.5 line-clamp-2 block text-xs leading-5 text-slate-600">{item.label}</span>
-              <span className="mt-1 block text-xs text-slate-400">{item.count}개 하위품목</span>
-            </Link>
-          );
-        })}
-      </nav>
+              });
+
+              return (
+                <tr className={rowClass} key={item.hs6}>
+                  <HsNavigatorCodeCell className={codeClass} href={href} value={parts.hs4} />
+                  <HsNavigatorCodeCell className={codeClass} href={href} value={parts.hs6Tail} />
+                  <HsNavigatorCodeCell className={codeClass} href={href} value={parts.digit78} />
+                  <HsNavigatorCodeCell className={codeClass} href={href} value={parts.digit910} />
+                  <td className="px-2 py-1.5 align-top font-medium leading-5">
+                    <Link
+                      className="block truncate"
+                      href={href}
+                    >
+                      {item.label}
+                    </Link>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </aside>
   );
 }
@@ -2244,6 +2279,7 @@ export async function HsDirectLookupPanel({
   const showDomesticExportResults = lookupDirection === "export" && exportResultMode === "domestic";
   const searchQuery = (query ?? hskCode ?? "").trim();
   const hasQuery = Boolean(searchQuery);
+  const shouldShowDestinationMap = showDestinationExportResults && !hasQuery && !destinationHsCode;
   const shouldLookupHs = hasQuery && isHsCodeLike(searchQuery);
   const shouldLookupProduct = hasQuery && !shouldLookupHs;
   const parsed = shouldLookupHs
@@ -2403,16 +2439,20 @@ export async function HsDirectLookupPanel({
     <Card>
       <CardHeader title={panelTitle} />
       <CardBody>
-        <form className={`grid gap-4 ${showDirectionSelect ? "lg:grid-cols-[1fr_130px_190px_190px_170px_auto]" : "lg:grid-cols-[1fr_190px_190px_170px_auto]"}`} method="get">
+        <form className={`grid gap-4 ${showDirectionSelect ? "lg:grid-cols-[minmax(240px,1fr)_130px_minmax(220px,260px)_minmax(180px,230px)_auto]" : "lg:grid-cols-[minmax(260px,1fr)_minmax(240px,300px)_minmax(180px,230px)_auto]"}`} method="get">
           <QueryField defaultValue={searchQuery} label="HS CODE 또는 품명" name="query" placeholder="예: 3401.30-0000 또는 입술화장품" />
           {showDirectionSelect ? <DirectionSelect defaultValue={lookupDirection} /> : <DirectionHiddenField value={lookupDirection} />}
-          <DestinationCountrySelect defaultValue={selectedDestinationCountry} direction={lookupDirection} />
+          {showDestinationExportResults ? (
+            <DestinationCountryPicker defaultValue={selectedDestinationCountry} direction={lookupDirection} showMap={shouldShowDestinationMap} />
+          ) : (
+            <DestinationCountrySelect defaultValue={selectedDestinationCountry} direction={lookupDirection} />
+          )}
           <OriginCountrySelect defaultValue={selectedOriginCountry} direction={lookupDirection} />
-          <QueryField defaultValue={resolvedBasisDate} label="조회기준일" name="basisDate" />
           <button className="focus-ring inline-flex items-center justify-center gap-2 self-end rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800" type="submit">
             <Search aria-hidden="true" size={18} />
             조회
           </button>
+          <BasisDateOptions defaultValue={resolvedBasisDate} />
         </form>
 
         {parsed && !parsed.success ? (
@@ -2460,80 +2500,83 @@ export async function HsDirectLookupPanel({
                 />
               ) : null}
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[960px] text-left text-sm">
-                <thead className="bg-slate-50 text-xs font-semibold text-slate-500">
-                  <tr>
-                    <th className="px-3 py-2">순위</th>
-	                    <th className="px-3 py-2">HSK</th>
-	                    <th className="px-3 py-2">HS6</th>
-	                    <th className="px-3 py-2">예상 품목</th>
-	                    <th className="px-3 py-2">HS CODE 경로</th>
-	                    <th className="px-3 py-2">후보 근거</th>
-	                    <th className="px-3 py-2">보완 필요 정보</th>
-	                  </tr>
-	                </thead>
-	                <tbody className="divide-y divide-slate-100">
-	                  {productCandidates.map((candidate) => {
-	                    const lookup = productCandidateLookupByHsk.get(candidate.hskCode);
-	                    const hierarchyLines = productCandidateHierarchyLines(candidate, lookup);
+            <div className="grid gap-3 bg-slate-50 p-3 lg:grid-cols-2">
+              {productCandidates.map((candidate) => {
+                const lookup = productCandidateLookupByHsk.get(candidate.hskCode);
+                const hierarchyLines = productCandidateHierarchyLines(candidate, lookup);
+                const detailHref = hsLookupHref({
+                  hskCode: candidate.hskCode,
+                  direction: lookupDirection,
+                  destinationCountry: selectedDestinationCountry,
+                  originCountry: selectedOriginCountry,
+                  basisDate: candidate.basisDate
+                });
+                const hs6Href = hsLookupHref({
+                  hskCode: candidate.hs6,
+                  direction: lookupDirection,
+                  destinationCountry: selectedDestinationCountry,
+                  originCountry: selectedOriginCountry,
+                  basisDate: candidate.basisDate
+                });
 
-	                    return (
-	                      <tr key={candidate.hskCode}>
-	                        <td className="px-3 py-2 text-slate-600">{candidate.rank}</td>
-	                        <td className="px-3 py-2 font-mono font-semibold text-blue-700">
-	                          <Link data-navigation-progress="상세조회" href={hsLookupHref({
-	                            hskCode: candidate.hskCode,
-	                            direction: lookupDirection,
-	                            destinationCountry: selectedDestinationCountry,
-	                            originCountry: selectedOriginCountry,
-	                            basisDate: candidate.basisDate
-	                          })}>
-	                            {formatHsCode(candidate.hskCode)}
-	                          </Link>
-	                        </td>
-	                        <td className="px-3 py-2 font-mono font-semibold text-blue-700">
-	                          <Link data-navigation-progress="상세조회" href={hsLookupHref({
-	                            hskCode: candidate.hs6,
-	                            direction: lookupDirection,
-	                            destinationCountry: selectedDestinationCountry,
-	                            originCountry: selectedOriginCountry,
-	                            basisDate: candidate.basisDate
-	                          })}>
-	                            {formatHsCode(candidate.hs6)}
-	                          </Link>
-	                        </td>
-	                        <td className="px-3 py-2 font-medium text-slate-950">
-	                          <div>{candidate.koreanName}</div>
-	                          <p className="mt-1 text-xs leading-5 text-slate-500">{candidate.reason}</p>
-	                        </td>
-	                        <td className="px-3 py-2 leading-6 text-slate-700">
-	                          <div className="grid gap-1">
-	                            {hierarchyLines.map((line) => (
-	                              <div key={line}>{line}</div>
-	                            ))}
-	                          </div>
-	                        </td>
-	                        <td className="px-3 py-2 leading-6 text-slate-600">
-	                          <Badge tone={candidate.lookupBasis === "user_hs_hint" ? "info" : candidate.lookupBasis === "ambiguous_abbreviation" ? "warning" : "neutral"}>
-	                            {productCandidateLookupBasisLabel(candidate)}
-	                          </Badge>
-	                          <p className="mt-2 text-xs leading-5 text-slate-500">{productCandidateEvidenceText(candidate)}</p>
-	                        </td>
-	                        <td className="px-3 py-2 leading-6 text-slate-600">{candidate.requiredQuestions.slice(0, 3).join(" / ")}</td>
-	                      </tr>
-	                    );
-	                  })}
-	                </tbody>
-              </table>
+                return (
+                  <article className="rounded-md border border-slate-200 bg-white p-4" key={candidate.hskCode}>
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <div className="text-xs font-semibold text-slate-500">후보 {candidate.rank}</div>
+                        <Link className="mt-1 block font-mono text-lg font-semibold text-blue-700 underline-offset-2 hover:underline" data-navigation-progress="상세조회" href={detailHref}>
+                          {formatHsCode(candidate.hskCode)}
+                        </Link>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge tone={candidate.lookupBasis === "user_hs_hint" ? "info" : candidate.lookupBasis === "ambiguous_abbreviation" ? "warning" : "neutral"}>
+                          {productCandidateLookupBasisLabel(candidate)}
+                        </Badge>
+                        <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
+                          참고도 {(candidate.confidenceScore * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                    </div>
+
+                    <h3 className="mt-3 text-base font-semibold text-slate-950">{candidate.koreanName}</h3>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">{candidate.reason}</p>
+
+                    <div className="mt-3 grid gap-2 rounded-md border border-slate-100 bg-slate-50 p-3">
+                      <div className="flex flex-wrap items-center gap-2 text-sm">
+                        <span className="text-xs font-semibold text-slate-500">HS6</span>
+                        <Link className="font-mono font-semibold text-blue-700 underline-offset-2 hover:underline" data-navigation-progress="상세조회" href={hs6Href}>
+                          {formatHsCode(candidate.hs6)}
+                        </Link>
+                      </div>
+                      <div className="grid gap-1 text-xs leading-5 text-slate-600">
+                        {hierarchyLines.map((line) => (
+                          <div key={line}>{line}</div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="mt-3 grid gap-2 text-sm">
+                      <div>
+                        <div className="text-xs font-semibold text-slate-500">판단 근거</div>
+                        <p className="mt-1 leading-6 text-slate-700">{productCandidateEvidenceText(candidate)}</p>
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-slate-500">보완 필요 정보</div>
+                        <p className="mt-1 leading-6 text-slate-700">{candidate.requiredQuestions.slice(0, 3).join(" / ")}</p>
+                      </div>
+                    </div>
+
+                    <Link
+                      className="focus-ring mt-4 inline-flex w-full items-center justify-center rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-800"
+                      data-navigation-progress="상세조회"
+                      href={detailHref}
+                    >
+                      이 HS CODE로 상세조회
+                    </Link>
+                  </article>
+                );
+              })}
             </div>
-            <ProductCandidateDetailLookupPanel
-              basisDate={resolvedBasisDate}
-              candidates={productCandidates}
-              destinationCountry={selectedDestinationCountry}
-              direction={lookupDirection}
-              originCountry={selectedOriginCountry}
-            />
           </div>
         ) : null}
 
@@ -2656,7 +2699,7 @@ export async function HsDirectLookupPanel({
                 />
               </div>
             ) : null}
-            <div className="grid lg:grid-cols-[220px_minmax(0,1fr)]">
+            <div className="grid lg:grid-cols-[360px_minmax(0,1fr)]">
               <Hs6Navigation
                 activeHs6={activeHs6}
                 basisDate={resolvedBasisDate}
@@ -2750,55 +2793,19 @@ export async function HsDirectLookupPanel({
         {lookupDirection === "import" && !isHs6Lookup && results.length ? (
           <div className="mt-5 grid gap-4">
             {results.map((result) => (
-              <article className="rounded-md border border-slate-200" key={result.hskCode}>
-                <div className="grid gap-0 lg:grid-cols-[minmax(300px,0.85fr)_minmax(0,1.35fr)]">
-                  <section className="overflow-hidden rounded-md border border-slate-200">
-                    <div className="bg-blue-700 px-3 py-2 text-sm font-semibold text-white">HS CODE 탐색</div>
-                    <HsHierarchyNavigator
-                      basisDate={result.basisDate}
-                      currentCode={result.hskCode}
-                      destinationCountry={selectedDestinationCountry}
-                      direction={lookupDirection}
-                      nodes={result.hierarchyPath}
-                    />
-                    <div className="grid min-h-0 md:grid-cols-[130px_minmax(0,1fr)]">
-                      <Hs4ContextNavigation
-                        basisDate={result.basisDate}
-                        destinationCountry={selectedDestinationCountry}
-                        direction={lookupDirection}
-                        nodes={result.hierarchyPath}
-                      />
-                      <div className="min-w-0">
-                        <div className="bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-500">같은 HS6 품목</div>
-                        <div className="max-h-80 overflow-auto">
-                          <table className="w-full text-left text-sm">
-                            <tbody className="divide-y divide-slate-100">
-                              {result.classificationSiblings.map((sibling) => (
-                                <tr className={sibling.isSelected ? "bg-red-50 text-red-700" : "text-slate-700"} key={sibling.hskCode}>
-                                  <td className="whitespace-nowrap px-3 py-2 font-mono text-xs font-semibold">
-                                    <Link className="text-blue-700 underline-offset-2 hover:underline" href={hsLookupHref({
-                                      hskCode: sibling.hskCode,
-                                      direction: lookupDirection,
-                                      destinationCountry: selectedDestinationCountry,
-                                      basisDate: result.basisDate
-                                    })}>
-                                      {formatHsCode(sibling.hskCode)}
-                                    </Link>
-                                  </td>
-                                  <td className="px-3 py-2 font-medium">{sibling.koreanName}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    </div>
-                  </section>
+              <article className="overflow-hidden rounded-md border border-slate-200" key={result.hskCode}>
+                <div className="grid lg:grid-cols-[430px_minmax(0,1fr)]">
+                  <HsCodeSideNavigator
+                    destinationCountry={selectedDestinationCountry}
+                    direction={lookupDirection}
+                    result={result}
+                  />
 
-                  <section className="overflow-hidden rounded-md border border-slate-200">
-                    <div className="flex flex-wrap items-center justify-between gap-2 bg-blue-700 px-3 py-2 text-sm font-semibold text-white">
+                  <div className="min-w-0">
+                  <section className="overflow-hidden border-b border-slate-200">
+                    <div className="flex h-10 items-center justify-between gap-2 bg-blue-700 px-3 text-sm font-semibold text-white">
                       <span>품목 상세</span>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex shrink-0 gap-2">
                         <Link
                           className="focus-ring inline-flex items-center justify-center rounded-md bg-white/15 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/25"
                           href={buildDutyEstimatorHref({
@@ -2897,7 +2904,6 @@ export async function HsDirectLookupPanel({
                       );
                     })()}
                   </section>
-                </div>
 
                 <InternalTaxSection rows={internalTaxCodesByHsk.get(result.hskCode) ?? []} />
 
@@ -2971,6 +2977,8 @@ export async function HsDirectLookupPanel({
 
                 <div className="px-3 pb-3">
                   <SourceFooter basisDate={result.basisDate} showVersion={false} sourceName={result.sourceName} sourceVersion={result.sourceVersion} />
+                </div>
+                  </div>
                 </div>
               </article>
             ))}

@@ -75,7 +75,7 @@ export function DestinationImportRequirementDialog({ requirement }: DestinationI
           </div>
           <button
             aria-label="닫기"
-            className="focus-ring grid size-8 place-items-center rounded-md text-slate-500 hover:bg-slate-100"
+            className="focus-ring grid size-8 place-items-center rounded-md text-slate-700 hover:bg-slate-100"
             onClick={() => dialogRef.current?.close()}
             type="button"
           >

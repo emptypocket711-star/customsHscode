@@ -4,6 +4,8 @@ import { getAiProvider, type AiProductSearchNormalizationResult } from "@/server
 import { redactSensitiveText } from "@/server/ai/redaction";
 import { cachedLookup, lookupCacheKey } from "@/server/cache/lookup-cache";
 
+const productSearchNormalizationVersion = "product-search-normalization-v6";
+
 function productInputText(input: ProductHsRecommendationInput) {
   const hsCodeHints = extractHsCodeHintsFromProductInput(input);
 
@@ -49,6 +51,84 @@ function acronymLookupHints(input: ProductHsRecommendationInput) {
       requiredInfo: ["반도체 웨이퍼 고정용 정전척인지", "사용 장비와 공정", "제8486호 장비 전용 부분품인지"]
     }
   ];
+}
+
+function productContextText(input: ProductHsRecommendationInput, normalization?: AiProductSearchNormalizationResult) {
+  return [
+    input.productName,
+    input.productUsage,
+    input.material,
+    input.composition,
+    input.functions,
+    input.modelName,
+    normalization?.correctedProductName,
+    ...(normalization?.searchTerms ?? []),
+    ...(normalization?.koreanTerms ?? []),
+    ...(normalization?.englishTerms ?? []),
+    ...(normalization?.productFamilies ?? []),
+    ...(normalization?.candidateHsCodeReasons.map((item) => `${item.reason} ${item.requiredInfo.join(" ")}`) ?? []),
+  ].filter(Boolean).join(" ").toLowerCase();
+}
+
+function productContextLookupHints(input: ProductHsRecommendationInput, normalization?: AiProductSearchNormalizationResult) {
+  const text = productContextText(input, normalization);
+  const hints: Array<{ code: string; reason: string; requiredInfo: string[] }> = [];
+  if (/(^|\s)(keyboard|keyboards|mechanical keyboard|wireless keyboard)(\s|$)|키보드|자판/.test(text)) {
+    hints.push({
+      code: "847160",
+      reason: "입력값에 컴퓨터용 키보드 또는 입력장치 문맥이 있어 제8471.60호 계열 확인이 우선 필요합니다.",
+      requiredInfo: ["키보드 완제품인지 키캡·스위치 등 부분품인지", "컴퓨터용 입력장치인지", "유선·무선 여부와 인터페이스"]
+    });
+  }
+
+  const vestLike = /(작업\s*용?\s*조끼|안전\s*조끼|반사\s*조끼|형광\s*조끼|보호\s*조끼|조끼|vest|waistcoat|safety\s*vest|work\s*vest|workwear\s*vest|reflective\s*vest|hi-?vis|high\s*visibility)/i.test(text);
+  const workwearLike = /(작업복|보호복|안전복|산업용\s*의류|워크웨어|workwear|protective\s*clothing|industrial\s*uniform|coverall|overall)/i.test(text);
+  if (vestLike || workwearLike) {
+    if (vestLike) {
+      hints.push(
+        {
+          code: "621133",
+          reason: "작업용·안전·반사 조끼가 편직물이 아닌 직물제 인조섬유 의류일 가능성이 있습니다.",
+          requiredInfo: ["편직물/뜨개질 제품인지 직물제 제품인지", "겉감 재질과 섬유 조성", "반사띠·형광색 등 안전용 기능 여부", "성별 구분 또는 공용 제품 여부"]
+        },
+        {
+          code: "621143",
+          reason: "여성용 또는 성별 구분이 있는 직물제 인조섬유 조끼라면 여성·소녀용 기타 의류 계열도 확인해야 합니다.",
+          requiredInfo: ["남성용·여성용·공용 구분", "겉감 재질과 섬유 조성", "직물제인지 편직물인지"]
+        },
+        {
+          code: "611030",
+          reason: "니트·편직물로 만든 조끼라면 제6110.30호 계열과 경합될 수 있습니다.",
+          requiredInfo: ["니트·편직물·뜨개질 제품인지", "합성섬유제인지", "일반 의류인지 보호·안전 기능이 있는지"]
+        },
+        {
+          code: "6211",
+          reason: "직물제 기타 의류로 넓게 검토해야 하는 조끼류일 가능성이 있습니다.",
+          requiredInfo: ["직물/편직 구분", "재질", "성별 구분", "방수·코팅·보호 기능 여부"]
+        }
+      );
+    } else {
+      hints.push(
+        {
+          code: "6211",
+          reason: "작업복·보호복류가 편직물이 아닌 직물제 기타 의류일 가능성이 있습니다.",
+          requiredInfo: ["작업복 형태", "직물/편직 구분", "재질", "방수·코팅·보호 기능 여부"]
+        },
+        {
+          code: "6113",
+          reason: "고무·플라스틱 등을 침투·도포·피복한 편직물 의류라면 제6113호 계열 확인이 필요합니다.",
+          requiredInfo: ["도포·코팅·피복 여부", "편직물 여부", "보호복 목적과 성능"]
+        },
+        {
+          code: "6210",
+          reason: "고무·플라스틱 등을 침투·도포·피복한 직물 의류라면 제6210호 계열 확인이 필요합니다.",
+          requiredInfo: ["도포·코팅·피복 여부", "직물제 여부", "보호복 목적과 성능"]
+        }
+      );
+    }
+  }
+
+  return hints;
 }
 
 export function extractHsCodeHintsFromText(text: string) {
@@ -99,12 +179,14 @@ export async function normalizeProductSearchInput(input: ProductHsRecommendation
       redactedInput: redacted.redactedText
     })
   });
+  const contextHints = productContextLookupHints(input, normalization);
 
   return {
     ...normalization,
     candidateHsCodes: Array.from(new Set([
       ...userProvidedHsCodes,
       ...acronymHints.map((hint) => hint.code),
+      ...contextHints.map((hint) => hint.code),
       ...normalization.candidateHsCodes
     ])).slice(0, 10),
     candidateHsCodeReasons: [
@@ -114,6 +196,7 @@ export async function normalizeProductSearchInput(input: ProductHsRecommendation
         requiredInfo: ["국내 HSK인지 해외 수입국 세번인지 확인", "품명·용도·재질과 해당 코드 설명의 일치 여부 확인"]
       })),
       ...acronymHints,
+      ...contextHints,
       ...normalization.candidateHsCodeReasons
     ].filter((item, index, items) => items.findIndex((candidate) => candidate.code === item.code) === index).slice(0, 10)
   };
@@ -132,6 +215,7 @@ export function buildProductSearchNormalizationCacheKey(input: {
     .slice(0, 24);
 
   return lookupCacheKey("ai-product-normalization", {
+    version: productSearchNormalizationVersion,
     provider: input.provider,
     model: input.model,
     basisDate: input.basisDate,

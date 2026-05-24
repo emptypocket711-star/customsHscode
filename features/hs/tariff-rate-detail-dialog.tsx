@@ -37,7 +37,7 @@ export function TariffRateDetailDialog({ label, rateText, rateType, priority, co
           <h2 className="text-sm font-semibold text-slate-950">{description.title}</h2>
           <button
             aria-label="닫기"
-            className="focus-ring grid size-8 place-items-center rounded-md text-slate-500 hover:bg-slate-100"
+            className="focus-ring grid size-8 place-items-center rounded-md text-slate-700 hover:bg-slate-100"
             onClick={() => dialogRef.current?.close()}
             type="button"
           >

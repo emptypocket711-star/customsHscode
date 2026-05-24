@@ -120,9 +120,9 @@ export async function getStaffReviewQueue(): Promise<StaffReviewQueue> {
   }
 }
 
-export function assertStaffCanApprove(role: "admin" | "customs_staff" | "client") {
-  if (role !== "admin" && role !== "customs_staff") {
-    throw new Error("담당자 또는 관리자만 승인할 수 있습니다.");
+export function assertStaffCanApprove(role: "developer" | "admin" | "customs_staff" | "client") {
+  if (role !== "developer" && role !== "admin" && role !== "customs_staff") {
+    throw new Error("개발자 운영 계정만 승인할 수 있습니다.");
   }
 
   return true;

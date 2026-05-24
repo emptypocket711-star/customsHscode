@@ -103,13 +103,15 @@ export class MockAiProvider implements AiProvider {
     const laserBeltLike = /la[sz]er/.test(input) && /belt|벨트|cs-?\d+/i.test(input);
     const printerLike = /printer|printing|print\s+machine|프린터|인쇄기/.test(input);
     const batteryLike = /battery|batteries|lithium|배터리|전지|리튬/.test(input);
+    const workVestLike = /작업\s*용?\s*조끼|안전\s*조끼|반사\s*조끼|형광\s*조끼|work\s*vest|safety\s*vest|reflective\s*vest|hi-?vis|high\s*visibility|waistcoat|vest/.test(input);
     const searchTerms = [
       ...(escLike ? ["esc", "escape key", "keyboard", "electronic stability control", "electrostatic chuck", "키보드", "제동장치", "정전척"] : []),
       ...(mushroomPowderLike ? ["mushroom powder", "dried mushroom", "mushroom", "powder", "버섯", "건조 버섯", "분말", "가루"] : []),
       ...(excavatorLike ? ["excavation", "excavator", "excavating", "굴삭기", "굴착기"] : []),
       ...(laserBeltLike ? ["laser belt", "massage belt", "massage apparatus", "massager", "physiotherapy", "물리치료", "마사지용 기기"] : []),
       ...(printerLike ? ["printer", "laser printer", "black and white printer", "monochrome printer", "프린터", "레이저 프린터", "인쇄기"] : []),
-      ...(batteryLike ? ["battery", "lithium battery", "lithium ion battery", "battery module", "배터리", "리튬이온", "축전지"] : [])
+      ...(batteryLike ? ["battery", "lithium battery", "lithium ion battery", "battery module", "배터리", "리튬이온", "축전지"] : []),
+      ...(workVestLike ? ["work vest", "safety vest", "reflective vest", "waistcoat", "작업용 조끼", "안전 조끼", "반사 조끼", "직물제 의류", "편직물 의류"] : [])
     ];
 
     return {
@@ -121,6 +123,7 @@ export class MockAiProvider implements AiProvider {
         : laserBeltLike ? "laser belt massage apparatus"
         : excavatorLike ? "excavation equipment / excavator"
         : batteryLike ? "lithium ion battery module"
+        : workVestLike ? "work or safety vest"
         : null,
       searchTerms,
       koreanTerms: [
@@ -129,7 +132,8 @@ export class MockAiProvider implements AiProvider {
         ...(excavatorLike ? ["굴삭기", "굴착기"] : []),
         ...(laserBeltLike ? ["마사지용 기기", "물리치료", "안마"] : []),
         ...(printerLike ? ["프린터", "레이저 프린터", "인쇄기"] : []),
-        ...(batteryLike ? ["배터리", "리튬이온", "축전지"] : [])
+        ...(batteryLike ? ["배터리", "리튬이온", "축전지"] : []),
+        ...(workVestLike ? ["작업용 조끼", "안전 조끼", "반사 조끼", "직물제 의류", "편직물 의류"] : [])
       ],
       englishTerms: [
         ...(escLike ? ["escape key", "keyboard", "electronic stability control", "electrostatic chuck"] : []),
@@ -137,7 +141,8 @@ export class MockAiProvider implements AiProvider {
         ...(excavatorLike ? ["excavation", "excavator", "excavating"] : []),
         ...(laserBeltLike ? ["laser belt", "massage belt", "massage apparatus", "massager", "physiotherapy"] : []),
         ...(printerLike ? ["printer", "laser printer", "black and white printer", "monochrome printer"] : []),
-        ...(batteryLike ? ["battery", "lithium battery", "lithium ion battery", "battery module"] : [])
+        ...(batteryLike ? ["battery", "lithium battery", "lithium ion battery", "battery module"] : []),
+        ...(workVestLike ? ["work vest", "safety vest", "reflective vest", "waistcoat", "woven apparel", "knitted apparel"] : [])
       ],
       productFamilies: [
         ...(escLike ? ["computer input device", "automotive braking control", "semiconductor manufacturing parts"] : []),
@@ -145,15 +150,17 @@ export class MockAiProvider implements AiProvider {
         ...(excavatorLike ? ["construction machinery"] : []),
         ...(laserBeltLike ? ["medical or massage apparatus"] : []),
         ...(printerLike ? ["office machine", "printing machinery"] : []),
-        ...(batteryLike ? ["accumulator", "electrical battery"] : [])
+        ...(batteryLike ? ["accumulator", "electrical battery"] : []),
+        ...(workVestLike ? ["workwear", "apparel", "protective clothing"] : [])
       ],
       candidateHsCodes: [
         ...(escLike ? ["847160", "870830", "848690"] : []),
         ...(mushroomPowderLike ? ["071239", "200390", "210690"] : []),
         ...(excavatorLike ? ["842952"] : []),
         ...(laserBeltLike ? ["901910"] : []),
-        ...(printerLike ? ["844331", "844332", "844339"] : []),
-        ...(batteryLike ? ["850760"] : [])
+        ...(printerLike ? ["844332", "844331", "844339"] : []),
+        ...(batteryLike ? ["850760"] : []),
+        ...(workVestLike ? ["621133", "621143", "611030", "6211"] : [])
       ],
       candidateHsCodeReasons: [
         ...(escLike ? [
@@ -211,7 +218,19 @@ export class MockAiProvider implements AiProvider {
           code: "850760",
           reason: "리튬이온 축전지 또는 배터리 모듈로 해석될 가능성이 있어 제8507호 계열 확인이 필요합니다.",
           requiredInfo: ["셀·모듈·팩 형태", "리튬이온 축전지 여부", "정격 전압·용량과 최종 사용처"]
-        }] : [])
+        }] : []),
+        ...(workVestLike ? [
+          {
+            code: "621133",
+            reason: "작업용·안전·반사 조끼가 직물제 인조섬유 의류일 가능성이 있습니다.",
+            requiredInfo: ["편직물/직물 구분", "섬유 조성", "반사띠·형광색 등 안전 기능", "남성용·여성용·공용 구분"]
+          },
+          {
+            code: "611030",
+            reason: "니트·편직물 조끼라면 제6110.30호 계열과 경합될 수 있습니다.",
+            requiredInfo: ["니트·편직물 여부", "섬유 조성", "일반 의류인지 보호·안전 기능이 있는지"]
+          }
+        ] : [])
       ],
       webSources: [],
       missingQuestions: escLike
@@ -226,6 +245,8 @@ export class MockAiProvider implements AiProvider {
         ? ["마사지·물리치료용 기기인지, 단순 벨트류인지 확인이 필요합니다.", "레이저 조사 기능 외 진동·압박·온열 등 마사지 기능이 있는지 확인이 필요합니다.", "의료기기 허가·표시 목적이 있는지 확인이 필요합니다."]
         : batteryLike
         ? ["셀·모듈·팩 중 어느 형태인지 확인이 필요합니다.", "리튬이온 축전지인지, 일차전지인지 확인이 필요합니다.", "정격 전압·용량과 최종 사용처 확인이 필요합니다."]
+        : workVestLike
+        ? ["편직물/뜨개질 제품인지 직물제 제품인지 확인이 필요합니다.", "겉감 재질과 섬유 조성 확인이 필요합니다.", "반사띠·형광색 등 안전용 기능 여부와 성별 구분 확인이 필요합니다."]
         : ["제품의 정확한 용도, 재질, 구성, 완제품/부분품 여부 확인이 필요합니다."]
     };
   }
@@ -249,19 +270,25 @@ function aiProductSearchNormalizationInstructions() {
     "Return JSON only.",
     "Do not final-confirm HS classification, tariff applicability, or legal requirements.",
     "Normalize product-name search input: fix likely typos, expand synonyms, provide Korean and English search terms, product families, provisional HS lookup hints, and missing questions.",
-    "For every product name, provide candidateHsCodes as 3 to 8 plausible HS heading/subheading/code prefixes for official database lookup. Prefer HS6 prefixes; use HS4 when only the heading is reasonably inferable. Use HS10 only when the input clearly names a narrow commodity.",
+    "The input may be Korean, Chinese, Japanese, English, or another language. Translate and interpret the product name before producing HS lookup hints.",
+    "If the input appears to be a brand name, trade name, product line, model name, SKU, catalog number, or non-descriptive short name, use web evidence when available to identify the underlying product type before choosing HS candidates.",
+    "For every product name, provide candidateHsCodes as 3 to 8 plausible HS heading/subheading/code prefixes. Order them by product-context likelihood. Prefer HS6 prefixes; use HS4 when only the heading is reasonably inferable. Use HS10 only when the input clearly names a narrow commodity.",
+    "The first candidateHsCodes item must be the best code boundary for the identified finished article and principal function, not merely a related heading.",
     "For every candidateHsCodes item, also provide candidateHsCodeReasons with {code, reason, requiredInfo}. The code must match one of candidateHsCodes after removing punctuation.",
     "If the user input already includes an HS/HSK code hint, preserve it as a lookup hint. If it appears to be a foreign import code longer than HS6, include the shared HS6 prefix and do not assume the foreign national suffix equals Korean HSK.",
     "For each candidateHsCodes prefix, include matching Korean or English terms in searchTerms/koreanTerms/englishTerms that are likely to appear in an official HS description for that heading.",
-    "candidateHsCodes are lookup hints only. They are not final classifications, and the app will only show candidates that exist in official source data.",
+    "candidateHsCodes are lookup hints only. They are not final classifications. Return useful HS4/HS6 candidates even when the exact national HS10 may need later official-data expansion.",
     "Give higher priority to the product phrase and surrounding context than to isolated ambiguous words. For example, cream alone can be dairy or cosmetic, but hand/moisture/skin cream should produce skin-care cosmetic lookup hints unless food/dairy terms are explicit.",
     "If the input is ambiguous, return several competing HS4/HS6 lookup hints plus missing questions instead of a final conclusion.",
     "When the input includes typos, model numbers, abbreviations, or short trade names, infer likely product families and provide broad lookup hints that can surface candidates from official HS data.",
     "If web search is available and the input appears to be a model number, SKU, catalog number, or product code, use web search to identify the underlying product type before producing search terms.",
     "When web search cannot identify the product code, return broad terms from the visible tokens and ask the user to provide product name, catalog page, photo, or specification sheet.",
     "If web search identifies a product but the visible words can reasonably indicate another product family, include both families as competing lookup hints and ask the user to confirm which product it is.",
+    "For beverage trade names, distinguish pure fruit juice of HS 2009 from water/sugar-based non-alcoholic beverages of HS 2202. If web evidence shows a retail drink such as a diluted fruit-flavored beverage, prioritize HS 2202 and keep HS 2009 as a conditional alternative only when it is pure juice.",
+    "For apparel, workwear, protective clothing, vests, waistcoats, safety vests, reflective vests, and uniforms, do not jump to a narrow fiber-specific HS10 unless the input states the fiber. First separate Chapter 61 knitted/crocheted apparel from Chapter 62 non-knitted woven apparel, then ask for fabric construction, fiber composition, gender/unisex use, coating, and safety/PPE function. For work/safety vests, include Chapter 62 woven other garments and Chapter 61 knitted vest alternatives when unclear.",
     "Treat likely misspellings such as lazer/laser cautiously. For laser belt or lazer belt, include therapy/massage apparatus and optical/laser-device lookup hints unless web evidence clearly proves a different product.",
     "Classify lookup intent by the finished article, principal function, and use before material. Do not suggest headings merely because a material word appears in the description.",
+    "Do not include candidate code boundaries that contradict the identified product family unless the input explicitly says the product may be that different article.",
     "Avoid highly specialized chemical, radioactive, military, or industrial headings unless the input explicitly indicates that specialization.",
     "Write Korean business SaaS copy for missingQuestions.",
     "JSON shape: {\"correctedProductName\":\"string|null\",\"searchTerms\":[\"string\"],\"koreanTerms\":[\"string\"],\"englishTerms\":[\"string\"],\"productFamilies\":[\"string\"],\"candidateHsCodes\":[\"string\"],\"candidateHsCodeReasons\":[{\"code\":\"string\",\"reason\":\"string\",\"requiredInfo\":[\"string\"]}],\"webSources\":[{\"title\":\"string\",\"url\":\"string\"}],\"missingQuestions\":[\"string\"]}"
@@ -347,23 +374,40 @@ function stringArray(value: unknown, limit: number) {
     : [];
 }
 
+function hsCodeArray(value: unknown, limit: number) {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => {
+      if (typeof item === "string") return item;
+      if (!item || typeof item !== "object") return "";
+      const candidate = item as { code?: unknown; hsCode?: unknown; hs_code?: unknown; hskCode?: unknown; hsk_code?: unknown };
+      return [candidate.code, candidate.hsCode, candidate.hs_code, candidate.hskCode, candidate.hsk_code]
+        .find((field): field is string => typeof field === "string") ?? "";
+    })
+    .map((code) => code.replace(/[^0-9]/g, ""))
+    .filter((code) => code.length >= 4 && code.length <= 10)
+    .slice(0, limit);
+}
+
 function parseAiProductSearchNormalizationJson(text: string, fallback: AiProductSearchNormalizationResult): AiProductSearchNormalizationResult {
   try {
     const parsed = JSON.parse(text) as Partial<AiProductSearchNormalizationResult>;
+    const rawParsed = parsed as Partial<AiProductSearchNormalizationResult> & { normalizedProductName?: unknown };
 
     return {
       provider: fallback.provider,
       model: fallback.model,
       correctedProductName: typeof parsed.correctedProductName === "string" && parsed.correctedProductName.trim()
         ? parsed.correctedProductName.trim()
+        : typeof rawParsed.normalizedProductName === "string" && rawParsed.normalizedProductName.trim()
+        ? rawParsed.normalizedProductName.trim()
         : fallback.correctedProductName,
       searchTerms: stringArray(parsed.searchTerms, 12),
       koreanTerms: stringArray(parsed.koreanTerms, 8),
       englishTerms: stringArray(parsed.englishTerms, 8),
       productFamilies: stringArray(parsed.productFamilies, 6),
-      candidateHsCodes: stringArray(parsed.candidateHsCodes, 8)
-        .map((code) => code.replace(/[^0-9]/g, ""))
-        .filter((code) => code.length >= 4 && code.length <= 10),
+      candidateHsCodes: hsCodeArray(parsed.candidateHsCodes, 8),
       candidateHsCodeReasons: Array.isArray(parsed.candidateHsCodeReasons)
         ? parsed.candidateHsCodeReasons
           .map((item) => {
@@ -375,6 +419,28 @@ function parseAiProductSearchNormalizationJson(text: string, fallback: AiProduct
               code,
               reason: reason.reason.trim(),
               requiredInfo: stringArray(reason.requiredInfo, 5)
+            };
+          })
+          .filter((item): item is { code: string; reason: string; requiredInfo: string[] } => item !== null)
+          .slice(0, 8)
+        : Array.isArray(parsed.candidateHsCodes)
+        ? parsed.candidateHsCodes
+          .map((item) => {
+            if (!item || typeof item !== "object") return null;
+            const candidate = item as { code?: unknown; hsCode?: unknown; hs_code?: unknown; hskCode?: unknown; hsk_code?: unknown; description?: unknown; reason?: unknown; requiredInfo?: unknown };
+            const codeSource = [candidate.code, candidate.hsCode, candidate.hs_code, candidate.hskCode, candidate.hsk_code]
+              .find((field): field is string => typeof field === "string") ?? "";
+            const code = codeSource.replace(/[^0-9]/g, "");
+            const reason = typeof candidate.reason === "string" && candidate.reason.trim()
+              ? candidate.reason.trim()
+              : typeof candidate.description === "string" && candidate.description.trim()
+              ? candidate.description.trim()
+              : "";
+            if (code.length < 4 || code.length > 10 || !reason) return null;
+            return {
+              code,
+              reason,
+              requiredInfo: stringArray(candidate.requiredInfo, 5)
             };
           })
           .filter((item): item is { code: string; reason: string; requiredInfo: string[] } => item !== null)
@@ -405,7 +471,7 @@ export class OpenAiProvider implements AiProvider {
   private readonly apiKey: string | undefined;
   private readonly timeoutMs = Number(process.env.OPENAI_TIMEOUT_MS || 15000);
   private readonly clarificationTimeoutMs = Number(process.env.OPENAI_CLARIFICATION_TIMEOUT_MS || 2000);
-  private readonly productSearchTimeoutMs = Number(process.env.OPENAI_PRODUCT_SEARCH_TIMEOUT_MS || 3000);
+  private readonly productSearchTimeoutMs = Number(process.env.OPENAI_PRODUCT_SEARCH_TIMEOUT_MS || 30000);
 
   constructor(apiKey = process.env.OPENAI_API_KEY) {
     this.apiKey = apiKey;
@@ -449,15 +515,28 @@ export class OpenAiProvider implements AiProvider {
         new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs))
       ]);
 
-      return response?.ok ? response : null;
-    } catch {
+      if (response?.ok) return response;
+      if (process.env.OPENAI_PRODUCT_SEARCH_DEBUG === "1" || process.env.OPENAI_PRODUCT_SEARCH_DEBUG === "true") {
+        const status = response instanceof Response ? `${response.status} ${response.statusText}` : "timeout";
+        const text = response instanceof Response ? await response.text().catch(() => "") : "";
+        console.info("[openai-response-error]", { status, text: text.slice(0, 2000) });
+      }
+      return null;
+    } catch (error) {
+      if (process.env.OPENAI_PRODUCT_SEARCH_DEBUG === "1" || process.env.OPENAI_PRODUCT_SEARCH_DEBUG === "true") {
+        console.info("[openai-response-error]", { error: error instanceof Error ? error.message : String(error) });
+      }
       return null;
     } finally {
       clearTimeout(timeout);
     }
   }
 
-  private shouldUseWebSearchForProductCode(prompt: AiProductSearchNormalizationPrompt) {
+  private shouldUseWebSearchForProductSearch(prompt: AiProductSearchNormalizationPrompt) {
+    if (process.env.OPENAI_PRODUCT_SEARCH_WEB_ENABLED === "0" || process.env.OPENAI_PRODUCT_SEARCH_WEB_ENABLED === "false") {
+      return false;
+    }
+
     const text = prompt.redactedInput.toLowerCase();
     const compact = text.replace(/[^a-z0-9-]/g, " ");
     const tokens = compact.split(/\s+/).filter(Boolean);
@@ -468,8 +547,10 @@ export class OpenAiProvider implements AiProvider {
       && !/^\d{4,10}$/.test(token)
     );
     const catalogPattern = /\b(model|sku|part\s*no|p\/n|제품코드|모델명|품번)\b/i.test(text);
+    const shortTradeName = text.replace(/^품명:\s*/i, "").trim().length <= 40;
+    const nonLatinName = /[\u3131-\u318e\uac00-\ud7a3\u3040-\u30ff\u3400-\u9fff]/.test(text);
 
-    return modelLikeToken || catalogPattern;
+    return modelLikeToken || catalogPattern || shortTradeName || nonLatinName;
   }
 
   async clarify(prompt: AiClarificationPrompt): Promise<AiClarificationResult> {
@@ -516,7 +597,7 @@ export class OpenAiProvider implements AiProvider {
         prompt,
         aiProductSearchNormalizationInstructions(),
         2600,
-        { webSearch: this.shouldUseWebSearchForProductCode(prompt) }
+        { webSearch: this.shouldUseWebSearchForProductSearch(prompt) }
       ),
       this.productSearchTimeoutMs
     );
@@ -525,6 +606,12 @@ export class OpenAiProvider implements AiProvider {
 
     const payload = await response.json() as unknown;
     const outputText = outputTextFromOpenAiResponse(payload);
+    if (process.env.OPENAI_PRODUCT_SEARCH_DEBUG === "1" || process.env.OPENAI_PRODUCT_SEARCH_DEBUG === "true") {
+      console.info("[openai-product-search]", {
+        outputText: outputText.slice(0, 2000),
+        payload: JSON.stringify(payload).slice(0, 2000)
+      });
+    }
     const parsed = parseAiProductSearchNormalizationJson(outputText, fallback);
     const responseWebSources = webSourcesFromOpenAiResponse(payload);
 

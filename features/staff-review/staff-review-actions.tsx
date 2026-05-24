@@ -35,7 +35,7 @@ export function StaffReviewActions({
       </label>
       <div className="flex flex-wrap gap-2">
         <button
-          className="focus-ring rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-400"
+          className="focus-ring rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-white"
           disabled={disabled || pending}
           name="decision"
           type="submit"
@@ -44,7 +44,7 @@ export function StaffReviewActions({
           승인 처리
         </button>
         <button
-          className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:text-slate-400"
+          className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-100 disabled:text-slate-600"
           disabled={disabled || pending}
           name="decision"
           type="submit"
@@ -93,7 +93,7 @@ export function DocumentLineHsRequestActions({
       </label>
       <div className="flex flex-wrap gap-2">
         <button
-          className="focus-ring rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-400"
+          className="focus-ring rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-white"
           disabled={isDisabled}
           name="direction"
           type="submit"
@@ -102,7 +102,7 @@ export function DocumentLineHsRequestActions({
           수입 HS 요청 생성
         </button>
         <button
-          className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:text-slate-400"
+          className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-100 disabled:text-slate-600"
           disabled={isDisabled}
           name="direction"
           type="submit"
@@ -196,7 +196,7 @@ export function DocumentLineCorrectionForm({
       </label>
       <div className="flex flex-wrap items-center gap-2">
         <button
-          className="focus-ring rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-400"
+          className="focus-ring rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-white"
           disabled={isDisabled}
           type="submit"
         >

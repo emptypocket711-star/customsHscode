@@ -1,10 +1,13 @@
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
+import { isDeveloperEmail } from "@/server/auth/developer";
+
+type AppRole = "developer" | "admin" | "customs_staff" | "client" | "unknown";
 
 export type RoleGuardResult =
   | {
       allowed: true;
       mode: "mock" | "supabase";
-      role: "admin" | "customs_staff" | "client" | "unknown";
+      role: AppRole;
       message?: string;
     }
   | {
@@ -14,13 +17,13 @@ export type RoleGuardResult =
       message: string;
     };
 
-export async function requireStaffRole(): Promise<RoleGuardResult> {
+export async function requireDeveloperRole(): Promise<RoleGuardResult> {
   if (!hasSupabaseEnv()) {
     return {
       allowed: true,
       mode: "mock",
-      role: "admin",
-      message: "Supabase 환경 변수가 없어 mock staff 권한으로 화면을 표시합니다."
+      role: "developer",
+      message: "Supabase 환경 변수가 없어 mock developer 권한으로 화면을 표시합니다."
     };
   }
 
@@ -35,7 +38,16 @@ export async function requireStaffRole(): Promise<RoleGuardResult> {
       allowed: false,
       mode: "supabase",
       role: "unknown",
-      message: "로그인한 담당자만 접근할 수 있습니다."
+      message: "로그인한 개발자 계정만 접근할 수 있습니다."
+    };
+  }
+
+  if (!isDeveloperEmail(user.email)) {
+    return {
+      allowed: false,
+      mode: "supabase",
+      role: "client",
+      message: "운영 화면은 지정된 개발자 계정만 접근할 수 있습니다."
     };
   }
 
@@ -54,12 +66,13 @@ export async function requireStaffRole(): Promise<RoleGuardResult> {
     };
   }
 
-  const role = String(data.role);
-  if (role === "admin" || role === "customs_staff") {
+  const role = String(data.role) as AppRole;
+  if (role === "developer" || role === "admin" || role === "customs_staff") {
     return {
       allowed: true,
       mode: "supabase",
-      role
+      role,
+      message: "지정된 개발자 계정으로 운영 화면에 접근했습니다."
     };
   }
 
@@ -67,6 +80,8 @@ export async function requireStaffRole(): Promise<RoleGuardResult> {
     allowed: false,
     mode: "supabase",
     role: "client",
-    message: "담당자 또는 관리자만 접근할 수 있습니다."
+    message: "개발자 권한 프로필이 필요합니다."
   };
 }
+
+export const requireStaffRole = requireDeveloperRole;

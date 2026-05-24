@@ -120,7 +120,7 @@ export function buildHsSupplementGuidance(inputCode: string): HsSupplementGuidan
         : `${levelText}까지 식별된 상태입니다. 하위 HSK를 좁히려면 아래 자료가 필요합니다.`,
     questions: rule?.questions ?? genericQuestions,
     recommendedMaterials: rule?.recommendedMaterials ?? genericMaterials,
-    canRequestConfirmation: normalizedCode.length >= 4
+    canRequestConfirmation: normalizedCode.length === 10
   };
 }
 

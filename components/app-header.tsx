@@ -18,8 +18,8 @@ async function getUserEmail() {
   }
 }
 
-export async function AppHeader() {
-  const email = await getUserEmail();
+export async function AppHeader({ email: providedEmail }: { email?: string | null } = {}) {
+  const email = providedEmail ?? await getUserEmail();
 
   return (
     <header className="border-b border-slate-200 bg-white">

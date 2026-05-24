@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { unstable_cache } from "next/cache";
 import { ArrowRight, Calculator, FileSearch, Search, Upload } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -7,6 +8,7 @@ import { SourceFooter } from "@/components/ui/source-footer";
 import { DestinationCoverageTable, type DestinationCoverageTableRow } from "@/features/dashboard/destination-coverage-table";
 import { destinationCountryOptions } from "@/features/export-diagnosis/country-options";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
+import { createSupabaseServiceRoleClient, hasSupabaseServiceRoleEnv } from "@/lib/supabase/service-role";
 import { getSeoulDateString } from "@/lib/utils";
 
 const fallbackStats = [
@@ -42,6 +44,13 @@ type DestinationCoverageDbRow = {
   data_source_count: number | string | null;
 };
 
+type DashboardMetricDbRow = {
+  metric_key: string;
+  metric_label: string;
+  metric_value: number | string | null;
+  note: string | null;
+};
+
 function formatCount(value: number | null) {
   return typeof value === "number" ? new Intl.NumberFormat("ko-KR").format(value) : "-";
 }
@@ -52,15 +61,37 @@ function numericCount(value: number | string | null | undefined) {
   return 0;
 }
 
-async function loadDashboardStats() {
-  if (!hasSupabaseEnv()) {
-    return fallbackStats;
+async function queryDashboardStats(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>> | ReturnType<typeof createSupabaseServiceRoleClient>,
+  basisDate: string
+) {
+  const { data: metricRows, error: metricError } = await supabase
+    .from("dashboard_metrics")
+    .select("metric_key, metric_label, metric_value, note")
+    .lte("effective_from", basisDate)
+    .or(`effective_to.is.null,effective_to.gte.${basisDate}`)
+    .eq("status", "published")
+    .order("metric_key");
+
+  if (!metricError && metricRows?.length) {
+    const sortOrder = new Map([
+      ["hs_master", 0],
+      ["standard_product_names", 1],
+      ["tariff_rates", 2],
+      ["customs_statistical_codes", 3]
+    ]);
+
+    return ((metricRows ?? []) as DashboardMetricDbRow[])
+      .sort((a, b) => (sortOrder.get(a.metric_key) ?? 99) - (sortOrder.get(b.metric_key) ?? 99))
+      .slice(0, 4)
+      .map((row) => ({
+        label: row.metric_label,
+        value: formatCount(numericCount(row.metric_value)),
+        note: row.note ?? "집계 데이터"
+      }));
   }
 
-  try {
-    const supabase = await createSupabaseServerClient();
-    const basisDate = getSeoulDateString();
-    const [hsMaster, standardNames, tariffRates, statisticalCodes] = await Promise.all([
+  const [hsMaster, standardNames, tariffRates, statisticalCodes] = await Promise.all([
       supabase
         .from("hs_master")
         .select("hsk_code", { count: "exact", head: true })
@@ -85,18 +116,68 @@ async function loadDashboardStats() {
         .lte("effective_from", basisDate)
         .or(`effective_to.is.null,effective_to.gte.${basisDate}`)
         .eq("status", "published")
-    ]);
+  ]);
 
-    if (hsMaster.error || standardNames.error || tariffRates.error || statisticalCodes.error) {
-      return fallbackStats;
-    }
+  if (hsMaster.error || standardNames.error || tariffRates.error || statisticalCodes.error) {
+    return fallbackStats;
+  }
 
-    return [
-      { label: "HS CODE", value: formatCount(hsMaster.count), note: "HS부호 데이터" },
-      { label: "표준품명", value: formatCount(standardNames.count), note: "표준품명 데이터" },
-      { label: "관세율", value: formatCount(tariffRates.count), note: "수입 관세율 데이터" },
-      { label: "내국세 코드표", value: formatCount(statisticalCodes.count), note: "통계부호 데이터" }
-    ];
+  return [
+    { label: "HS CODE", value: formatCount(hsMaster.count), note: "HS부호 데이터" },
+    { label: "표준품명", value: formatCount(standardNames.count), note: "표준품명 데이터" },
+    { label: "관세율", value: formatCount(tariffRates.count), note: "수입 관세율 데이터" },
+    { label: "내국세 코드표", value: formatCount(statisticalCodes.count), note: "통계부호 데이터" }
+  ];
+}
+
+const loadCachedDashboardStats = unstable_cache(
+  async (basisDate: string) => {
+    if (!hasSupabaseServiceRoleEnv()) return fallbackStats;
+    return queryDashboardStats(createSupabaseServiceRoleClient(), basisDate);
+  },
+  ["dashboard-stats"],
+  { revalidate: 60 * 60 }
+);
+
+const loadCachedDestinationCoverage = unstable_cache(
+  async () => {
+    if (!hasSupabaseServiceRoleEnv()) return fallbackCoverage;
+
+    const supabase = createSupabaseServiceRoleClient();
+    const { data, error } = await supabase
+      .from("export_destination_country_coverage")
+      .select("country_code, tariff_count, internal_tax_count, requirement_count, additional_tariff_count, trade_remedy_count, data_source_count")
+      .order("tariff_count", { ascending: false })
+      .limit(200);
+
+    if (error) return fallbackCoverage;
+
+    return ((data ?? []) as DestinationCoverageDbRow[]).map((row) => ({
+      countryCode: row.country_code,
+      tariffCount: numericCount(row.tariff_count),
+      internalTaxCount: numericCount(row.internal_tax_count),
+      requirementCount: numericCount(row.requirement_count),
+      additionalTariffCount: numericCount(row.additional_tariff_count),
+      tradeRemedyCount: numericCount(row.trade_remedy_count),
+      dataSourceCount: numericCount(row.data_source_count)
+    }));
+  },
+  ["dashboard-destination-coverage"],
+  { revalidate: 60 * 60 }
+);
+
+async function loadDashboardStats(basisDate: string) {
+  if (!hasSupabaseEnv()) {
+    return fallbackStats;
+  }
+
+  if (hasSupabaseServiceRoleEnv()) {
+    return loadCachedDashboardStats(basisDate);
+  }
+
+  try {
+    const supabase = await createSupabaseServerClient();
+    return queryDashboardStats(supabase, basisDate);
   } catch {
     return fallbackStats;
   }
@@ -105,6 +186,10 @@ async function loadDashboardStats() {
 async function loadDestinationCoverage(): Promise<DestinationCoverageTableRow[]> {
   if (!hasSupabaseEnv()) {
     return fallbackCoverage;
+  }
+
+  if (hasSupabaseServiceRoleEnv()) {
+    return loadCachedDestinationCoverage();
   }
 
   try {
@@ -134,7 +219,7 @@ async function loadDestinationCoverage(): Promise<DestinationCoverageTableRow[]>
 export default async function DashboardPage() {
   const basisDate = getSeoulDateString();
   const [stats, coverageRows] = await Promise.all([
-    loadDashboardStats(),
+    loadDashboardStats(basisDate),
     loadDestinationCoverage()
   ]);
 
@@ -151,39 +236,31 @@ export default async function DashboardPage() {
 
       <Card>
         <CardBody>
-          <form action="/hs/direct" className="grid gap-3 lg:grid-cols-[1fr_120px_150px_180px_auto]" method="get">
-            <label className="grid gap-1 text-sm font-medium text-slate-700">
+          <form action="/hs/direct" className="grid gap-3 lg:grid-cols-[minmax(240px,1fr)_120px_minmax(220px,280px)_auto]" method="get">
+            <input defaultValue={basisDate} name="basisDate" type="hidden" />
+            <label className="grid min-w-0 gap-1 text-sm font-medium text-slate-700">
               HS CODE 또는 품명
               <input
-                className="focus-ring rounded-md border border-slate-300 px-3 py-3 text-base"
+                className="focus-ring w-full min-w-0 rounded-md border border-slate-300 px-3 py-3 text-base"
                 name="query"
                 placeholder="예: 3401.30-0000 또는 입술화장품"
                 type="text"
               />
             </label>
-            <label className="grid gap-1 text-sm font-medium text-slate-700">
+            <label className="grid min-w-0 gap-1 text-sm font-medium text-slate-700">
               구분
-              <select className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-3 text-base" defaultValue="import" name="direction">
+              <select className="focus-ring w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-3 text-base" defaultValue="import" name="direction">
                 <option value="import">수입</option>
                 <option value="export">수출</option>
               </select>
             </label>
-            <label className="grid gap-1 text-sm font-medium text-slate-700">
+            <label className="grid min-w-0 gap-1 text-sm font-medium text-slate-700">
               수입국가/목적국
-              <select className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-3 text-base" defaultValue="ALL" name="destinationCountry">
+              <select className="focus-ring w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-3 text-base" defaultValue="ALL" name="destinationCountry">
                 {destinationCountryOptions.map((country) => (
                   <option key={country.code} value={country.code}>{country.label}</option>
                 ))}
               </select>
-            </label>
-            <label className="grid gap-1 text-sm font-medium text-slate-700">
-              조회기준일
-              <input
-                className="focus-ring rounded-md border border-slate-300 px-3 py-3 text-base"
-                defaultValue={basisDate}
-                name="basisDate"
-                type="date"
-              />
             </label>
             <button className="focus-ring inline-flex items-center justify-center gap-2 self-end rounded-md bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800" type="submit">
               <Search aria-hidden="true" size={18} />

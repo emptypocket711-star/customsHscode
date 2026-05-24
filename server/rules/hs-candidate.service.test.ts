@@ -82,7 +82,7 @@ describe("recommendHsCandidates", () => {
 
     expect(candidates[0]?.hskCode).toBe("0712391090");
     expect(candidates[0]?.requiredQuestions.join(" ")).toContain("추가 가공");
-    expect(candidates[0]?.scoreBreakdown.join(" ")).toMatch(/AI 검색용 HS 후보|키워드/);
+    expect(candidates[0]?.scoreBreakdown.join(" ")).toMatch(/AI HS 후보 상세 조회|키워드/);
   });
 
   it("keeps competing acronym meanings from AI lookup hints", async () => {
@@ -98,6 +98,17 @@ describe("recommendHsCandidates", () => {
     ]));
     expect(candidates.find((candidate) => candidate.hs6 === "870830")?.reason).toContain("Electronic Stability Control");
     expect(candidates.find((candidate) => candidate.hs6 === "848690")?.reason).toContain("Electrostatic Chuck");
+  });
+
+  it("prioritizes apparel HS candidates over plastic article matches for work vests", async () => {
+    const candidates = await recommendHsCandidatesForProduct({
+      productName: "작업용 조끼",
+      basisDate: "2026-05-21"
+    });
+
+    expect(candidates[0]?.hs6).toBe("621133");
+    expect(candidates.map((candidate) => candidate.hs6)).toEqual(expect.arrayContaining(["621143", "611030"]));
+    expect(candidates.some((candidate) => candidate.hs6 === "392690")).toBe(false);
   });
 
   it("recommends construction machinery candidates from one-letter English omissions", () => {
@@ -132,16 +143,25 @@ describe("recommendHsCandidates", () => {
     expect(candidates[0]?.requiredQuestions.join(" ")).toContain("복사");
   });
 
-  it("keeps generic product hints when brand names are mixed into product names", async () => {
+  it("prioritizes input-device HS6 for keyboard product context", async () => {
+    const candidates = await recommendHsCandidatesForProduct({
+      productName: "레이니 키보드",
+      basisDate: "2026-05-21"
+    });
+
+    expect(candidates.length).toBeGreaterThan(0);
+    expect(candidates[0]?.hs6).toBe("847160");
+    expect(candidates[0]?.hskCode).toBe("8471601020");
+    expect(candidates.map((candidate) => candidate.hskCode)).not.toContain("847130");
+  });
+
+  it("does not fall back to local official-name dictionaries when AI gives no code hints", async () => {
     const candidates = await recommendHsCandidatesForProduct({
       productName: "graceday hand cream",
       basisDate: "2026-05-21"
     });
 
-    expect(candidates.length).toBeGreaterThan(0);
-    expect(candidates[0]?.hskCode).toBe("3304991000");
-    expect(candidates[0]?.koreanName).toContain("기초화장");
-    expect(candidates[0]?.riskNotes).toContain("화장품");
+    expect(candidates).toHaveLength(0);
   });
 
   it("removes dairy cream candidates when cosmetic skin-care context is present", () => {
@@ -173,6 +193,37 @@ describe("recommendHsCandidates", () => {
     );
 
     expect(filtered.map((candidate) => candidate.hskCode)).toEqual(["3304991000"]);
+  });
+
+  it("removes portable-computer candidates when input-device context is present", () => {
+    const makeCandidate = (hskCode: string, koreanName: string, confidenceScore: number) => ({
+      hskCode,
+      hs6: hskCode.slice(0, 6),
+      rank: 1,
+      confidenceScore,
+      koreanName,
+      reason: "test",
+      requiredQuestions: [],
+      riskNotes: "test",
+      scoreBreakdown: [],
+      reviewStatus: "suggested" as const,
+      sourceName: "test",
+      sourceUrl: "test",
+      sourceVersion: "test",
+      effectiveFrom: "2026-01-01",
+      effectiveTo: null,
+      basisDate: "2026-05-21"
+    });
+
+    const filtered = hsCandidateServiceInternals.filterContextConflictingCandidates(
+      { productName: "wireless mechanical keyboard", basisDate: "2026-05-21" },
+      [
+        makeCandidate("8471601020", "컴퓨터 키보드", 0.82),
+        makeCandidate("8471300000", "휴대용 자동자료처리기계", 0.8)
+      ]
+    );
+
+    expect(filtered.map((candidate) => candidate.hskCode)).toEqual(["8471601020"]);
   });
 
   it("maps stored Customs API018 rows as provisional product candidates", () => {
@@ -238,7 +289,7 @@ describe("recommendHsCandidates", () => {
     });
 
     expect(candidates[0]?.hs6).toBe("071239");
-    expect(candidates[0]?.reason).toContain("공식 HS 데이터");
+    expect(candidates[0]?.reason).toContain("HS CODE 힌트");
     expect(candidates[0]?.riskNotes).toContain("품목분류 확정");
   });
 
@@ -321,6 +372,46 @@ describe("recommendHsCandidates", () => {
     });
 
     expect(candidates[0]?.hskCode).toBe("8507601000");
+  });
+
+  it("keeps any GPT HS4/HS6 hints as provisional candidates even without official HS10 rows", () => {
+    const candidates = hsCandidateServiceInternals.recommendAiHsCodeHintCandidates(
+      {
+        productName: "임의 품명",
+        basisDate: "2026-05-21"
+      },
+      {
+        provider: "mock",
+        model: "test",
+        correctedProductName: null,
+        searchTerms: [],
+        koreanTerms: [],
+        englishTerms: [],
+        productFamilies: [],
+        candidateHsCodes: ["190190", "190590"],
+        candidateHsCodeReasons: [
+          {
+            code: "190190",
+            reason: "제품 문맥상 제1901호 계열 확인이 필요합니다.",
+            requiredInfo: ["성분표", "제조공정"]
+          },
+          {
+            code: "190590",
+            reason: "제품 문맥상 제1905호 계열 확인이 필요합니다.",
+            requiredInfo: ["형태", "섭취 전 조리 여부"]
+          }
+        ],
+        webSources: [],
+        missingQuestions: ["제품 사양 확인이 필요합니다."]
+      },
+      []
+    );
+
+    expect(candidates.length).toBeGreaterThan(0);
+    expect(candidates.map((candidate) => candidate.hskCode)).toEqual(expect.arrayContaining(["190190", "190590"]));
+    expect(candidates.every((candidate) => candidate.lookupBasis === "ai_hs_hint")).toBe(true);
+    expect(candidates.find((candidate) => candidate.hskCode === "190190")?.reason).toContain("GPT가 제시한 예비 HS 후보");
+    expect(candidates.every((candidate) => candidate.riskNotes.includes("품목분류 확정"))).toBe(true);
   });
 
   it("scores official standard name rows by matching input terms", () => {

@@ -13,7 +13,8 @@ describe("staff review service", () => {
   });
 
   it("prevents client role approval", () => {
-    expect(() => assertStaffCanApprove("client")).toThrow("담당자 또는 관리자");
+    expect(() => assertStaffCanApprove("client")).toThrow("개발자 운영 계정");
+    expect(assertStaffCanApprove("developer")).toBe(true);
     expect(assertStaffCanApprove("customs_staff")).toBe(true);
   });
 });

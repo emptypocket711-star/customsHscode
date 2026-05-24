@@ -56,6 +56,33 @@ describe("analyzeProductClarification", () => {
 });
 
 describe("normalizeProductSearchInput", () => {
+  it("parses object-shaped GPT HS code candidates", () => {
+    const parsed = aiProviderInternals.parseAiProductSearchNormalizationJson(JSON.stringify({
+      normalizedProductName: "아이코스",
+      candidateHsCodes: [
+        { hsCode: "8543.70", description: "전기식 가열 담배 기기" },
+        { hsCode: "2403.99", description: "담배 관련 제품 가능성" }
+      ],
+      missingQuestions: ["담배 스틱 포함 여부"]
+    }), {
+      provider: "openai",
+      model: "test",
+      correctedProductName: null,
+      searchTerms: [],
+      koreanTerms: [],
+      englishTerms: [],
+      productFamilies: [],
+      candidateHsCodes: [],
+      candidateHsCodeReasons: [],
+      webSources: [],
+      missingQuestions: []
+    });
+
+    expect(parsed.correctedProductName).toBe("아이코스");
+    expect(parsed.candidateHsCodes).toEqual(["854370", "240399"]);
+    expect(parsed.candidateHsCodeReasons[0]?.reason).toContain("가열");
+  });
+
   it("builds AI cache keys from redacted input hashes instead of raw product text", () => {
     const key = buildProductSearchNormalizationCacheKey({
       provider: "openai",
@@ -97,6 +124,17 @@ describe("normalizeProductSearchInput", () => {
     expect(normalization.candidateHsCodes).toContain("901910");
     expect(normalization.missingQuestions.join(" ")).toContain("마사지");
     expect(JSON.stringify(normalization)).not.toContain("9019102000");
+  });
+
+  it("adds broad apparel candidates for unclear work vest names", async () => {
+    const normalization = await normalizeProductSearchInput({
+      productName: "작업용 조끼",
+      basisDate: "2026-05-24"
+    });
+
+    expect(normalization.candidateHsCodes).toEqual(expect.arrayContaining(["621133", "621143", "611030", "6211"]));
+    expect(normalization.candidateHsCodes.indexOf("621133")).toBeLessThan(normalization.candidateHsCodes.indexOf("611030"));
+    expect(normalization.missingQuestions.join(" ")).toContain("편직물");
   });
 
   it("can return HS prefixes only as official lookup hints", () => {

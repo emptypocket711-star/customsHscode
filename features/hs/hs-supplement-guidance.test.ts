@@ -9,7 +9,7 @@ describe("HS supplement guidance", () => {
     expect(guidance.title).toContain("화장품");
     expect(guidance.questions).toContain("입술용, 눈화장용, 기초화장용, 매니큐어/페디큐어용 중 어디에 해당하는지");
     expect(guidance.recommendedMaterials).toContain("전성분표");
-    expect(guidance.canRequestConfirmation).toBe(true);
+    expect(guidance.canRequestConfirmation).toBe(false);
   });
 
   it("builds HS6 guidance for filtering parts", () => {

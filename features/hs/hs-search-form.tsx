@@ -120,7 +120,7 @@ export function HsSearchForm({ defaultSearchType = "hs_code" }: { defaultSearchT
       ) : null}
 
       <button
-        className="focus-ring inline-flex w-full items-center justify-center gap-2 rounded-md bg-blue-700 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-400 sm:w-fit"
+        className="focus-ring inline-flex w-full items-center justify-center gap-2 rounded-md bg-blue-700 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-white sm:w-fit"
         disabled={pending}
         type="submit"
       >

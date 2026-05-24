@@ -14,7 +14,7 @@ export function HsCopySummaryButton({ text }: { text: string }) {
 
   return (
     <button
-      className="focus-ring inline-flex items-center gap-1.5 rounded bg-white px-2.5 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-50"
+      className="focus-ring inline-flex items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-semibold text-blue-800 hover:bg-blue-100"
       onClick={copyToClipboard}
       type="button"
     >

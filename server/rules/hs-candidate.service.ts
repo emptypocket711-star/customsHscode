@@ -308,6 +308,82 @@ function reasonForHsCodeHint(
   return reasons.find((item) => hskCode.startsWith(item.code) || hs6.startsWith(item.code) || item.code.startsWith(hs6));
 }
 
+function aiCodeHintRankBonus(normalization: AiProductSearchNormalizationResult | null, hskCode: string, hs6: string) {
+  const hints = normalizeAiHsCodeHints(normalization);
+  const index = hints.findIndex((code) => {
+    if (code.length >= 10) return hskCode === code.slice(0, 10);
+    if (code.length === 6) return hs6 === code || hskCode.startsWith(code);
+    return hskCode.startsWith(code) || hs6.startsWith(code);
+  });
+
+  return index >= 0 ? Math.max(0, 2 - index * 0.35) : 0;
+}
+
+function normalizeAiHsCodeHints(normalization: AiProductSearchNormalizationResult | null) {
+  return Array.from(new Set(
+    (normalization?.candidateHsCodes ?? [])
+      .map((code) => code.replace(/[^0-9]/g, ""))
+      .filter((code) => code.length >= 4 && code.length <= 10)
+  )).slice(0, 8);
+}
+
+function hasCandidateForAiCodeHint(candidate: HsCandidateRecommendation, code: string) {
+  if (code.length >= 10) return candidate.hskCode === code.slice(0, 10);
+  if (code.length === 6) return candidate.hs6 === code || candidate.hskCode.startsWith(code);
+  return candidate.hskCode.startsWith(code) || candidate.hs6.startsWith(code);
+}
+
+function aiHsCodeHintLabel(code: string) {
+  if (code.length >= 10) return `HSK ${code.slice(0, 4)}.${code.slice(4, 6)}-${code.slice(6, 10)}`;
+  if (code.length === 6) return `HS ${code.slice(0, 4)}.${code.slice(4, 6)} 계열`;
+  return `HS ${code} 계열`;
+}
+
+function recommendAiHsCodeHintCandidates(
+  input: ProductHsRecommendationInput,
+  normalization: AiProductSearchNormalizationResult | null,
+  existingCandidates: HsCandidateRecommendation[]
+): HsCandidateRecommendation[] {
+  const codes = normalizeAiHsCodeHints(normalization)
+    .filter((code) => !existingCandidates.some((candidate) => hasCandidateForAiCodeHint(candidate, code)));
+
+  return codes.slice(0, 5).map((code, index) => {
+    const hs6 = code.length >= 6 ? code.slice(0, 6) : code;
+    const hintReason = reasonForHsCodeHint(normalization, code, hs6);
+    const requiredQuestions = [
+      ...(hintReason?.requiredInfo ?? []),
+      ...(normalization?.missingQuestions ?? []),
+      "제품명, 용도, 성분·재질, 제조공정, 완제품/부분품 여부 확인",
+      "해당 HS4/HS6의 국내 HSK 10자리 하위 세번 확인"
+    ].filter((question, questionIndex, questions) => questions.indexOf(question) === questionIndex).slice(0, 5);
+
+    return {
+      hskCode: code,
+      hs6,
+      rank: index + 1,
+      confidenceScore: Math.max(0.54, 0.69 - index * 0.04),
+      koreanName: aiHsCodeHintLabel(code),
+      reason: hintReason
+        ? `${hintReason.reason} GPT가 제시한 예비 HS 후보이며, 하위 HSK 10자리와 실제 제품 사양 확인이 필요합니다.`
+        : "GPT가 제품명 문맥에서 제시한 예비 HS 후보입니다. 하위 HSK 10자리와 실제 제품 사양 확인이 필요합니다.",
+      requiredQuestions,
+      riskNotes: "AI 예비 후보이며 품목분류 확정이 아닙니다. 동일 HS4/HS6 내에서도 재질, 성분, 용도, 가공상태에 따라 하위 세번이 달라질 수 있습니다.",
+      scoreBreakdown: [
+        "GPT HS4/HS6 후보 우선 표시",
+        ...(hintReason ? [`GPT 후보 근거: ${hintReason.reason}`] : [])
+      ],
+      lookupBasis: "ai_hs_hint",
+      reviewStatus: "suggested" as const,
+      sourceName: "AI 품명 정규화",
+      sourceUrl: "internal://ai-product-normalization",
+      sourceVersion: `${normalization?.provider ?? "unknown"}:${normalization?.model ?? "unknown"}`,
+      effectiveFrom: input.basisDate,
+      effectiveTo: null,
+      basisDate: input.basisDate
+    };
+  });
+}
+
 function hasUnrequestedSpecializedContext(row: HsMasterSearchRow, input: ProductHsRecommendationInput) {
   const haystack = `${row.korean_name} ${row.english_name ?? ""}`.toLowerCase();
   const inputText = normalizeProductInputText(input);
@@ -365,6 +441,27 @@ const contextConflictRules = [
     preservingInputTerms: ["chemical", "industrial", "pigment", "resin", "paint", "화학", "공업용", "안료", "수지", "도료"],
     blockedCandidatePrefixes: ["28", "29", "3206", "3901", "3902"],
     blockedCandidateTerms: ["chemical", "pigment", "resin", "화학", "안료", "수지"]
+  },
+  {
+    label: "input-device-vs-portable-computer",
+    inputContextTerms: ["keyboard", "keyboards", "input device", "input unit", "키보드", "입력장치", "자판"],
+    preservingInputTerms: ["laptop", "notebook", "portable computer", "tablet pc", "노트북", "휴대용 컴퓨터", "태블릿"],
+    blockedCandidatePrefixes: ["847130"],
+    blockedCandidateTerms: ["portable automatic data processing", "휴대용 자동자료처리", "노트북"]
+  },
+  {
+    label: "ready-to-drink-beverage-vs-food-preparation",
+    inputContextTerms: ["beverage", "drink", "ready-to-drink", "soft drink", "juice drink", "flavored water", "음료", "음료수", "마시는"],
+    preservingInputTerms: ["concentrate", "syrup", "powder", "extract", "base", "농축", "시럽", "분말", "원액", "엑기스"],
+    blockedCandidatePrefixes: ["2106"],
+    blockedCandidateTerms: ["food preparations", "조제 식료품"]
+  },
+  {
+    label: "apparel-vest-vs-plastic-articles",
+    inputContextTerms: ["vest", "waistcoat", "workwear", "safety vest", "reflective vest", "hi-vis", "high visibility", "조끼", "작업복", "작업용", "안전조끼", "반사조끼", "형광조끼"],
+    preservingInputTerms: ["plastic article", "plastic closure", "stopper", "cap", "lid", "플라스틱 제품", "뚜껑", "마개", "캡", "플라스틱 부품"],
+    blockedCandidatePrefixes: ["3926"],
+    blockedCandidateTerms: ["plastics", "플라스틱"]
   }
 ];
 
@@ -630,22 +727,24 @@ function mapOfficialHsMasterRowsToCandidates(
         hskCode: item.row.hsk_code,
         hs6: item.row.hs6,
         rank: index + 1,
-        confidenceScore: Math.max(0.34, Math.min(0.7, 0.44 + item.score * 0.035 - index * 0.03)),
+        confidenceScore: item.fromCodeHint
+          ? Math.max(0.64, Math.min(0.86, 0.68 + item.score * 0.025 - index * 0.02))
+          : Math.max(0.34, Math.min(0.7, 0.44 + item.score * 0.035 - index * 0.03)),
         koreanName: item.row.korean_name,
         reason: hintReason
-          ? `${hintReason.reason} 공식 HS 데이터에 대조해 조회한 후보입니다.`
+          ? `${hintReason.reason} 해당 HS 후보의 류·호·소호 설명을 함께 확인해야 합니다.`
           : item.fromCodeHint
-          ? "AI가 생성한 검색용 HS 후보를 공식 HS 데이터에 대조해 조회한 후보입니다. 실제 기능, 구성, 용도에 따라 하위 세번 확인이 필요합니다."
-          : "AI가 생성한 검색어를 공식 HS 품명 데이터에 대조해 조회한 후보입니다. 실제 기능, 구성, 용도에 따라 하위 세번 확인이 필요합니다.",
+          ? "AI가 제시한 HS 후보입니다. 실제 기능, 구성, 용도에 따라 하위 세번 확인이 필요합니다."
+          : "AI가 해석한 품명 단서로 조회한 HS 후보입니다. 실제 기능, 구성, 용도에 따라 하위 세번 확인이 필요합니다.",
         requiredQuestions: [
           ...(hintReason?.requiredInfo ?? []),
           ...(normalization?.missingQuestions ?? []),
           "카탈로그, 제품 사양서, 기능 설명, 완제품/부분품 여부 확인"
         ].filter((question, questionIndex, questions) => questions.indexOf(question) === questionIndex).slice(0, 4),
-        riskNotes: "AI 검색 보조와 공식 HS 데이터 매칭 결과이며 품목분류 확정이 아닙니다.",
+        riskNotes: "AI 검색 보조 결과이며 품목분류 확정이 아닙니다.",
         scoreBreakdown: [
-          item.fromCodeHint ? "AI 검색용 HS 후보와 공식 HS 데이터 매칭" : "AI 검색어와 공식 HS 품명 매칭",
-          ...item.matches.slice(0, 5).map((term) => `공식 품명 검색어 ${term}`)
+          item.fromCodeHint ? "AI HS 후보 상세 조회" : "AI 품명 단서 조회",
+          ...item.matches.slice(0, 5).map((term) => `조회 보조어 ${term}`)
         ],
         lookupBasis: item.fromUserHsHint ? "user_hs_hint" : item.fromCodeHint ? "ai_hs_hint" : "ai_term_match",
         reviewStatus: "suggested" as const,
@@ -688,7 +787,11 @@ function rankOfficialHsMasterRows(
     const matches = matchedHsMasterTerms(row, terms);
     if (hasNonMaterialSearchTerms && matches.length > 0 && hasOnlyMaterialMatches(matches)) continue;
     const current = best.get(row.hsk_code);
-    const score = 5 + matches.length * 2 + Math.min(row.hsk_code.length, 10) / 10 + (reasonedHint ? 2 : 0);
+    const score = 5
+      + matches.length * 2
+      + Math.min(row.hsk_code.length, 10) / 10
+      + (reasonedHint ? 2 : 0)
+      + aiCodeHintRankBonus(normalization, row.hsk_code, row.hs6);
     if (!current || score > current.score) {
       const fromUserHsHint = userProvidedHsHints.some((hint) => {
         if (hint.length >= 10) return row.hsk_code === hint.slice(0, 10) || row.hs6 === hint.slice(0, 6);
@@ -706,15 +809,15 @@ function recommendHsCandidatesFromMockOfficialHsMasterSearch(
   input: ProductHsRecommendationInput,
   normalization: AiProductSearchNormalizationResult | null
 ) {
-  if (!hasOfficialDataLookupHint(normalization)) return [];
+  if (!normalization?.candidateHsCodes.length) return [];
   const analysis = analyzeProductNameInput(input);
   const terms = hsMasterSearchTerms(analysis, normalization);
   return rankOfficialHsMasterRows(
     input,
     normalization,
     terms,
-    mockHsMasterRowsByTerms(input, terms),
-    normalization?.candidateHsCodes.length ? mockHsMasterRowsByCodeHints(input, normalization.candidateHsCodes) : []
+    [],
+    mockHsMasterRowsByCodeHints(input, normalization.candidateHsCodes)
   );
 }
 
@@ -723,14 +826,11 @@ async function recommendHsCandidatesFromOfficialHsMasterSearch(
   input: ProductHsRecommendationInput,
   normalization: AiProductSearchNormalizationResult | null
 ): Promise<HsCandidateRecommendation[]> {
+  if (!normalization?.candidateHsCodes.length) return [];
   const analysis = analyzeProductNameInput(input);
   const terms = hsMasterSearchTerms(analysis, normalization);
-  const hasCodeHints = Boolean(normalization?.candidateHsCodes.length);
-  const [termRows, codeHintRows] = await Promise.all([
-    terms.length && !hasCodeHints ? findHsMasterRowsByTerms(supabase, input, terms) : Promise.resolve([]),
-    hasCodeHints ? findHsMasterRowsByCodeHints(supabase, input, normalization?.candidateHsCodes ?? []) : Promise.resolve([])
-  ]);
-  return rankOfficialHsMasterRows(input, normalization, terms, termRows, codeHintRows);
+  const codeHintRows = await findHsMasterRowsByCodeHints(supabase, input, normalization.candidateHsCodes);
+  return rankOfficialHsMasterRows(input, normalization, terms, [], codeHintRows);
 }
 
 async function recommendHsCandidatesFromSupabase(
@@ -1053,7 +1153,7 @@ function recommendHsCandidatesFromUserCodeHints(input: ProductHsRecommendationIn
     rank: index + 1,
     confidenceScore: Math.max(0.62, 0.82 - index * 0.04),
     koreanName: record.korean_name,
-    reason: "입력값에 포함된 HS CODE 힌트를 기준으로 공식 HS 데이터에서 조회한 후보입니다. 품명, 용도, 재질과의 일치 여부 확인이 필요합니다.",
+    reason: "입력값에 포함된 HS CODE 힌트를 기준으로 조회한 후보입니다. 품명, 용도, 재질과의 일치 여부 확인이 필요합니다.",
     requiredQuestions: [
       "입력한 HS CODE가 국내 HSK인지, 해외 수입국 세번인지 확인",
       "품명, 용도, 재질, 기능이 해당 HS CODE 설명과 일치하는지 확인",
@@ -1168,18 +1268,20 @@ export function recommendHsCandidates(input: ProductHsRecommendationInput): HsCa
 export async function recommendHsCandidatesForProduct(input: ProductHsRecommendationInput): Promise<HsCandidateRecommendation[]> {
   const { input: augmentedInput, normalization } = await normalizedProductSearch(input);
   const isAmbiguousAcronym = Boolean(ambiguousRuleForProductName(input.productName));
+  const shouldKeepAiAlternatives = isAmbiguousAcronym || normalizeAiHsCodeHints(normalization).length > 1;
 
   if (!hasSupabaseEnv()) {
+    const baseCandidates = [
+      ...recommendAmbiguousProductCandidates(input),
+      ...recommendHsCandidatesFromMockOfficialHsMasterSearch(augmentedInput, normalization)
+    ];
+    const aiHintCandidates = recommendAiHsCodeHintCandidates(augmentedInput, normalization, baseCandidates);
+
     return pruneByUserHsHints(
       input,
       pruneWeakProductRecommendations(
-        mergeRecommendations([
-          ...recommendAmbiguousProductCandidates(input),
-          ...recommendHsCandidates(input),
-          ...(augmentedInput.productName !== input.productName ? recommendHsCandidates(augmentedInput) : []),
-          ...recommendHsCandidatesFromMockOfficialHsMasterSearch(augmentedInput, normalization)
-        ]),
-        { keepAmbiguousAlternatives: isAmbiguousAcronym }
+        mergeRecommendations([...baseCandidates, ...aiHintCandidates]),
+        { keepAmbiguousAlternatives: shouldKeepAiAlternatives }
       )
     );
   }
@@ -1189,74 +1291,40 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
     if (normalization && isBareProductCodeInput(input.productName) && normalization.webSources.length === 0 && !hasOfficialDataLookupHint(normalization)) {
       return [];
     }
-    const useAugmented = augmentedInput.productName !== input.productName;
-    const deterministicCandidates = [
-      ...recommendHsCandidates(input),
-      ...(useAugmented ? recommendHsCandidates(augmentedInput) : [])
-    ];
-    const [
-      officialCandidates,
-      internalTaxCandidates,
-      normalizedOfficialCandidates,
-      normalizedInternalTaxCandidates,
-      officialHsMasterCandidates,
-      storedCustomsHsCodeSearchCandidates
-    ] = await Promise.all([
-      recommendHsCandidatesFromSupabase(supabase, input).catch(() => []),
-      recommendHsCandidatesFromInternalTaxRules(supabase, input).catch(() => []),
-      useAugmented ? recommendHsCandidatesFromSupabase(supabase, augmentedInput).catch(() => []) : Promise.resolve([]),
-      useAugmented ? recommendHsCandidatesFromInternalTaxRules(supabase, augmentedInput).catch(() => []) : Promise.resolve([]),
-      normalization ? recommendHsCandidatesFromOfficialHsMasterSearch(supabase, augmentedInput, normalization).catch(() => []) : Promise.resolve([]),
-      recommendHsCandidatesFromStoredCustomsHsCodeSearch(supabase, augmentedInput, normalization).catch(() => [])
-    ]);
-    const nonApiNormalizedCandidates = [
-      ...deterministicCandidates,
-      ...normalizedOfficialCandidates,
-      ...normalizedInternalTaxCandidates,
-      ...officialHsMasterCandidates,
-      ...storedCustomsHsCodeSearchCandidates
-    ];
-    const normalizedApiCandidates = useAugmented && !nonApiNormalizedCandidates.length
-      ? await recommendHsCandidatesFromCustomsHsSearch(augmentedInput).catch(() => [])
+    const officialHsMasterCandidates = normalization
+      ? await recommendHsCandidatesFromOfficialHsMasterSearch(supabase, augmentedInput, normalization).catch(() => [])
       : [];
-    const normalizedCandidates = [...nonApiNormalizedCandidates, ...normalizedApiCandidates];
-    const originalCandidates = normalizedCandidates.length ? [] : [
-      ...deterministicCandidates,
-      ...officialCandidates,
-      ...internalTaxCandidates
+    const nonApiNormalizedBaseCandidates = [
+      ...officialHsMasterCandidates
     ];
-    const apiCandidates = normalizedCandidates.length || originalCandidates.length
-      ? []
-      : await recommendHsCandidatesFromCustomsHsSearch(input).catch(() => []);
-    const merged = filterContextConflictingCandidates(input, mergeRecommendations([
+    const aiHintCandidates = normalization
+      ? recommendAiHsCodeHintCandidates(augmentedInput, normalization, nonApiNormalizedBaseCandidates)
+      : [];
+    const nonApiNormalizedCandidates = [
+      ...nonApiNormalizedBaseCandidates,
+      ...aiHintCandidates
+    ];
+    const normalizedCandidates = [...nonApiNormalizedCandidates];
+    const merged = filterContextConflictingCandidates(augmentedInput, mergeRecommendations([
       ...recommendAmbiguousProductCandidates(input),
-      ...normalizedCandidates,
-      ...originalCandidates,
-      ...apiCandidates
+      ...normalizedCandidates
     ]));
     return pruneByUserHsHints(input, pruneWeakProductRecommendations(merged, {
-      keepAmbiguousAlternatives: isAmbiguousAcronym
+      keepAmbiguousAlternatives: shouldKeepAiAlternatives
     }));
   } catch {
-    const apiCandidates = await recommendHsCandidatesFromCustomsHsSearch(input).catch(() => []);
     if (isBareProductCodeInput(input.productName) && augmentedInput.productName !== input.productName && !hasOfficialDataLookupHint(normalization)) {
       return [];
     }
     const mockOfficialCandidates = recommendHsCandidatesFromMockOfficialHsMasterSearch(augmentedInput, normalization);
-    const normalizedApiCandidates = augmentedInput.productName !== input.productName && !mockOfficialCandidates.length
-      ? await recommendHsCandidatesFromCustomsHsSearch(augmentedInput).catch(() => [])
-      : [];
-    const normalizedCandidates = [...mockOfficialCandidates, ...normalizedApiCandidates];
-    const originalCandidates = normalizedCandidates.length ? [] : apiCandidates;
-    const merged = filterContextConflictingCandidates(input, mergeRecommendations([
+    const aiHintCandidates = recommendAiHsCodeHintCandidates(augmentedInput, normalization, mockOfficialCandidates);
+    const normalizedCandidates = [...mockOfficialCandidates, ...aiHintCandidates];
+    const merged = filterContextConflictingCandidates(augmentedInput, mergeRecommendations([
       ...recommendAmbiguousProductCandidates(input),
-      ...recommendHsCandidates(input),
-      ...(augmentedInput.productName !== input.productName ? recommendHsCandidates(augmentedInput) : []),
-      ...normalizedCandidates,
-      ...originalCandidates
+      ...normalizedCandidates
     ]));
     return pruneByUserHsHints(input, pruneWeakProductRecommendations(merged, {
-      keepAmbiguousAlternatives: isAmbiguousAcronym
+      keepAmbiguousAlternatives: shouldKeepAiAlternatives
     }));
   }
 }
@@ -1266,6 +1334,7 @@ export const hsCandidateServiceInternals = {
   scoreStandardName: scoreStandardNameWithTerms,
   uniqueRowsByHsk,
   mapStoredCustomsHsCodeSearchRowsToCandidates,
+  recommendAiHsCodeHintCandidates,
   pruneWeakProductRecommendations,
   filterContextConflictingCandidates,
   ambiguousRuleForProductName,

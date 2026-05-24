@@ -80,7 +80,7 @@ export async function StaffReviewCenter() {
         <CardHeader
           title="권한 정책"
           description="클라이언트 사용자는 HS 확정, 리포트 승인, 법령 publish를 수행할 수 없습니다."
-          action={<Badge tone="warning">staff/admin only</Badge>}
+          action={<Badge tone="warning">developer only</Badge>}
         />
         <CardBody>
           <div className="grid gap-3 md:grid-cols-3">

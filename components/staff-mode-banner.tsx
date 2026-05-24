@@ -13,7 +13,7 @@ export function StaffModeBanner({
         <div>
           <p className="text-sm font-semibold text-slate-950">운영 화면 권한 상태</p>
           <p className="mt-1 text-sm text-slate-600">
-            {message ?? "Supabase 인증과 profiles.role 기준으로 staff/admin 권한을 확인했습니다."}
+            {message ?? "Supabase 인증과 지정 개발자 계정 권한을 확인했습니다."}
           </p>
         </div>
         <Badge tone={mode === "supabase" ? "success" : "warning"}>{mode}</Badge>
