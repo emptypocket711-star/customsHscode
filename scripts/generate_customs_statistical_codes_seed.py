@@ -1,0 +1,167 @@
+#!/usr/bin/env python3
+"""Generate Supabase seed SQL for Customs MYC API019 statistical codes."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import os
+import sys
+import urllib.parse
+import urllib.request
+from datetime import datetime, timezone
+from pathlib import Path
+from xml.etree import ElementTree as ET
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(SCRIPT_DIR))
+
+from generate_customs_excel_seed import copy_block, numeric_or_none  # noqa: E402
+
+DEFAULT_ENDPOINT = "https://unipass.customs.go.kr:38010/ext/rest/statsSgnQry/retrieveStatsSgnBrkd"
+SOURCE_NAME = "관세청 통계부호내역조회"
+SOURCE_VERSION = "myc-openapi-api019-v1.0"
+DEFAULT_CODE_TYPES = ["A01", "A04", "A07"]
+
+
+def local_name(tag: str) -> str:
+    return tag.rsplit("}", 1)[-1]
+
+
+def child_text(element: ET.Element, name: str) -> str:
+    for child in element:
+        if local_name(child.tag) == name:
+            return (child.text or "").strip()
+    return ""
+
+
+def redacted_url(url: str) -> str:
+    parsed = urllib.parse.urlsplit(url)
+    pairs = urllib.parse.parse_qsl(parsed.query, keep_blank_values=True)
+    redacted = urllib.parse.urlencode([(key, "[redacted]" if key == "crkyCn" else value) for key, value in pairs])
+    return urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, parsed.path, redacted, parsed.fragment))
+
+
+def parse_api019_xml(raw_text: str, code_type: str) -> list[dict[str, object]]:
+    root = ET.fromstring(raw_text)
+    rows: list[dict[str, object]] = []
+
+    for element in root.iter():
+        tag = local_name(element.tag)
+        if tag == "othStatsSgnQryVo":
+            rows.append({
+                "code_type": code_type,
+                "code": child_text(element, "statsSgn"),
+                "korean_name": child_text(element, "koreBrkd"),
+                "korean_abbreviation": child_text(element, "koreAbrt") or None,
+                "english_abbreviation": child_text(element, "englAbrt") or None,
+                "english_note": None,
+                "internal_tax_rate": numeric_or_none(child_text(element, "itxRt")),
+            })
+        elif tag == "statsSgnQryVo2":
+            rows.append({
+                "code_type": code_type,
+                "code": child_text(element, "cdValtVal"),
+                "korean_name": child_text(element, "cdValtValNm"),
+                "korean_abbreviation": None,
+                "english_abbreviation": child_text(element, "englAbrtNm") or None,
+                "english_note": child_text(element, "valtValEnglRmrkCn") or None,
+                "internal_tax_rate": None,
+            })
+
+    return [row for row in rows if row["code"] or row["korean_name"]]
+
+
+def fetch_code_rows(endpoint: str, service_key: str, code_type: str) -> tuple[str, str, list[dict[str, object]]]:
+    url = f"{endpoint}?{urllib.parse.urlencode({'crkyCn': service_key, 'statsSgnTp': code_type})}"
+    with urllib.request.urlopen(url, timeout=30) as response:
+        raw = response.read().decode("utf-8", errors="replace")
+    return raw, redacted_url(url), parse_api019_xml(raw, code_type)
+
+
+def seed_rows(args: argparse.Namespace, retrieved_at: str) -> list[list[object]]:
+    key = (
+        args.service_key
+        or os.environ.get("CUSTOMS_API_STATS_CODE_SERVICE_KEY")
+        or os.environ.get("CUSTOMS_API_SERVICE_KEY")
+        or os.environ.get("PUBLIC_DATA_SERVICE_KEY")
+    )
+    if not key:
+        raise SystemExit("CUSTOMS_API_STATS_CODE_SERVICE_KEY 또는 CUSTOMS_API_SERVICE_KEY가 필요합니다.")
+
+    output: list[list[object]] = []
+    seen: set[tuple[object, object, object, object]] = set()
+    for code_type in args.code_type:
+        raw, source_url, rows = fetch_code_rows(args.endpoint, key, code_type)
+        checksum = hashlib.sha256(raw.encode("utf-8")).hexdigest()
+        for row in rows:
+            source_version = f"{SOURCE_VERSION}:{code_type}"
+            identity = (row["code_type"], row["code"], row["korean_name"], source_version)
+            if identity in seen:
+                continue
+            seen.add(identity)
+            output.append([
+                row["code_type"],
+                row["code"],
+                row["korean_name"],
+                row["korean_abbreviation"],
+                row["english_abbreviation"],
+                row["english_note"],
+                row["internal_tax_rate"],
+                SOURCE_NAME,
+                source_url,
+                source_version,
+                args.effective_from,
+                args.effective_to,
+                None,
+                retrieved_at,
+                "staged",
+                checksum,
+            ])
+    return output
+
+
+def write_seed(args: argparse.Namespace) -> None:
+    retrieved_at = datetime.now(timezone.utc).isoformat()
+    rows = seed_rows(args, retrieved_at)
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    with args.output.open("w", encoding="utf-8") as out:
+        out.write("-- Generated by scripts/generate_customs_statistical_codes_seed.py\n")
+        out.write("begin;\n")
+        out.write(f"delete from public.customs_statistical_codes where source_version like '{SOURCE_VERSION}:%';\n")
+        out.write(copy_block("public.customs_statistical_codes", [
+            "code_type",
+            "code",
+            "korean_name",
+            "korean_abbreviation",
+            "english_abbreviation",
+            "english_note",
+            "internal_tax_rate",
+            "source_name",
+            "source_url",
+            "source_version",
+            "effective_from",
+            "effective_to",
+            "published_at",
+            "retrieved_at",
+            "status",
+            "checksum",
+        ], rows))
+        out.write("commit;\n")
+    print(f"wrote {args.output} ({len(rows)} rows)")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--endpoint", default=DEFAULT_ENDPOINT)
+    parser.add_argument("--service-key")
+    parser.add_argument("--code-type", action="append", default=DEFAULT_CODE_TYPES)
+    parser.add_argument("--effective-from", default="2026-01-01")
+    parser.add_argument("--effective-to", default=None)
+    parser.add_argument("--output", type=Path, default=Path("supabase/seed/generated/customs_statistical_codes_api019_seed.sql"))
+    args = parser.parse_args()
+    write_seed(args)
+
+
+if __name__ == "__main__":
+    main()

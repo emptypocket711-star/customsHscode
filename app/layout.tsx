@@ -1,0 +1,26 @@
+import type { Metadata } from "next";
+import { Suspense } from "react";
+import { NavigationProgress } from "@/components/navigation-progress";
+import "./globals.css";
+
+export const metadata: Metadata = {
+  title: "통관이음 AI",
+  description: "HS CODE, 관세율, FTA, 수출입요건 조회 서비스"
+};
+
+export default function RootLayout({
+  children
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="ko">
+      <body>
+        <Suspense fallback={null}>
+          <NavigationProgress />
+        </Suspense>
+        {children}
+      </body>
+    </html>
+  );
+}

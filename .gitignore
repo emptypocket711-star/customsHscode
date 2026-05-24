@@ -1,0 +1,27 @@
+.env
+.env.local
+.env.*.local
+.DS_Store
+.next/
+node_modules/
+tsconfig.tsbuildinfo
+__pycache__/
+*.pyc
+.venv/
+.venv-*/
+data/external/
+data/cache/
+supabase/seed/generated/
+supabase/.temp/
+supabase/.branches/
+
+# Raw official/source files should be stored outside Git and regenerated into DB snapshots.
+*.zip
+*.xls
+*.xlsx
+*.xlsm
+*.pdf
+*.hwp
+
+# Runtime logs
+*.log

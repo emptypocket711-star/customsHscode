@@ -1,0 +1,2982 @@
+import { ExternalLink, Search } from "lucide-react";
+import Link from "next/link";
+import { Fragment } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { SourceFooter } from "@/components/ui/source-footer";
+import { buildDutyEstimatorHref } from "@/features/duty-estimator/url-params";
+import { countryCodeAliases, destinationCountryOptions, exportCountryLabel, exportCountryOptions } from "@/features/export-diagnosis/country-options";
+import { mockExportDestinationTariffRates } from "@/features/export-diagnosis/mock-export-data";
+import { HsCopySummaryButton } from "@/features/hs/hs-copy-summary-button";
+import { destinationAgreementRateDisplayItems, destinationDisplayAgreementRates, destinationDisplayBaseRate } from "@/features/hs/export-destination-tariff-display";
+import { DestinationAgreementRateDialog } from "@/features/hs/destination-agreement-rate-dialog";
+import { displayImportTariffLabel, filterImportTariffsForCountry, importTariffApplicationPriority, isCommonImportTariff } from "@/features/hs/import-tariff-display";
+import { DestinationAdditionalTariffDialog } from "@/features/hs/destination-additional-tariff-dialog";
+import { DestinationImportRequirementDialog } from "@/features/hs/destination-import-requirement-dialog";
+import { DestinationInternalTaxDialog, destinationInternalTaxText } from "@/features/hs/destination-internal-tax-dialog";
+import { DestinationTradeRemedyDialog } from "@/features/hs/destination-trade-remedy-dialog";
+import { ImportRequirementDetailDialog } from "@/features/hs/import-requirement-detail-dialog";
+import { hsDirectLookupSchema } from "@/features/hs/schemas";
+import {
+  buildHsSupplementGuidance,
+  buildProductSupplementGuidance,
+  isWeakProductName,
+  type HsSupplementGuidance
+} from "@/features/hs/hs-supplement-guidance";
+import { TariffRateDetailDialog } from "@/features/hs/tariff-rate-detail-dialog";
+import { TariffPriorityGuideDialog } from "@/features/hs/tariff-priority-guide-dialog";
+import { formatHsCode, normalizeHsCode } from "@/lib/hs-code";
+import { buildHsHierarchyPath, type HsHierarchyNode } from "@/lib/hs-hierarchy";
+import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
+import { getSeoulDateString } from "@/lib/utils";
+import { cachedLookup, lookupCacheKey } from "@/server/cache/lookup-cache";
+import {
+  findExportDestinationCustomsCodes,
+  findExportDestinationTariffsByDestinationCode,
+  findExportDestinationTariffs,
+  type ExportDestinationCustomsCodeItem,
+  type ExportDestinationTariffItem
+} from "@/server/repositories/export-destination-tariff.repository";
+import {
+  findExportDestinationAdditionalTariffs,
+  findExportDestinationImportRequirements,
+  findExportDestinationInternalTaxes,
+  findExportDestinationTradeRemedyCases,
+  type ExportDestinationAdditionalTariffItem,
+  type ExportDestinationImportRequirementItem,
+  type ExportDestinationInternalTaxItem,
+  type ExportDestinationTradeRemedyCaseItem
+} from "@/server/repositories/export-destination-import-data.repository";
+import {
+  findInternalTaxCodeMatches,
+  findInternalTaxLawRuleMatches,
+  type InternalTaxCodeMatch
+} from "@/server/repositories/customs-statistical-code.repository";
+import { analyzeProductClarification, type ProductClarificationResult } from "@/server/ai/clarification.service";
+import { lookupHsDirect, type HsDirectLookupResult } from "@/server/repositories/hs-master.repository";
+import {
+  buildCustomsHsCodeNavigationQuery,
+  fetchCustomsOpenApiSnapshot,
+  hasCustomsOpenApiEnv,
+  parseCustomsHsCodeNavigationXml,
+  type CustomsHsCodeNavigationItem
+} from "@/server/integrations/customs/customs-api";
+import { recommendHsCandidatesForProduct, type HsCandidateRecommendation } from "@/server/rules/hs-candidate.service";
+import { getExportDiagnosis, type ExportDiagnosisResult } from "@/server/rules/export-diagnosis.service";
+
+function normalizeHsInput(value?: string) {
+  return value ? normalizeHsCode(value) : "";
+}
+
+function isHsCodeLike(value: string) {
+  return /^[0-9.\-\s]+$/.test(value) && normalizeHsInput(value).length >= 2;
+}
+
+const lookupCacheTtlMs = 5 * 60 * 1000;
+
+function cachedHsDirectLookup(hskCode: string, basisDate: string) {
+  return cachedLookup({
+    key: lookupCacheKey("hs-direct", { hskCode: normalizeHsInput(hskCode), basisDate }),
+    ttlMs: lookupCacheTtlMs,
+    load: () => lookupHsDirect(hskCode, basisDate)
+  });
+}
+
+function QueryField({
+  name,
+  label,
+  defaultValue,
+  placeholder
+}: {
+  name: string;
+  label: string;
+  defaultValue: string;
+  placeholder?: string;
+}) {
+  return (
+    <label className="grid gap-1 text-sm font-medium text-slate-700">
+      {label}
+      <input
+        className="focus-ring rounded-md border border-slate-300 px-3 py-2"
+        defaultValue={defaultValue}
+        name={name}
+        placeholder={placeholder}
+        type={name === "basisDate" ? "date" : "text"}
+      />
+    </label>
+  );
+}
+
+function DirectionSelect({ defaultValue }: { defaultValue: "import" | "export" }) {
+  return (
+    <label className="grid gap-1 text-sm font-medium text-slate-700">
+      거래구분
+      <select className="focus-ring rounded-md border border-slate-300 px-3 py-2" defaultValue={defaultValue} name="direction">
+        <option value="import">수입</option>
+        <option value="export">수출</option>
+      </select>
+    </label>
+  );
+}
+
+function DirectionHiddenField({ value }: { value: "import" | "export" }) {
+  return <input name="direction" type="hidden" value={value} />;
+}
+
+function DestinationCountrySelect({ defaultValue, direction }: { defaultValue: string; direction: "import" | "export" }) {
+  return (
+    <label className="grid gap-1 text-sm font-medium text-slate-700">
+      {direction === "import" ? "수입국가" : "목적국"}
+      <select className="focus-ring rounded-md border border-slate-300 px-3 py-2" defaultValue={defaultValue} name="destinationCountry">
+        {destinationCountryOptions.map((country) => (
+          <option key={country.code} value={country.code}>
+            {country.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function OriginCountrySelect({ defaultValue, direction }: { defaultValue: string; direction: "import" | "export" }) {
+  if (direction !== "export") return null;
+
+  return (
+    <label className="grid gap-1 text-sm font-medium text-slate-700">
+      원산지
+      <select className="focus-ring rounded-md border border-slate-300 px-3 py-2" defaultValue={defaultValue} name="originCountry">
+        <option value="ALL">모든 원산지</option>
+        {exportCountryOptions.filter((country) => country.code !== "ALL").map((country) => (
+          <option key={country.code} value={country.code}>
+            {country.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function RequirementSummary({
+  requirements
+}: {
+  requirements: Array<{ name: string; relatedLaw: string; agency: string | null; type?: string }>;
+}) {
+  if (!requirements.length) {
+    return <span className="text-slate-400">-</span>;
+  }
+
+  const uniqueRequirements = Array.from(new Map(requirements.map((requirement) => [requirement.relatedLaw, requirement])).values());
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {uniqueRequirements.map((requirement) => (
+        <span className="rounded bg-lime-100 px-1.5 py-0.5 text-xs font-semibold text-lime-800" key={requirement.relatedLaw}>
+          {requirement.relatedLaw}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+type ImportRequirementDisplayItem = {
+  type: string;
+  name: string;
+  relatedLaw: string;
+  agencyCode: string | null;
+  agency: string | null;
+  agencyContact: {
+    phone: string | null;
+    email: string | null;
+    websiteUrl: string | null;
+    note: string | null;
+  } | null;
+  procedureSummary: string | null;
+};
+
+type GroupedImportRequirement = {
+  type: string;
+  name: string;
+  relatedLaw: string;
+  procedureSummary: string | null;
+  agencies: Array<{
+    code: string | null;
+    name: string;
+    contact: ImportRequirementDisplayItem["agencyContact"];
+  }>;
+};
+
+function agencyDisplayText(agency: GroupedImportRequirement["agencies"][number]) {
+  return agency.contact?.websiteUrl?.trim() || agency.name;
+}
+
+function AgencyCell({ agencies }: { agencies: GroupedImportRequirement["agencies"] }) {
+  if (!agencies.length) return "-";
+  if (agencies.length > 1) return `${agencies.length}개 기관`;
+
+  const agency = agencies[0]!;
+  const websiteUrl = agency.contact?.websiteUrl?.trim();
+  if (websiteUrl) {
+    return (
+      <a className="font-medium text-blue-700 underline-offset-2 hover:underline" href={websiteUrl} rel="noreferrer" target="_blank">
+        {websiteUrl}
+      </a>
+    );
+  }
+
+  return agency.name;
+}
+
+function groupedImportRequirements(requirements: ImportRequirementDisplayItem[]) {
+  return Array.from(
+    requirements.reduce((groups, requirement) => {
+      const key = [requirement.type, requirement.name, requirement.relatedLaw, requirement.procedureSummary ?? ""].join("|");
+      const group = groups.get(key) ?? {
+        type: requirement.type,
+        name: requirement.name,
+        relatedLaw: requirement.relatedLaw,
+        procedureSummary: requirement.procedureSummary,
+        agencies: [] as GroupedImportRequirement["agencies"]
+      };
+
+      const agencyName = requirement.agency?.trim();
+      if (agencyName && !group.agencies.some((agency) => agency.name === agencyName && agency.code === requirement.agencyCode)) {
+        group.agencies.push({
+          code: requirement.agencyCode,
+          name: agencyName,
+          contact: requirement.agencyContact
+        });
+      }
+
+      groups.set(key, group);
+      return groups;
+    }, new Map<string, GroupedImportRequirement>()).values()
+  ).map((group) => ({
+    ...group,
+    agencies: group.agencies.sort((a, b) => a.name.localeCompare(b.name, "ko"))
+  }));
+}
+
+function isBasicTariffLabel(label: string) {
+  return label.includes("기본세율") || label.includes("기본관세");
+}
+
+function compactTariffLabel(label: string) {
+  return label
+    .replace("관세율", "")
+    .replace("세율", "")
+    .replace("관세", "")
+    .trim();
+}
+
+function preferentialTariffSummary(
+  tariffs: Array<{ rateType: string; label: string; rateText: string; countryGroup: string | null; usageRateType: string | null }>,
+  countryCode: string
+) {
+  const rows = tariffs
+    .map((tariff) => ({
+      ...tariff,
+      displayLabel: displayImportTariffLabel(tariff, countryCode)
+    }))
+    .filter((tariff) => !isBasicTariffLabel(tariff.displayLabel))
+    .sort((a, b) => importTariffApplicationPriority(a).localeCompare(importTariffApplicationPriority(b)) || a.rateType.localeCompare(b.rateType));
+
+  if (!rows.length) return "-";
+
+  return rows.slice(0, 3).map((tariff) => `${compactTariffLabel(tariff.displayLabel)} ${tariff.rateText}`).join(" / ");
+}
+
+function tariffNumericValue(rateText: string) {
+  if (/^(무세|free)$/i.test(rateText.trim())) return 0;
+
+  const percent = rateText.match(/-?\d+(?:\.\d+)?(?=\s*%)/);
+  if (percent) return Number(percent[0]);
+
+  const numeric = rateText.match(/-?\d+(?:\.\d+)?/);
+  return numeric ? Number(numeric[0]) : Number.POSITIVE_INFINITY;
+}
+
+function isFtaTariffRate(rateType: string) {
+  return rateType.trim().toUpperCase().startsWith("F");
+}
+
+function tariffSummaryText(tariff: { rateType: string; label: string; rateText: string }, countryCode: string) {
+  return `${displayImportTariffLabel(tariff, countryCode)} ${tariff.rateText}`;
+}
+
+function lowestTariff<T extends { rateType: string; label: string; rateText: string }>(tariffs: T[]) {
+  return tariffs
+    .toSorted((a, b) => tariffNumericValue(a.rateText) - tariffNumericValue(b.rateText) || a.rateType.localeCompare(b.rateType))
+    .at(0);
+}
+
+function isBaselineCopyTariff(tariff: { rateType: string; label: string; rateText: string }, countryCode: string) {
+  const label = displayImportTariffLabel(tariff, countryCode);
+  return label.includes("기본") || (label.includes("WTO") && !label.includes("양허"));
+}
+
+function baselineCopyTariff<T extends { rateType: string; label: string; rateText: string }>(tariffs: T[], countryCode: string) {
+  return lowestTariff(tariffs.filter((tariff) => isBaselineCopyTariff(tariff, countryCode)))
+    ?? lowestTariff(tariffs.filter((tariff) => isCommonImportTariff(tariff)));
+}
+
+function hsCopySummaryText({
+  result,
+  displayTariffs,
+  internalTaxRows,
+  importRequirements,
+  countryCode
+}: {
+  result: {
+    hskCode: string;
+    koreanName: string;
+  };
+  displayTariffs: Array<{
+    rateType: string;
+    label: string;
+    rateText: string;
+    countryGroup: string | null;
+    usageRateType: string | null;
+    sourceName: string;
+    sourceVersion: string;
+  }>;
+  internalTaxRows: InternalTaxCodeMatch[];
+  importRequirements: ImportRequirementDisplayItem[];
+  countryCode: string;
+}) {
+  const commonTariff = baselineCopyTariff(displayTariffs, countryCode);
+  const ftaTariffs = countryCode === "ALL" ? [] : displayTariffs.filter((tariff) => isFtaTariffRate(tariff.rateType));
+  const groupedRequirements = groupedImportRequirements(importRequirements);
+  const lines = [
+    `${result.koreanName} / ${formatHsCode(result.hskCode)}`,
+    `적용 관세율 : ${commonTariff ? tariffSummaryText(commonTariff, countryCode) : "-"}`
+  ];
+
+  if (ftaTariffs.length) {
+    lines.push(`FTA 관세율 : ${ftaTariffs.map((tariff) => tariffSummaryText(tariff, countryCode)).join(" / ")}`);
+  }
+
+  lines.push("내국세");
+  if (internalTaxRows.length) {
+    for (const row of internalTaxRows) {
+      const basis = [row.lawName, row.articleRef, row.matchBasis].filter(Boolean).join(" / ");
+      lines.push(`${row.name} : ${row.rateText}${basis ? ` (${basis})` : ""}`);
+    }
+  } else {
+    lines.push("부가세 : 10%");
+  }
+
+  lines.push("수입요건");
+  if (groupedRequirements.length) {
+    for (const requirement of groupedRequirements) {
+      const agencies = requirement.agencies.map((agency) => agencyDisplayText(agency)).join(", ");
+      lines.push(`- ${requirement.relatedLaw} / ${requirement.name}${agencies ? ` / ${agencies}` : ""}`);
+    }
+  } else {
+    lines.push("수입 요건은 없습니다");
+  }
+
+  return lines.join("\n");
+}
+
+function hierarchyLevelLabel(level: HsHierarchyNode["level"]) {
+  if (level === 2) return "류";
+  if (level === 4) return "호";
+  if (level === 6) return "소호";
+  return "HSK";
+}
+
+function productCandidateHierarchyNodes(candidate: HsCandidateRecommendation, lookup?: HsDirectLookupResult) {
+  if (lookup?.hierarchyPath.length) return lookup.hierarchyPath;
+
+  return buildHsHierarchyPath({
+    code: candidate.hskCode,
+    hs6: candidate.hs6,
+    currentLabel: candidate.koreanName
+  });
+}
+
+function productCandidateHierarchyLines(candidate: HsCandidateRecommendation, lookup?: HsDirectLookupResult) {
+  return productCandidateHierarchyNodes(candidate, lookup).map((node) => `${hierarchyLevelLabel(node.level)} ${formatHsCode(node.code)} ${node.label}`);
+}
+
+function productCandidateLookupBasisLabel(candidate: HsCandidateRecommendation) {
+  if (candidate.lookupBasis === "user_hs_hint") return "입력 HS 힌트";
+  if (candidate.lookupBasis === "ai_hs_hint") return "AI HS 후보";
+  if (candidate.lookupBasis === "ai_term_match") return "AI 검색어";
+  if (candidate.lookupBasis === "official_name_match") return "품명 검색";
+  if (candidate.lookupBasis === "customs_api") return "HS부호검색";
+  if (candidate.lookupBasis === "internal_tax_rule") return "내국세 단서";
+  if (candidate.lookupBasis === "ambiguous_abbreviation") return "약어 후보";
+  return "후보 검색";
+}
+
+function productCandidateEvidenceText(candidate: HsCandidateRecommendation) {
+  const evidence = candidate.scoreBreakdown
+    .filter((item) => !item.includes("표준품명"))
+    .slice(0, 3);
+
+  if (evidence.length) return evidence.join(" / ");
+  return candidate.lookupBasis === "ai_hs_hint"
+    ? "AI가 만든 HS 조회 힌트를 공식 HS 데이터에서 확인"
+    : "입력 품명과 공식 HS 데이터 대조";
+}
+
+function productCandidateCopySummaryText({
+  productName,
+  candidates,
+  lookupByHsk,
+  internalTaxByHsk,
+  countryCode,
+  clarification
+}: {
+  productName: string;
+  candidates: HsCandidateRecommendation[];
+  lookupByHsk: Map<string, HsDirectLookupResult>;
+  internalTaxByHsk: Map<string, InternalTaxCodeMatch[]>;
+  countryCode: string;
+  clarification: ProductClarificationResult | null;
+}) {
+  const missingQuestions = Array.from(
+    new Set([
+      ...(clarification?.missingQuestions ?? []),
+      ...candidates.flatMap((candidate) => candidate.requiredQuestions)
+    ])
+  ).slice(0, 8);
+  const lines = [
+    `품명 "${productName}"만으로는 정확한 HS CODE를 특정하기 어렵습니다.`,
+    "아래 정보가 부족하여 제품 용도와 구성에 따라 다른 세번이 적용될 수 있습니다."
+  ];
+
+  if (missingQuestions.length) {
+    lines.push("");
+    lines.push("추가로 확인이 필요한 정보");
+    for (const question of missingQuestions) {
+      lines.push(`- ${question}`);
+    }
+  }
+
+  lines.push("");
+  lines.push("예상 가능한 내역은 아래와 같습니다. 정확한 제품 설명, 사진, 카탈로그, 재질/구성, 용도, 모델명, 장착 대상 정보를 주시면 다시 확인하겠습니다.");
+
+  candidates.forEach((candidate, index) => {
+    const lookup = lookupByHsk.get(candidate.hskCode);
+    const displayTariffs = lookup ? filterImportTariffsForCountry(lookup.tariffPreviews, countryCode) : [];
+    const commonTariff = baselineCopyTariff(displayTariffs, countryCode);
+    const ftaTariffs = countryCode === "ALL" ? [] : displayTariffs.filter((tariff) => isFtaTariffRate(tariff.rateType));
+    const internalTaxes = internalTaxByHsk.get(candidate.hskCode) ?? [];
+    const requirements = groupedImportRequirements(lookup?.importRequirements ?? []);
+    const hierarchyLines = productCandidateHierarchyLines(candidate, lookup);
+
+    lines.push("");
+    lines.push(`${index + 1}. ${candidate.koreanName}`);
+    lines.push(`HS CODE : ${formatHsCode(candidate.hskCode)}`);
+    if (hierarchyLines.length) {
+      lines.push("HS CODE 경로");
+      for (const line of hierarchyLines) {
+        lines.push(`- ${line}`);
+      }
+    }
+    lines.push(`적용 관세율 : ${commonTariff ? tariffSummaryText(commonTariff, countryCode) : "표시할 관세율 데이터가 없습니다"}`);
+
+    if (ftaTariffs.length) {
+      lines.push(`FTA 관세율 : ${ftaTariffs.map((tariff) => tariffSummaryText(tariff, countryCode)).join(" / ")}`);
+    }
+
+    lines.push("내국세");
+    if (internalTaxes.length) {
+      for (const row of internalTaxes) {
+        const basis = [row.lawName, row.articleRef, row.matchBasis].filter(Boolean).join(" / ");
+        lines.push(`${row.name} : ${row.rateText}${basis ? ` (${basis})` : ""}`);
+      }
+    } else {
+      lines.push("부가세 : 10%");
+    }
+
+    lines.push("수입요건");
+    if (requirements.length) {
+      for (const requirement of requirements) {
+        const agencies = requirement.agencies.map((agency) => agencyDisplayText(agency)).join(", ");
+        lines.push(`- ${requirement.relatedLaw} / ${requirement.name}${agencies ? ` / ${agencies}` : ""}`);
+      }
+    } else {
+      lines.push("수입 요건은 없습니다");
+    }
+  });
+
+  return lines.join("\n");
+}
+
+function productNoResultCopySummaryText({
+  productName,
+  clarification
+}: {
+  productName: string;
+  clarification: ProductClarificationResult | null;
+}) {
+  const questions = clarification?.missingQuestions.length
+    ? clarification.missingQuestions
+    : [
+      "제품의 정확한 일반 품명과 상업명",
+      "제품의 실제 용도와 최종 사용처",
+      "완제품인지 부분품인지, 부분품이면 장착 대상 완제품",
+      "주요 재질, 성분, 함량 또는 구성품",
+      "작동 방식, 기능, 사양서 또는 카탈로그 URL",
+      "제조사, 모델명, 제품 사진 또는 상세 설명"
+    ];
+
+  return [
+    `문의 품명 : ${productName}`,
+    "",
+    "현재 제공된 품명만으로는 HS CODE 후보를 충분히 특정하기 어렵습니다.",
+    "아래 정보가 보완되면 HS CODE 후보, 관세율, 내국세, 수입요건을 다시 확인하겠습니다.",
+    "",
+    "추가로 필요한 정보",
+    ...questions.slice(0, 8).map((question, index) => `${index + 1}. ${question}`),
+    "",
+    "제품코드나 모델명만 있는 경우 제조사 카탈로그, 제품 URL, 사양서, 사진 중 하나를 함께 보내 주세요.",
+    "정확한 정보를 주시면 해당 내용 기준으로 다시 확인하겠습니다."
+  ].join("\n");
+}
+
+function displayValue(value?: string | null) {
+  return value?.trim() ? value : "-";
+}
+
+function hsLookupHref({
+  hskCode,
+  basisDate,
+  direction,
+  destinationCountry,
+  originCountry,
+  destinationHsCode
+}: {
+  hskCode: string;
+  basisDate: string;
+  direction: "import" | "export";
+  destinationCountry: string;
+  originCountry?: string;
+  destinationHsCode?: string;
+}) {
+  const params = new URLSearchParams({
+    query: hskCode,
+    direction,
+    destinationCountry,
+    basisDate
+  });
+
+  if (destinationHsCode) {
+    params.set("destinationHsCode", destinationHsCode);
+  }
+
+  if (originCountry && originCountry !== "ALL") {
+    params.set("originCountry", originCountry);
+  }
+
+  const path = direction === "export" && destinationHsCode ? "/hs/overseas" : "/hs/direct";
+  return `${path}?${params.toString()}`;
+}
+
+function HsHierarchyTrail({
+  nodes,
+  currentCode,
+  basisDate,
+  direction,
+  destinationCountry
+}: {
+  nodes: HsHierarchyNode[];
+  currentCode: string;
+  basisDate: string;
+  direction: "import" | "export";
+  destinationCountry: string;
+}) {
+  if (!nodes.length) return null;
+
+  const normalizedCurrent = normalizeHsInput(currentCode);
+
+  return (
+    <nav className="flex flex-wrap items-center gap-1.5 text-sm" aria-label="HS CODE 경로">
+      {nodes.map((node, index) => {
+        const isCurrent = normalizeHsInput(node.code) === normalizedCurrent;
+
+        return (
+          <Fragment key={`${node.level}-${node.code}`}>
+            {index > 0 ? <span className="text-slate-300">/</span> : null}
+            {isCurrent ? (
+              <span className="rounded bg-slate-100 px-2 py-1 font-semibold text-slate-900">
+                <span className="font-mono">{formatHsCode(node.code)}</span>
+                <span className="ml-1 text-slate-600">{node.label}</span>
+              </span>
+            ) : (
+              <Link
+                className="rounded px-2 py-1 font-medium text-blue-700 underline-offset-2 hover:bg-blue-50 hover:underline"
+                href={hsLookupHref({
+                  hskCode: node.code,
+                  direction,
+                  destinationCountry,
+                  basisDate
+                })}
+              >
+                <span className="font-mono">{formatHsCode(node.code)}</span>
+                <span className="ml-1 text-slate-600">{node.label}</span>
+              </Link>
+            )}
+          </Fragment>
+        );
+      })}
+    </nav>
+  );
+}
+
+function destinationHsPathItems(row: ExportDestinationTariffItem & { hskCode?: string }) {
+  const displayCode = normalizeHsInput(row.destinationHsCode);
+  const tariffCode = normalizeHsInput(row.destinationTariffCode);
+  const codes = [displayCode.slice(0, 4), displayCode.slice(0, 6)];
+
+  if (tariffCode && tariffCode !== displayCode) {
+    codes.push(tariffCode);
+  } else if (displayCode.length > 8) {
+    codes.push(displayCode.slice(0, 8));
+  }
+
+  codes.push(displayCode);
+
+  return Array.from(new Set(codes.filter((code) => code.length >= 4))).map((code) => {
+    const isCurrent = code === displayCode;
+    const isTariffCode = tariffCode ? code === tariffCode : code.length === 8 && displayCode.length > 8;
+    const label = isCurrent
+      ? (row.destinationCustomsName ?? row.koreanName ?? row.englishName ?? "현재 코드")
+      : isTariffCode
+        ? "관세율 기준 세번"
+        : code.length === 4
+          ? "4자리 호"
+          : code.length === 6
+            ? "6자리 소호"
+            : "상위 세번";
+
+    return { code, label, isCurrent };
+  });
+}
+
+function DestinationHsHierarchyTrail({
+  row,
+  destinationCountry,
+  originCountry
+}: {
+  row: ExportDestinationTariffItem & { hskCode?: string };
+  destinationCountry: string;
+  originCountry: string;
+}) {
+  const items = destinationHsPathItems(row);
+
+  if (items.length <= 1) return null;
+
+  return (
+    <nav className="flex flex-wrap items-center gap-1.5 text-sm" aria-label="수입국 HS CODE 경로">
+      {items.map((item, index) => (
+        <Fragment key={item.code}>
+          {index > 0 ? <span className="text-slate-300">/</span> : null}
+          {item.isCurrent ? (
+            <span className="rounded bg-slate-100 px-2 py-1 font-semibold text-slate-900">
+              <span className="font-mono">{formatHsCode(item.code)}</span>
+              <span className="ml-1 text-slate-600">{item.label}</span>
+            </span>
+          ) : (
+            <Link
+              className="rounded px-2 py-1 font-medium text-blue-700 underline-offset-2 hover:bg-blue-50 hover:underline"
+              href={hsLookupHref({
+                hskCode: row.hskCode ?? item.code,
+                direction: "export",
+                destinationCountry,
+                originCountry,
+                basisDate: row.basisDate,
+                destinationHsCode: item.code
+              })}
+            >
+              <span className="font-mono">{formatHsCode(item.code)}</span>
+              <span className="ml-1 text-slate-600">{item.label}</span>
+            </Link>
+          )}
+        </Fragment>
+      ))}
+    </nav>
+  );
+}
+
+function HsHierarchyNavigator({
+  nodes,
+  currentCode,
+  basisDate,
+  direction,
+  destinationCountry
+}: {
+  nodes: HsHierarchyNode[];
+  currentCode: string;
+  basisDate: string;
+  direction: "import" | "export";
+  destinationCountry: string;
+}) {
+  if (!nodes.length) return null;
+
+  const normalizedCurrent = normalizeHsInput(currentCode);
+
+  return (
+    <div className="border-b border-slate-200 bg-white">
+      <div className="bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-500">상위 HS CODE</div>
+      <nav className="grid gap-1 p-2" aria-label="상위 HS CODE">
+        {nodes.map((node) => {
+          const isCurrent = normalizeHsInput(node.code) === normalizedCurrent;
+          const content = (
+            <>
+              <span className="block font-mono text-xs font-semibold">{formatHsCode(node.code)}</span>
+              <span className="mt-0.5 line-clamp-2 block text-xs leading-5">{node.label}</span>
+            </>
+          );
+
+          return isCurrent ? (
+            <div className="rounded bg-red-50 px-3 py-2 text-red-700" key={`${node.level}-${node.code}`}>
+              {content}
+            </div>
+          ) : (
+            <Link
+              className="rounded px-3 py-2 text-slate-700 hover:bg-slate-50"
+              href={hsLookupHref({
+                hskCode: node.code,
+                direction,
+                destinationCountry,
+                basisDate
+              })}
+              key={`${node.level}-${node.code}`}
+            >
+              {content}
+            </Link>
+          );
+        })}
+      </nav>
+    </div>
+  );
+}
+
+function Hs4ContextNavigation({
+  nodes,
+  basisDate,
+  direction,
+  destinationCountry
+}: {
+  nodes: HsHierarchyNode[];
+  basisDate: string;
+  direction: "import" | "export";
+  destinationCountry: string;
+}) {
+  const hs4Node = nodes.find((node) => normalizeHsInput(node.code).length === 4);
+
+  if (!hs4Node) return null;
+
+  return (
+    <div className="border-r border-slate-200 bg-slate-50">
+      <div className="bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-500">해당 HS4</div>
+      <div className="p-2">
+        <Link
+          className="block rounded bg-white px-3 py-2 text-slate-700 shadow-sm hover:bg-blue-50"
+          href={hsLookupHref({
+            hskCode: hs4Node.code,
+            direction,
+            destinationCountry,
+            basisDate
+          })}
+        >
+          <span className="block font-mono text-xs font-semibold text-blue-700">{formatHsCode(hs4Node.code)}</span>
+          <span className="mt-0.5 line-clamp-4 block text-xs leading-5 text-slate-600">{hs4Node.label}</span>
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+type Hs6NavigationSource = {
+  hs6: string;
+  koreanName: string;
+  hierarchyPath: HsHierarchyNode[];
+};
+
+type ExportLookupSource = {
+  hskCode: string;
+  hs6?: string;
+};
+
+function isGenericHsLabel(label?: string | null) {
+  const normalized = (label ?? "").replace(/[\s.:-]/g, "").toLowerCase();
+
+  return !normalized || normalized === "기타" || normalized === "other" || normalized.endsWith("소호");
+}
+
+function hs6NavigationLabel(group: Hs6NavigationSource[]) {
+  const hierarchyLabel = group[0]?.hierarchyPath.find((node) => normalizeHsInput(node.code) === normalizeHsInput(group[0]?.hs6))?.label;
+
+  if (!isGenericHsLabel(hierarchyLabel)) {
+    return hierarchyLabel ?? "-";
+  }
+
+  const childNames = Array.from(new Set(group.map((item) => item.koreanName).filter((name) => !isGenericHsLabel(name))));
+
+  if (childNames.length) {
+    return `${childNames.slice(0, 2).join(" / ")}${childNames.length > 2 ? " 외" : ""}`;
+  }
+
+  return hierarchyLabel || group[0]?.koreanName || "-";
+}
+
+function DestinationAdditionalTariffSummary({ rows }: { rows: ExportDestinationAdditionalTariffItem[] }) {
+  if (!rows.length) return <span>-</span>;
+
+  return (
+    <ul className="grid gap-1.5">
+      {rows.map((row) => (
+        <li key={`${row.countryCode}-${row.destinationHsCode}-${row.additionalTariffCode}-${row.originCountryCode ?? ""}-${row.sourceVersion}`}>
+          <DestinationAdditionalTariffDialog tariff={row} />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function DestinationTradeRemedySummary({ rows }: { rows: ExportDestinationTradeRemedyCaseItem[] }) {
+  if (!rows.length) return <span>-</span>;
+
+  return (
+    <ul className="grid gap-1.5">
+      {rows.map((row) => (
+        <li key={`${row.countryCode}-${row.destinationHsCode}-${row.caseNumber}-${row.originCountryCode ?? ""}-${row.sourceVersion}`}>
+          <DestinationTradeRemedyDialog tradeRemedyCase={row} />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function matchesDestinationCountry(recordCountry: string, selectedCountry: string) {
+  return countryCodeAliases(selectedCountry).includes(recordCountry);
+}
+
+function mockDestinationTariffsForHsk(hskCode: string, destinationCountry: string, basisDate: string) {
+  const hs6 = normalizeHsInput(hskCode).slice(0, 6);
+
+  return mockExportDestinationTariffRates
+    .filter((rate) => matchesDestinationCountry(rate.countryCode, destinationCountry))
+    .filter((rate) => rate.basisDate === basisDate)
+    .filter((rate) => {
+      const destinationHs = normalizeHsInput(rate.destinationHsCode);
+
+      return destinationHs.startsWith(hs6);
+    })
+    .slice(0, 5);
+}
+
+async function destinationTariffsForResults({
+  results,
+  direction,
+  destinationCountry,
+  basisDate
+}: {
+  results: ExportLookupSource[];
+  direction: "import" | "export";
+  destinationCountry: string;
+  basisDate: string;
+}) {
+  return cachedLookup({
+    key: lookupCacheKey("destination-tariffs-for-results", {
+      codes: results.map((result) => normalizeHsInput(result.hskCode)).sort(),
+      direction,
+      destinationCountry,
+      basisDate
+    }),
+    ttlMs: lookupCacheTtlMs,
+    load: () => uncachedDestinationTariffsForResults({ results, direction, destinationCountry, basisDate })
+  });
+}
+
+async function uncachedDestinationTariffsForResults({
+  results,
+  direction,
+  destinationCountry,
+  basisDate
+}: {
+  results: ExportLookupSource[];
+  direction: "import" | "export";
+  destinationCountry: string;
+  basisDate: string;
+}) {
+  const tariffsByHsk = new Map<string, ExportDestinationTariffItem[]>();
+
+  if (direction !== "export" || results.length === 0) {
+    return tariffsByHsk;
+  }
+
+  if (hasSupabaseEnv()) {
+    try {
+      const supabase = await createSupabaseServerClient();
+      const tariffResults = await Promise.all(
+        results.map(async (result) => [
+          result.hskCode,
+          await findExportDestinationTariffs(supabase, {
+            hskCode: result.hskCode,
+            destinationCountry,
+            basisDate,
+            limit: destinationCountry === "ALL" ? 120 : 20
+          })
+        ] as const)
+      );
+
+      for (const [hskCode, tariffs] of tariffResults) {
+        tariffsByHsk.set(hskCode, tariffs);
+      }
+
+      return tariffsByHsk;
+    } catch {
+      // Local development can run without Supabase credentials; fall back to bundled examples.
+    }
+  }
+
+  for (const result of results) {
+    tariffsByHsk.set(result.hskCode, mockDestinationTariffsForHsk(result.hskCode, destinationCountry, basisDate));
+  }
+
+  return tariffsByHsk;
+}
+
+async function destinationTariffsForDestinationCode({
+  queryCode,
+  direction,
+  destinationCountry,
+  basisDate
+}: {
+  queryCode: string;
+  direction: "import" | "export";
+  destinationCountry: string;
+  basisDate: string;
+}) {
+  return cachedLookup({
+    key: lookupCacheKey("destination-tariffs-by-destination-code", {
+      queryCode: normalizeHsInput(queryCode),
+      direction,
+      destinationCountry,
+      basisDate
+    }),
+    ttlMs: lookupCacheTtlMs,
+    load: () => uncachedDestinationTariffsForDestinationCode({ queryCode, direction, destinationCountry, basisDate })
+  });
+}
+
+async function uncachedDestinationTariffsForDestinationCode({
+  queryCode,
+  direction,
+  destinationCountry,
+  basisDate
+}: {
+  queryCode: string;
+  direction: "import" | "export";
+  destinationCountry: string;
+  basisDate: string;
+}) {
+  if (direction !== "export" || normalizeHsInput(queryCode).length < 4 || destinationCountry === "ALL" || !hasSupabaseEnv()) {
+    return [];
+  }
+
+  try {
+    const supabase = await createSupabaseServerClient();
+    return await findExportDestinationTariffsByDestinationCode(supabase, {
+      destinationHsCode: queryCode,
+      destinationCountry,
+      basisDate,
+      limit: 80
+    });
+  } catch {
+    return [];
+  }
+}
+
+async function destinationCustomsCodesForTariffs({
+  tariffs,
+  basisDate
+}: {
+  tariffs: ExportDestinationTariffItem[];
+  basisDate: string;
+  originCountryCode?: string;
+}) {
+  return cachedLookup({
+    key: lookupCacheKey("destination-customs-codes-for-tariffs", {
+      tariffs: tariffs.map((tariff) => ({
+        countryCode: tariff.countryCode,
+        code: normalizeHsInput(tariff.destinationTariffCode ?? tariff.destinationHsCode)
+      })).sort((a, b) => `${a.countryCode}:${a.code}`.localeCompare(`${b.countryCode}:${b.code}`)),
+      basisDate
+    }),
+    ttlMs: lookupCacheTtlMs,
+    load: () => uncachedDestinationCustomsCodesForTariffs({ tariffs, basisDate })
+  });
+}
+
+async function uncachedDestinationCustomsCodesForTariffs({
+  tariffs,
+  basisDate
+}: {
+  tariffs: ExportDestinationTariffItem[];
+  basisDate: string;
+}) {
+  const codesByTariffKey = new Map<string, ExportDestinationCustomsCodeItem[]>();
+
+  if (!hasSupabaseEnv() || tariffs.length === 0) {
+    return codesByTariffKey;
+  }
+
+  const uniqueTariffs = Array.from(
+    new Map(tariffs.map((tariff) => [
+      `${tariff.countryCode}:${tariff.destinationTariffCode ?? tariff.destinationHsCode}`,
+      tariff
+    ])).values()
+  );
+
+  try {
+    const supabase = await createSupabaseServerClient();
+    const rows = await Promise.all(
+      uniqueTariffs.map(async (tariff) => {
+        const tariffCode = tariff.destinationTariffCode ?? tariff.destinationHsCode;
+        const key = `${tariff.countryCode}:${normalizeHsInput(tariffCode)}`;
+        const customsCodes = await findExportDestinationCustomsCodes(supabase, {
+          countryCode: tariff.countryCode,
+          queryCode: tariffCode,
+          basisDate,
+          limit: 40
+        });
+        return { key, customsCodes };
+      })
+    );
+
+    for (const row of rows) {
+      codesByTariffKey.set(row.key, row.customsCodes);
+    }
+  } catch {
+    // Destination-country customs-code collectors are optional while each country connector is added.
+  }
+
+  return codesByTariffKey;
+}
+
+function destinationImportDataKey(countryCode: string, destinationHsCode: string) {
+  return `${countryCode}:${normalizeHsInput(destinationHsCode)}`;
+}
+
+async function destinationImportDataForTariffs({
+  tariffs,
+  basisDate,
+  originCountryCode,
+  selectedDestinationCountry
+}: {
+  tariffs: ExportDestinationTariffItem[];
+  basisDate: string;
+  originCountryCode?: string;
+  selectedDestinationCountry?: string;
+}) {
+  return cachedLookup({
+    key: lookupCacheKey("destination-import-data-for-tariffs", {
+      tariffs: tariffs.map((tariff) => ({
+        countryCode: tariff.countryCode,
+        destinationHsCode: normalizeHsInput(tariff.destinationHsCode)
+      })).sort((a, b) => `${a.countryCode}:${a.destinationHsCode}`.localeCompare(`${b.countryCode}:${b.destinationHsCode}`)),
+      basisDate,
+      originCountryCode,
+      selectedDestinationCountry
+    }),
+    ttlMs: lookupCacheTtlMs,
+    load: () => uncachedDestinationImportDataForTariffs({ tariffs, basisDate, originCountryCode, selectedDestinationCountry })
+  });
+}
+
+async function uncachedDestinationImportDataForTariffs({
+  tariffs,
+  basisDate,
+  originCountryCode,
+  selectedDestinationCountry
+}: {
+  tariffs: ExportDestinationTariffItem[];
+  basisDate: string;
+  originCountryCode?: string;
+  selectedDestinationCountry?: string;
+}) {
+  const requirementsByKey = new Map<string, ExportDestinationImportRequirementItem[]>();
+  const internalTaxesByKey = new Map<string, ExportDestinationInternalTaxItem[]>();
+  const additionalTariffsByKey = new Map<string, ExportDestinationAdditionalTariffItem[]>();
+  const tradeRemedyCasesByKey = new Map<string, ExportDestinationTradeRemedyCaseItem[]>();
+
+  if (!hasSupabaseEnv() || tariffs.length === 0) {
+    return { requirementsByKey, internalTaxesByKey, additionalTariffsByKey, tradeRemedyCasesByKey };
+  }
+
+  const uniqueTariffs = Array.from(
+    new Map(tariffs.map((tariff) => [
+      destinationImportDataKey(tariff.countryCode, tariff.destinationHsCode),
+      tariff
+    ])).values()
+  );
+
+  try {
+    const supabase = await createSupabaseServerClient();
+    const rows = await Promise.all(
+      uniqueTariffs.map(async (tariff) => {
+        const key = destinationImportDataKey(tariff.countryCode, tariff.destinationHsCode);
+        const lookupCountryCode = selectedDestinationCountry && selectedDestinationCountry !== "ALL"
+          ? selectedDestinationCountry
+          : tariff.countryCode;
+        const [requirements, internalTaxes, additionalTariffs, tradeRemedyCases] = await Promise.all([
+          findExportDestinationImportRequirements(supabase, {
+            countryCode: lookupCountryCode,
+            destinationHsCode: tariff.destinationHsCode,
+            basisDate,
+            limit: 50
+          }),
+          findExportDestinationInternalTaxes(supabase, {
+            countryCode: lookupCountryCode,
+            destinationHsCode: tariff.destinationHsCode,
+            basisDate,
+            limit: 50
+          }),
+          findExportDestinationAdditionalTariffs(supabase, {
+            countryCode: lookupCountryCode,
+            destinationHsCode: tariff.destinationHsCode,
+            basisDate,
+            originCountryCode,
+            limit: 50
+          }),
+          findExportDestinationTradeRemedyCases(supabase, {
+            countryCode: lookupCountryCode,
+            destinationHsCode: tariff.destinationHsCode,
+            basisDate,
+            originCountryCode,
+            limit: 50
+          })
+        ]);
+
+        return { key, requirements, internalTaxes, additionalTariffs, tradeRemedyCases };
+      })
+    );
+
+    for (const row of rows) {
+      requirementsByKey.set(row.key, row.requirements);
+      internalTaxesByKey.set(row.key, row.internalTaxes);
+      additionalTariffsByKey.set(row.key, row.additionalTariffs);
+      tradeRemedyCasesByKey.set(row.key, row.tradeRemedyCases);
+    }
+  } catch {
+    // Destination-country requirement collectors are optional while each country connector is added.
+  }
+
+  return { requirementsByKey, internalTaxesByKey, additionalTariffsByKey, tradeRemedyCasesByKey };
+}
+
+async function internalTaxCodesForResults({
+  results,
+  basisDate
+}: {
+  results: Array<{ hskCode: string; koreanName: string }>;
+  basisDate: string;
+}) {
+  return cachedLookup({
+    key: lookupCacheKey("internal-tax-codes-for-results", {
+      results: results.map((result) => ({
+        hskCode: normalizeHsInput(result.hskCode),
+        koreanName: result.koreanName
+      })).sort((a, b) => a.hskCode.localeCompare(b.hskCode)),
+      basisDate
+    }),
+    ttlMs: lookupCacheTtlMs,
+    load: () => uncachedInternalTaxCodesForResults({ results, basisDate })
+  });
+}
+
+async function uncachedInternalTaxCodesForResults({
+  results,
+  basisDate
+}: {
+  results: Array<{ hskCode: string; koreanName: string }>;
+  basisDate: string;
+}) {
+  const rowsByHsk = new Map<string, InternalTaxCodeMatch[]>();
+
+  if (!hasSupabaseEnv() || results.length === 0) {
+    return rowsByHsk;
+  }
+
+  try {
+    const supabase = await createSupabaseServerClient();
+    const codeResults = await Promise.all(
+      results.map(async (result) => {
+        const [lawRules, statisticalCodes] = await Promise.all([
+          findInternalTaxLawRuleMatches(supabase, {
+            hskCode: result.hskCode,
+            query: result.koreanName,
+            basisDate,
+            limit: 8
+          }),
+          findInternalTaxCodeMatches(supabase, {
+            query: result.koreanName,
+            basisDate,
+            limit: 5
+          })
+        ]);
+
+        return [
+          result.hskCode,
+          [...lawRules, ...statisticalCodes]
+        ] as const;
+      })
+    );
+
+    for (const [hskCode, rows] of codeResults) {
+      rowsByHsk.set(hskCode, [...rows]);
+    }
+  } catch {
+    // Keep HS lookup usable when the local legal-data database is unavailable.
+  }
+
+  return rowsByHsk;
+}
+
+async function hsCodeNavigationStatsForResults({
+  results,
+  enabled
+}: {
+  results: Array<{ hskCode: string }>;
+  enabled: boolean;
+}) {
+  return cachedLookup({
+    key: lookupCacheKey("hs-code-navigation-stats", {
+      codes: results.map((result) => normalizeHsInput(result.hskCode)).filter((code) => code.length === 10).sort(),
+      enabled
+    }),
+    ttlMs: lookupCacheTtlMs,
+    load: () => uncachedHsCodeNavigationStatsForResults({ results, enabled })
+  });
+}
+
+async function uncachedHsCodeNavigationStatsForResults({
+  results,
+  enabled
+}: {
+  results: Array<{ hskCode: string }>;
+  enabled: boolean;
+}) {
+  const rowsByHsk = new Map<string, CustomsHsCodeNavigationItem[]>();
+
+  if (!enabled || !hasCustomsOpenApiEnv("hs_code_navigation") || results.length === 0) {
+    return rowsByHsk;
+  }
+
+  const exactHskCodes = Array.from(new Set(results.map((result) => normalizeHsInput(result.hskCode)).filter((code) => code.length === 10)));
+
+  await Promise.all(
+    exactHskCodes.map(async (hskCode) => {
+      try {
+        const snapshot = await fetchCustomsOpenApiSnapshot("hs_code_navigation", buildCustomsHsCodeNavigationQuery({ hskPattern: hskCode }));
+        const rows = parseCustomsHsCodeNavigationXml(snapshot.rawText)
+          .filter((row) => normalizeHsInput(row.hskCodePattern) === hskCode)
+          .sort((a, b) => Number(a.rank || 9999) - Number(b.rank || 9999))
+          .slice(0, 12);
+
+        rowsByHsk.set(hskCode, rows);
+      } catch {
+        rowsByHsk.set(hskCode, []);
+      }
+    })
+  );
+
+  return rowsByHsk;
+}
+function EmptyDestinationTariffState() {
+  return (
+    <div className="px-3 py-4 text-sm text-slate-500">
+      표시할 상대국 수입 HS/관세율 데이터가 없습니다.
+    </div>
+  );
+}
+
+function destinationCountrySubjectLabel(countryCode: string) {
+  const label = exportCountryLabel(countryCode);
+  if (countryCode === "ALL") return "모든국가";
+  if (!label) return "수입국";
+
+  return label.replace(/\s*\([A-Z]{2,3}\)\s*$/, "");
+}
+
+function destinationMatchLabel(matchBasis: ExportDestinationTariffItem["matchBasis"]) {
+  if (matchBasis === "exact") return "동일 코드";
+  if (matchBasis === "prefix") return "하위 코드";
+  if (matchBasis === "hs6") return "HS6 공용 기준";
+  return "HS4 기준";
+}
+
+function destinationMatchDisplay(row: ExportDestinationTariffItem) {
+  return `${destinationMatchLabel(row.matchBasis)} · ${row.matchScore}점`;
+}
+
+function destinationTariffKey(row: ExportDestinationTariffItem) {
+  return `${row.countryCode}:${normalizeHsInput(row.destinationTariffCode ?? row.destinationHsCode)}`;
+}
+
+function hasSameDestinationCode(row: ExportDestinationTariffItem, sourceCode: string) {
+  const normalizedSource = normalizeHsInput(sourceCode);
+
+  return normalizedSource.length >= 10 && normalizeHsInput(row.destinationHsCode) === normalizedSource;
+}
+
+function destinationCodeRoleLabel(role: string) {
+  if (role === "vat_9_non_full_item") return "9% VAT 신고번호";
+  if (role === "vat_policy_item") return "VAT 특례 신고번호";
+  if (role === "consumption_tax_policy_item") return "소비세 대상 신고번호";
+  return "신고상품번호";
+}
+
+function DestinationCountryResultTable({
+  rows,
+  destinationCountry,
+  requirementsByKey,
+  internalTaxesByKey,
+  additionalTariffsByKey,
+  tradeRemedyCasesByKey,
+  customsCodesByTariffKey,
+  basisDate,
+  sourceQuery,
+  sourceHs6,
+  originCountry
+}: {
+  rows: Array<ExportDestinationTariffItem & { hskCode?: string }>;
+  destinationCountry: string;
+  requirementsByKey: Map<string, ExportDestinationImportRequirementItem[]>;
+  internalTaxesByKey: Map<string, ExportDestinationInternalTaxItem[]>;
+  additionalTariffsByKey: Map<string, ExportDestinationAdditionalTariffItem[]>;
+  tradeRemedyCasesByKey: Map<string, ExportDestinationTradeRemedyCaseItem[]>;
+  customsCodesByTariffKey: Map<string, ExportDestinationCustomsCodeItem[]>;
+  basisDate: string;
+  sourceQuery: string;
+  sourceHs6?: string;
+  originCountry: string;
+}) {
+  if (!rows.length) return <EmptyDestinationTariffState />;
+
+  const showCountryColumn = destinationCountry === "ALL";
+  const countryLabel = showCountryColumn ? "수입국" : destinationCountrySubjectLabel(destinationCountry);
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[1120px] text-left text-sm">
+        <thead className="border-y border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
+          <tr>
+            {showCountryColumn ? <th className="px-3 py-2">국가</th> : null}
+            <th className="px-3 py-2">{countryLabel} HS CODE</th>
+            <th className="px-3 py-2">10자리 후보</th>
+            <th className="px-3 py-2">{countryLabel} 품명</th>
+            <th className="px-3 py-2">기본세율</th>
+            <th className="px-3 py-2">협정세율</th>
+            <th className="px-3 py-2">추가관세</th>
+            <th className="px-3 py-2">AD/CVD</th>
+            <th className="px-3 py-2">내국세</th>
+            <th className="px-3 py-2">수입요건</th>
+            <th className="px-3 py-2">자료연도</th>
+            <th className="px-3 py-2">매칭</th>
+            <th className="px-3 py-2">한국 HS6</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {rows.map((row) => {
+            const rowDestinationCountry = showCountryColumn ? row.countryCode : destinationCountry;
+            const importDataKey = destinationImportDataKey(row.countryCode, row.destinationHsCode);
+            const internalTaxes = internalTaxesByKey.get(importDataKey) ?? [];
+            const requirements = requirementsByKey.get(importDataKey) ?? [];
+            const additionalTariffs = additionalTariffsByKey.get(importDataKey) ?? [];
+            const tradeRemedyCases = tradeRemedyCasesByKey.get(importDataKey) ?? [];
+            const customsCodes = customsCodesByTariffKey.get(destinationTariffKey(row)) ?? [];
+            const productName = row.koreanName ?? row.englishName ?? "-";
+            const koreanHs6 = sourceHs6 ?? (row.hskCode ? normalizeHsInput(row.hskCode).slice(0, 6) : "");
+            const agreementRateItems = destinationAgreementRateDisplayItems(row, originCountry);
+            const agreementRateLabel = destinationDisplayAgreementRates(row, originCountry);
+
+            return (
+              <tr key={`${row.hskCode ?? ""}-${row.countryCode}-${row.destinationHsCode}-${row.sourceVersion}`}>
+                {showCountryColumn ? (
+                  <td className="whitespace-nowrap px-3 py-2 font-semibold text-slate-800">{exportCountryLabel(row.countryCode)}</td>
+                ) : null}
+                <td className="whitespace-nowrap px-3 py-2 font-mono font-semibold">
+                  <Link
+                    className="text-blue-700 underline-offset-2 hover:underline"
+                    href={hsLookupHref({
+                      hskCode: sourceQuery,
+                      direction: "export",
+                      destinationCountry: rowDestinationCountry,
+                      originCountry,
+                      basisDate,
+                      destinationHsCode: row.destinationHsCode
+                    })}
+                  >
+                    {formatHsCode(row.destinationHsCode)}
+                  </Link>
+                </td>
+                <td className="px-3 py-2 text-slate-700">
+                  {customsCodes.length ? (
+                    <div className="flex max-w-[360px] flex-wrap gap-1">
+                      {customsCodes.slice(0, 6).map((code) => (
+                        <Link
+                          className="rounded border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-xs text-blue-700 hover:bg-blue-50"
+                          href={hsLookupHref({
+                            hskCode: sourceQuery,
+                            direction: "export",
+                            destinationCountry: rowDestinationCountry,
+                            originCountry,
+                            basisDate,
+                            destinationHsCode: code.customsCode
+                          })}
+                          key={`${code.customsCode}-${code.sourceVersion}`}
+                          title={code.koreanName ?? code.englishName ?? ""}
+                        >
+                          {formatHsCode(code.customsCode)}
+                        </Link>
+                      ))}
+                      {customsCodes.length > 6 ? <span className="text-xs text-slate-500">+{customsCodes.length - 6}</span> : null}
+                    </div>
+                  ) : "-"}
+                </td>
+                <td className="px-3 py-2 font-medium text-slate-900">{productName}</td>
+                <td className="px-3 py-2 font-semibold text-orange-600">{destinationDisplayBaseRate(row)}</td>
+                <td className="px-3 py-2 leading-6 text-slate-700">
+                  <DestinationAgreementRateDialog items={agreementRateItems} label={agreementRateLabel} />
+                </td>
+                <td className="px-3 py-2 leading-6 text-rose-700">
+                  <DestinationAdditionalTariffSummary rows={additionalTariffs} />
+                </td>
+                <td className="px-3 py-2 leading-6 text-rose-700">
+                  <DestinationTradeRemedySummary rows={tradeRemedyCases} />
+                </td>
+                <td className="px-3 py-2 text-slate-700">
+                  <DestinationInternalTaxSummary rows={internalTaxes} />
+                </td>
+                <td className="px-3 py-2 text-slate-700">
+                  {requirements.length ? `${requirements.length}건` : "-"}
+                </td>
+                <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.tariffYear}년</td>
+                <td className="whitespace-nowrap px-3 py-2 text-slate-600">{destinationMatchDisplay(row)}</td>
+                <td className="whitespace-nowrap px-3 py-2 font-mono text-slate-500">{koreanHs6 ? formatHsCode(koreanHs6) : "-"}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function destinationCopySummaryText({
+  row,
+  productName,
+  agreementRateLabel,
+  internalTaxes,
+  requirements,
+  additionalTariffs,
+  tradeRemedyCases
+}: {
+  row: ExportDestinationTariffItem & { hskCode?: string };
+  productName: string;
+  agreementRateLabel: string;
+  internalTaxes: ExportDestinationInternalTaxItem[];
+  requirements: ExportDestinationImportRequirementItem[];
+  additionalTariffs: ExportDestinationAdditionalTariffItem[];
+  tradeRemedyCases: ExportDestinationTradeRemedyCaseItem[];
+}) {
+  const lines = [
+    `${productName} / ${formatHsCode(row.destinationHsCode)}`,
+    `적용 관세율 : ${destinationDisplayBaseRate(row)}`
+  ];
+
+  if (agreementRateLabel !== "-") {
+    lines.push(`FTA 관세율 : ${agreementRateLabel}`);
+  }
+
+  if (additionalTariffs.length) {
+    lines.push(`추가관세 : ${additionalTariffs.map((tariff) => `${tariff.tariffProgram} ${tariff.rateText ?? "-"}`).join(" / ")}`);
+  }
+
+  if (tradeRemedyCases.length) {
+    lines.push(`AD/CVD : ${tradeRemedyCases.map((item) => `${item.caseNumber} ${item.rateText ?? "-"}`).join(" / ")}`);
+  }
+
+  lines.push("내국세");
+  if (internalTaxes.length) {
+    for (const tax of internalTaxes) {
+      lines.push(`${destinationInternalTaxText(tax)}${tax.basis ? ` / ${tax.basis}` : ""}`);
+    }
+  } else {
+    lines.push("표시할 수입국 내국세 데이터가 없습니다");
+  }
+
+  lines.push("수입요건");
+  if (requirements.length) {
+    for (const requirement of requirements) {
+      lines.push(`- ${requirement.requirementName}${requirement.agency ? ` / ${requirement.agency}` : ""}`);
+    }
+  } else {
+    lines.push("수입 요건은 없습니다");
+  }
+
+  return lines.join("\n");
+}
+
+function DestinationInternalTaxSummary({ rows }: { rows: ExportDestinationInternalTaxItem[] }) {
+  if (!rows.length) return <>-</>;
+
+  return (
+    <span className="inline-flex flex-wrap gap-x-2 gap-y-1">
+      {rows.map((tax, index) => (
+        <Fragment key={`${tax.countryCode}-${tax.destinationHsCode}-${tax.taxType}-${tax.taxName}-${tax.rateText ?? ""}-${tax.sourceVersion}`}>
+          {index > 0 ? <span className="text-slate-400">/</span> : null}
+          <DestinationInternalTaxDialog tax={tax} />
+        </Fragment>
+      ))}
+    </span>
+  );
+}
+
+function DestinationCountryDetailPage({
+  row,
+  destinationCountry,
+  requirements,
+  internalTaxes,
+  additionalTariffs,
+  tradeRemedyCases,
+  customsCodes,
+  sourceHs6,
+  originCountry
+}: {
+  row: ExportDestinationTariffItem & { hskCode?: string };
+  destinationCountry: string;
+  requirements: ExportDestinationImportRequirementItem[];
+  internalTaxes: ExportDestinationInternalTaxItem[];
+  additionalTariffs: ExportDestinationAdditionalTariffItem[];
+  tradeRemedyCases: ExportDestinationTradeRemedyCaseItem[];
+  customsCodes: ExportDestinationCustomsCodeItem[];
+  sourceHs6?: string;
+  originCountry: string;
+}) {
+  const productName = row.koreanName ?? row.englishName ?? "-";
+  const koreanHs6 = sourceHs6 ?? (row.hskCode ? normalizeHsInput(row.hskCode).slice(0, 6) : "");
+  const tariffCode = row.destinationTariffCode ?? row.destinationHsCode;
+  const selectedCustomsCode = row.destinationCustomsCode;
+  const agreementRateItems = destinationAgreementRateDisplayItems(row, originCountry);
+  const agreementRateLabel = destinationDisplayAgreementRates(row, originCountry);
+  const detailCountry = destinationCountry === "ALL" ? row.countryCode : destinationCountry;
+
+  return (
+    <section className="border-b border-slate-200">
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-900 px-3 py-2 text-sm font-semibold text-white">
+        <span>수입국 HS 상세</span>
+        <HsCopySummaryButton
+          text={destinationCopySummaryText({
+            row,
+            productName,
+            agreementRateLabel,
+            internalTaxes,
+            requirements,
+            additionalTariffs,
+            tradeRemedyCases
+          })}
+        />
+      </div>
+      <dl className="grid text-sm sm:grid-cols-[160px_1fr]">
+        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">수입국</dt>
+        <dd className="border-b border-slate-200 px-3 py-2">{exportCountryLabel(detailCountry)}</dd>
+        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">수입국 HS CODE</dt>
+        <dd className="border-b border-slate-200 px-3 py-2 font-mono font-semibold text-slate-950">{formatHsCode(row.destinationHsCode)}</dd>
+        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">수입국 HS 경로</dt>
+        <dd className="border-b border-slate-200 px-3 py-2">
+          <DestinationHsHierarchyTrail
+            destinationCountry={detailCountry}
+            originCountry={originCountry}
+            row={row}
+          />
+        </dd>
+        {selectedCustomsCode ? (
+          <>
+            <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">관세율 기준 세번</dt>
+            <dd className="border-b border-slate-200 px-3 py-2">
+              <span className="font-mono font-semibold">{formatHsCode(tariffCode)}</span>
+              <span className="ml-2 text-slate-600">중국 2026 세칙 8자리 기준</span>
+            </dd>
+          </>
+        ) : null}
+        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">수입국 품명</dt>
+        <dd className="border-b border-slate-200 px-3 py-2">{productName}</dd>
+        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">최혜국/기본세율</dt>
+        <dd className="border-b border-slate-200 px-3 py-2 font-semibold text-orange-600">{destinationDisplayBaseRate(row)}</dd>
+        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">협정세율</dt>
+        <dd className="border-b border-slate-200 px-3 py-2 leading-6">
+          <DestinationAgreementRateDialog items={agreementRateItems} label={agreementRateLabel} />
+        </dd>
+        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">추가관세</dt>
+        <dd className="border-b border-slate-200 px-3 py-2 leading-6 text-rose-700">
+          <DestinationAdditionalTariffSummary rows={additionalTariffs} />
+        </dd>
+        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">AD/CVD</dt>
+        <dd className="border-b border-slate-200 px-3 py-2 leading-6 text-rose-700">
+          <DestinationTradeRemedySummary rows={tradeRemedyCases} />
+        </dd>
+        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">일반세율</dt>
+        <dd className="border-b border-slate-200 px-3 py-2 text-slate-700">{row.baseRateText ?? "-"}</dd>
+        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">내국세</dt>
+        <dd className="border-b border-slate-200 px-3 py-2">
+          {internalTaxes.length ? <DestinationInternalTaxSummary rows={internalTaxes} /> : "표시할 수입국 내국세 데이터가 없습니다."}
+        </dd>
+        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">수입요건</dt>
+        <dd className="border-b border-slate-200 px-3 py-2">
+          {requirements.length ? (
+            <ul className="grid gap-2">
+              {requirements.map((requirement) => (
+                <li key={`${requirement.countryCode}-${requirement.destinationHsCode}-${requirement.requirementType}-${requirement.requirementName}`}>
+                  <DestinationImportRequirementDialog requirement={requirement} />
+                  <div className="text-slate-600">{[requirement.agency, requirement.legalBasis].filter(Boolean).join(" / ")}</div>
+                </li>
+              ))}
+            </ul>
+          ) : "표시할 수입국 수입요건 데이터가 없습니다."}
+        </dd>
+        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">자료연도</dt>
+        <dd className="border-b border-slate-200 px-3 py-2">{row.tariffYear}년</dd>
+        {customsCodes.length ? (
+          <>
+            <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">10자리 신고상품번호</dt>
+            <dd className="border-b border-slate-200 px-3 py-2">
+              <div className="grid gap-2">
+                {customsCodes.slice(0, 20).map((code) => (
+                  <Link
+                    className={`rounded-md border px-3 py-2 hover:bg-blue-50 ${code.customsCode === selectedCustomsCode ? "border-blue-300 bg-blue-50" : "border-slate-200 bg-white"}`}
+                    href={hsLookupHref({
+                      hskCode: row.hskCode ?? koreanHs6 ?? row.destinationHsCode,
+                      direction: "export",
+                      destinationCountry: detailCountry,
+                      originCountry,
+                      basisDate: row.basisDate,
+                      destinationHsCode: code.customsCode
+                    })}
+                    key={`${code.customsCode}-${code.sourceVersion}`}
+                  >
+                    <span className="font-mono font-semibold text-blue-700">{formatHsCode(code.customsCode)}</span>
+                    <span className="ml-2 text-slate-700">{code.koreanName ?? code.englishName ?? "-"}</span>
+                    <span className="ml-2 text-xs text-slate-500">{destinationCodeRoleLabel(code.codeRole)}</span>
+                  </Link>
+                ))}
+              </div>
+            </dd>
+          </>
+        ) : null}
+        <dt className="bg-slate-50 px-3 py-2 font-semibold text-slate-600">한국 HS6 연결</dt>
+        <dd className="px-3 py-2 font-mono">{koreanHs6 ? formatHsCode(koreanHs6) : "-"}</dd>
+      </dl>
+    </section>
+  );
+}
+
+function InternalTaxSection({ rows }: { rows: InternalTaxCodeMatch[] }) {
+  const hasVatRule = rows.some((row) => row.name.includes("부가가치세"));
+
+  return (
+    <div className="border-t border-slate-200">
+      <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">내국세</div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[720px] text-left text-sm">
+          <thead className="border-y border-slate-200 text-xs font-semibold text-slate-500">
+            <tr>
+              <th className="px-3 py-2">구분</th>
+              <th className="px-3 py-2">코드</th>
+              <th className="px-3 py-2">내용</th>
+              <th className="px-3 py-2">세율</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {!hasVatRule ? (
+              <tr>
+                <td className="px-3 py-2 font-medium text-slate-900">부가가치세</td>
+                <td className="px-3 py-2 text-slate-500">기본</td>
+                <td className="px-3 py-2 text-slate-700">일반 수입물품 기준 부가가치세</td>
+                <td className="px-3 py-2 font-semibold text-orange-600">10%</td>
+              </tr>
+            ) : null}
+            {rows.map((row) => (
+              <tr key={`${row.codeType}-${row.code}-${row.name}`}>
+                <td className="px-3 py-2 font-medium text-slate-900">{row.lawName ?? "개별소비세 등"}</td>
+                <td className="whitespace-nowrap px-3 py-2 font-mono text-slate-700">{row.code}</td>
+                <td className="px-3 py-2 text-slate-700">
+                  <div className="font-medium text-slate-900">{row.name}</div>
+                  {row.conditionText || row.matchBasis ? (
+                    <div className="mt-1 text-xs leading-5 text-slate-500">
+                      {[row.articleRef, row.matchBasis, row.conditionText].filter(Boolean).join(" / ")}
+                    </div>
+                  ) : null}
+                </td>
+                <td className="px-3 py-2 font-semibold text-orange-600">{row.rateText}</td>
+              </tr>
+            ))}
+            {!rows.length ? (
+              <tr>
+                <td className="px-3 py-3 text-slate-500" colSpan={4}>
+                  품명과 직접 매칭되는 추가 내국세율 코드표 항목이 표시되지 않았습니다.
+                </td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function HsNavigationStatsSection({ rows }: { rows: CustomsHsCodeNavigationItem[] }) {
+  return (
+    <div className="border-t border-slate-200">
+      <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">신고 품명 통계</div>
+      {rows.length ? (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[720px] text-left text-sm">
+            <thead className="border-y border-slate-200 text-xs font-semibold text-slate-500">
+              <tr>
+                <th className="px-3 py-2">순위</th>
+                <th className="px-3 py-2">신고 품명</th>
+                <th className="px-3 py-2">신고 건수</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {rows.map((row) => (
+                <tr key={`${row.rank}-${row.productName}-${row.lineCount}`}>
+                  <td className="whitespace-nowrap px-3 py-2 font-mono font-semibold text-slate-700">{row.rank || "-"}</td>
+                  <td className="px-3 py-2 font-medium text-slate-900">{row.productName || "-"}</td>
+                  <td className="whitespace-nowrap px-3 py-2 text-slate-700">{row.lineCount || "-"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <EmptySectionState>표시할 신고 품명 통계가 없습니다.</EmptySectionState>
+      )}
+    </div>
+  );
+}
+
+function EmptySectionState({ children }: { children: string }) {
+  return <div className="px-3 py-4 text-sm text-slate-500">{children}</div>;
+}
+
+function HsSupplementGuidancePanel({
+  basisDate,
+  destinationCountry,
+  guidance,
+  originCountry,
+  direction
+}: {
+  basisDate: string;
+  destinationCountry: string;
+  guidance: HsSupplementGuidance;
+  originCountry: string;
+  direction: "import" | "export";
+}) {
+  if (guidance.level === "unknown") return null;
+
+  return (
+    <section className="mt-5 overflow-hidden rounded-md border border-blue-200 bg-blue-50">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-blue-200 px-3 py-2">
+        <div>
+          <h2 className="text-sm font-semibold text-blue-950">{guidance.title}</h2>
+          <p className="mt-1 text-xs leading-5 text-blue-800">{guidance.description}</p>
+        </div>
+        <Badge tone="info">{guidance.level.toUpperCase()}</Badge>
+      </div>
+      <div className="grid gap-4 p-3 lg:grid-cols-[1.25fr_0.75fr]">
+        <div>
+          <p className="text-xs font-semibold text-blue-900">보완 질문</p>
+          <ol className="mt-2 grid gap-2">
+            {guidance.questions.map((question, index) => (
+              <li className="rounded-md border border-blue-100 bg-white px-3 py-2 text-sm leading-6 text-slate-700" key={question}>
+                <span className="mr-2 font-mono text-xs font-semibold text-blue-700">{index + 1}</span>
+                {question}
+              </li>
+            ))}
+          </ol>
+        </div>
+        <div>
+          <p className="text-xs font-semibold text-blue-900">첨부하면 좋은 자료</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {guidance.recommendedMaterials.map((material) => (
+              <span className="rounded-full border border-blue-100 bg-white px-2.5 py-1 text-xs font-semibold text-blue-800" key={material}>
+                {material}
+              </span>
+            ))}
+          </div>
+          {guidance.canRequestConfirmation ? (
+            <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3">
+              <p className="text-xs leading-5 text-amber-900">
+                이 코드를 기준으로 관세율, 내국세, 수입요건 또는 수출요건 상세 화면을 조회할 수 있습니다.
+              </p>
+              <Link
+                className="focus-ring mt-3 inline-flex items-center justify-center rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-800"
+                data-navigation-progress="상세조회"
+                href={hsLookupHref({
+                  hskCode: guidance.code,
+                  direction,
+                  destinationCountry,
+                  originCountry,
+                  basisDate
+                })}
+              >
+                이 코드로 상세조회
+              </Link>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ProductCandidateDetailLookupPanel({
+  basisDate,
+  candidates,
+  destinationCountry,
+  direction,
+  originCountry
+}: {
+  basisDate: string;
+  candidates: HsCandidateRecommendation[];
+  destinationCountry: string;
+  direction: "import" | "export";
+  originCountry: string;
+}) {
+  if (!candidates.length) return null;
+
+  return (
+    <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-3">
+      <p className="text-sm font-semibold text-slate-900">후보 HS 상세조회</p>
+      <p className="mt-1 text-xs leading-5 text-slate-600">
+        후보 중 하나를 선택하면 해당 HS CODE 기준 상세조회 화면으로 이동합니다.
+      </p>
+      <div className="mt-3 grid gap-3 lg:grid-cols-2">
+        {candidates.slice(0, 4).map((candidate) => (
+          <div className="rounded-md border border-slate-200 bg-white p-3" key={candidate.hskCode}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="font-mono text-sm font-semibold text-blue-700">{formatHsCode(candidate.hskCode)}</span>
+              <span className="text-xs font-semibold text-slate-500">{(candidate.confidenceScore * 100).toFixed(0)}%</span>
+            </div>
+            <p className="mt-1 text-sm font-medium text-slate-900">{candidate.koreanName}</p>
+            <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-600">{candidate.reason}</p>
+            <Link
+              className="focus-ring mt-3 inline-flex w-full items-center justify-center rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-800"
+              data-navigation-progress="상세조회"
+              href={hsLookupHref({
+                hskCode: candidate.hskCode,
+                direction,
+                destinationCountry,
+                originCountry,
+                basisDate
+              })}
+            >
+              이 코드로 상세조회
+            </Link>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ExportDomesticDiagnosisSection({
+  results,
+  destinationCountry,
+  originCountry
+}: {
+  results: ExportDiagnosisResult[];
+  destinationCountry: string;
+  originCountry: string;
+}) {
+  if (!results.length) {
+    return (
+      <div className="mt-5 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+        조회기준일에 표시할 수 있는 한국 수출요건 데이터가 없습니다.
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-5 grid gap-4">
+      {results.map((result) => (
+        <article className="overflow-hidden rounded-md border border-slate-200" key={result.hskCode}>
+          <div className="bg-blue-700 px-3 py-2 text-sm font-semibold text-white">한국 수출 기준 조회 결과</div>
+          <dl className="grid text-sm sm:grid-cols-[140px_1fr_140px_1fr]">
+            <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">HSK</dt>
+            <dd className="border-b border-slate-200 px-3 py-2 font-mono font-semibold text-slate-950">{formatHsCode(result.hskCode)}</dd>
+            <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">HS6</dt>
+            <dd className="border-b border-slate-200 px-3 py-2 font-mono text-slate-700">{formatHsCode(result.hs6)}</dd>
+            <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">품명</dt>
+            <dd className="border-b border-slate-200 px-3 py-2 sm:col-span-3">{result.productName}</dd>
+            <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">목적국</dt>
+            <dd className="border-b border-slate-200 px-3 py-2">{exportCountryLabel(destinationCountry)}</dd>
+            <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">조회기준일</dt>
+            <dd className="border-b border-slate-200 px-3 py-2">{result.basisDate}</dd>
+          </dl>
+
+          <form action="/hs/overseas" className="grid gap-3 border-t border-slate-200 bg-slate-50 px-3 py-3 sm:grid-cols-[220px_1fr_auto] sm:items-end" method="get">
+            <input name="query" type="hidden" value={result.hskCode} />
+            <input name="originCountry" type="hidden" value={originCountry} />
+            <input name="basisDate" type="hidden" value={result.basisDate} />
+            <label className="grid gap-1 text-sm font-medium text-slate-700">
+              해외 기준 목적국
+              <select className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2" defaultValue={destinationCountry} name="destinationCountry">
+                {destinationCountryOptions.map((country) => (
+                  <option key={country.code} value={country.code}>
+                    {country.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="text-xs leading-5 text-slate-500">
+              선택한 목적국의 HS CODE, 현지 품명, 관세율, 내국세, 수입요건 화면으로 이동합니다.
+            </div>
+            <button className="focus-ring inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800" type="submit">
+              <ExternalLink aria-hidden="true" size={16} />
+              해외 기준 결과 확인하기
+            </button>
+          </form>
+
+          <section className="border-t border-slate-200">
+            <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">수출요건</div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[900px] text-left text-sm">
+                <thead className="border-y border-slate-200 text-xs font-semibold text-slate-500">
+                  <tr>
+                    <th className="px-3 py-2">구분</th>
+                    <th className="px-3 py-2">요건명</th>
+                    <th className="px-3 py-2">법령</th>
+                    <th className="px-3 py-2">기관</th>
+                    <th className="px-3 py-2">내용</th>
+                    <th className="px-3 py-2">요청서류</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {result.requirements.length ? result.requirements.map((requirement) => (
+                    <tr key={`${requirement.type}-${requirement.name}-${requirement.relatedLaw}`}>
+                      <td className="px-3 py-2 text-slate-700">{requirement.type}</td>
+                      <td className="px-3 py-2 font-medium text-slate-900">{requirement.name}</td>
+                      <td className="px-3 py-2 text-slate-700">{requirement.relatedLaw}</td>
+                      <td className="px-3 py-2 text-slate-700">{requirement.agency}</td>
+                      <td className="px-3 py-2 leading-6 text-slate-700">{requirement.procedureSummary}</td>
+                      <td className="px-3 py-2 leading-6 text-slate-600">{requirement.buyerDocuments.join(", ")}</td>
+                    </tr>
+                  )) : (
+                    <tr>
+                      <td className="px-3 py-2 text-slate-600" colSpan={6}>표시 가능한 수출요건 데이터 없음</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section className="border-t border-slate-200">
+            <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">전략물자 / 수출통제</div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[860px] text-left text-sm">
+                <thead className="border-y border-slate-200 text-xs font-semibold text-slate-500">
+                  <tr>
+                    <th className="px-3 py-2">분류</th>
+                    <th className="px-3 py-2">키워드</th>
+                    <th className="px-3 py-2">조건</th>
+                    <th className="px-3 py-2">자가판정</th>
+                    <th className="px-3 py-2">전문판정</th>
+                    <th className="px-3 py-2">허가</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {result.exportControls.length ? result.exportControls.map((control) => (
+                    <tr key={`${control.category}-${control.keyword}-${control.controlNumber ?? ""}`}>
+                      <td className="px-3 py-2 text-slate-700">{control.category}</td>
+                      <td className="px-3 py-2 font-medium text-slate-900">{control.keyword}</td>
+                      <td className="px-3 py-2 leading-6 text-slate-700">{control.specCondition}</td>
+                      <td className="px-3 py-2 text-slate-700">{control.selfClassificationNeeded ? "필요 가능성 있음" : "-"}</td>
+                      <td className="px-3 py-2 text-slate-700">{control.expertClassificationNeeded ? "필요 가능성 있음" : "-"}</td>
+                      <td className="px-3 py-2 text-slate-700">{control.licenseType ?? "-"}</td>
+                    </tr>
+                  )) : (
+                    <tr>
+                      <td className="px-3 py-2 text-slate-600" colSpan={6}>표시 가능한 수출통제 데이터 없음</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section className="border-t border-slate-200">
+            <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">FTA C/O 및 원산지증빙</div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px] text-left text-sm">
+                <thead className="border-y border-slate-200 text-xs font-semibold text-slate-500">
+                  <tr>
+                    <th className="px-3 py-2">협정</th>
+                    <th className="px-3 py-2">발급 가능성</th>
+                    <th className="px-3 py-2">발급방식</th>
+                    <th className="px-3 py-2">원산지증빙</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {result.ftaCoOptions.length ? result.ftaCoOptions.map((fta) => (
+                    <tr key={`${fta.agreementName}-${fta.issueMethod}`}>
+                      <td className="px-3 py-2 font-medium text-slate-900">{fta.agreementName}</td>
+                      <td className="px-3 py-2 leading-6 text-slate-700">{fta.coIssuePossibility}</td>
+                      <td className="px-3 py-2 text-slate-700">{fta.issueMethod}</td>
+                      <td className="px-3 py-2 leading-6 text-slate-600">{fta.originEvidence.join(", ")}</td>
+                    </tr>
+                  )) : (
+                    <tr>
+                      <td className="px-3 py-2 text-slate-600" colSpan={4}>표시 가능한 FTA C/O 데이터 없음</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <div className="border-t border-slate-200 bg-slate-50 px-3 py-3 text-xs leading-5 text-slate-600">
+            {result.notices.map((notice) => <p key={notice}>{notice}</p>)}
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function AiClarificationPanel({
+  analysis,
+  candidates
+}: {
+  analysis: ProductClarificationResult;
+  candidates: HsCandidateRecommendation[];
+}) {
+  const candidateByCode = new Map(candidates.map((candidate) => [candidate.hskCode, candidate]));
+
+  return (
+    <section className="mt-5 overflow-hidden rounded-md border border-violet-200 bg-violet-50">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-violet-200 px-3 py-2">
+        <div>
+          <h2 className="text-sm font-semibold text-violet-950">AI 보조 분석</h2>
+          <p className="mt-1 text-xs leading-5 text-violet-800">{analysis.summary}</p>
+        </div>
+        <Badge tone={analysis.confidence === "low" ? "warning" : "info"}>{analysis.confidence.toUpperCase()}</Badge>
+      </div>
+      <div className="grid gap-4 p-3 lg:grid-cols-[1fr_0.9fr]">
+        <div>
+          <p className="text-xs font-semibold text-violet-900">추가 확인 질문</p>
+          <ol className="mt-2 grid gap-2">
+            {analysis.missingQuestions.map((question, index) => (
+              <li className="rounded-md border border-violet-100 bg-white px-3 py-2 text-sm leading-6 text-slate-700" key={question}>
+                <span className="mr-2 font-mono text-xs font-semibold text-violet-700">{index + 1}</span>
+                {question}
+              </li>
+            ))}
+          </ol>
+        </div>
+        <div>
+          <p className="text-xs font-semibold text-violet-900">우선 검토 후보</p>
+          <div className="mt-2 grid gap-2">
+            {analysis.suggestedCandidateCodes.length ? analysis.suggestedCandidateCodes.map((code) => {
+              const candidate = candidateByCode.get(code);
+              return (
+                <div className="rounded-md border border-violet-100 bg-white px-3 py-2" key={code}>
+                  <div className="font-mono text-sm font-semibold text-blue-700">{formatHsCode(code)}</div>
+                  <div className="mt-1 text-sm font-medium text-slate-900">{candidate?.koreanName ?? "후보 품명 확인 필요"}</div>
+                </div>
+              );
+            }) : (
+              <div className="rounded-md border border-violet-100 bg-white px-3 py-2 text-sm text-slate-600">
+                공식 데이터 후보가 부족하여 우선 검토 후보를 표시할 수 없습니다.
+              </div>
+            )}
+          </div>
+          <p className="mt-3 text-xs font-semibold text-violet-900">주의사항</p>
+          <ul className="mt-2 grid gap-1 text-xs leading-5 text-slate-600">
+            {analysis.riskNotes.map((note) => <li key={note}>{note}</li>)}
+          </ul>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ProductNoResultPanel({
+  productName,
+  clarification
+}: {
+  productName: string;
+  clarification: ProductClarificationResult | null;
+}) {
+  const questions = clarification?.missingQuestions.length
+    ? clarification.missingQuestions
+    : [
+      "제품의 정확한 일반 품명과 상업명",
+      "제품의 실제 용도와 최종 사용처",
+      "완제품인지 부분품인지, 부분품이면 장착 대상 완제품",
+      "주요 재질, 성분, 함량 또는 구성품",
+      "작동 방식, 기능, 사양서 또는 카탈로그 URL",
+      "제조사, 모델명, 제품 사진 또는 상세 설명"
+    ];
+
+  return (
+    <section className="mt-4 overflow-hidden rounded-md border border-amber-200 bg-amber-50">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200 px-3 py-2">
+        <div>
+          <h2 className="text-sm font-semibold text-amber-950">품명 검색 결과 없음</h2>
+          <p className="mt-1 text-xs leading-5 text-amber-900">
+            입력한 품명만으로는 표시 가능한 HS 후보를 만들기 어렵습니다. 제품코드, 약어, 짧은 품명은 실제 제품 정보 보완이 필요할 수 있습니다.
+          </p>
+        </div>
+        <HsCopySummaryButton text={productNoResultCopySummaryText({ productName, clarification })} />
+      </div>
+      <div className="grid gap-3 p-3 lg:grid-cols-[1fr_0.8fr]">
+        <div className="rounded-md border border-amber-100 bg-white p-3">
+          <p className="text-xs font-semibold text-amber-900">보완 요청 항목</p>
+          <ol className="mt-2 grid gap-2">
+            {questions.slice(0, 8).map((question, index) => (
+              <li className="text-sm leading-6 text-slate-700" key={question}>
+                <span className="mr-2 font-mono text-xs font-semibold text-amber-700">{index + 1}</span>
+                {question}
+              </li>
+            ))}
+          </ol>
+        </div>
+        <div className="rounded-md border border-amber-100 bg-white p-3 text-sm leading-6 text-slate-700">
+          <p className="font-semibold text-slate-900">제품코드 또는 모델명 검색 시</p>
+          <p className="mt-2">
+            제조사명, 제품 URL, 카탈로그, 사진, 사양서 중 하나가 있으면 실제 제품군을 더 좁힐 수 있습니다.
+          </p>
+          <p className="mt-2">
+            해외 HS CODE나 6자리 HS CODE를 알고 있다면 품명과 함께 입력하면 해당 코드가 강한 조회 단서로 사용됩니다.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Hs6Navigation({
+  items,
+  activeHs6,
+  basisDate,
+  direction,
+  destinationCountry
+}: {
+  items: Array<{ hs6: string; label: string; count: number }>;
+  activeHs6: string;
+  basisDate: string;
+  direction: "import" | "export";
+  destinationCountry: string;
+}) {
+  if (!items.length) return null;
+
+  return (
+    <aside className="border-b border-slate-200 bg-slate-50 lg:border-b-0 lg:border-r">
+      <div className="border-b border-slate-200 bg-blue-700 px-3 py-2 text-sm font-semibold text-white">HS6 목록</div>
+      <nav className="max-h-[560px] overflow-auto p-2">
+        {items.map((item) => {
+          const isActive = item.hs6 === activeHs6;
+
+          return (
+            <Link
+              className={`block rounded px-3 py-2 text-sm hover:bg-white ${isActive ? "bg-white font-semibold text-red-700 shadow-sm" : "text-slate-700"}`}
+              href={hsLookupHref({
+                hskCode: item.hs6,
+                direction,
+                destinationCountry,
+                basisDate
+              })}
+              key={item.hs6}
+            >
+              <span className="block font-mono">{formatHsCode(item.hs6)}</span>
+              <span className="mt-0.5 line-clamp-2 block text-xs leading-5 text-slate-600">{item.label}</span>
+              <span className="mt-1 block text-xs text-slate-400">{item.count}개 하위품목</span>
+            </Link>
+          );
+        })}
+      </nav>
+    </aside>
+  );
+}
+
+export async function HsDirectLookupPanel({
+  query,
+  hskCode,
+  basisDate,
+  direction,
+  destinationCountry,
+  originCountry,
+  destinationHsCode,
+  defaultDirection = "import",
+  exportResultMode = "domestic",
+  panelTitle = "통합 조회",
+  showDirectionSelect = true
+}: {
+  query?: string;
+  hskCode?: string;
+  basisDate?: string;
+  direction?: string;
+  destinationCountry?: string;
+  originCountry?: string;
+  destinationHsCode?: string;
+  defaultDirection?: "import" | "export";
+  exportResultMode?: "domestic" | "destination";
+  panelTitle?: string;
+  showDirectionSelect?: boolean;
+}) {
+  const resolvedBasisDate = basisDate || getSeoulDateString();
+  const lookupDirection = direction === "export" || (!direction && defaultDirection === "export") ? "export" : "import";
+  const selectedDestinationCountry = destinationCountry || (exportResultMode === "destination" ? "CHN" : "ALL");
+  const selectedOriginCountry = lookupDirection === "export" ? (originCountry || "KOR") : "ALL";
+  const showDestinationExportResults = lookupDirection === "export" && exportResultMode === "destination";
+  const showDomesticExportResults = lookupDirection === "export" && exportResultMode === "domestic";
+  const searchQuery = (query ?? hskCode ?? "").trim();
+  const hasQuery = Boolean(searchQuery);
+  const shouldLookupHs = hasQuery && isHsCodeLike(searchQuery);
+  const shouldLookupProduct = hasQuery && !shouldLookupHs;
+  const parsed = shouldLookupHs
+    ? hsDirectLookupSchema.safeParse({
+        hskCode: searchQuery,
+        basisDate: resolvedBasisDate
+      })
+    : null;
+  const [results, productCandidates] = await Promise.all([
+    parsed?.success ? cachedHsDirectLookup(parsed.data.hskCode, parsed.data.basisDate) : Promise.resolve([]),
+    shouldLookupProduct
+      ? recommendHsCandidatesForProduct({
+          productName: searchQuery,
+          basisDate: resolvedBasisDate
+        })
+      : Promise.resolve([])
+  ]);
+  const [productCandidateLookupResults, aiClarification] = await Promise.all([
+    productCandidates.length
+      ? Promise.all(productCandidates.map((candidate) => cachedHsDirectLookup(candidate.hskCode, resolvedBasisDate).catch(() => []))).then((rows) => rows.flat())
+      : Promise.resolve([]),
+    shouldLookupProduct
+      ? analyzeProductClarification({
+          productName: searchQuery,
+          basisDate: resolvedBasisDate,
+          officialCandidates: productCandidates
+        }).catch(() => null)
+      : Promise.resolve(null)
+  ]);
+  const productCandidateLookupByHsk = new Map(productCandidateLookupResults.map((result) => [result.hskCode, result]));
+  const productCandidateInternalTaxByHskPromise = internalTaxCodesForResults({
+    results: productCandidateLookupResults,
+    basisDate: resolvedBasisDate
+  });
+  const exportLookupSources: ExportLookupSource[] = shouldLookupProduct && productCandidates.length
+    ? productCandidates.map((candidate: HsCandidateRecommendation) => ({
+        hskCode: candidate.hskCode,
+        hs6: candidate.hs6
+      }))
+    : results.map((result) => ({
+      hskCode: result.hskCode,
+      hs6: result.hs6
+    }));
+  const normalizedQuery = normalizeHsInput(parsed?.success ? parsed.data.hskCode : searchQuery);
+  const isHs6Lookup = normalizedQuery.length > 0 && normalizedQuery.length <= 6;
+  const isHsHeadingLookup = normalizedQuery.length > 0 && normalizedQuery.length < 6;
+  const [
+    productCandidateInternalTaxByHsk,
+    exportDomesticResults,
+    destinationTariffsByHsk,
+    internalTaxCodesByHsk,
+    hsNavigationStatsByHsk,
+    directDestinationTariffs
+  ] = await Promise.all([
+    productCandidateInternalTaxByHskPromise,
+    showDomesticExportResults && hasQuery
+      ? Promise.all(
+          exportLookupSources
+            .filter((source) => normalizeHsInput(source.hskCode).length === 10)
+            .slice(0, 12)
+            .map((source) => getExportDiagnosis({
+              hskCode: source.hskCode,
+              basisDate: resolvedBasisDate,
+              destinationCountry: selectedDestinationCountry
+            }).catch(() => null))
+        ).then((rows) => rows.filter((result): result is ExportDiagnosisResult => Boolean(result)))
+      : Promise.resolve([]),
+    destinationTariffsForResults({
+      results: exportLookupSources,
+      direction: showDestinationExportResults ? "export" : "import",
+      destinationCountry: selectedDestinationCountry,
+      basisDate: resolvedBasisDate
+    }),
+    internalTaxCodesForResults({
+      results,
+      basisDate: resolvedBasisDate
+    }),
+    hsCodeNavigationStatsForResults({
+      results,
+      enabled: normalizedQuery.length > 6
+    }),
+    destinationTariffsForDestinationCode({
+      queryCode: normalizedQuery,
+      direction: showDestinationExportResults ? "export" : "import",
+      destinationCountry: selectedDestinationCountry,
+      basisDate: resolvedBasisDate
+    })
+  ]);
+  const hs6DestinationTariffs = Array.from(
+    new Map(
+      exportLookupSources.flatMap((source) =>
+        (destinationTariffsByHsk.get(source.hskCode) ?? []).map((tariff) => [
+          `${source.hskCode}-${tariff.countryCode}-${tariff.destinationHsCode}-${tariff.sourceVersion}`,
+          { ...tariff, hskCode: source.hskCode }
+        ])
+      )
+    ).values()
+  );
+  const exportDestinationRows = Array.from(
+    new Map(
+      [...hs6DestinationTariffs, ...directDestinationTariffs].map((tariff) => [
+        `${tariff.countryCode}-${tariff.destinationHsCode}-${tariff.sourceVersion}`,
+        tariff
+      ])
+    ).values()
+  );
+  const [destinationImportData, destinationCustomsCodesByTariffKey] = await Promise.all([
+    destinationImportDataForTariffs({
+      tariffs: exportDestinationRows,
+      basisDate: resolvedBasisDate,
+      originCountryCode: selectedOriginCountry,
+      selectedDestinationCountry
+    }),
+    destinationCustomsCodesForTariffs({
+      tariffs: exportDestinationRows,
+      basisDate: resolvedBasisDate
+    })
+  ]);
+  const selectedDestinationHsCode = normalizeHsInput(destinationHsCode);
+  const selectedDestinationRowByParam = selectedDestinationHsCode
+    ? exportDestinationRows.find((row) => normalizeHsInput(row.destinationHsCode) === selectedDestinationHsCode)
+    : undefined;
+  const sameDestinationRow = !selectedDestinationRowByParam && selectedDestinationCountry !== "ALL"
+    ? exportDestinationRows.find((row) => hasSameDestinationCode(row, normalizedQuery))
+    : undefined;
+  const selectedDestinationRow = selectedDestinationRowByParam ?? sameDestinationRow;
+  const shouldShowHs6DestinationSelectionNotice = showDestinationExportResults
+    && selectedDestinationCountry !== "ALL"
+    && normalizedQuery.length >= 10
+    && !destinationHsCode
+    && !sameDestinationRow;
+  const hs6Groups = results.reduce((groups, result) => {
+    const group = groups.get(result.hs6) ?? [];
+
+    group.push(result);
+    groups.set(result.hs6, group);
+
+    return groups;
+  }, new Map<string, typeof results>());
+  const hs6NavigationItems = Array.from(hs6Groups.entries())
+    .map(([hs6, group]) => ({
+      hs6,
+      label: hs6NavigationLabel(group),
+      count: group.length
+    }))
+    .sort((a, b) => a.hs6.localeCompare(b.hs6));
+  const hs6NavigationLabelByCode = new Map(hs6NavigationItems.map((item) => [item.hs6, item.label]));
+  const activeHs6 = normalizedQuery.length === 6 ? normalizedQuery : hs6NavigationItems[0]?.hs6 ?? "";
+  const lookupHierarchyPath = results[0]?.hierarchyPath.filter((node) => normalizeHsInput(node.code).length <= normalizedQuery.length) ?? [];
+  const supplementGuidance = shouldLookupHs && normalizedQuery.length >= 4 && normalizedQuery.length < 10
+    ? buildHsSupplementGuidance(normalizedQuery)
+    : shouldLookupProduct && isWeakProductName(searchQuery)
+      ? buildProductSupplementGuidance(searchQuery)
+      : null;
+
+  return (
+    <Card>
+      <CardHeader title={panelTitle} />
+      <CardBody>
+        <form className={`grid gap-4 ${showDirectionSelect ? "lg:grid-cols-[1fr_130px_190px_190px_170px_auto]" : "lg:grid-cols-[1fr_190px_190px_170px_auto]"}`} method="get">
+          <QueryField defaultValue={searchQuery} label="HS CODE 또는 품명" name="query" placeholder="예: 3401.30-0000 또는 입술화장품" />
+          {showDirectionSelect ? <DirectionSelect defaultValue={lookupDirection} /> : <DirectionHiddenField value={lookupDirection} />}
+          <DestinationCountrySelect defaultValue={selectedDestinationCountry} direction={lookupDirection} />
+          <OriginCountrySelect defaultValue={selectedOriginCountry} direction={lookupDirection} />
+          <QueryField defaultValue={resolvedBasisDate} label="조회기준일" name="basisDate" />
+          <button className="focus-ring inline-flex items-center justify-center gap-2 self-end rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800" type="submit">
+            <Search aria-hidden="true" size={18} />
+            조회
+          </button>
+        </form>
+
+        {parsed && !parsed.success ? (
+          <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+            {parsed.error.issues[0]?.message ?? "입력값을 확인해 주세요."}
+          </div>
+        ) : null}
+
+        {parsed?.success && results.length === 0 && !(lookupDirection === "export" && exportDestinationRows.length) ? (
+          <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+            조회기준일에 표시할 수 있는 HS CODE 데이터가 없습니다.
+          </div>
+        ) : null}
+
+        {shouldLookupProduct && productCandidates.length === 0 ? (
+          <ProductNoResultPanel productName={searchQuery} clarification={aiClarification} />
+        ) : null}
+
+        {supplementGuidance ? (
+          <HsSupplementGuidancePanel
+            basisDate={resolvedBasisDate}
+            destinationCountry={selectedDestinationCountry}
+            direction={lookupDirection}
+            guidance={supplementGuidance}
+            originCountry={selectedOriginCountry}
+          />
+        ) : null}
+
+        {aiClarification && productCandidates.length ? <AiClarificationPanel analysis={aiClarification} candidates={productCandidates} /> : null}
+
+        {productCandidates.length ? (
+          <div className="mt-5 overflow-hidden rounded-md border border-slate-200">
+            <div className="flex flex-wrap items-center justify-between gap-2 bg-blue-700 px-3 py-2 text-sm font-semibold text-white">
+              <span>품명 검색 결과</span>
+              {lookupDirection === "import" ? (
+                <HsCopySummaryButton
+                  text={productCandidateCopySummaryText({
+                    productName: searchQuery,
+                    candidates: productCandidates,
+                    lookupByHsk: productCandidateLookupByHsk,
+                    internalTaxByHsk: productCandidateInternalTaxByHsk,
+                    countryCode: selectedDestinationCountry,
+                    clarification: aiClarification
+                  })}
+                />
+              ) : null}
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[960px] text-left text-sm">
+                <thead className="bg-slate-50 text-xs font-semibold text-slate-500">
+                  <tr>
+                    <th className="px-3 py-2">순위</th>
+	                    <th className="px-3 py-2">HSK</th>
+	                    <th className="px-3 py-2">HS6</th>
+	                    <th className="px-3 py-2">예상 품목</th>
+	                    <th className="px-3 py-2">HS CODE 경로</th>
+	                    <th className="px-3 py-2">후보 근거</th>
+	                    <th className="px-3 py-2">보완 필요 정보</th>
+	                  </tr>
+	                </thead>
+	                <tbody className="divide-y divide-slate-100">
+	                  {productCandidates.map((candidate) => {
+	                    const lookup = productCandidateLookupByHsk.get(candidate.hskCode);
+	                    const hierarchyLines = productCandidateHierarchyLines(candidate, lookup);
+
+	                    return (
+	                      <tr key={candidate.hskCode}>
+	                        <td className="px-3 py-2 text-slate-600">{candidate.rank}</td>
+	                        <td className="px-3 py-2 font-mono font-semibold text-blue-700">
+	                          <Link data-navigation-progress="상세조회" href={hsLookupHref({
+	                            hskCode: candidate.hskCode,
+	                            direction: lookupDirection,
+	                            destinationCountry: selectedDestinationCountry,
+	                            originCountry: selectedOriginCountry,
+	                            basisDate: candidate.basisDate
+	                          })}>
+	                            {formatHsCode(candidate.hskCode)}
+	                          </Link>
+	                        </td>
+	                        <td className="px-3 py-2 font-mono font-semibold text-blue-700">
+	                          <Link data-navigation-progress="상세조회" href={hsLookupHref({
+	                            hskCode: candidate.hs6,
+	                            direction: lookupDirection,
+	                            destinationCountry: selectedDestinationCountry,
+	                            originCountry: selectedOriginCountry,
+	                            basisDate: candidate.basisDate
+	                          })}>
+	                            {formatHsCode(candidate.hs6)}
+	                          </Link>
+	                        </td>
+	                        <td className="px-3 py-2 font-medium text-slate-950">
+	                          <div>{candidate.koreanName}</div>
+	                          <p className="mt-1 text-xs leading-5 text-slate-500">{candidate.reason}</p>
+	                        </td>
+	                        <td className="px-3 py-2 leading-6 text-slate-700">
+	                          <div className="grid gap-1">
+	                            {hierarchyLines.map((line) => (
+	                              <div key={line}>{line}</div>
+	                            ))}
+	                          </div>
+	                        </td>
+	                        <td className="px-3 py-2 leading-6 text-slate-600">
+	                          <Badge tone={candidate.lookupBasis === "user_hs_hint" ? "info" : candidate.lookupBasis === "ambiguous_abbreviation" ? "warning" : "neutral"}>
+	                            {productCandidateLookupBasisLabel(candidate)}
+	                          </Badge>
+	                          <p className="mt-2 text-xs leading-5 text-slate-500">{productCandidateEvidenceText(candidate)}</p>
+	                        </td>
+	                        <td className="px-3 py-2 leading-6 text-slate-600">{candidate.requiredQuestions.slice(0, 3).join(" / ")}</td>
+	                      </tr>
+	                    );
+	                  })}
+	                </tbody>
+              </table>
+            </div>
+            <ProductCandidateDetailLookupPanel
+              basisDate={resolvedBasisDate}
+              candidates={productCandidates}
+              destinationCountry={selectedDestinationCountry}
+              direction={lookupDirection}
+              originCountry={selectedOriginCountry}
+            />
+          </div>
+        ) : null}
+
+        {showDomesticExportResults && hasQuery ? (
+          <ExportDomesticDiagnosisSection
+            destinationCountry={selectedDestinationCountry}
+            originCountry={selectedOriginCountry}
+            results={exportDomesticResults}
+          />
+        ) : null}
+
+        {showDestinationExportResults && hasQuery ? (
+          <div className="mt-5 overflow-hidden rounded-md border border-slate-200">
+            <div className="flex flex-wrap items-center justify-between gap-2 bg-blue-700 px-3 py-2 text-sm font-semibold text-white">
+              <span>{destinationCountrySubjectLabel(selectedDestinationCountry)} 수입 기준 조회 결과</span>
+              <span className="text-xs font-medium text-blue-100">
+                {exportDestinationRows.length ? `${exportDestinationRows.length}개 상대국 HS` : "상대국 HS 데이터 없음"}
+              </span>
+            </div>
+            <div className="grid gap-4 border-b border-slate-200 bg-slate-50 px-3 py-3 text-sm lg:grid-cols-[1fr_1fr_1fr_1.5fr]">
+              <div>
+                <div className="text-xs font-semibold text-slate-500">입력값</div>
+                <div className="mt-1 font-mono font-semibold text-slate-900">{searchQuery}</div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-slate-500">수입국</div>
+                <div className="mt-1 font-semibold text-slate-900">{exportCountryLabel(selectedDestinationCountry)}</div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-slate-500">원산지</div>
+                <div className="mt-1 font-semibold text-slate-900">{selectedOriginCountry === "ALL" ? "모든 원산지" : exportCountryLabel(selectedOriginCountry)}</div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-slate-500">기준</div>
+                <div className="mt-1 text-slate-700">수입국 HS CODE, 수입국 품명, 수입국 세율 기준</div>
+              </div>
+            </div>
+
+            {results.length ? (
+              <div className="border-b border-slate-200 px-3 py-3">
+                <div className="mb-2 text-xs font-semibold text-slate-500">한국 HS 연결 기준</div>
+                <div className="flex flex-wrap gap-2">
+                  {Array.from(new Map(results.map((result) => [result.hs6, result])).values()).map((result) => (
+                    <Link
+                      className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm hover:bg-blue-50"
+                      href={hsLookupHref({
+                        hskCode: result.hs6,
+                        direction: lookupDirection,
+                        destinationCountry: selectedDestinationCountry,
+                        originCountry: selectedOriginCountry,
+                        basisDate: result.basisDate
+                      })}
+                      key={result.hs6}
+                    >
+                      <span className="font-mono font-semibold text-blue-700">{formatHsCode(result.hs6)}</span>
+                      <span className="ml-2 text-slate-700">{hs6NavigationLabelByCode.get(result.hs6) ?? result.koreanName}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {selectedDestinationRow ? (
+              <DestinationCountryDetailPage
+                additionalTariffs={destinationImportData.additionalTariffsByKey.get(destinationImportDataKey(selectedDestinationRow.countryCode, selectedDestinationRow.destinationHsCode)) ?? []}
+                customsCodes={destinationCustomsCodesByTariffKey.get(destinationTariffKey(selectedDestinationRow)) ?? []}
+                destinationCountry={selectedDestinationCountry}
+                internalTaxes={destinationImportData.internalTaxesByKey.get(destinationImportDataKey(selectedDestinationRow.countryCode, selectedDestinationRow.destinationHsCode)) ?? []}
+                originCountry={selectedOriginCountry}
+                requirements={destinationImportData.requirementsByKey.get(destinationImportDataKey(selectedDestinationRow.countryCode, selectedDestinationRow.destinationHsCode)) ?? []}
+                row={selectedDestinationRow}
+                sourceHs6={(selectedDestinationRow as { hskCode?: string }).hskCode ? normalizeHsInput((selectedDestinationRow as { hskCode?: string }).hskCode).slice(0, 6) : undefined}
+                tradeRemedyCases={destinationImportData.tradeRemedyCasesByKey.get(destinationImportDataKey(selectedDestinationRow.countryCode, selectedDestinationRow.destinationHsCode)) ?? []}
+              />
+            ) : null}
+
+            {shouldShowHs6DestinationSelectionNotice ? (
+              <div className="border-b border-slate-200 bg-amber-50 px-3 py-3 text-sm leading-6 text-amber-900">
+                <div className="font-semibold">동일한 10자리 수입국 HS CODE가 확인되지 않았습니다.</div>
+                <p className="mt-1">
+                  HS 6자리는 국제 공통 기준이므로 {formatHsCode(normalizedQuery.slice(0, 6))} 기준의 수입국 후보를 표시합니다.
+                  수입국 HS CODE 또는 10자리 후보를 선택하면 해당 수입국 기준 상세 화면으로 이동합니다.
+                </p>
+              </div>
+            ) : null}
+
+            <DestinationCountryResultTable
+              basisDate={resolvedBasisDate}
+              additionalTariffsByKey={destinationImportData.additionalTariffsByKey}
+              customsCodesByTariffKey={destinationCustomsCodesByTariffKey}
+              destinationCountry={selectedDestinationCountry}
+              internalTaxesByKey={destinationImportData.internalTaxesByKey}
+              originCountry={selectedOriginCountry}
+              requirementsByKey={destinationImportData.requirementsByKey}
+              rows={exportDestinationRows}
+              sourceHs6={normalizedQuery.slice(0, 6)}
+              sourceQuery={searchQuery}
+              tradeRemedyCasesByKey={destinationImportData.tradeRemedyCasesByKey}
+            />
+          </div>
+        ) : null}
+
+        {lookupDirection === "import" && isHs6Lookup && results.length ? (
+          <div className="mt-5 overflow-hidden rounded-md border border-slate-200">
+            <div className="flex flex-wrap items-center justify-between gap-2 bg-blue-700 px-3 py-2 text-sm font-semibold text-white">
+              <span>{formatHsCode(normalizedQuery)} 조회 결과</span>
+              <span className="text-xs font-medium text-blue-100">
+                HS6 {hs6NavigationItems.length}개 / HSK {results.length}개
+              </span>
+            </div>
+            {lookupHierarchyPath.length ? (
+              <div className="grid gap-1 border-b border-slate-200 bg-white px-3 py-2">
+                <div className="text-xs font-semibold text-slate-500">상위 HS CODE</div>
+                <HsHierarchyTrail
+                  basisDate={resolvedBasisDate}
+                  currentCode={normalizedQuery}
+                  destinationCountry={selectedDestinationCountry}
+                  direction={lookupDirection}
+                  nodes={lookupHierarchyPath}
+                />
+              </div>
+            ) : null}
+            <div className="grid lg:grid-cols-[220px_minmax(0,1fr)]">
+              <Hs6Navigation
+                activeHs6={activeHs6}
+                basisDate={resolvedBasisDate}
+                destinationCountry={selectedDestinationCountry}
+                direction={lookupDirection}
+                items={hs6NavigationItems}
+              />
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[940px] text-left text-sm">
+                  <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
+                    <tr>
+                      <th className="px-3 py-2">HSK</th>
+                      <th className="px-3 py-2">품명</th>
+                      <th className="px-3 py-2">기본</th>
+                      <th className="px-3 py-2">탄력·양허</th>
+                      <th className="px-3 py-2">요건</th>
+                      <th className="px-3 py-2">Description</th>
+                      <th className="px-3 py-2">조회</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {results.map((result, index) => {
+                      const importTariffs = filterImportTariffsForCountry(result.tariffPreviews, selectedDestinationCountry);
+                      const basicRate = importTariffs.find((tariff) => isBasicTariffLabel(displayImportTariffLabel(tariff, selectedDestinationCountry)))?.rateText ?? "-";
+                      const preferentialSummary = preferentialTariffSummary(importTariffs, selectedDestinationCountry);
+                      const startsHs6Group = isHsHeadingLookup && result.hs6 !== results[index - 1]?.hs6;
+                      const hs6Count = startsHs6Group ? results.filter((item) => item.hs6 === result.hs6).length : 0;
+                      const hs6Label = hs6NavigationLabelByCode.get(result.hs6) ?? result.koreanName;
+
+                      return (
+                        <Fragment key={result.hskCode}>
+                          {startsHs6Group ? (
+                            <tr className="bg-slate-100">
+                              <td className="px-3 py-2 font-mono text-xs font-semibold text-slate-700" colSpan={7}>
+                                <Link className="text-blue-700 underline-offset-2 hover:underline" href={hsLookupHref({
+                                  hskCode: result.hs6,
+                                  direction: lookupDirection,
+                                  destinationCountry: selectedDestinationCountry,
+                                  basisDate: result.basisDate
+                                })}>
+                                  {formatHsCode(result.hs6)}
+                                </Link>
+                                <span className="ml-2 font-sans text-slate-700">{hs6Label}</span>
+                                <span className="ml-2 text-slate-500">{hs6Count}개 하위 HSK</span>
+                              </td>
+                            </tr>
+                          ) : null}
+                          <tr className={result.hs6 === activeHs6 ? "bg-blue-50/50" : undefined}>
+                            <td className="whitespace-nowrap px-3 py-2 font-mono font-semibold">
+                              <Link className="text-blue-700 underline-offset-2 hover:underline" href={hsLookupHref({
+                                hskCode: result.hskCode,
+                                direction: lookupDirection,
+                                destinationCountry: selectedDestinationCountry,
+                                basisDate: result.basisDate
+                              })}>
+                                {formatHsCode(result.hskCode)}
+                              </Link>
+                            </td>
+                            <td className="px-3 py-2 font-medium text-slate-900">{result.koreanName}</td>
+                            <td className="px-3 py-2 font-semibold text-orange-600">{basicRate}</td>
+                            <td className="px-3 py-2 text-slate-700">{preferentialSummary}</td>
+                            <td className="px-3 py-2 text-slate-700">
+                              <RequirementSummary requirements={result.importRequirements} />
+                            </td>
+                            <td className="px-3 py-2 text-slate-700">{result.englishName ?? "-"}</td>
+                            <td className="whitespace-nowrap px-3 py-2">
+                              <Link className="font-semibold text-blue-700 underline-offset-2 hover:underline" href={hsLookupHref({
+                                hskCode: result.hskCode,
+                                direction: lookupDirection,
+                                destinationCountry: selectedDestinationCountry,
+                                basisDate: result.basisDate
+                              })}>
+                                상세
+                              </Link>
+                            </td>
+                          </tr>
+                        </Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="px-3 pb-3">
+              <SourceFooter basisDate={results[0].basisDate} showVersion={false} sourceName={results[0].sourceName} sourceVersion={results[0].sourceVersion} />
+            </div>
+          </div>
+        ) : null}
+
+        {lookupDirection === "import" && !isHs6Lookup && results.length ? (
+          <div className="mt-5 grid gap-4">
+            {results.map((result) => (
+              <article className="rounded-md border border-slate-200" key={result.hskCode}>
+                <div className="grid gap-0 lg:grid-cols-[minmax(300px,0.85fr)_minmax(0,1.35fr)]">
+                  <section className="overflow-hidden rounded-md border border-slate-200">
+                    <div className="bg-blue-700 px-3 py-2 text-sm font-semibold text-white">HS CODE 탐색</div>
+                    <HsHierarchyNavigator
+                      basisDate={result.basisDate}
+                      currentCode={result.hskCode}
+                      destinationCountry={selectedDestinationCountry}
+                      direction={lookupDirection}
+                      nodes={result.hierarchyPath}
+                    />
+                    <div className="grid min-h-0 md:grid-cols-[130px_minmax(0,1fr)]">
+                      <Hs4ContextNavigation
+                        basisDate={result.basisDate}
+                        destinationCountry={selectedDestinationCountry}
+                        direction={lookupDirection}
+                        nodes={result.hierarchyPath}
+                      />
+                      <div className="min-w-0">
+                        <div className="bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-500">같은 HS6 품목</div>
+                        <div className="max-h-80 overflow-auto">
+                          <table className="w-full text-left text-sm">
+                            <tbody className="divide-y divide-slate-100">
+                              {result.classificationSiblings.map((sibling) => (
+                                <tr className={sibling.isSelected ? "bg-red-50 text-red-700" : "text-slate-700"} key={sibling.hskCode}>
+                                  <td className="whitespace-nowrap px-3 py-2 font-mono text-xs font-semibold">
+                                    <Link className="text-blue-700 underline-offset-2 hover:underline" href={hsLookupHref({
+                                      hskCode: sibling.hskCode,
+                                      direction: lookupDirection,
+                                      destinationCountry: selectedDestinationCountry,
+                                      basisDate: result.basisDate
+                                    })}>
+                                      {formatHsCode(sibling.hskCode)}
+                                    </Link>
+                                  </td>
+                                  <td className="px-3 py-2 font-medium">{sibling.koreanName}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className="overflow-hidden rounded-md border border-slate-200">
+                    <div className="flex flex-wrap items-center justify-between gap-2 bg-blue-700 px-3 py-2 text-sm font-semibold text-white">
+                      <span>품목 상세</span>
+                      <div className="flex flex-wrap gap-2">
+                        <Link
+                          className="focus-ring inline-flex items-center justify-center rounded-md bg-white/15 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/25"
+                          href={buildDutyEstimatorHref({
+                            hskCode: result.hskCode,
+                            basisDate: result.basisDate,
+                            dutyRate: lowestTariff(filterImportTariffsForCountry(result.tariffPreviews, selectedDestinationCountry).filter((tariff) => isCommonImportTariff(tariff)))?.rateText,
+                            preferentialRate: lowestTariff(filterImportTariffsForCountry(result.tariffPreviews, selectedDestinationCountry).filter((tariff) => isFtaTariffRate(tariff.rateType)))?.rateText,
+                            internalTaxRows: (internalTaxCodesByHsk.get(result.hskCode) ?? []).map((row) => ({
+                              name: row.name,
+                              lawName: row.lawName,
+                              rateText: row.rateText,
+                              baseType: row.taxBaseType
+                            }))
+                          })}
+                        >
+                          납세액 계산
+                        </Link>
+                        <HsCopySummaryButton
+                          text={hsCopySummaryText({
+                            result,
+                            displayTariffs: filterImportTariffsForCountry(result.tariffPreviews, selectedDestinationCountry),
+                            internalTaxRows: internalTaxCodesByHsk.get(result.hskCode) ?? [],
+                            importRequirements: result.importRequirements,
+                            countryCode: selectedDestinationCountry
+                          })}
+                        />
+                      </div>
+                    </div>
+                    <dl className="grid text-sm sm:grid-cols-[140px_1fr]">
+                      <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">품목번호</dt>
+                      <dd className="border-b border-slate-200 px-3 py-2 font-mono font-semibold">
+                        <Link className="text-blue-700 underline-offset-2 hover:underline" href={hsLookupHref({
+                          hskCode: result.hskCode,
+                          direction: lookupDirection,
+                          destinationCountry: selectedDestinationCountry,
+                          basisDate: result.basisDate
+                        })}>
+                          {formatHsCode(result.hskCode)}
+                        </Link>
+                      </dd>
+                      <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">국문</dt>
+                      <dd className="border-b border-slate-200 px-3 py-2">{result.koreanName}</dd>
+                      <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">영문</dt>
+                      <dd className="border-b border-slate-200 px-3 py-2">{displayValue(result.englishName)}</dd>
+                      <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">단위</dt>
+                      <dd className="border-b border-slate-200 px-3 py-2">수량 {displayValue(result.quantityUnit)} / 중량 {displayValue(result.weightUnit)}</dd>
+                      <dt className="bg-slate-50 px-3 py-2 font-semibold text-slate-600">기준일</dt>
+                      <dd className="px-3 py-2">조회기준일 {result.basisDate}</dd>
+                    </dl>
+
+                    {(() => {
+                      const displayTariffs = filterImportTariffsForCountry(result.tariffPreviews, selectedDestinationCountry);
+
+                      return displayTariffs.length ? (
+                        <div className="border-t border-slate-200">
+                          <div className="flex justify-end bg-slate-50 px-3 py-2">
+                            <TariffPriorityGuideDialog />
+                          </div>
+                          <table className="w-full text-left text-sm">
+                            <thead className="bg-slate-50 text-xs font-semibold text-slate-500">
+                              <tr>
+                                <th className="px-3 py-2">관세율구분</th>
+                                <th className="px-3 py-2">세율</th>
+                                <th className="px-3 py-2">적용 순위</th>
+                                <th className="px-3 py-2">상세</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-200">
+                              {displayTariffs.map((tariff) => (
+                                <tr key={`${tariff.rateType}-${tariff.rateText}-${tariff.sourceVersion}`}>
+                                  <td className="px-3 py-2 font-medium text-slate-900">
+                                    {displayImportTariffLabel(tariff, selectedDestinationCountry)}
+                                  </td>
+                                  <td className="px-3 py-2 text-orange-600">{tariff.rateText}</td>
+                                  <td className="px-3 py-2 text-slate-600">{importTariffApplicationPriority(tariff)}</td>
+                                  <td className="px-3 py-2">
+                                    <TariffRateDetailDialog
+                                      countryGroup={tariff.countryGroup}
+                                      label={displayImportTariffLabel(tariff, selectedDestinationCountry)}
+                                      priority={importTariffApplicationPriority(tariff)}
+                                      rateText={tariff.rateText}
+                                      rateType={tariff.rateType}
+                                      usageRateType={tariff.usageRateType}
+                                      countryCode={selectedDestinationCountry}
+                                    />
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div className="border-t border-slate-200">
+                          <EmptySectionState>표시할 관세율 데이터가 없습니다.</EmptySectionState>
+                        </div>
+                      );
+                    })()}
+                  </section>
+                </div>
+
+                <InternalTaxSection rows={internalTaxCodesByHsk.get(result.hskCode) ?? []} />
+
+                <div className="border-t border-slate-200">
+                  <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">표준품명/필수규격</div>
+                  {result.standardProductNames.length ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[720px] text-left text-sm">
+                        <thead className="border-y border-slate-200 text-xs font-semibold text-slate-500">
+                          <tr>
+                            <th className="px-3 py-2">표준품명</th>
+                            <th className="px-3 py-2">필수규격</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {result.standardProductNames.map((item) => (
+                            <tr key={item.name}>
+                              <td className="px-3 py-2 font-medium text-slate-900">{item.name}</td>
+                              <td className="px-3 py-2 text-slate-700">{item.requiredSpec}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <EmptySectionState>표시할 표준품명 데이터가 없습니다.</EmptySectionState>
+                  )}
+                </div>
+
+                <div className="border-t border-slate-200">
+                    <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">수입요건</div>
+                    {result.importRequirements.length ? (
+                      <div className="overflow-x-auto">
+                        <table className="w-full min-w-[760px] text-left text-sm">
+                          <thead className="border-y border-slate-200 text-xs font-semibold text-slate-500">
+                            <tr>
+                              <th className="px-3 py-2">구분</th>
+                              <th className="px-3 py-2">요건서류</th>
+                              <th className="px-3 py-2">관련법령</th>
+                              <th className="px-3 py-2">기관</th>
+                              <th className="px-3 py-2">내용</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {groupedImportRequirements(result.importRequirements).map((item) => (
+                              <tr key={`${item.type}-${item.name}-${item.relatedLaw}`}>
+                                <td className="whitespace-nowrap px-3 py-2 text-slate-700">{item.type}</td>
+                                <td className="px-3 py-2">
+                                  <ImportRequirementDetailDialog
+                                    agencies={item.agencies}
+                                    name={item.name}
+                                    procedureSummary={item.procedureSummary}
+                                    relatedLaw={item.relatedLaw}
+                                    type={item.type}
+                                  />
+                                </td>
+                                <td className="px-3 py-2 text-slate-700">{item.relatedLaw}</td>
+                                <td className="px-3 py-2 text-slate-700"><AgencyCell agencies={item.agencies} /></td>
+                                <td className="px-3 py-2 leading-6 text-slate-700">{item.procedureSummary ?? "-"}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <EmptySectionState>표시할 수입요건 데이터가 없습니다.</EmptySectionState>
+                    )}
+                </div>
+
+                <HsNavigationStatsSection rows={hsNavigationStatsByHsk.get(result.hskCode) ?? []} />
+
+                <div className="px-3 pb-3">
+                  <SourceFooter basisDate={result.basisDate} showVersion={false} sourceName={result.sourceName} sourceVersion={result.sourceVersion} />
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : null}
+      </CardBody>
+    </Card>
+  );
+}
