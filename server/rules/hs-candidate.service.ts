@@ -1006,6 +1006,7 @@ function recommendHsCandidatesFromUserCodeHints(input: ProductHsRecommendationIn
 }
 
 async function recommendHsCandidatesFromCustomsHsSearch(input: ProductHsRecommendationInput): Promise<HsCandidateRecommendation[]> {
+  if (process.env.CUSTOMS_API_PRODUCT_SEARCH_LIVE_ENABLED !== "true") return [];
   if (!hasCustomsOpenApiEnv("hs_code")) return [];
 
   const snapshot = await fetchCustomsOpenApiSnapshot("hs_code", buildCustomsHsCodeQuery({
@@ -1107,6 +1108,8 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       pruneWeakProductRecommendations(
         mergeRecommendations([
           ...recommendAmbiguousProductCandidates(input),
+          ...recommendHsCandidates(input),
+          ...(augmentedInput.productName !== input.productName ? recommendHsCandidates(augmentedInput) : []),
           ...recommendHsCandidatesFromMockOfficialHsMasterSearch(augmentedInput, normalization)
         ]),
         { keepAmbiguousAlternatives: isAmbiguousAcronym }
@@ -1120,6 +1123,10 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       return [];
     }
     const useAugmented = augmentedInput.productName !== input.productName;
+    const deterministicCandidates = [
+      ...recommendHsCandidates(input),
+      ...(useAugmented ? recommendHsCandidates(augmentedInput) : [])
+    ];
     const [
       officialCandidates,
       internalTaxCandidates,
@@ -1136,6 +1143,7 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       recommendHsCandidatesFromStoredCustomsHsCodeSearch(supabase, augmentedInput, normalization).catch(() => [])
     ]);
     const nonApiNormalizedCandidates = [
+      ...deterministicCandidates,
       ...normalizedOfficialCandidates,
       ...normalizedInternalTaxCandidates,
       ...officialHsMasterCandidates,
@@ -1146,6 +1154,7 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       : [];
     const normalizedCandidates = [...nonApiNormalizedCandidates, ...normalizedApiCandidates];
     const originalCandidates = normalizedCandidates.length ? [] : [
+      ...deterministicCandidates,
       ...officialCandidates,
       ...internalTaxCandidates
     ];
@@ -1174,6 +1183,8 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
     const originalCandidates = normalizedCandidates.length ? [] : apiCandidates;
     return pruneByUserHsHints(input, pruneWeakProductRecommendations(mergeRecommendations([
       ...recommendAmbiguousProductCandidates(input),
+      ...recommendHsCandidates(input),
+      ...(augmentedInput.productName !== input.productName ? recommendHsCandidates(augmentedInput) : []),
       ...normalizedCandidates,
       ...originalCandidates
     ]), {

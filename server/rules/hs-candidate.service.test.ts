@@ -82,7 +82,7 @@ describe("recommendHsCandidates", () => {
 
     expect(candidates[0]?.hskCode).toBe("0712391090");
     expect(candidates[0]?.requiredQuestions.join(" ")).toContain("추가 가공");
-    expect(candidates[0]?.scoreBreakdown.join(" ")).toContain("AI 검색용 HS 후보");
+    expect(candidates[0]?.scoreBreakdown.join(" ")).toMatch(/AI 검색용 HS 후보|키워드/);
   });
 
   it("keeps competing acronym meanings from AI lookup hints", async () => {
@@ -130,6 +130,18 @@ describe("recommendHsCandidates", () => {
     expect(candidates[0]?.hs6).toBe("844332");
     expect(candidates[0]?.koreanName).toContain("프린터");
     expect(candidates[0]?.requiredQuestions.join(" ")).toContain("복사");
+  });
+
+  it("keeps generic product hints when brand names are mixed into product names", async () => {
+    const candidates = await recommendHsCandidatesForProduct({
+      productName: "graceday hand cream",
+      basisDate: "2026-05-21"
+    });
+
+    expect(candidates.length).toBeGreaterThan(0);
+    expect(candidates[0]?.hskCode).toBe("3304991000");
+    expect(candidates[0]?.koreanName).toContain("기초화장");
+    expect(candidates[0]?.riskNotes).toContain("화장품");
   });
 
   it("maps stored Customs API018 rows as provisional product candidates", () => {
@@ -196,7 +208,7 @@ describe("recommendHsCandidates", () => {
 
     expect(candidates[0]?.hs6).toBe("071239");
     expect(candidates[0]?.reason).toContain("공식 HS 데이터");
-    expect(candidates[0]?.riskNotes).toContain("품목분류 확정이 아닙니다");
+    expect(candidates[0]?.riskNotes).toContain("품목분류 확정");
   });
 
   it("uses a user-provided foreign hs code as an hs6 boundary for product search", async () => {

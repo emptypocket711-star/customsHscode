@@ -38,7 +38,7 @@ export const productCandidateHints: ProductCandidateHint[] = [
   },
   {
     hskCode: "3304991000",
-    keywords: ["크림", "화장", "피부", "스킨", "로션", "보습", "클렌저", "세안", "cosmetic", "cream", "cleanser"],
+    keywords: ["크림", "핸드크림", "화장", "피부", "스킨", "로션", "보습", "클렌저", "세안", "cosmetic", "cream", "hand cream", "moisturizer", "moisturiser", "lotion", "skin care", "cleanser"],
     baseReason: "품명 또는 용도에 피부 적용 화장품 단서가 있습니다.",
     questions: ["피부 직접 사용 제품", "의약품·의약외품 효능 표시 여부", "전성분표·용량 정보"],
     risk: "의약외품, 기능성화장품, 표시·인증 규제 가능성은 별도 확인 필요"
@@ -104,6 +104,7 @@ export const productCandidateHints: ProductCandidateHint[] = [
 const synonymGroups = [
   ["립밤", "립스틱", "립글로스", "립", "입술", "입술화장"],
   ["폼클렌저", "클렌저", "세안제", "세정제", "피부세척", "피부세정", "세척"],
+  ["핸드크림", "hand cream", "handcream", "moisturizer", "moisturiser", "lotion", "스킨케어", "피부", "보습", "크림", "화장품", "cosmetic", "skin care"],
   ["선크림", "선스크린", "자외선차단", "썬크림"],
   ["핸드백", "가방", "백", "파우치", "지갑"],
   ["리튬이온", "리튬", "배터리", "전지", "축전지", "셀", "모듈", "팩"],
@@ -121,7 +122,7 @@ const conceptGroups = [
   { label: "버섯", terms: ["mushroom", "mushrooms", "버섯", "fungi"] },
   { label: "분말/가루", terms: ["powder", "powders", "분말", "가루"] },
   { label: "식품/섭취", terms: ["food", "식품", "섭취", "보충제", "supplement"] },
-  { label: "화장품", terms: ["cosmetic", "화장", "피부", "입술", "크림"] },
+  { label: "화장품", terms: ["cosmetic", "화장품", "화장", "피부", "입술", "크림", "핸드크림", "hand cream", "handcream", "moisturizer", "moisturiser", "lotion", "skin care"] },
   { label: "전기/전자", terms: ["electronic", "device", "전기", "전자", "장치", "센서", "모듈"] },
   { label: "배터리", terms: ["battery", "리튬", "배터리", "전지", "축전지"] },
   { label: "굴착 장비", terms: ["excavator", "excavators", "excavation", "excavating", "굴삭기", "굴착기", "backhoe", "digger"] },

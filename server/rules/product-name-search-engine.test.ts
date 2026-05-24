@@ -81,4 +81,18 @@ describe("product-name-search-engine", () => {
     expect(analysis.terms).toContain("laser belt");
     expect(scored[0]?.hint.hskCode).toBe("9019102000");
   });
+
+  it("treats brand plus generic cosmetic names as skin-care context, not food cream context", () => {
+    const analysis = analyzeProductNameInput({
+      productName: "graceday hand cream",
+      basisDate: "2026-05-24"
+    });
+    const scored = productCandidateHints
+      .map((hint) => ({ hint, score: scoreProductHint(analysis, hint).score }))
+      .sort((a, b) => b.score - a.score);
+
+    expect(analysis.conceptLabels).toContain("화장품");
+    expect(analysis.terms).toEqual(expect.arrayContaining(["hand cream", "skin care", "cosmetic"]));
+    expect(scored[0]?.hint.hskCode).toBe("3304991000");
+  });
 });

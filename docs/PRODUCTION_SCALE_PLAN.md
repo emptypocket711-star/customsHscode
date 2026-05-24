@@ -108,7 +108,8 @@ Implemented AI cache:
 - Raw product text, invoice text, model descriptions, and contact-like values must not appear in cache keys.
 - Product-name GPT normalization uses `OPENAI_PRODUCT_SEARCH_TIMEOUT_MS` so slow AI calls can fall back quickly without blocking the whole lookup page.
 - Product clarification uses `OPENAI_CLARIFICATION_TIMEOUT_MS` and falls back to deterministic guidance when the AI explanation is slow.
-- Public data API calls use `PUBLIC_DATA_REQUEST_TIMEOUT_MS`, and request-time customs HS product-search fallback uses the shorter `CUSTOMS_API_PRODUCT_SEARCH_TIMEOUT_MS`.
+- Public data API calls use `PUBLIC_DATA_REQUEST_TIMEOUT_MS`.
+- Do not enable live Customs API018 product-name fallback in production. Keep `CUSTOMS_API_PRODUCT_SEARCH_LIVE_ENABLED=false`, collect API018 rows into `customs_hs_code_search_items` on a scheduled basis, and query only reviewed/published stored rows during customer lookup.
 - Set `LOOKUP_CACHE_DEBUG=true` only in server logs when debugging cache behavior. Logs record cache event and namespace only, never the raw query key.
 
 ## Queue Policy
