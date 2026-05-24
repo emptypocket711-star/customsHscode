@@ -22,7 +22,7 @@ function expectPublishedEffectiveFilter(source: string, tableName: string) {
 
 describe("lookup governance guards", () => {
   it("keeps dashboard legal-data counts basis-date scoped", () => {
-    const source = read("app/(app)/dashboard/page.tsx");
+    const source = read("server/rules/dashboard-metrics.service.ts");
 
     for (const tableName of ["hs_master", "standard_product_names", "tariff_rates", "customs_statistical_codes"]) {
       expectPublishedEffectiveFilter(source, tableName);

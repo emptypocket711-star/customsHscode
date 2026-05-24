@@ -2,8 +2,10 @@ import { AlertTriangle, CheckCircle2, Clock, FileWarning } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { SourceFooter } from "@/components/ui/source-footer";
+import { DestinationCoverageTable } from "@/features/dashboard/destination-coverage-table";
 import { CustomsApiConnectorPanel } from "@/features/legal-updates/customs-api-connector-panel";
 import { SourcePublishPanel } from "@/features/legal-updates/source-publish-panel";
+import { loadDestinationCoverage } from "@/server/rules/dashboard-metrics.service";
 import { getLegalUpdateDashboard } from "@/server/rules/legal-update.service";
 import { getSourceVersionInventory, type SourceVersionInventoryDiagnosticSeverity } from "@/server/rules/source-inventory.service";
 
@@ -79,12 +81,26 @@ const updateRunbook = [
 
 export async function LegalUpdateCenter() {
   const dashboard = getLegalUpdateDashboard();
-  const inventory = await getSourceVersionInventory();
+  const [inventory, destinationCoverageRows] = await Promise.all([
+    getSourceVersionInventory(),
+    loadDestinationCoverage()
+  ]);
 
   return (
     <div className="grid gap-5">
       <CustomsApiConnectorPanel />
       <SourcePublishPanel />
+
+      <Card>
+        <CardHeader
+          title="목적국 데이터 커버리지"
+          description="수출 목적국 조회에 사용되는 관세율, 내국세, 수입요건, 추가관세 적재 현황입니다."
+          action={<Badge tone="info">coverage</Badge>}
+        />
+        <CardBody>
+          <DestinationCoverageTable rows={destinationCoverageRows} />
+        </CardBody>
+      </Card>
 
       <Card>
         <CardHeader

@@ -3,13 +3,6 @@ import { mockHsMasterRecords, mockStandardProductNames } from "@/features/hs/moc
 import type { ProductHsRecommendationInput } from "@/features/hs/schemas";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import {
-  buildCustomsHsCodeQuery,
-  fetchCustomsOpenApiSnapshot,
-  hasCustomsOpenApiEnv,
-  parseCustomsHsCodeSearchXml
-} from "@/server/integrations/customs/customs-api";
-import type { InternalTaxLawRuleRecord } from "@/server/repositories/customs-statistical-code.repository";
-import {
   augmentProductInputWithAiTerms,
   extractHsCodeHintsFromProductInput,
   normalizeProductSearchInput
@@ -21,7 +14,6 @@ import {
   productCandidateHints,
   productSearchTerms,
   scoreProductHint,
-  scoreStandardName as scoreProductStandardName,
   scoreStandardNameWithTerms,
   type ProductNameSearchAnalysis
 } from "@/server/rules/product-name-search-engine";
@@ -44,16 +36,6 @@ export type HsCandidateRecommendation = {
   effectiveFrom: string;
   effectiveTo: string | null;
   basisDate: string;
-};
-
-type StandardNameSearchRow = {
-  hsk_code: string;
-  standard_name_kr: string;
-  required_spec_kr: string | null;
-  detailed_classification: string | null;
-  source_name: string;
-  source_url: string;
-  source_version: string;
 };
 
 type HsMasterSearchRow = {
@@ -82,12 +64,6 @@ type CustomsHsCodeSearchRow = {
   source_version: string;
   effective_from: string;
   effective_to: string | null;
-};
-
-type InternalTaxLawHsCandidate = {
-  rule: InternalTaxLawRuleRecord;
-  hsRecord: HsMasterSearchRow;
-  keywordMatches: string[];
 };
 
 type NormalizedProductSearch = {
@@ -148,76 +124,6 @@ function ambiguousRuleForProductName(productName: string) {
 
 function isEffective(record: { effective_from: string; effective_to: string | null; status: string }, basisDate: string) {
   return record.status === "published" && record.effective_from <= basisDate && (!record.effective_to || record.effective_to >= basisDate);
-}
-
-function matchingInternalTaxRuleKeywords(rule: InternalTaxLawRuleRecord, terms: string[], rawText: string) {
-  const compactText = rawText.replace(/\s+/g, "");
-
-  return rule.keyword_terms.filter((keyword) => {
-    const normalizedKeyword = keyword.toLowerCase();
-    const compactKeyword = normalizedKeyword.replace(/\s+/g, "");
-    return terms.includes(normalizedKeyword) || rawText.includes(normalizedKeyword) || compactText.includes(compactKeyword);
-  });
-}
-
-function uniqueRowsByHsk(rows: StandardNameSearchRow[], analysis: ProductNameSearchAnalysis) {
-  const best = new Map<string, { row: StandardNameSearchRow; score: number; breakdown: string[]; matchedTerms: string[] }>();
-
-  for (const row of rows) {
-    const { score, breakdown, matchedTerms } = scoreProductStandardName(row, analysis);
-    if (score <= 0) continue;
-    const current = best.get(row.hsk_code);
-    if (!current || score > current.score) {
-      best.set(row.hsk_code, { row, score, breakdown, matchedTerms });
-    }
-  }
-
-  return [...best.values()].sort((a, b) => {
-    if (b.score !== a.score) return b.score - a.score;
-    return a.row.hsk_code.localeCompare(b.row.hsk_code);
-  });
-}
-
-function usefulProductSearchTerms(terms: string[], limit = 8) {
-  return Array.from(new Set(terms
-    .map((term) => term.trim().toLowerCase())
-    .filter((term) => term.length >= 3)
-    .filter((term) => !hsMasterWeakTerms.has(term))
-  )).slice(0, limit);
-}
-
-async function findStandardNameRows(
-  supabase: SupabaseClient,
-  input: ProductHsRecommendationInput,
-  terms: string[]
-) {
-  const usefulTerms = usefulProductSearchTerms(terms);
-  const rows = await Promise.all(usefulTerms.flatMap((term) => [
-    supabase
-      .from("standard_product_names")
-      .select("hsk_code, standard_name_kr, required_spec_kr, detailed_classification, source_name, source_url, source_version")
-      .ilike("standard_name_kr", `%${term}%`)
-      .lte("effective_from", input.basisDate)
-      .or(`effective_to.is.null,effective_to.gte.${input.basisDate}`)
-      .eq("status", "published")
-      .limit(25),
-    supabase
-      .from("standard_product_names")
-      .select("hsk_code, standard_name_kr, required_spec_kr, detailed_classification, source_name, source_url, source_version")
-      .ilike("required_spec_kr", `%${term}%`)
-      .lte("effective_from", input.basisDate)
-      .or(`effective_to.is.null,effective_to.gte.${input.basisDate}`)
-      .eq("status", "published")
-      .limit(25)
-  ]));
-
-  const collected: StandardNameSearchRow[] = [];
-  for (const row of rows) {
-    if (row.error) throw new Error(row.error.message);
-    collected.push(...((row.data ?? []) as StandardNameSearchRow[]));
-  }
-
-  return collected;
 }
 
 const hsMasterWeakTerms = new Set([
@@ -488,33 +394,6 @@ function filterContextConflictingCandidates(
   return filtered.length ? filtered.map((candidate, index) => ({ ...candidate, rank: index + 1 })) : candidates;
 }
 
-async function findHsMasterRowsByTerms(
-  supabase: SupabaseClient,
-  input: ProductHsRecommendationInput,
-  terms: string[]
-) {
-  const usefulTerms = usefulProductSearchTerms(terms, 12);
-  const rows = await Promise.all(usefulTerms.map((term) =>
-    supabase
-      .from("hs_master")
-      .select("hsk_code, hs6, korean_name, english_name, source_name, source_url, source_version, effective_from, effective_to")
-      .or(`korean_name.ilike.%${term}%,english_name.ilike.%${term}%`)
-      .lte("effective_from", input.basisDate)
-      .or(`effective_to.is.null,effective_to.gte.${input.basisDate}`)
-      .eq("status", "published")
-      .order("hsk_code")
-      .limit(30)
-  ));
-
-  const collected: HsMasterSearchRow[] = [];
-  for (const row of rows) {
-    if (row.error) throw new Error(row.error.message);
-    collected.push(...((row.data ?? []) as HsMasterSearchRow[]));
-  }
-
-  return collected;
-}
-
 async function findHsMasterRowsByCodeHints(
   supabase: SupabaseClient,
   input: ProductHsRecommendationInput,
@@ -543,33 +422,6 @@ async function findHsMasterRowsByCodeHints(
 
     if (error) throw new Error(error.message);
     collected.push(...((data ?? []) as HsMasterSearchRow[]));
-  }
-
-  return collected;
-}
-
-async function findStoredCustomsHsCodeSearchRowsByTerms(
-  supabase: SupabaseClient,
-  input: ProductHsRecommendationInput,
-  terms: string[]
-) {
-  const usefulTerms = usefulProductSearchTerms(terms, 10);
-  const rows = await Promise.all(usefulTerms.map((term) =>
-    supabase
-      .from("customs_hs_code_search_items")
-      .select("hsk_code, hs6, korean_name, english_name, quantity_unit, weight_unit, rate_text, rate_type_code, source_name, source_url, source_version, effective_from, effective_to")
-      .or(`korean_name.ilike.%${term}%,english_name.ilike.%${term}%`)
-      .lte("effective_from", input.basisDate)
-      .or(`effective_to.is.null,effective_to.gte.${input.basisDate}`)
-      .eq("status", "published")
-      .order("hsk_code")
-      .limit(30)
-  ));
-
-  const collected: CustomsHsCodeSearchRow[] = [];
-  for (const row of rows) {
-    if (row.error) throw new Error(row.error.message);
-    collected.push(...((row.data ?? []) as CustomsHsCodeSearchRow[]));
   }
 
   return collected;
@@ -619,45 +471,6 @@ function mapStoredCustomsHsCodeSearchRowsToCandidates(
       effectiveTo: row.effective_to,
       basisDate: input.basisDate
     }));
-}
-
-async function recommendHsCandidatesFromStoredCustomsHsCodeSearch(
-  supabase: SupabaseClient,
-  input: ProductHsRecommendationInput,
-  normalization: AiProductSearchNormalizationResult | null
-) {
-  const analysis = analyzeProductNameInput(input);
-  const terms = hsMasterSearchTerms(analysis, normalization);
-  if (!terms.length) return [];
-  const rows = await findStoredCustomsHsCodeSearchRowsByTerms(supabase, input, terms);
-  return mapStoredCustomsHsCodeSearchRowsToCandidates(input, rows, terms);
-}
-
-function mockHsMasterRowsByTerms(
-  input: ProductHsRecommendationInput,
-  terms: string[]
-): HsMasterSearchRow[] {
-  const rows: HsMasterSearchRow[] = [];
-
-  for (const term of terms) {
-    const normalizedTerm = term.toLowerCase();
-    rows.push(...mockHsMasterRecords
-      .filter((record) => isEffective(record, input.basisDate))
-      .filter((record) => `${record.korean_name} ${record.english_name ?? ""}`.toLowerCase().includes(normalizedTerm))
-      .map((record) => ({
-        hsk_code: record.hsk_code,
-        hs6: record.hs6,
-        korean_name: record.korean_name,
-        english_name: record.english_name,
-        source_name: record.source_name,
-        source_url: record.source_url,
-        source_version: record.source_version,
-        effective_from: record.effective_from,
-        effective_to: record.effective_to
-      })));
-  }
-
-  return rows;
 }
 
 function mockHsMasterRowsByCodeHints(
@@ -831,150 +644,6 @@ async function recommendHsCandidatesFromOfficialHsMasterSearch(
   const terms = hsMasterSearchTerms(analysis, normalization);
   const codeHintRows = await findHsMasterRowsByCodeHints(supabase, input, normalization.candidateHsCodes);
   return rankOfficialHsMasterRows(input, normalization, terms, [], codeHintRows);
-}
-
-async function recommendHsCandidatesFromSupabase(
-  supabase: SupabaseClient,
-  input: ProductHsRecommendationInput
-): Promise<HsCandidateRecommendation[]> {
-  const analysis = analyzeProductNameInput(input);
-  const terms = analysis.terms;
-  if (!terms.length) return [];
-
-  const standardRows = await findStandardNameRows(supabase, input, terms);
-  const rankedStandardRows = uniqueRowsByHsk(standardRows, analysis).slice(0, 5);
-  const hskCodes = rankedStandardRows.map((item) => item.row.hsk_code);
-  if (!hskCodes.length) return [];
-
-  const { data: hsRows, error: hsError } = await supabase
-    .from("hs_master")
-    .select("hsk_code, hs6, korean_name, english_name, source_name, source_url, source_version, effective_from, effective_to")
-    .in("hsk_code", hskCodes)
-    .lte("effective_from", input.basisDate)
-    .or(`effective_to.is.null,effective_to.gte.${input.basisDate}`)
-    .eq("status", "published");
-
-  if (hsError) throw new Error(hsError.message);
-
-  const hsByCode = new Map(((hsRows ?? []) as HsMasterSearchRow[]).map((row) => [row.hsk_code, row]));
-
-  return rankedStandardRows
-    .map((item, index): HsCandidateRecommendation | null => {
-      const hsRecord = hsByCode.get(item.row.hsk_code);
-      if (!hsRecord) return null;
-      const confidenceScore = Math.max(0.38, Math.min(0.74, 0.44 + item.score * 0.08 - index * 0.03));
-
-      return {
-        hskCode: hsRecord.hsk_code,
-        hs6: hsRecord.hs6,
-        rank: index + 1,
-        confidenceScore,
-        koreanName: hsRecord.korean_name,
-        reason: "입력 품명으로 조회 가능한 HS CODE 후보입니다. 실제 품목의 기능, 재질, 구성, 용도에 따라 하위 세번이 달라질 수 있습니다.",
-        requiredQuestions: [
-          item.row.required_spec_kr ? `필수규격: ${item.row.required_spec_kr}` : "필수규격 자료 없음",
-          item.row.detailed_classification ? `세부분류: ${item.row.detailed_classification}` : "세부분류 기준 없음",
-          "카탈로그, 성분/재질, 용도, 모델별 사양서"
-        ],
-        riskNotes: "HSK 확정이 아니며 품목분류 경합과 요건 영향 확인 필요",
-        scoreBreakdown: item.breakdown,
-        lookupBasis: "official_name_match" as const,
-        reviewStatus: "suggested" as const,
-        sourceName: item.row.source_name || hsRecord.source_name,
-        sourceUrl: item.row.source_url || hsRecord.source_url,
-        sourceVersion: item.row.source_version || hsRecord.source_version,
-        effectiveFrom: hsRecord.effective_from,
-        effectiveTo: hsRecord.effective_to,
-        basisDate: input.basisDate
-      };
-    })
-    .filter((item): item is HsCandidateRecommendation => Boolean(item));
-}
-
-async function recommendHsCandidatesFromInternalTaxRules(
-  supabase: SupabaseClient,
-  input: ProductHsRecommendationInput
-): Promise<HsCandidateRecommendation[]> {
-  const analysis = analyzeProductNameInput(input);
-  const terms = analysis.terms;
-  const rawText = analysis.rawText;
-  if (!terms.length) return [];
-
-  const { data: ruleRows, error: ruleError } = await supabase
-    .from("internal_tax_law_rules")
-    .select("tax_type, tax_name, law_name, article_ref, rule_type, hsk_pattern, keyword_terms, rate_text, rate_formula, condition_text, source_name, source_url, source_version")
-    .not("hsk_pattern", "is", null)
-    .lte("effective_from", input.basisDate)
-    .or(`effective_to.is.null,effective_to.gte.${input.basisDate}`)
-    .eq("status", "published")
-    .limit(50);
-
-  if (ruleError) throw new Error(ruleError.message);
-
-  const matchedRules = ((ruleRows ?? []) as InternalTaxLawRuleRecord[])
-    .map((rule) => ({
-      rule,
-      keywordMatches: matchingInternalTaxRuleKeywords(rule, terms, rawText)
-    }))
-    .filter((item) => item.keywordMatches.length > 0);
-
-  if (!matchedRules.length) return [];
-
-  const candidateRows: InternalTaxLawHsCandidate[] = [];
-
-  for (const item of matchedRules) {
-    const pattern = item.rule.hsk_pattern?.replace(/[^0-9]/g, "");
-    if (!pattern) continue;
-
-    const { data: hsRows, error: hsError } = await supabase
-      .from("hs_master")
-      .select("hsk_code, hs6, korean_name, english_name, source_name, source_url, source_version, effective_from, effective_to")
-      .like("hsk_code", `${pattern}%`)
-      .lte("effective_from", input.basisDate)
-      .or(`effective_to.is.null,effective_to.gte.${input.basisDate}`)
-      .eq("status", "published")
-      .order("hsk_code")
-      .limit(item.rule.rule_type === "hs4" ? 8 : 5);
-
-    if (hsError) throw new Error(hsError.message);
-
-    candidateRows.push(...((hsRows ?? []) as HsMasterSearchRow[]).map((hsRecord) => ({
-      rule: item.rule,
-      hsRecord,
-      keywordMatches: item.keywordMatches
-    })));
-  }
-
-  return candidateRows
-    .sort((a, b) => {
-      const exactKeywordDiff = Number(b.hsRecord.korean_name.includes(input.productName)) - Number(a.hsRecord.korean_name.includes(input.productName));
-      if (exactKeywordDiff !== 0) return exactKeywordDiff;
-      return a.hsRecord.hsk_code.localeCompare(b.hsRecord.hsk_code);
-    })
-    .slice(0, 5)
-    .map((item, index) => ({
-      hskCode: item.hsRecord.hsk_code,
-      hs6: item.hsRecord.hs6,
-      rank: index + 1,
-      confidenceScore: Math.max(0.42, 0.64 - index * 0.04),
-      koreanName: item.hsRecord.korean_name,
-      reason: "내국세 법령상 과세대상 후보와 연결될 수 있는 HS CODE입니다. 실제 성분, 용도, 용량, 가격 기준 확인이 필요합니다.",
-      requiredQuestions: [
-        item.rule.condition_text ?? "내국세 법령상 과세대상 조건 확인",
-        item.rule.rate_text ? `내국세율 단서: ${item.rule.rate_text}` : "세율 자료 확인 필요",
-        "성분, 용도, 용량, 가격 기준 확인"
-      ],
-      riskNotes: "내국세 법령 기반 후보이므로 HS 확정용이 아니라 과세대상 가능성 보조 단서입니다.",
-      scoreBreakdown: item.keywordMatches.map((term) => `내국세 법령 단서 ${term}`),
-      lookupBasis: "internal_tax_rule",
-      reviewStatus: "suggested" as const,
-      sourceName: item.rule.source_name,
-      sourceUrl: item.rule.source_url ?? item.hsRecord.source_url,
-      sourceVersion: item.rule.source_version,
-      effectiveFrom: item.hsRecord.effective_from,
-      effectiveTo: item.hsRecord.effective_to,
-      basisDate: input.basisDate
-    }));
 }
 
 function mergeRecommendations(candidates: HsCandidateRecommendation[]) {
@@ -1172,48 +841,6 @@ function recommendHsCandidatesFromUserCodeHints(input: ProductHsRecommendationIn
   }));
 }
 
-async function recommendHsCandidatesFromCustomsHsSearch(input: ProductHsRecommendationInput): Promise<HsCandidateRecommendation[]> {
-  if (process.env.CUSTOMS_API_PRODUCT_SEARCH_LIVE_ENABLED !== "true") return [];
-  if (!hasCustomsOpenApiEnv("hs_code")) return [];
-
-  const snapshot = await fetchCustomsOpenApiSnapshot("hs_code", buildCustomsHsCodeQuery({
-    productName: input.productName,
-    language: "ko"
-  }), { timeoutMs: Number(process.env.CUSTOMS_API_PRODUCT_SEARCH_TIMEOUT_MS || 2500) });
-  const rows = parseCustomsHsCodeSearchXml(snapshot.rawText).slice(0, 20);
-  const unique = new Map<string, (typeof rows)[number]>();
-
-  for (const row of rows) {
-    if (row.hskCode && !unique.has(row.hskCode)) {
-      unique.set(row.hskCode, row);
-    }
-  }
-
-  return [...unique.values()].slice(0, 5).map((row, index) => ({
-    hskCode: row.hskCode,
-    hs6: row.hskCode.slice(0, 6),
-    rank: index + 1,
-    confidenceScore: Math.max(0.32, 0.58 - index * 0.04),
-    koreanName: row.koreanName || row.englishName || row.hskCode,
-    reason: "관세청 HS부호검색에서 조회된 HS CODE 후보입니다. 실제 재질·용도·성분 확인 후 하위 세번 검토가 필요합니다.",
-    requiredQuestions: [
-      "품명 검색 결과이므로 실제 재질·용도·성분 확인 필요",
-      row.quantityUnit || row.weightUnit ? `단위: 수량 ${row.quantityUnit || "-"} / 중량 ${row.weightUnit || "-"}` : "수량·중량 단위 확인 필요",
-      "카탈로그, 성분/재질, 용도, 모델별 사양서"
-    ],
-    riskNotes: "관세청 HS부호검색 결과는 품목분류 확정이 아니며 하위 세번 경합 확인 필요",
-    scoreBreakdown: ["관세청 HS부호검색 API 후보"],
-    lookupBasis: "customs_api",
-    reviewStatus: "suggested",
-    sourceName: snapshot.sourceName,
-    sourceUrl: snapshot.sourceUrl,
-    sourceVersion: snapshot.sourceVersion,
-    effectiveFrom: input.basisDate,
-    effectiveTo: null,
-    basisDate: input.basisDate
-  }));
-}
-
 export function recommendHsCandidates(input: ProductHsRecommendationInput): HsCandidateRecommendation[] {
   const analysis = analyzeProductNameInput(input);
   const userCodeHintCandidates = recommendHsCandidatesFromUserCodeHints(input);
@@ -1332,7 +959,6 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
 export const hsCandidateServiceInternals = {
   searchTerms: productSearchTerms,
   scoreStandardName: scoreStandardNameWithTerms,
-  uniqueRowsByHsk,
   mapStoredCustomsHsCodeSearchRowsToCandidates,
   recommendAiHsCodeHintCandidates,
   pruneWeakProductRecommendations,
