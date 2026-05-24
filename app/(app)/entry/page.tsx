@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { ArrowRight, FileUp, Globe2, Search } from "lucide-react";
+import { ArrowRight, Calculator, Globe2, Search } from "lucide-react";
 import { PageHeading } from "@/components/page-heading";
 import { Card, CardBody } from "@/components/ui/card";
 
 const entries = [
   { href: "/hs/direct", title: "통합 조회", description: "HS CODE 또는 품명으로 품목번호, 관세율, 수입요건", icon: Search },
   { href: "/diagnosis/export", title: "수출·상대국 세율", description: "목적국 관세율, FTA C/O, 수출요건", icon: Globe2 },
-  { href: "/documents/upload", title: "선적서류 조회", description: "Commercial Invoice, Packing List, B/L, C/O", icon: FileUp }
+  { href: "/duty-estimator", title: "예상 납세액 계산", description: "물품가격, 환율, 관세율, 내국세 기준 납세액", icon: Calculator }
 ];
 
 export default function EntryPage() {

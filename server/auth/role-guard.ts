@@ -67,7 +67,7 @@ export async function requireDeveloperRole(): Promise<RoleGuardResult> {
   }
 
   const role = String(data.role) as AppRole;
-  if (role === "developer" || role === "admin" || role === "customs_staff") {
+  if (role === "developer") {
     return {
       allowed: true,
       mode: "supabase",
@@ -80,7 +80,7 @@ export async function requireDeveloperRole(): Promise<RoleGuardResult> {
     allowed: false,
     mode: "supabase",
     role: "client",
-    message: "개발자 권한 프로필이 필요합니다."
+    message: "운영 화면은 지정된 개발자 권한 프로필만 접근할 수 있습니다."
   };
 }
 

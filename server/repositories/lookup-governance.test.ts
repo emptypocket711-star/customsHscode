@@ -90,4 +90,14 @@ describe("lookup governance guards", () => {
       expect(migrations, `${tableName} must enable row level security`).toContain(`alter table public.${tableName} enable row level security`);
     }
   });
+
+  it("keeps operations RPCs restricted to the single developer role", () => {
+    const roleGuard = read("server/auth/role-guard.ts");
+    const strictMigration = read("supabase/migrations/20260525002200_developer_only_operations_strict.sql");
+
+    expect(roleGuard).toContain('role === "developer"');
+    expect(roleGuard).not.toContain('role === "admin" || role === "customs_staff"');
+    expect(strictMigration).toContain("actor_role <> 'developer'::public.user_role");
+    expect(strictMigration).toContain("emptypocket711@gmail.com");
+  });
 });

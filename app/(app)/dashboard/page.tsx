@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Calculator, FileSearch, Search, Upload } from "lucide-react";
+import { ArrowRight, Calculator, FileSearch, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { PageHeading } from "@/components/page-heading";
@@ -10,8 +10,7 @@ import { loadDashboardStats } from "@/server/rules/dashboard-metrics.service";
 
 const workflows = [
   { href: "/hs/direct", title: "통합 조회", icon: FileSearch, note: "HS CODE 또는 품명으로 품목번호, 관세율, 수입요건, 수출상대국 관세율 확인" },
-  { href: "/duty-estimator", title: "예상 납세액 계산", icon: Calculator, note: "물품가격, 환율, 관세율, 내국세율을 입력해 관세·부가세 계산" },
-  { href: "/documents/upload", title: "선적서류 조회", icon: Upload, note: "CI/PL/B/L에서 품목 정보 추출" }
+  { href: "/duty-estimator", title: "예상 납세액 계산", icon: Calculator, note: "물품가격, 환율, 관세율, 내국세율을 입력해 관세·부가세 계산" }
 ];
 
 export default async function DashboardPage() {
