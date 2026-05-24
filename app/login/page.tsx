@@ -20,7 +20,7 @@ export default async function LoginPage() {
   const user = await getCurrentUser();
 
   if (user) {
-    redirect("/documents/upload");
+    redirect("/dashboard");
   }
 
   return (
@@ -29,7 +29,7 @@ export default async function LoginPage() {
         <div className="text-center">
           <h1 className="text-2xl font-semibold text-slate-950">통관이음 AI</h1>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            선적서류 업로드와 회사별 검토 이력 저장을 위해 로그인해 주세요.
+            HS CODE 조회와 회사별 검토 이력 저장을 위해 로그인 또는 회원가입을 진행해 주세요.
           </p>
         </div>
       </div>

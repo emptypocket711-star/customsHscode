@@ -75,7 +75,7 @@ export async function authenticateAction(
     if (data.session) {
       await ensureClientProfile(parsed.data.companyName, parsed.data.fullName);
       revalidatePath("/", "layout");
-      redirect("/documents/upload");
+      redirect("/dashboard");
     }
 
     return {
@@ -100,7 +100,7 @@ export async function authenticateAction(
 
   await ensureClientProfile(undefined, parsed.data.fullName);
   revalidatePath("/", "layout");
-  redirect("/documents/upload");
+  redirect("/dashboard");
 }
 
 export async function signOutAction() {
