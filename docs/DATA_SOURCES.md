@@ -80,6 +80,14 @@ Customs MYC OpenAPI notes from `MYC_OpenAPI 연계가이드_v3.9`:
 - request parameter: `hsSgn`
 - response fields include `hs10Sgn`, `prlstNm`, `acrsTcntRnk`, and `prlstLnCnt`
 - Despite the service name, API043 is not an HS hierarchy/tree source and not an internal-tax mapping source. It provides ranked declaration item-name statistics for an HS10 query and can be used to improve product-name suggestions or examples.
+- API018 `HS부호검색`
+- service name: `searchHsSgn`
+- URL: `https://unipass.customs.go.kr:38010/ext/rest/hsSgnQry/searchHsSgn`
+- auth parameter: `crkyCn`
+- request parameters: `hsSgn` HSK code, `prnm` product name, `koenTp` where `1` is Korean and `2` is English
+- response fields include `hsSgn`, `korePrnm`, `englPrnm`, `qtyUt`, `wghtUt`, `txrt`, and `txtpSgn`
+- Do not call API018 from every customer lookup. Collect API018 rows on a scheduled basis, store them in `customs_hs_code_search_items`, and query our database during product-name recommendation.
+- Deduplicate API018 rows by `hsk_code + korean_name + english_name + source_version`. Re-running the same monthly source version must update row metadata instead of creating duplicate lookup candidates.
 - API012 `관세환율 정보`
 - service name: `retrieveTrifFxrtInfo`
 - URL: `https://unipass.customs.go.kr:38010/ext/rest/trifFxrtInfoQry/retrieveTrifFxrtInfo`
@@ -116,11 +124,21 @@ CUSTOMS_API_STATS_CODE_SERVICE_KEY=... python3 scripts/generate_customs_statisti
   --output supabase/seed/generated/customs_statistical_codes_api019_seed.sql
 ```
 
+Generate staged API018 HS-code-search rows with:
+
+```bash
+CUSTOMS_API_HS_CODE_SERVICE_KEY=... python3 scripts/generate_customs_hs_code_search_seed.py \
+  --hsk-prefix 3304 \
+  --output supabase/seed/generated/customs_hs_code_search_api018_seed.sql
+```
+
 API019 is a code-table source. It does not by itself map every HSK to final internal taxes. Use it as source data for internal-tax rule tables and calculation workflows.
 
 API043 is a trade-statistics/navigation source. In local smoke checks, full HSK10 queries such as `4202290000` return ranked item-name rows, while broad wildcard patterns may return no rows depending on the query.
 
 API012 is an exchange-rate source for future expected duty and internal-tax calculations. It is not enough to calculate final import taxes by itself; the calculator also needs tariff rows, customs value inputs, currency selection, and HSK-to-internal-tax mapping rules.
+
+API018 is a lookup-support source. It can improve HS candidate recall for short or English product-name searches, but it is not a classification decision source. Store it as `staged`, publish reviewed source versions, and keep AI/user-facing language provisional.
 
 For focused development, generate one HSK range first:
 

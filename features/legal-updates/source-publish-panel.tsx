@@ -23,6 +23,12 @@ const sourcePresets = [
     prefix: false
   },
   {
+    label: "관세청 HS부호검색 API018",
+    targetTable: "customs_hs_code_search_items",
+    sourceVersion: "myc-openapi-api018-v1.0",
+    prefix: true
+  },
+  {
     label: "관세청 품목번호별 관세율표 20260211",
     targetTable: "tariff_rates",
     sourceVersion: "customs-domestic-tariff-20260211",
@@ -121,6 +127,7 @@ export function SourcePublishPanel() {
               <select className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2" disabled={pending} name="targetTable" defaultValue="hs_master">
                 <option value="hs_master">hs_master</option>
                 <option value="standard_product_names">standard_product_names</option>
+                <option value="customs_hs_code_search_items">customs_hs_code_search_items</option>
                 <option value="tariff_rates">tariff_rates</option>
                 <option value="export_destination_tariff_rates">export_destination_tariff_rates</option>
                 <option value="customs_confirmation_requirements">customs_confirmation_requirements</option>

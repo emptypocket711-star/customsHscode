@@ -132,6 +132,54 @@ describe("recommendHsCandidates", () => {
     expect(candidates[0]?.requiredQuestions.join(" ")).toContain("복사");
   });
 
+  it("maps stored Customs API018 rows as provisional product candidates", () => {
+    const candidates = hsCandidateServiceInternals.mapStoredCustomsHsCodeSearchRowsToCandidates(
+      {
+        productName: "printer black and white",
+        basisDate: "2026-05-21"
+      },
+      [
+        {
+          hsk_code: "8443321010",
+          hs6: "844332",
+          korean_name: "프린터",
+          english_name: "Printer capable of connecting to an automatic data processing machine",
+          quantity_unit: "NO",
+          weight_unit: "KG",
+          rate_text: "0",
+          rate_type_code: "C",
+          source_name: "관세청 HS부호검색",
+          source_url: "https://unipass.customs.go.kr/...crkyCn=%5Bredacted%5D",
+          source_version: "myc-openapi-api018-v1.0:2026-05",
+          effective_from: "2026-01-01",
+          effective_to: null
+        },
+        {
+          hsk_code: "8708303000",
+          hs6: "870830",
+          korean_name: "제동장치",
+          english_name: "Brakes",
+          quantity_unit: null,
+          weight_unit: null,
+          rate_text: null,
+          rate_type_code: null,
+          source_name: "관세청 HS부호검색",
+          source_url: "https://unipass.customs.go.kr/...crkyCn=%5Bredacted%5D",
+          source_version: "myc-openapi-api018-v1.0:2026-05",
+          effective_from: "2026-01-01",
+          effective_to: null
+        }
+      ],
+      ["printer", "프린터"]
+    );
+
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]?.hskCode).toBe("8443321010");
+    expect(candidates[0]?.lookupBasis).toBe("customs_api");
+    expect(candidates[0]?.reason).toContain("저장본");
+    expect(candidates[0]?.riskNotes).toContain("확정이 아닙니다");
+  });
+
   it("extracts user-provided HS6 or foreign HS code hints from mixed product input", () => {
     expect(extractHsCodeHintsFromText("mushroom powder 071239")).toContain("071239");
     expect(extractHsCodeHintsFromText("품명: massage belt / 해외 HS CODE 9019.10.20")).toEqual(

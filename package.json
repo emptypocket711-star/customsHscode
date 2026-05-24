@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "loadtest:lookup": "node scripts/load_lookup_routes.mjs",
+    "db:generate-api018": "python3 scripts/generate_customs_hs_code_search_seed.py",
     "db:apply-lookup-seeds": "scripts/apply_lookup_seed_bundle.sh"
   },
   "dependencies": {

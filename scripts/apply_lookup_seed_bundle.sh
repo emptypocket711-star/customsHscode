@@ -28,6 +28,9 @@ fi
 
 run_sql_file "$ROOT_DIR/supabase/seed/generated/customs_hs_seed.sql"
 run_sql_file "$ROOT_DIR/supabase/seed/generated/customs_standard_product_seed.sql"
+if [[ "${APPLY_CUSTOMS_HS_CODE_SEARCH:-1}" == "1" && -f "$ROOT_DIR/supabase/seed/generated/customs_hs_code_search_api018_seed.sql" ]]; then
+  run_sql_file "$ROOT_DIR/supabase/seed/generated/customs_hs_code_search_api018_seed.sql"
+fi
 run_sql_file "$ROOT_DIR/supabase/seed/generated/customs_tariff_rates_api030_seed.sql"
 run_sql_file "$ROOT_DIR/supabase/seed/generated/customs_confirmation_requirements_seed.sql"
 run_sql_file "$ROOT_DIR/supabase/seed/generated/export_destination_data_sources_seed.sql"

@@ -68,6 +68,22 @@ type HsMasterSearchRow = {
   effective_to: string | null;
 };
 
+type CustomsHsCodeSearchRow = {
+  hsk_code: string;
+  hs6: string;
+  korean_name: string | null;
+  english_name: string | null;
+  quantity_unit: string | null;
+  weight_unit: string | null;
+  rate_text: string | null;
+  rate_type_code: string | null;
+  source_name: string;
+  source_url: string;
+  source_version: string;
+  effective_from: string;
+  effective_to: string | null;
+};
+
 type InternalTaxLawHsCandidate = {
   rule: InternalTaxLawRuleRecord;
   hsRecord: HsMasterSearchRow;
@@ -367,6 +383,91 @@ async function findHsMasterRowsByCodeHints(
   }
 
   return collected;
+}
+
+async function findStoredCustomsHsCodeSearchRowsByTerms(
+  supabase: SupabaseClient,
+  input: ProductHsRecommendationInput,
+  terms: string[]
+) {
+  const usefulTerms = usefulProductSearchTerms(terms, 10);
+  const rows = await Promise.all(usefulTerms.map((term) =>
+    supabase
+      .from("customs_hs_code_search_items")
+      .select("hsk_code, hs6, korean_name, english_name, quantity_unit, weight_unit, rate_text, rate_type_code, source_name, source_url, source_version, effective_from, effective_to")
+      .or(`korean_name.ilike.%${term}%,english_name.ilike.%${term}%`)
+      .lte("effective_from", input.basisDate)
+      .or(`effective_to.is.null,effective_to.gte.${input.basisDate}`)
+      .eq("status", "published")
+      .order("hsk_code")
+      .limit(30)
+  ));
+
+  const collected: CustomsHsCodeSearchRow[] = [];
+  for (const row of rows) {
+    if (row.error) throw new Error(row.error.message);
+    collected.push(...((row.data ?? []) as CustomsHsCodeSearchRow[]));
+  }
+
+  return collected;
+}
+
+function mapStoredCustomsHsCodeSearchRowsToCandidates(
+  input: ProductHsRecommendationInput,
+  rows: CustomsHsCodeSearchRow[],
+  terms: string[]
+): HsCandidateRecommendation[] {
+  const best = new Map<string, { row: CustomsHsCodeSearchRow; matches: string[]; score: number }>();
+
+  for (const row of rows) {
+    const haystack = `${row.korean_name ?? ""} ${row.english_name ?? ""}`.toLowerCase();
+    const matches = terms.filter((term) => haystack.includes(term));
+    if (!matches.length) continue;
+    const current = best.get(row.hsk_code);
+    const score = matches.length * 2 + (row.korean_name?.includes("기타") || row.english_name?.toLowerCase() === "other" ? -1 : 0);
+    if (!current || score > current.score) {
+      best.set(row.hsk_code, { row, matches, score });
+    }
+  }
+
+  return [...best.values()]
+    .sort((a, b) => b.score - a.score || a.row.hsk_code.localeCompare(b.row.hsk_code))
+    .slice(0, 5)
+    .map(({ row, matches }, index) => ({
+      hskCode: row.hsk_code,
+      hs6: row.hs6,
+      rank: index + 1,
+      confidenceScore: Math.max(0.38, Math.min(0.68, 0.46 + matches.length * 0.06 - index * 0.03)),
+      koreanName: row.korean_name || row.english_name || row.hsk_code,
+      reason: "관세청 HS부호검색 저장본에서 조회된 HS CODE 후보입니다. 실제 제품의 기능, 재질, 구성, 용도에 따라 하위 세번이 달라질 수 있습니다.",
+      requiredQuestions: [
+        "관세청 HS부호검색 저장본 후보이므로 품목분류 확정 전 제품 사양 확인 필요",
+        row.quantity_unit || row.weight_unit ? `단위: 수량 ${row.quantity_unit || "-"} / 중량 ${row.weight_unit || "-"}` : "수량·중량 단위 확인 필요",
+        "카탈로그, 성분/재질, 용도, 모델별 사양서"
+      ],
+      riskNotes: "관세청 HS부호검색 결과는 조회 후보이며 품목분류 확정이 아닙니다.",
+      scoreBreakdown: matches.map((term) => `관세청 HS부호검색 저장본 검색어: ${term}`),
+      lookupBasis: "customs_api",
+      reviewStatus: "suggested" as const,
+      sourceName: row.source_name,
+      sourceUrl: row.source_url,
+      sourceVersion: row.source_version,
+      effectiveFrom: row.effective_from,
+      effectiveTo: row.effective_to,
+      basisDate: input.basisDate
+    }));
+}
+
+async function recommendHsCandidatesFromStoredCustomsHsCodeSearch(
+  supabase: SupabaseClient,
+  input: ProductHsRecommendationInput,
+  normalization: AiProductSearchNormalizationResult | null
+) {
+  const analysis = analyzeProductNameInput(input);
+  const terms = hsMasterSearchTerms(analysis, normalization);
+  if (!terms.length) return [];
+  const rows = await findStoredCustomsHsCodeSearchRowsByTerms(supabase, input, terms);
+  return mapStoredCustomsHsCodeSearchRowsToCandidates(input, rows, terms);
 }
 
 function mockHsMasterRowsByTerms(
@@ -1024,18 +1125,21 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       internalTaxCandidates,
       normalizedOfficialCandidates,
       normalizedInternalTaxCandidates,
-      officialHsMasterCandidates
+      officialHsMasterCandidates,
+      storedCustomsHsCodeSearchCandidates
     ] = await Promise.all([
       recommendHsCandidatesFromSupabase(supabase, input).catch(() => []),
       recommendHsCandidatesFromInternalTaxRules(supabase, input).catch(() => []),
       useAugmented ? recommendHsCandidatesFromSupabase(supabase, augmentedInput).catch(() => []) : Promise.resolve([]),
       useAugmented ? recommendHsCandidatesFromInternalTaxRules(supabase, augmentedInput).catch(() => []) : Promise.resolve([]),
-      normalization ? recommendHsCandidatesFromOfficialHsMasterSearch(supabase, augmentedInput, normalization).catch(() => []) : Promise.resolve([])
+      normalization ? recommendHsCandidatesFromOfficialHsMasterSearch(supabase, augmentedInput, normalization).catch(() => []) : Promise.resolve([]),
+      recommendHsCandidatesFromStoredCustomsHsCodeSearch(supabase, augmentedInput, normalization).catch(() => [])
     ]);
     const nonApiNormalizedCandidates = [
       ...normalizedOfficialCandidates,
       ...normalizedInternalTaxCandidates,
-      ...officialHsMasterCandidates
+      ...officialHsMasterCandidates,
+      ...storedCustomsHsCodeSearchCandidates
     ];
     const normalizedApiCandidates = useAugmented && !nonApiNormalizedCandidates.length
       ? await recommendHsCandidatesFromCustomsHsSearch(augmentedInput).catch(() => [])
@@ -1082,6 +1186,7 @@ export const hsCandidateServiceInternals = {
   searchTerms: productSearchTerms,
   scoreStandardName: scoreStandardNameWithTerms,
   uniqueRowsByHsk,
+  mapStoredCustomsHsCodeSearchRowsToCandidates,
   pruneWeakProductRecommendations,
   ambiguousRuleForProductName,
   analyzeProductNameInput

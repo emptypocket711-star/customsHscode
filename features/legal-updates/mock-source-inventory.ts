@@ -28,6 +28,15 @@ export const mockSourceVersionInventory: SourceVersionInventoryItem[] = [
     latestPublishedAt: null
   },
   {
+    targetTable: "customs_hs_code_search_items",
+    sourceName: "관세청 HS부호검색",
+    sourceVersion: "myc-openapi-api018-v1.0:2026-05",
+    status: "staged",
+    rowCount: 0,
+    latestRetrievedAt: null,
+    latestPublishedAt: null
+  },
+  {
     targetTable: "tariff_rates",
     sourceName: "관세청 품목번호별 관세율표",
     sourceVersion: "customs-domestic-tariff-20260211",

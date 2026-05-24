@@ -135,6 +135,44 @@ CUSTOMS_API_SERVICE_KEY=... python3 scripts/generate_customs_tariff_seed.py \
   --output supabase/seed/generated/customs_tariff_rates_api030_seed.sql
 ```
 
+## Customs HS code search API018 seed
+
+`generate_customs_hs_code_search_seed.py` calls Customs MYC OpenAPI API018
+`searchHsSgn` and writes staged rows for
+`customs_hs_code_search_items`. This stores Customs HS code search results in
+our database, so customer product-name lookup does not need to call API018 in
+real time.
+
+Smoke check one HSK:
+
+```bash
+CUSTOMS_API_HS_CODE_SERVICE_KEY=... python3 scripts/generate_customs_hs_code_search_seed.py \
+  --hsk 8443321010 \
+  --output /tmp/customs_hs_code_search_smoke.sql
+```
+
+Generate one HS heading/subheading range from the official HS master file:
+
+```bash
+CUSTOMS_API_HS_CODE_SERVICE_KEY=... python3 scripts/generate_customs_hs_code_search_seed.py \
+  --hsk-prefix 3304 \
+  --output supabase/seed/generated/customs_hs_code_search_api018_seed.sql
+```
+
+Collect specific product-name queries:
+
+```bash
+CUSTOMS_API_HS_CODE_SERVICE_KEY=... python3 scripts/generate_customs_hs_code_search_seed.py \
+  --query 프린터 \
+  --query 버섯 \
+  --output supabase/seed/generated/customs_hs_code_search_api018_seed.sql
+```
+
+Rows are deduplicated by `hsk_code + korean_name + english_name +
+source_version` in the generated SQL. Re-running the monthly seed updates the
+stored row metadata instead of inserting duplicates. Rows are generated as
+`staged`; publish them through the legal source publish panel after review.
+
 ## Apply lookup seed bundle
 
 `apply_lookup_seed_bundle.sh` applies the generated lookup data needed for the
