@@ -254,6 +254,7 @@ function aiProductSearchNormalizationInstructions() {
     "If the user input already includes an HS/HSK code hint, preserve it as a lookup hint. If it appears to be a foreign import code longer than HS6, include the shared HS6 prefix and do not assume the foreign national suffix equals Korean HSK.",
     "For each candidateHsCodes prefix, include matching Korean or English terms in searchTerms/koreanTerms/englishTerms that are likely to appear in an official HS description for that heading.",
     "candidateHsCodes are lookup hints only. They are not final classifications, and the app will only show candidates that exist in official source data.",
+    "Give higher priority to the product phrase and surrounding context than to isolated ambiguous words. For example, cream alone can be dairy or cosmetic, but hand/moisture/skin cream should produce skin-care cosmetic lookup hints unless food/dairy terms are explicit.",
     "If the input is ambiguous, return several competing HS4/HS6 lookup hints plus missing questions instead of a final conclusion.",
     "When the input includes typos, model numbers, abbreviations, or short trade names, infer likely product families and provide broad lookup hints that can surface candidates from official HS data.",
     "If web search is available and the input appears to be a model number, SKU, catalog number, or product code, use web search to identify the underlying product type before producing search terms.",

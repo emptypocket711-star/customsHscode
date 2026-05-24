@@ -325,6 +325,72 @@ function hasUnrequestedSpecializedContext(row: HsMasterSearchRow, input: Product
   );
 }
 
+const contextConflictRules = [
+  {
+    label: "skin-care-vs-dairy",
+    inputContextTerms: [
+      "cosmetic",
+      "skin care",
+      "skincare",
+      "hand cream",
+      "handcream",
+      "moisture cream",
+      "moisturizing cream",
+      "moisture",
+      "moisturizing",
+      "moisturizer",
+      "moisturiser",
+      "lotion",
+      "화장품",
+      "기초화장",
+      "피부",
+      "보습",
+      "핸드크림",
+      "로션"
+    ],
+    preservingInputTerms: ["milk", "dairy", "edible", "food", "frozen", "cream cheese", "유제품", "우유", "식품", "식용", "냉동"],
+    blockedCandidatePrefixes: ["0401"],
+    blockedCandidateTerms: ["냉동크림", "milk", "dairy"]
+  },
+  {
+    label: "massage-therapy-vs-vehicle-belt",
+    inputContextTerms: ["massage", "massager", "physiotherapy", "therapy", "rehabilitation", "마사지", "안마", "물리치료", "재활치료"],
+    preservingInputTerms: ["vehicle", "automotive", "engine", "timing belt", "fan belt", "차량", "자동차", "엔진", "타이밍벨트"],
+    blockedCandidatePrefixes: ["4010", "8708"],
+    blockedCandidateTerms: ["transmission belt", "conveyor belt", "vehicle", "automotive", "전동용 벨트", "차량", "자동차"]
+  },
+  {
+    label: "food-powder-vs-chemical-powder",
+    inputContextTerms: ["food", "edible", "supplement", "mushroom", "fruit", "vegetable", "식품", "섭취", "보충제", "버섯", "과일", "채소"],
+    preservingInputTerms: ["chemical", "industrial", "pigment", "resin", "paint", "화학", "공업용", "안료", "수지", "도료"],
+    blockedCandidatePrefixes: ["28", "29", "3206", "3901", "3902"],
+    blockedCandidateTerms: ["chemical", "pigment", "resin", "화학", "안료", "수지"]
+  }
+];
+
+function isContextConflictingCandidate(input: ProductHsRecommendationInput, candidate: HsCandidateRecommendation) {
+  const inputText = normalizeProductInputText(input);
+  const candidateText = `${candidate.hskCode} ${candidate.hs6} ${candidate.koreanName}`.toLowerCase();
+
+  return contextConflictRules.some((rule) => {
+    const hasInputContext = rule.inputContextTerms.some((term) => inputText.includes(term));
+    if (!hasInputContext) return false;
+    const hasPreservingInput = rule.preservingInputTerms.some((term) => inputText.includes(term));
+    if (hasPreservingInput) return false;
+
+    return rule.blockedCandidatePrefixes.some((prefix) => candidate.hskCode.startsWith(prefix) || candidate.hs6.startsWith(prefix))
+      || rule.blockedCandidateTerms.some((term) => candidateText.includes(term));
+  });
+}
+
+function filterContextConflictingCandidates(
+  input: ProductHsRecommendationInput,
+  candidates: HsCandidateRecommendation[]
+) {
+  const filtered = candidates.filter((candidate) => !isContextConflictingCandidate(input, candidate));
+  return filtered.length ? filtered.map((candidate, index) => ({ ...candidate, rank: index + 1 })) : candidates;
+}
+
 async function findHsMasterRowsByTerms(
   supabase: SupabaseClient,
   input: ProductHsRecommendationInput,
@@ -659,9 +725,10 @@ async function recommendHsCandidatesFromOfficialHsMasterSearch(
 ): Promise<HsCandidateRecommendation[]> {
   const analysis = analyzeProductNameInput(input);
   const terms = hsMasterSearchTerms(analysis, normalization);
+  const hasCodeHints = Boolean(normalization?.candidateHsCodes.length);
   const [termRows, codeHintRows] = await Promise.all([
-    terms.length ? findHsMasterRowsByTerms(supabase, input, terms) : Promise.resolve([]),
-    normalization?.candidateHsCodes.length ? findHsMasterRowsByCodeHints(supabase, input, normalization.candidateHsCodes) : Promise.resolve([])
+    terms.length && !hasCodeHints ? findHsMasterRowsByTerms(supabase, input, terms) : Promise.resolve([]),
+    hasCodeHints ? findHsMasterRowsByCodeHints(supabase, input, normalization?.candidateHsCodes ?? []) : Promise.resolve([])
   ]);
   return rankOfficialHsMasterRows(input, normalization, terms, termRows, codeHintRows);
 }
@@ -1161,12 +1228,12 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
     const apiCandidates = normalizedCandidates.length || originalCandidates.length
       ? []
       : await recommendHsCandidatesFromCustomsHsSearch(input).catch(() => []);
-    const merged = mergeRecommendations([
+    const merged = filterContextConflictingCandidates(input, mergeRecommendations([
       ...recommendAmbiguousProductCandidates(input),
       ...normalizedCandidates,
       ...originalCandidates,
       ...apiCandidates
-    ]);
+    ]));
     return pruneByUserHsHints(input, pruneWeakProductRecommendations(merged, {
       keepAmbiguousAlternatives: isAmbiguousAcronym
     }));
@@ -1181,13 +1248,14 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       : [];
     const normalizedCandidates = [...mockOfficialCandidates, ...normalizedApiCandidates];
     const originalCandidates = normalizedCandidates.length ? [] : apiCandidates;
-    return pruneByUserHsHints(input, pruneWeakProductRecommendations(mergeRecommendations([
+    const merged = filterContextConflictingCandidates(input, mergeRecommendations([
       ...recommendAmbiguousProductCandidates(input),
       ...recommendHsCandidates(input),
       ...(augmentedInput.productName !== input.productName ? recommendHsCandidates(augmentedInput) : []),
       ...normalizedCandidates,
       ...originalCandidates
-    ]), {
+    ]));
+    return pruneByUserHsHints(input, pruneWeakProductRecommendations(merged, {
       keepAmbiguousAlternatives: isAmbiguousAcronym
     }));
   }
@@ -1199,6 +1267,7 @@ export const hsCandidateServiceInternals = {
   uniqueRowsByHsk,
   mapStoredCustomsHsCodeSearchRowsToCandidates,
   pruneWeakProductRecommendations,
+  filterContextConflictingCandidates,
   ambiguousRuleForProductName,
   analyzeProductNameInput
 };

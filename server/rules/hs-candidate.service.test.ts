@@ -144,6 +144,37 @@ describe("recommendHsCandidates", () => {
     expect(candidates[0]?.riskNotes).toContain("화장품");
   });
 
+  it("removes dairy cream candidates when cosmetic skin-care context is present", () => {
+    const makeCandidate = (hskCode: string, koreanName: string, confidenceScore: number) => ({
+      hskCode,
+      hs6: hskCode.slice(0, 6),
+      rank: 1,
+      confidenceScore,
+      koreanName,
+      reason: "test",
+      requiredQuestions: [],
+      riskNotes: "test",
+      scoreBreakdown: [],
+      reviewStatus: "suggested" as const,
+      sourceName: "test",
+      sourceUrl: "test",
+      sourceVersion: "test",
+      effectiveFrom: "2026-01-01",
+      effectiveTo: null,
+      basisDate: "2026-05-21"
+    });
+
+    const filtered = hsCandidateServiceInternals.filterContextConflictingCandidates(
+      { productName: "toableo moisture cream", basisDate: "2026-05-21" },
+      [
+        makeCandidate("3304991000", "기초화장용 제품류", 0.78),
+        makeCandidate("0401401000", "냉동크림", 0.51)
+      ]
+    );
+
+    expect(filtered.map((candidate) => candidate.hskCode)).toEqual(["3304991000"]);
+  });
+
   it("maps stored Customs API018 rows as provisional product candidates", () => {
     const candidates = hsCandidateServiceInternals.mapStoredCustomsHsCodeSearchRowsToCandidates(
       {
