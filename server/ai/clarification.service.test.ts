@@ -173,6 +173,32 @@ describe("normalizeProductSearchInput", () => {
     ]);
     expect(parsed.webSources).toEqual([{ title: "Maker page", url: "https://example.com/product" }]);
   });
+
+  it("keeps GPT candidate order ahead of local context fallback hints", () => {
+    const parsed = aiProviderInternals.parseAiProductSearchNormalizationJson(JSON.stringify({
+      correctedProductName: "keyboard controller",
+      candidateHsCodes: ["854370", "847160"],
+      candidateHsCodeReasons: [
+        { code: "854370", reason: "GPT 판단상 전기식 제어장치 가능성이 더 높음", requiredInfo: ["기능 확인"] },
+        { code: "847160", reason: "키보드 입력장치 가능성", requiredInfo: ["완제품 여부"] }
+      ],
+      searchTerms: ["keyboard controller"]
+    }), {
+      provider: "openai",
+      model: "test",
+      correctedProductName: null,
+      searchTerms: [],
+      koreanTerms: [],
+      englishTerms: [],
+      productFamilies: [],
+      candidateHsCodes: [],
+      candidateHsCodeReasons: [],
+      webSources: [],
+      missingQuestions: []
+    });
+
+    expect(parsed.candidateHsCodes).toEqual(["854370", "847160"]);
+  });
 });
 
 describe("analyzeDocumentExtractionClarification", () => {

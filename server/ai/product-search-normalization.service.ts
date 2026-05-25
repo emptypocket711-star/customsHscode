@@ -185,9 +185,9 @@ export async function normalizeProductSearchInput(input: ProductHsRecommendation
     ...normalization,
     candidateHsCodes: Array.from(new Set([
       ...userProvidedHsCodes,
+      ...normalization.candidateHsCodes,
       ...acronymHints.map((hint) => hint.code),
-      ...contextHints.map((hint) => hint.code),
-      ...normalization.candidateHsCodes
+      ...contextHints.map((hint) => hint.code)
     ])).slice(0, 10),
     candidateHsCodeReasons: [
       ...userProvidedHsCodes.map((code) => ({
@@ -195,9 +195,9 @@ export async function normalizeProductSearchInput(input: ProductHsRecommendation
         reason: "사용자가 입력값에 함께 제공한 HS CODE 힌트입니다.",
         requiredInfo: ["국내 HSK인지 해외 수입국 세번인지 확인", "품명·용도·재질과 해당 코드 설명의 일치 여부 확인"]
       })),
+      ...normalization.candidateHsCodeReasons,
       ...acronymHints,
-      ...contextHints,
-      ...normalization.candidateHsCodeReasons
+      ...contextHints
     ].filter((item, index, items) => items.findIndex((candidate) => candidate.code === item.code) === index).slice(0, 10)
   };
 }
