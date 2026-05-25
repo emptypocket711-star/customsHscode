@@ -64,6 +64,11 @@ function isWeakInput(input: string) {
   return normalized.length < 8 || weakTerms.some((term) => normalized === term || normalized.includes(` ${term} `));
 }
 
+function reasoningEffortForResponses(model: string, webSearch: boolean) {
+  if (!model.startsWith("gpt-5")) return null;
+  return webSearch ? "low" : "none";
+}
+
 export class MockAiProvider implements AiProvider {
   name: AiProviderName = "mock";
   model = "mock-clarification-v1";
@@ -486,7 +491,7 @@ export class OpenAiProvider implements AiProvider {
       input: typeof input === "string" ? input : JSON.stringify(input),
       store: false,
       max_output_tokens: maxOutputTokens,
-      ...(this.model.startsWith("gpt-5") ? { reasoning: { effort: webSearch ? "low" : "minimal" } } : {}),
+      ...(reasoningEffortForResponses(this.model, webSearch) ? { reasoning: { effort: reasoningEffortForResponses(this.model, webSearch) } } : {}),
       ...(webSearch ? {
         tools: [{ type: "web_search" }],
         tool_choice: "auto",
@@ -644,5 +649,6 @@ export const aiProviderInternals = {
   outputTextFromOpenAiResponse,
   webSourcesFromOpenAiResponse,
   parseAiClarificationJson,
-  parseAiProductSearchNormalizationJson
+  parseAiProductSearchNormalizationJson,
+  reasoningEffortForResponses
 };

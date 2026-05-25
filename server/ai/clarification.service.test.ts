@@ -241,4 +241,10 @@ describe("OpenAI provider parsing", () => {
 
     expect(sources).toEqual([{ title: "Product page", url: "https://example.com/product" }]);
   });
+
+  it("uses supported reasoning effort values for gpt-5 Responses API calls", () => {
+    expect(aiProviderInternals.reasoningEffortForResponses("gpt-5.4-mini", false)).toBe("none");
+    expect(aiProviderInternals.reasoningEffortForResponses("gpt-5.4-mini", true)).toBe("low");
+    expect(aiProviderInternals.reasoningEffortForResponses("gpt-4.1-mini", false)).toBeNull();
+  });
 });
