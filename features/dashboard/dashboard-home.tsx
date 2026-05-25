@@ -18,6 +18,7 @@ import { SourceFooter } from "@/components/ui/source-footer";
 import { destinationCountryOptions } from "@/features/export-diagnosis/country-options";
 import { formatHsCode } from "@/lib/hs-code";
 import type { HsFavoriteItem } from "@/server/repositories/hs-favorite.repository";
+import type { HsLookupHistoryItem } from "@/server/repositories/hs-lookup-history.repository";
 
 type DashboardStat = {
   label: string;
@@ -57,12 +58,6 @@ const quickExamples = [
   { label: "graceday hand cream", href: "/hs/direct?query=graceday%20hand%20cream&direction=import&destinationCountry=ALL" }
 ];
 
-const recentLookups = [
-  { code: "8471.60-9000", name: "키보드", time: "최근 예시" },
-  { code: "8528.52-2000", name: "모니터", time: "최근 예시" },
-  { code: "6211.33-0000", name: "작업용 조끼", time: "최근 예시" }
-];
-
 const comparisonSteps = [
   { title: "후보 정리", body: "품명·모델명·오타·HS 힌트를 AI가 4자리/6자리 후보로 정규화합니다." },
   { title: "세율 비교", body: "기본·WTO·FTA·목적국 세율을 국가 선택 기준으로 좁혀 보여줍니다." },
@@ -75,13 +70,25 @@ function toneClass(tone: string) {
   return "bg-slate-100 text-slate-700 ring-slate-200";
 }
 
+function displayLookupTitle(query: string) {
+  const digits = query.replace(/\D/g, "");
+  return digits.length === 10 ? formatHsCode(digits) : query;
+}
+
+function displayLookupMeta(item: HsLookupHistoryItem) {
+  const direction = item.direction === "export" ? "수출" : "수입";
+  return `${direction} · ${item.destinationCountry}`;
+}
+
 export function DashboardHome({
   basisDate,
   favorites,
+  lookupHistory,
   stats
 }: {
   basisDate: string;
   favorites: HsFavoriteItem[];
+  lookupHistory: HsLookupHistoryItem[];
   stats: DashboardStat[];
 }) {
   return (
@@ -259,13 +266,14 @@ export function DashboardHome({
         />
         <DashboardListCard
           icon={Clock3}
-          items={recentLookups.map((item) => ({
-            href: `/hs/direct?query=${item.code}&direction=import&destinationCountry=ALL&basisDate=${basisDate}`,
-            title: formatHsCode(item.code),
-            subtitle: item.name,
-            meta: item.time
+          emptyText="아직 저장된 최근 검색이 없습니다."
+          items={lookupHistory.map((item) => ({
+            href: `/hs/direct?query=${encodeURIComponent(item.query)}&direction=${item.direction}&destinationCountry=${item.destinationCountry}&basisDate=${item.basisDate}`,
+            title: displayLookupTitle(item.query),
+            subtitle: displayLookupMeta(item),
+            meta: item.basisDate
           }))}
-          title="최근 검색 예시"
+          title="최근 검색"
         />
       </section>
     </div>
