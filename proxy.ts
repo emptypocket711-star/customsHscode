@@ -7,6 +7,10 @@ function clientIp(request: NextRequest) {
 }
 
 function limitForPath(pathname: string) {
+  if (pathname === "/login" || pathname.startsWith("/auth")) {
+    return { scope: "auth", limit: 40, windowMs: 60_000 };
+  }
+
   if (pathname.startsWith("/documents")) {
     return { scope: "documents", limit: 30, windowMs: 60_000 };
   }
@@ -59,5 +63,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/hs/:path*", "/documents/:path*", "/duty-estimator/:path*"]
+  matcher: ["/auth/:path*", "/login", "/hs/:path*", "/documents/:path*", "/duty-estimator/:path*"]
 };
