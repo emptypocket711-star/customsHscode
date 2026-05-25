@@ -656,6 +656,7 @@ export function getAiProvider(): AiProvider {
 }
 
 export const aiProviderInternals = {
+  aiProductSearchNormalizationInstructions,
   outputTextFromOpenAiResponse,
   webSourcesFromOpenAiResponse,
   parseAiClarificationJson,

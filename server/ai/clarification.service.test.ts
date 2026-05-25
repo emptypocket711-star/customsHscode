@@ -199,6 +199,50 @@ describe("normalizeProductSearchInput", () => {
 
     expect(parsed.candidateHsCodes).toEqual(["854370", "847160"]);
   });
+
+  it("keeps product-name GPT instructions broad enough for multilingual and model-code searches", () => {
+    const instructions = aiProviderInternals.aiProductSearchNormalizationInstructions();
+
+    expect(instructions).toContain("Korean, Chinese, Japanese, English, or another language");
+    expect(instructions).toContain("brand name, trade name, product line, model name, SKU, catalog number");
+    expect(instructions).toContain("3 to 8 plausible HS heading/subheading/code prefixes");
+    expect(instructions).toContain("Prefer HS6 prefixes");
+    expect(instructions).toContain("Return useful HS4/HS6 candidates even when the exact national HS10 may need later official-data expansion");
+    expect(instructions).toContain("If web search identifies a product but the visible words can reasonably indicate another product family");
+  });
+
+  it("parses multilingual GPT product candidates without requiring official-name matches", () => {
+    const fallback = {
+      provider: "openai" as const,
+      model: "test",
+      correctedProductName: null,
+      searchTerms: [],
+      koreanTerms: [],
+      englishTerms: [],
+      productFamilies: [],
+      candidateHsCodes: [],
+      candidateHsCodeReasons: [],
+      webSources: [],
+      missingQuestions: []
+    };
+    const parsed = aiProviderInternals.parseAiProductSearchNormalizationJson(JSON.stringify({
+      correctedProductName: "초록매실",
+      searchTerms: ["plum beverage", "매실 음료"],
+      koreanTerms: ["매실음료", "음료"],
+      englishTerms: ["non-alcoholic beverage", "plum drink"],
+      productFamilies: ["retail beverage"],
+      candidateHsCodes: ["2202.99", "2009"],
+      candidateHsCodeReasons: [
+        { code: "220299", reason: "소매용 매실향 음료 가능성", requiredInfo: ["원액인지 희석음료인지", "설탕·물 첨가 여부"] },
+        { code: "2009", reason: "순수 과실주스라면 조건부 검토", requiredInfo: ["과즙 함량", "희석 여부"] }
+      ],
+      missingQuestions: ["제품 라벨과 성분표 확인"]
+    }), fallback);
+
+    expect(parsed.candidateHsCodes).toEqual(["220299", "2009"]);
+    expect(parsed.koreanTerms).toContain("매실음료");
+    expect(parsed.candidateHsCodeReasons[0]?.reason).toContain("매실");
+  });
 });
 
 describe("analyzeDocumentExtractionClarification", () => {
