@@ -93,11 +93,28 @@ describe("hs master repository mock lookup", () => {
           effective_from: "2026-01-01",
           effective_to: null,
           status: "published"
+        },
+        {
+          hsk_pattern: "3923",
+          pattern_type: "hs4",
+          item_name: "플라스틱제 포장상자",
+          method_summary: "소매용 최소포장에 원산지표시",
+          note: "포장상태 확인 필요",
+          source_name: "method",
+          source_url: "https://example.com/method",
+          source_version: "method-v1",
+          effective_from: "2026-01-01",
+          effective_to: null,
+          status: "published"
         }
       ]
     );
 
     expect(originMarking?.matchedPattern).toBe("3923");
     expect(originMarking?.method?.methodSummary).toBe("현품에 원산지표시");
+    expect(originMarking?.methods.map((item) => item.methodSummary)).toEqual([
+      "현품에 원산지표시",
+      "소매용 최소포장에 원산지표시"
+    ]);
   });
 });

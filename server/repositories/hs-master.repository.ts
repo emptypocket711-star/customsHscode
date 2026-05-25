@@ -183,6 +183,15 @@ export type HsDirectLookupResult = {
       sourceUrl: string;
       sourceVersion: string;
     } | null;
+    methods: Array<{
+      matchedPattern: string;
+      itemName: string;
+      methodSummary: string;
+      note: string | null;
+      sourceName: string;
+      sourceUrl: string;
+      sourceVersion: string;
+    }>;
   } | null;
   classificationCases: Array<{
     title: string;
@@ -286,6 +295,13 @@ function selectBestOriginMarkingMethod(records: OriginMarkingMethodRecord[], hsk
     .toSorted((a, b) => originMarkingSpecificity(b.hsk_pattern) - originMarkingSpecificity(a.hsk_pattern))[0] ?? null;
 }
 
+function selectOriginMarkingMethods(records: OriginMarkingMethodRecord[], hskCode: string) {
+  const candidates = new Set(originMarkingCandidatePatterns(hskCode));
+  return records
+    .filter((record) => candidates.has(record.hsk_pattern))
+    .toSorted((a, b) => originMarkingSpecificity(b.hsk_pattern) - originMarkingSpecificity(a.hsk_pattern));
+}
+
 function buildOriginMarkingInfo(
   hskCode: string,
   targets: OriginMarkingTargetRecord[],
@@ -295,6 +311,16 @@ function buildOriginMarkingInfo(
   if (!target) return null;
 
   const method = selectBestOriginMarkingMethod(methods, hskCode);
+  const matchingMethods = selectOriginMarkingMethods(methods, hskCode);
+  const mapMethod = (record: OriginMarkingMethodRecord) => ({
+    matchedPattern: record.hsk_pattern,
+    itemName: record.item_name,
+    methodSummary: record.method_summary,
+    note: record.note,
+    sourceName: record.source_name,
+    sourceUrl: record.source_url,
+    sourceVersion: record.source_version
+  });
 
   return {
     isTarget: target.is_target,
@@ -304,17 +330,8 @@ function buildOriginMarkingInfo(
     targetSourceName: target.source_name,
     targetSourceUrl: target.source_url,
     targetSourceVersion: target.source_version,
-    method: method
-      ? {
-          matchedPattern: method.hsk_pattern,
-          itemName: method.item_name,
-          methodSummary: method.method_summary,
-          note: method.note,
-          sourceName: method.source_name,
-          sourceUrl: method.source_url,
-          sourceVersion: method.source_version
-        }
-      : null
+    method: method ? mapMethod(method) : null,
+    methods: matchingMethods.map(mapMethod)
   };
 }
 
@@ -848,6 +865,7 @@ export const hsMasterRepositoryInternals = {
   originMarkingCandidatePatterns,
   selectBestOriginMarkingTarget,
   selectBestOriginMarkingMethod,
+  selectOriginMarkingMethods,
   buildOriginMarkingInfo,
   lookupWithMockData
 };

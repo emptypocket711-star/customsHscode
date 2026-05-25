@@ -21,6 +21,15 @@ type OriginMarkingInfo = {
     sourceUrl: string;
     sourceVersion: string;
   } | null;
+  methods: Array<{
+    matchedPattern: string;
+    itemName: string;
+    methodSummary: string;
+    note: string | null;
+    sourceName: string;
+    sourceUrl: string;
+    sourceVersion: string;
+  }>;
 } | null;
 
 type PresentOriginMarkingInfo = NonNullable<OriginMarkingInfo>;
@@ -105,6 +114,37 @@ function SourceLine({ sourceName, sourceUrl }: { sourceName: string; sourceUrl: 
   );
 }
 
+function LawLinks() {
+  return (
+    <div className="flex flex-wrap gap-2 text-xs">
+      <a
+        className="rounded border border-slate-200 bg-white px-2 py-1 font-semibold text-blue-700 underline-offset-2 hover:underline"
+        href="https://www.law.go.kr/법령/대외무역법"
+        rel="noreferrer"
+        target="_blank"
+      >
+        대외무역법
+      </a>
+      <a
+        className="rounded border border-slate-200 bg-white px-2 py-1 font-semibold text-blue-700 underline-offset-2 hover:underline"
+        href="https://www.law.go.kr/행정규칙/대외무역관리규정"
+        rel="noreferrer"
+        target="_blank"
+      >
+        대외무역관리규정
+      </a>
+      <a
+        className="rounded border border-slate-200 bg-white px-2 py-1 font-semibold text-blue-700 underline-offset-2 hover:underline"
+        href="https://www.law.go.kr/행정규칙/원산지제도운영에관한고시"
+        rel="noreferrer"
+        target="_blank"
+      >
+        원산지제도 운영에 관한 고시
+      </a>
+    </div>
+  );
+}
+
 function OriginMarkingTargetDialog({ originMarking, hskCode, itemName }: OriginMarkingDialogProps) {
   return (
     <DialogShell
@@ -138,6 +178,14 @@ function OriginMarkingTargetDialog({ originMarking, hskCode, itemName }: OriginM
             </div>
           </section>
 
+          <section className="rounded-md border border-slate-200">
+            <h3 className="border-b border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">근거 법령</h3>
+            <div className="grid gap-3 p-3 leading-6 text-slate-700">
+              <p>원산지표시 의무와 표시방법은 대외무역법, 대외무역관리규정, 원산지제도 운영에 관한 고시를 함께 확인합니다.</p>
+              <LawLinks />
+            </div>
+          </section>
+
           <SourceLine sourceName={originMarking.targetSourceName} sourceUrl={originMarking.targetSourceUrl} />
         </div>
       </div>
@@ -147,6 +195,7 @@ function OriginMarkingTargetDialog({ originMarking, hskCode, itemName }: OriginM
 
 function OriginMarkingMethodDialog({ originMarking, itemName }: OriginMarkingDialogProps) {
   const method = originMarking.method;
+  const methods = originMarking.methods.length ? originMarking.methods : method ? [method] : [];
 
   return (
     <DialogShell
@@ -166,12 +215,23 @@ function OriginMarkingMethodDialog({ originMarking, itemName }: OriginMarkingDia
               </tr>
             </thead>
             <tbody>
-              <tr className="border-t border-slate-200">
-                <td className="whitespace-nowrap px-3 py-2 font-mono">{displayPattern(method?.matchedPattern ?? originMarking.matchedPattern)}</td>
-                <td className="px-3 py-2">{formatOriginText(method?.itemName ?? itemName)}</td>
-                <td className="px-3 py-2 leading-6">{method?.methodSummary ? formatOriginText(method.methodSummary) : "개별 표시방법 데이터가 없는 품목입니다. 아래 일반원칙에 따라 현품, 포장, 최소포장 등 적정 표시방법을 확인합니다."}</td>
-                <td className="px-3 py-2 leading-6">{formatOriginText(method?.note)}</td>
-              </tr>
+              {methods.length ? (
+                methods.map((row, index) => (
+                  <tr className="border-t border-slate-200" key={`${row.matchedPattern}-${row.itemName}-${index}`}>
+                    <td className="whitespace-nowrap px-3 py-2 font-mono">{displayPattern(row.matchedPattern)}</td>
+                    <td className="px-3 py-2">{formatOriginText(row.itemName)}</td>
+                    <td className="px-3 py-2 leading-6">{formatOriginText(row.methodSummary)}</td>
+                    <td className="px-3 py-2 leading-6">{formatOriginText(row.note)}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr className="border-t border-slate-200">
+                  <td className="whitespace-nowrap px-3 py-2 font-mono">{displayPattern(originMarking.matchedPattern)}</td>
+                  <td className="px-3 py-2">{formatOriginText(itemName)}</td>
+                  <td className="px-3 py-2 leading-6">개별 표시방법 데이터가 없는 품목입니다. 아래 일반원칙에 따라 현품, 포장, 최소포장 등 적정 표시방법을 확인합니다.</td>
+                  <td className="px-3 py-2 leading-6">-</td>
+                </tr>
+              )}
             </tbody>
           </table>
 
@@ -181,6 +241,14 @@ function OriginMarkingMethodDialog({ originMarking, itemName }: OriginMarkingDia
               <p>별표에 직접 기재되지 않은 물품이라도 같은 HS세번에 해당하고 게재 물품과 유사하면 그 물품에 준하여 표시방법을 검토합니다.</p>
               <p>표시방법이 특정되지 않은 원산지표시 대상물품은 물품 특성, 포장 형태, 소비자 식별 가능성, 표시의 견고성에 맞는 방법을 선택합니다.</p>
               <p>소매용 최소포장 표시가 허용되는 경우에도 수입 후 포장 제거 또는 재포장 가능성이 있으면 현품 표시 필요성을 함께 확인합니다.</p>
+            </div>
+          </section>
+
+          <section className="rounded-md border border-slate-200">
+            <h3 className="border-b border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">근거 법령</h3>
+            <div className="grid gap-3 p-3 leading-6 text-slate-700">
+              <p>물품별 표시방법은 원산지제도 운영에 관한 고시의 표시방법 체계를 기준으로 확인합니다.</p>
+              <LawLinks />
             </div>
           </section>
 
