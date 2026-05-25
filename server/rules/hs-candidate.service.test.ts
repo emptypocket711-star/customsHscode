@@ -155,13 +155,17 @@ describe("recommendHsCandidates", () => {
     expect(candidates.map((candidate) => candidate.hskCode)).not.toContain("847130");
   });
 
-  it("does not fall back to local official-name dictionaries when AI gives no code hints", async () => {
+  it("uses product-family AI guardrails for brand plus generic cosmetic names", async () => {
     const candidates = await recommendHsCandidatesForProduct({
       productName: "graceday hand cream",
       basisDate: "2026-05-21"
     });
 
-    expect(candidates).toHaveLength(0);
+    expect(candidates.length).toBeGreaterThan(0);
+    expect(candidates[0]?.hs6).toBe("330499");
+    expect(candidates[0]?.lookupBasis).toBe("ai_hs_hint");
+    expect(candidates[0]?.reason).toContain("피부 적용 화장품");
+    expect(candidates[0]?.riskNotes).toContain("품목분류 확정");
   });
 
   it("removes dairy cream candidates when cosmetic skin-care context is present", () => {

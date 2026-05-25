@@ -5,7 +5,7 @@ import { redactSensitiveText } from "@/server/ai/redaction";
 import { cachedLookup, lookupCacheKey } from "@/server/cache/lookup-cache";
 import { logLookupTelemetry, productInputShape } from "@/server/observability/lookup-telemetry";
 
-const productSearchNormalizationVersion = "product-search-normalization-v7";
+const productSearchNormalizationVersion = "product-search-normalization-v8";
 
 function productInputText(input: ProductHsRecommendationInput) {
   const hsCodeHints = extractHsCodeHintsFromProductInput(input);
@@ -74,6 +74,15 @@ function productContextText(input: ProductHsRecommendationInput, normalization?:
 function productContextLookupHints(input: ProductHsRecommendationInput, normalization?: AiProductSearchNormalizationResult) {
   const text = productContextText(input, normalization);
   const hints: Array<{ code: string; reason: string; requiredInfo: string[] }> = [];
+
+  if (/(skin\s*care|skincare|cosmetic|cosmetics|hand\s*cream|handcream|moistur(?:e|izing|izer|iser)\s*cream|lotion|cleanser|toner|serum|화장품|기초화장|핸드\s*크림|보습\s*크림|로션|클렌저|세럼|피부)/i.test(text)) {
+    hints.push({
+      code: "330499",
+      reason: "입력값에 피부 적용 화장품·기초화장품 문맥이 있어 제3304.99호 계열 확인이 우선 필요합니다.",
+      requiredInfo: ["피부에 직접 사용하는 화장품인지", "의약품·의약외품 효능 표시 여부", "전성분표와 용량·사용 부위"]
+    });
+  }
+
   if (/(^|\s)(keyboard|keyboards|mechanical keyboard|wireless keyboard)(\s|$)|키보드|자판/.test(text)) {
     hints.push({
       code: "847160",

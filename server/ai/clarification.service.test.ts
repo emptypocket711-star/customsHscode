@@ -93,7 +93,7 @@ describe("normalizeProductSearchInput", () => {
     });
 
     expect(key).toContain("ai-product-normalization");
-    expect(key).toContain("product-search-normalization-v7");
+    expect(key).toContain("product-search-normalization-v8");
     expect(key).toContain("901910");
     expect(key).not.toContain("secret");
     expect(key).not.toContain("ABC-123");
@@ -205,9 +205,11 @@ describe("normalizeProductSearchInput", () => {
 
     expect(instructions).toContain("Korean, Chinese, Japanese, English, or another language");
     expect(instructions).toContain("brand name, trade name, product line, model name, SKU, catalog number");
+    expect(instructions).toContain("brand or product line plus a generic product phrase");
     expect(instructions).toContain("3 to 8 plausible HS heading/subheading/code prefixes");
     expect(instructions).toContain("Prefer HS6 prefixes");
     expect(instructions).toContain("Return useful HS4/HS6 candidates even when the exact national HS10 may need later official-data expansion");
+    expect(instructions).toContain("Do not require an exact official HS description match before returning candidateHsCodes");
     expect(instructions).toContain("If web search identifies a product but the visible words can reasonably indicate another product family");
   });
 
