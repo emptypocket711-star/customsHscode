@@ -1,5 +1,14 @@
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/service-role";
 
+export type AccountAccessEvent = {
+  id: string;
+  eventType: string;
+  ipAddress: string | null;
+  userAgent: string | null;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+};
+
 export type ManagedUser = {
   id: string;
   email: string;
@@ -16,6 +25,7 @@ export type ManagedUser = {
   companyName: string;
   businessNo: string;
   companyType: string;
+  recentAccessEvents: AccountAccessEvent[];
 };
 
 type ProfileRow = {
@@ -37,6 +47,17 @@ type CompanyRow = {
   type: string | null;
 };
 
+type AccountAccessEventRow = {
+  id: string;
+  user_id: string | null;
+  email: string | null;
+  event_type: string;
+  ip_address: string | null;
+  user_agent: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+};
+
 export async function listManagedUsers(): Promise<ManagedUser[]> {
   const supabase = createSupabaseServiceRoleClient();
   const { data: authData, error: authError } = await supabase.auth.admin.listUsers({
@@ -51,6 +72,8 @@ export async function listManagedUsers(): Promise<ManagedUser[]> {
 
   const profileById = new Map<string, ProfileRow>();
   const companyById = new Map<string, CompanyRow>();
+  const eventsByUserId = new Map<string, AccountAccessEvent[]>();
+  const eventsByEmail = new Map<string, AccountAccessEvent[]>();
 
   if (userIds.length > 0) {
     const { data: profiles, error: profileError } = await supabase
@@ -79,10 +102,53 @@ export async function listManagedUsers(): Promise<ManagedUser[]> {
     }
   }
 
+  if (userIds.length > 0 || users.some((user) => user.email)) {
+    const emails = users.map((user) => user.email?.toLowerCase()).filter(Boolean) as string[];
+    const eventFilters = [
+      userIds.length > 0 ? `user_id.in.(${userIds.join(",")})` : "",
+      emails.length > 0 ? `email.in.(${emails.map((email) => `"${email}"`).join(",")})` : ""
+    ].filter(Boolean);
+
+    if (eventFilters.length > 0) {
+      const { data: events, error: eventError } = await supabase
+        .from("account_access_events")
+        .select("id,user_id,email,event_type,ip_address,user_agent,metadata,created_at")
+        .or(eventFilters.join(","))
+        .order("created_at", { ascending: false })
+        .limit(500);
+
+      if (eventError) throw eventError;
+
+      for (const event of (events ?? []) as AccountAccessEventRow[]) {
+        const normalizedEvent = {
+          id: event.id,
+          eventType: event.event_type,
+          ipAddress: event.ip_address,
+          userAgent: event.user_agent,
+          metadata: event.metadata,
+          createdAt: event.created_at
+        } satisfies AccountAccessEvent;
+
+        if (event.user_id) {
+          const existing = eventsByUserId.get(event.user_id) ?? [];
+          if (existing.length < 5) eventsByUserId.set(event.user_id, [...existing, normalizedEvent]);
+        }
+
+        if (event.email) {
+          const emailKey = event.email.toLowerCase();
+          const existing = eventsByEmail.get(emailKey) ?? [];
+          if (existing.length < 5) eventsByEmail.set(emailKey, [...existing, normalizedEvent]);
+        }
+      }
+    }
+  }
+
   return users
     .map((user) => {
       const profile = profileById.get(user.id);
       const company = profile?.company_id ? companyById.get(profile.company_id) : undefined;
+      const emailKey = (user.email ?? profile?.email ?? "").toLowerCase();
+      const recentAccessEvents = eventsByUserId.get(user.id) ?? eventsByEmail.get(emailKey) ?? [];
 
       return {
         id: user.id,
@@ -99,7 +165,8 @@ export async function listManagedUsers(): Promise<ManagedUser[]> {
         companyId: profile?.company_id ?? "",
         companyName: company?.name ?? String(user.user_metadata?.company_name ?? ""),
         businessNo: company?.business_no ?? String(user.user_metadata?.business_no ?? ""),
-        companyType: company?.type ?? ""
+        companyType: company?.type ?? "",
+        recentAccessEvents
       } satisfies ManagedUser;
     })
     .sort((a, b) => {

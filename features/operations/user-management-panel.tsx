@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useActionState, useMemo, useState } from "react";
-import { Filter, Save, Search, Trash2 } from "lucide-react";
+import { Activity, Filter, Save, Search, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import {
@@ -28,6 +28,33 @@ function formatBusinessNo(value: string) {
   if (digits.length <= 3) return digits;
   if (digits.length <= 5) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
   return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
+}
+
+function formatEventType(value: string) {
+  const labels: Record<string, string> = {
+    login_success: "로그인 성공",
+    login_failure: "로그인 실패",
+    signup_otp_requested: "가입 인증번호 요청",
+    signup_email_verified: "이메일 인증",
+    signup_completed: "가입 완료",
+    password_reset_requested: "비밀번호 재설정 요청",
+    sign_out: "로그아웃"
+  };
+
+  return labels[value] ?? value;
+}
+
+function formatMetadata(metadata: Record<string, unknown> | null) {
+  if (!metadata) return "";
+  const reason = typeof metadata.reason === "string" ? metadata.reason : "";
+  const stage = typeof metadata.stage === "string" ? metadata.stage : "";
+  const details = [stage, reason].filter(Boolean);
+  return details.length > 0 ? details.join(" / ") : "";
+}
+
+function truncate(value: string | null, maxLength: number) {
+  if (!value) return "-";
+  return value.length > maxLength ? `${value.slice(0, maxLength - 1)}...` : value;
 }
 
 function StatusMessage({ state }: { state: DeveloperUserActionState }) {
@@ -242,6 +269,46 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
                   <span>온보딩 완료: {formatDate(user.onboardingCompletedAt)}</span>
                   <span>회사 타입: {user.companyType || "-"}</span>
                 </div>
+
+                <details className="rounded-md border border-slate-200 bg-white">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-semibold text-slate-800">
+                    <span className="inline-flex items-center gap-2">
+                      <Activity aria-hidden="true" size={16} />
+                      최근 접속 이력
+                    </span>
+                    <span className="text-xs font-medium text-slate-500">{user.recentAccessEvents.length}건</span>
+                  </summary>
+                  <div className="border-t border-slate-200">
+                    {user.recentAccessEvents.length === 0 ? (
+                      <p className="px-3 py-3 text-sm text-slate-500">접속 이력이 없습니다.</p>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full text-left text-xs">
+                          <thead className="bg-slate-50 text-slate-500">
+                            <tr>
+                              <th className="px-3 py-2 font-semibold">시간</th>
+                              <th className="px-3 py-2 font-semibold">이벤트</th>
+                              <th className="px-3 py-2 font-semibold">IP</th>
+                              <th className="px-3 py-2 font-semibold">환경</th>
+                              <th className="px-3 py-2 font-semibold">메모</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 text-slate-700">
+                            {user.recentAccessEvents.map((event) => (
+                              <tr key={event.id}>
+                                <td className="whitespace-nowrap px-3 py-2">{formatDate(event.createdAt)}</td>
+                                <td className="whitespace-nowrap px-3 py-2 font-medium text-slate-900">{formatEventType(event.eventType)}</td>
+                                <td className="whitespace-nowrap px-3 py-2">{event.ipAddress ?? "-"}</td>
+                                <td className="max-w-[280px] px-3 py-2">{truncate(event.userAgent, 96)}</td>
+                                <td className="max-w-[220px] px-3 py-2">{formatMetadata(event.metadata) || "-"}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </details>
 
                 <div className="flex flex-wrap gap-2">
                   <button
