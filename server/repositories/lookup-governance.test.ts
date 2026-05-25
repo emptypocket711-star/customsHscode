@@ -66,7 +66,11 @@ describe("lookup governance guards", () => {
       "supabase/migrations/20260523070000_export_destination_customs_codes.sql",
       "supabase/migrations/20260523090000_export_destination_additional_tariffs.sql",
       "supabase/migrations/20260523103000_export_destination_trade_remedy_cases.sql",
-      "supabase/migrations/20260524040000_background_jobs.sql"
+      "supabase/migrations/20260524040000_background_jobs.sql",
+      "supabase/migrations/20260525003000_hs_favorites.sql",
+      "supabase/migrations/20260525007500_account_access_events.sql",
+      "supabase/migrations/20260525007600_active_user_sessions.sql",
+      "supabase/migrations/20260525007700_hs_lookup_history.sql"
     ].map(read).join("\n");
 
     for (const tableName of [
@@ -85,7 +89,11 @@ describe("lookup governance guards", () => {
       "export_destination_trade_remedy_cases",
       "export_destination_data_sources",
       "case_documents",
-      "background_jobs"
+      "background_jobs",
+      "hs_favorites",
+      "hs_lookup_history",
+      "account_access_events",
+      "active_user_sessions"
     ]) {
       expect(migrations, `${tableName} must enable row level security`).toContain(`alter table public.${tableName} enable row level security`);
     }
@@ -99,5 +107,37 @@ describe("lookup governance guards", () => {
     expect(roleGuard).not.toContain('role === "admin" || role === "customs_staff"');
     expect(strictMigration).toContain("actor_role <> 'developer'::public.user_role");
     expect(strictMigration).toContain("emptypocket711@gmail.com");
+  });
+
+  it("keeps operations pages and navigation restricted to the developer account", () => {
+    const appLayout = read("app/(app)/layout.tsx");
+    const usersPage = read("app/(app)/operations/users/page.tsx");
+    const healthPage = read("app/(app)/operations/health/page.tsx");
+    const sideNav = read("components/app-side-nav.tsx");
+
+    expect(appLayout).toContain("isDeveloperEmail(user.email)");
+    expect(appLayout).toContain("showOperations={isDeveloperEmail(user.email)}");
+    expect(usersPage).toContain("requireDeveloperRole()");
+    expect(healthPage).toContain("requireDeveloperRole()");
+    expect(sideNav).toContain("showOperations ? <NavGroup");
+  });
+
+  it("keeps recent user-data policies company scoped and service-role only where needed", () => {
+    const hsFavorites = read("supabase/migrations/20260525003000_hs_favorites.sql");
+    const hsLookupHistory = read("supabase/migrations/20260525007700_hs_lookup_history.sql");
+    const accountAccessEvents = read("supabase/migrations/20260525007500_account_access_events.sql");
+    const activeUserSessions = read("supabase/migrations/20260525007600_active_user_sessions.sql");
+    const hardening = read("supabase/migrations/20260525007800_harden_recent_user_data_rls.sql");
+
+    expect(hsFavorites).toContain("and company_id = public.current_company_id()");
+    expect(hardening).toContain("and company_id = public.current_company_id()");
+    expect(hsLookupHistory).toContain("and company_id = public.current_company_id()");
+
+    expect(accountAccessEvents).toContain("public.current_user_role() = 'developer'::public.user_role");
+    expect(hardening).toContain("revoke all on public.account_access_events from anon, authenticated");
+    expect(hardening).toContain("to service_role");
+
+    expect(activeUserSessions).toContain("public.current_user_role() = 'developer'::public.user_role");
+    expect(activeUserSessions).toContain("auth.role() = 'service_role'");
   });
 });
