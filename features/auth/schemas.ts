@@ -142,3 +142,12 @@ export type SignupOtpActionState = {
   email?: string;
   verified?: boolean;
 };
+
+export type BusinessRegistrationCheckState = {
+  status: "idle" | "success" | "warning" | "error";
+  message?: string;
+  active?: boolean;
+  businessNo?: string;
+  configured?: boolean;
+  rawStatus?: string;
+};

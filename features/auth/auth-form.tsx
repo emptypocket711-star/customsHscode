@@ -5,12 +5,13 @@ import { Building2, CheckCircle2, Lock, LogIn, Mail, User, UserPlus, type Lucide
 import Link from "next/link";
 import {
   authenticateAction,
+  checkBusinessRegistrationAction,
   checkSignupEmailAvailabilityAction,
   sendSignupEmailOtpAction,
   verifySignupEmailOtpAction
 } from "@/server/actions/auth.actions";
 import { AccountTypeSelector, type SignupAccountType } from "@/features/auth/account-type-selector";
-import type { AuthActionState, SignupOtpActionState } from "@/features/auth/schemas";
+import type { AuthActionState, BusinessRegistrationCheckState, SignupOtpActionState } from "@/features/auth/schemas";
 
 const initialAuthState: AuthActionState = {
   status: "idle",
@@ -39,8 +40,10 @@ export function AuthForm({
   const [sendState, sendAction, sendPending] = useActionState(sendSignupEmailOtpAction, initialOtpState);
   const [verifyState, verifyAction, verifyPending] = useActionState(verifySignupEmailOtpAction, initialOtpState);
   const [emailCheckPending, startEmailCheckTransition] = useTransition();
+  const [businessNoCheckPending, startBusinessNoCheckTransition] = useTransition();
   const [signupEmail, setSignupEmail] = useState(sendState.email ?? "");
   const [emailAvailability, setEmailAvailability] = useState<SignupOtpActionState>({ status: "idle" });
+  const [businessNoCheck, setBusinessNoCheck] = useState<BusinessRegistrationCheckState>({ status: "idle" });
   const [otpToken, setOtpToken] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupPasswordConfirm, setSignupPasswordConfirm] = useState("");
@@ -124,6 +127,8 @@ export function AuthForm({
   const isSignupPasswordConfirmValid = signupPassword.length > 0 && signupPassword === signupPasswordConfirm;
   const isCompanySignup = accountType === "company";
   const isBusinessNoValid = businessNo.replace(/\D/g, "").length === 10;
+  const normalizedBusinessNo = businessNo.replace(/\D/g, "");
+  const businessNoCheckMatches = businessNoCheck.businessNo === normalizedBusinessNo;
   const canCompleteSignup =
     accountType !== null &&
     verifiedSignupEmail &&
@@ -308,11 +313,32 @@ export function AuthForm({
                         label="사업자등록번호"
                         maxLength={12}
                         name="businessNo"
-                        onChange={(value) => setBusinessNo(formatBusinessNo(value))}
+                        onChange={(value) => {
+                          setBusinessNo(formatBusinessNo(value));
+                          setBusinessNoCheck({ status: "idle" });
+                        }}
                         placeholder="000-00-00000"
                         value={businessNo}
                       />
-                      <p className="-mt-3 text-xs leading-5 text-slate-500">현재는 형식만 확인하며, 정식 사업자 상태 조회는 추후 연동 예정입니다.</p>
+                      <div className="-mt-3 grid gap-2">
+                        <button
+                          className="focus-ring inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
+                          disabled={!isBusinessNoValid || authPending || businessNoCheckPending}
+                          onClick={() => {
+                            startBusinessNoCheckTransition(async () => {
+                              setBusinessNoCheck(await checkBusinessRegistrationAction(businessNo));
+                            });
+                          }}
+                          type="button"
+                        >
+                          {businessNoCheckPending ? "사업자번호 확인 중" : "사업자번호 확인"}
+                        </button>
+                        {businessNoCheck.message && businessNoCheckMatches ? (
+                          <BusinessRegistrationStatusMessage state={businessNoCheck} />
+                        ) : (
+                          <p className="text-xs leading-5 text-slate-500">형식 검증 후 운영 API 키가 설정되어 있으면 사업자 상태까지 확인합니다.</p>
+                        )}
+                      </div>
                       <BusinessTypeCheckboxes disabled={authPending} selectedValues={selectedBusinessTypes} onChange={setSelectedBusinessTypes} />
                     </>
                   ) : null}
@@ -403,6 +429,19 @@ function StatusMessage({ state }: { state: { status: "idle" | "success" | "error
       {state.message}
     </p>
   );
+}
+
+function BusinessRegistrationStatusMessage({ state }: { state: BusinessRegistrationCheckState }) {
+  if (!state.message) return null;
+
+  const className =
+    state.status === "success"
+      ? "rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs font-medium leading-5 text-emerald-800"
+      : state.status === "warning"
+        ? "rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs font-medium leading-5 text-amber-900"
+        : "rounded-lg border border-red-200 bg-red-50 p-3 text-xs font-medium leading-5 text-red-800";
+
+  return <p className={className}>{state.message}</p>;
 }
 
 function SectionTitle({ title, description }: { title: string; description: string }) {

@@ -138,6 +138,30 @@ export function getEnvironmentHealthGroups(): EnvironmentHealthGroup[] {
       ]
     },
     {
+      title: "사업자 검증",
+      description: "기업회원 가입 시 사업자등록번호 상태를 서버에서 확인하는 선택 설정입니다.",
+      items: [
+        envItem({
+          key: "BUSINESS_REGISTRATION_STATUS_API_URL",
+          label: "사업자 상태조회 URL",
+          description: "공공데이터포털 국세청 사업자등록 상태조회 endpoint입니다.",
+          required: false
+        }),
+        envItem({
+          key: "BUSINESS_REGISTRATION_STATUS_SERVICE_KEY",
+          label: "사업자 상태조회 key",
+          description: "설정되면 회원가입 화면에서 계속사업자 여부를 확인합니다. 미설정 시 형식 검증만 수행합니다.",
+          required: false
+        }),
+        envItem({
+          key: "BUSINESS_REGISTRATION_STATUS_TIMEOUT_MS",
+          label: "사업자 상태조회 timeout",
+          description: "외부 API 응답 지연이 가입 화면을 오래 막지 않도록 제한하는 시간입니다.",
+          required: false
+        })
+      ]
+    },
+    {
       title: "운영 보호",
       description: "트래픽 증가와 배치 작업을 제어하는 선택 설정입니다.",
       items: [

@@ -9,6 +9,7 @@ import {
   signupOtpVerifyFormSchema,
   updatePasswordFormSchema,
   type AuthActionState,
+  type BusinessRegistrationCheckState,
   type SignupOtpActionState,
   type UpdatePasswordActionState
 } from "@/features/auth/schemas";
@@ -25,6 +26,7 @@ import {
   checkCompanyIpAllowance,
   clearActiveUserSessionCookie
 } from "@/server/auth/session-policy";
+import { checkBusinessRegistrationStatus } from "@/server/integrations/business-registration/status-api";
 
 function stringValue(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -172,6 +174,25 @@ export async function authenticateAction(
   const supabase = await createSupabaseServerClient({ rememberSession: parsed.data.rememberSession ?? true });
 
   if (parsed.data.mode === "signup") {
+    if (parsed.data.accountType === "company") {
+      const businessStatus = await checkBusinessRegistrationStatus(parsed.data.businessNo ?? "");
+      if (!businessStatus.validFormat) {
+        return {
+          status: "error",
+          mode: "signup",
+          message: businessStatus.message
+        };
+      }
+
+      if (businessStatus.configured && !businessStatus.active) {
+        return {
+          status: "error",
+          mode: "signup",
+          message: businessStatus.message
+        };
+      }
+    }
+
     const { error: passwordError } = await supabase.auth.updateUser({
       password: parsed.data.password!,
       data: {
@@ -416,6 +437,44 @@ export async function checkSignupEmailAvailabilityAction(email: string): Promise
       status: "error",
       email: parsed.data.email,
       message: "이메일 중복 여부를 확인할 수 없습니다."
+    };
+  }
+}
+
+export async function checkBusinessRegistrationAction(businessNo: string): Promise<BusinessRegistrationCheckState> {
+  try {
+    const result = await checkBusinessRegistrationStatus(businessNo);
+
+    if (!result.validFormat) {
+      return {
+        status: "error",
+        businessNo: result.businessNo,
+        configured: result.configured,
+        message: result.message
+      };
+    }
+
+    if (!result.configured) {
+      return {
+        status: "warning",
+        businessNo: result.businessNo,
+        configured: false,
+        message: result.message
+      };
+    }
+
+    return {
+      status: result.active ? "success" : "warning",
+      active: result.active,
+      businessNo: result.businessNo,
+      configured: true,
+      message: result.message,
+      rawStatus: result.rawStatus
+    };
+  } catch (error) {
+    return {
+      status: "error",
+      message: error instanceof Error ? error.message : "사업자등록번호 확인 중 오류가 발생했습니다."
     };
   }
 }
