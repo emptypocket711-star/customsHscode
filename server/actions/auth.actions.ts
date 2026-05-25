@@ -268,13 +268,7 @@ export async function verifySignupEmailOtpAction(
 
     if (!fallback.error) {
       await setRememberSessionPreference(true);
-
-      return {
-        status: "success",
-        email: parsed.data.email,
-        verified: true,
-        message: "이메일 인증이 완료되었습니다. 비밀번호와 회사 정보를 입력해 주세요."
-      };
+      redirect("/auth/complete-signup");
     }
 
     return {
@@ -285,13 +279,7 @@ export async function verifySignupEmailOtpAction(
   }
 
   await setRememberSessionPreference(true);
-
-  return {
-    status: "success",
-    email: parsed.data.email,
-    verified: true,
-    message: "이메일 인증이 완료되었습니다. 비밀번호와 회사 정보를 입력해 주세요."
-  };
+  redirect("/auth/complete-signup");
 }
 
 export async function updatePasswordAction(
