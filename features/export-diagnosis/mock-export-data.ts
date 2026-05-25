@@ -59,7 +59,7 @@ export type MockExportDestinationTariffRate = {
 };
 
 const source = {
-  source_name: "통관이음 AI mock export rules",
+  source_name: "HS FINDER mock export rules",
   source_url: "internal://mock/export-diagnosis",
   source_version: "mock-export-rules-2026",
   effective_from: "2026-01-01",

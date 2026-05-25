@@ -74,7 +74,7 @@ export function DashboardHome({ basisDate, stats }: { basisDate: string; stats: 
                 <span className="text-xs font-medium text-[var(--text-muted)]">기준일 {basisDate}</span>
               </div>
               <h1 className="mt-3 text-2xl font-semibold tracking-normal text-[var(--text-primary)] sm:text-3xl">
-                통관이음 AI
+                HS FINDER
               </h1>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
                 HS CODE, 품명, 국가 정보를 기준으로 관세율과 수출입요건을 빠르게 조회하고 비교합니다.

@@ -29,7 +29,7 @@ export async function AppHeader({ email: providedEmail }: { email?: string | nul
             <Search aria-hidden="true" size={20} />
           </span>
           <span>
-            <span className="block text-base font-semibold text-slate-950">통관이음 AI</span>
+            <span className="block text-base font-semibold text-slate-950">HS FINDER</span>
             <span className="block text-xs text-slate-500">HS CODE 조회</span>
           </span>
         </Link>

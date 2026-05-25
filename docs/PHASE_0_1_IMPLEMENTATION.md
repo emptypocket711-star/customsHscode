@@ -2,7 +2,7 @@
 
 ## Scope
 
-Implemented the MVP skeleton for `통관이음 AI`:
+Implemented the MVP skeleton for `HS FINDER`:
 
 - Next.js App Router shell
 - Korean B2B dashboard and entry flows

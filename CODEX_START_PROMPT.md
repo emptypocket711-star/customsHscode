@@ -11,7 +11,7 @@ Read these files first:
 Then build Phase 0 and Phase 1.
 
 Goal:
-Create a Next.js + TypeScript + Supabase MVP skeleton for a Korean customs diagnosis SaaS named “통관이음 AI”.
+Create a Next.js + TypeScript + Supabase MVP skeleton for a Korean customs diagnosis SaaS named “HS FINDER”.
 
 Implement:
 

@@ -213,7 +213,7 @@ export async function createReportDraftForHsCandidate(
     : null;
   const ruleSnapshotId = await createSnapshot(supabase, {
     sourceType: "rule_engine",
-    sourceName: "통관이음 AI deterministic report draft rules",
+    sourceName: "HS FINDER deterministic report draft rules",
     sourceUrl: "internal://rules/report-draft",
     sourceVersion: "report-draft-v0",
     effectiveFrom: request.basis_date,
@@ -237,7 +237,7 @@ export async function createReportDraftForHsCandidate(
     {
       report_id: reportId,
       source_snapshot_id: ruleSnapshotId,
-      source_name: "통관이음 AI deterministic report draft rules",
+      source_name: "HS FINDER deterministic report draft rules",
       source_url: "internal://rules/report-draft",
       source_version: "report-draft-v0",
       lock_reason: "rule_engine_report_generation"

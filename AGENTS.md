@@ -4,7 +4,7 @@
 
 This repository builds a Korean customs, HS, FTA, import/export requirement, and legal-update SaaS.
 
-Working product name: `통관이음 AI`.
+Working product name: `HS FINDER`.
 
 The app helps Korean importers, exporters, customs brokers, and trade teams diagnose import/export issues by HS code, product name, or shipping documents.
 

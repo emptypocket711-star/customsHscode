@@ -50,7 +50,7 @@ export type RequirementPlaybookRecord = EffectiveRecord & {
 };
 
 const source = {
-  source_name: "통관이음 AI mock import rules",
+  source_name: "HS FINDER mock import rules",
   source_url: "internal://mock/import-diagnosis",
   source_version: "mock-import-rules-2026",
   effective_from: "2026-01-01",

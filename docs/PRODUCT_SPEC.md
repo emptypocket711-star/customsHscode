@@ -1,4 +1,4 @@
-# Product Spec — 통관이음 AI
+# Product Spec — HS FINDER
 
 ## One-line Definition
 

@@ -1,4 +1,4 @@
-# Customs AI Codex Harness
+# HS FINDER
 
 관세·FTA·수출입요건 진단 SaaS를 Codex로 빠르게 만들기 위한 하네스 패키지입니다.
 

@@ -4,7 +4,7 @@ import { NavigationProgress } from "@/components/navigation-progress";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "통관이음 AI",
+  title: "HS FINDER",
   description: "HS CODE, 관세율, FTA, 수출입요건 조회 서비스"
 };
 

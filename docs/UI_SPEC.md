@@ -26,7 +26,7 @@ Avoid casual copy. Use clear action labels.
 ## Entry Page
 
 Title:
-`통관이음 AI`
+`HS FINDER`
 
 Cards:
 1. `통합 조회`
