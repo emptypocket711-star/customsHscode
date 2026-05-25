@@ -270,7 +270,7 @@ describe("recommendHsCandidates", () => {
     expect(candidates).toHaveLength(1);
     expect(candidates[0]?.hskCode).toBe("8443321010");
     expect(candidates[0]?.lookupBasis).toBe("customs_api");
-    expect(candidates[0]?.reason).toContain("저장본");
+    expect(candidates[0]?.reason).toContain("저장된 HS 검색 데이터");
     expect(candidates[0]?.riskNotes).toContain("확정이 아닙니다");
   });
 

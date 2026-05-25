@@ -455,14 +455,14 @@ function mapStoredCustomsHsCodeSearchRowsToCandidates(
       rank: index + 1,
       confidenceScore: Math.max(0.38, Math.min(0.68, 0.46 + matches.length * 0.06 - index * 0.03)),
       koreanName: row.korean_name || row.english_name || row.hsk_code,
-      reason: "관세청 HS부호검색 저장본에서 조회된 HS CODE 후보입니다. 실제 제품의 기능, 재질, 구성, 용도에 따라 하위 세번이 달라질 수 있습니다.",
+      reason: "저장된 HS 검색 데이터에서 조회된 HS CODE 후보입니다. 실제 제품의 기능, 재질, 구성, 용도에 따라 하위 세번이 달라질 수 있습니다.",
       requiredQuestions: [
-        "관세청 HS부호검색 저장본 후보이므로 품목분류 확정 전 제품 사양 확인 필요",
+        "저장 데이터 기반 후보이므로 품목분류 확정 전 제품 사양 확인 필요",
         row.quantity_unit || row.weight_unit ? `단위: 수량 ${row.quantity_unit || "-"} / 중량 ${row.weight_unit || "-"}` : "수량·중량 단위 확인 필요",
         "카탈로그, 성분/재질, 용도, 모델별 사양서"
       ],
-      riskNotes: "관세청 HS부호검색 결과는 조회 후보이며 품목분류 확정이 아닙니다.",
-      scoreBreakdown: matches.map((term) => `관세청 HS부호검색 저장본 검색어: ${term}`),
+      riskNotes: "저장 HS 검색 데이터 결과는 조회 후보이며 품목분류 확정이 아닙니다.",
+      scoreBreakdown: matches.map((term) => `저장 HS 검색 데이터 보조어: ${term}`),
       lookupBasis: "customs_api",
       reviewStatus: "suggested" as const,
       sourceName: row.source_name,

@@ -430,7 +430,7 @@ function productCandidateLookupBasisLabel(candidate: HsCandidateRecommendation) 
   if (candidate.lookupBasis === "ai_hs_hint") return "GPT 예비 HS";
   if (candidate.lookupBasis === "ai_term_match") return "GPT 품명 단서";
   if (candidate.lookupBasis === "official_name_match") return "품명 단서";
-  if (candidate.lookupBasis === "customs_api") return "HS부호검색";
+  if (candidate.lookupBasis === "customs_api") return "저장 HS 데이터";
   if (candidate.lookupBasis === "internal_tax_rule") return "내국세 단서";
   if (candidate.lookupBasis === "ambiguous_abbreviation") return "약어 후보";
   return "후보 검색";
