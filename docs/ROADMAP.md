@@ -1,5 +1,7 @@
 # Roadmap
 
+운영 작업 기록은 [WORK_LOG.md](./WORK_LOG.md), 주요 제품·기술 결정은 [DECISIONS.md](./DECISIONS.md)에 별도로 남긴다.
+
 ## Phase 0 — Project Bootstrap
 
 - Next.js project

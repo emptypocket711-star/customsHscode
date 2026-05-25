@@ -1,5 +1,10 @@
 # 런칭 전 운영 체크리스트
 
+관련 기록:
+
+- 작업일지: [WORK_LOG.md](./WORK_LOG.md)
+- 주요 의사결정: [DECISIONS.md](./DECISIONS.md)
+
 ## 계정과 권한
 
 - Supabase Auth를 기본 로그인으로 사용한다.

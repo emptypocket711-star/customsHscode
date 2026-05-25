@@ -1,0 +1,101 @@
+# Decisions
+
+이 문서는 HS FINDER 개발 중 되돌리면 영향이 큰 제품·기술 의사결정을 기록한다.
+
+## Product Identity
+
+- 앱 이름은 `HS FINDER`로 사용한다.
+- 한국어 B2B SaaS 톤을 유지한다.
+- 로그인/회원가입을 먼저 받고, 로그인 후 대시보드와 조회 기능을 제공한다.
+
+## Legal And Customs Data Principle
+
+- 법령, 관세율, HS, FTA, 수입요건, 수출요건 데이터는 원칙적으로 공식 출처 기반 스냅샷으로 관리한다.
+- 데이터는 `source_name`, `source_url`, `source_version`, `effective_from`, `effective_to`, `published_at`, `retrieved_at`, `status`, `checksum` 기준을 유지한다.
+- 사용자 화면은 씨엘HS처럼 조회 정보를 명확하게 보여주는 방향으로 간다.
+- 단, 내부 데이터 모델과 보고서/검토 흐름에서는 source, version, basis date, RLS, audit log를 유지한다.
+
+## HS Lookup UX
+
+- 메인 조회창은 HS CODE와 품명 입력을 모두 받는다.
+- 수입 조회와 수출 조회는 노출 정보가 다르다.
+- 수입 조회에서는 한국 수입 기준 관세율, FTA, 내국세, 수입요건을 표시한다.
+- 수출 조회에서는 한국 수출요건을 우선 표시하고, 목적국 기준 HS/관세/내국세/요건은 별도 해외 HS 조회 화면에서 보여준다.
+- HS CODE는 `3401.30-0000` 형태로 표시한다.
+- 10자리 조회 시 상위 6자리, 4자리 경로와 왼쪽 HSK 네비게이터를 제공한다.
+- 4자리/6자리/10자리 네비게이터 항목은 클릭 시 해당 조회 결과로 이동해야 한다.
+
+## Product Name Search
+
+- 품명 검색은 GPT 후보를 우선한다.
+- 공식 HS 품명 데이터와 저장 HS 검색 데이터는 GPT 후보를 확정하거나 덮어쓰기 위한 기준이 아니라, 하위 세번 상세와 downstream 조회 보조 데이터로 사용한다.
+- 예시 단어만 보강하지 않는다. 모든 품명, 한글/영문/중문/러시아어, 브랜드명, 모델명, SKU, 오타에 적용되는 일반 로직을 우선한다.
+- 사용자가 품명과 HS6 또는 해외 HS CODE를 같이 입력할 수 있으므로, 입력값 안의 HS 힌트는 후보 생성에 반영한다.
+- GPT가 HS4/HS6 후보만 줄 수 있어야 한다. HS10 확정이 없더라도 후보 화면에 표시한다.
+- “표준품명과 일치” 또는 “공식 데이터에 대조”처럼 사용자가 확정으로 오해할 수 있는 문구는 피한다.
+
+## Customs API Usage
+
+- 관세청 API018 HS부호검색은 실시간 사용자 조회용으로 쓰지 않는다.
+- API018은 월 1회 또는 운영자가 실행하는 적재 작업으로 DB에 저장하고 중복은 피한다.
+- 사용자 조회는 검토·게시된 DB 스냅샷을 읽는다.
+- 관세율, 통계부호, 관세환율 API도 사용자 요청 중 직접 호출보다 수집/스냅샷/캐시 기반 사용을 우선한다.
+
+## AI Provider
+
+- 운영 AI provider는 OpenAI를 사용한다.
+- 현재 운영 모델은 `OPENAI_MODEL` 환경변수로 제어한다.
+- 품명 검색은 GPT 후보를 받되, 원문 품명이나 송장 원문을 불필요하게 로그에 남기지 않는다.
+- GPT 정규화 결과는 redacted input hash, provider, model, basis date 기준으로 캐싱한다.
+- `LOOKUP_TELEMETRY_ENABLED=true`일 때만 후보 수와 지연 시간 중심의 운영 telemetry를 남긴다.
+
+## User And Auth Model
+
+- 개인회원과 기업회원 가입 흐름을 분리한다.
+- 개인회원은 이메일 인증 후 추가 가입 필드를 완료해야 대시보드로 이동한다.
+- 기업회원은 이메일 인증, 회사명, 사업자등록번호, 업무 유형, 비밀번호 등 필수 필드를 완료해야 대시보드로 이동한다.
+- 기업회원 사업자등록번호는 런칭 전 숫자 10자리 형식만 검증한다.
+- 국세청/공공데이터 사업자 상태조회는 나중에 붙이며, `BUSINESS_REGISTRATION_STATUS_LIVE_ENABLED=true`일 때만 호출한다.
+- 개발자 계정은 `emptypocket711@gmail.com`이고 운영 메뉴 접근은 개발자 계정만 허용한다.
+- 개발자는 사용자 목록, 앱 profile, 회사 정보, 접속 IP 현황을 운영 화면에서 관리할 수 있어야 한다.
+
+## Document Upload
+
+- 문서 업로드는 MVP 런칭 전 일반 사용자 동선에서 제외한다.
+- 현재는 개발자만 내부 테스트 패널을 볼 수 있다.
+- XLS, OCR, PDF, 이미지 변환은 worker와 파일 변환 환경이 준비된 뒤 다시 공개한다.
+- 문서 원문과 인보이스 내용은 client log에 남기지 않는다.
+
+## Deployment Direction
+
+- 1차 런칭은 Vercel + Supabase로 간다.
+- 트래픽 증가 전 Upstash Redis 등 durable cache/rate limit 공유 저장소를 붙인다.
+- 무거운 작업은 `background_jobs`로 분리한다.
+- 문서/OCR/엑셀 변환, 월별 공식 데이터 수집, 보고서 생성은 request-time 작업에서 분리한다.
+
+## Rate Limit And Scale
+
+- `/login`, `/auth`, `/hs`, `/documents`, `/duty-estimator` 경로는 rate limit 보호 대상이다.
+- 운영에서는 `RATE_LIMIT_ENABLED`가 기본적으로 켜지는 구조를 유지한다.
+- 여러 서버 인스턴스에서 일관된 rate limit을 위해 Upstash Redis REST 환경변수를 사용할 수 있다.
+
+## Overseas HS Data
+
+- 해외 HS 조회는 목적국 기준 별도 화면으로 제공한다.
+- 한국 HSK 10자리를 입력해도 HS6까지는 국제 공통이므로 목적국 HS 후보를 찾아 보여준다.
+- 목적국 데이터는 국가별 출처, 연도, 관세율, 내국세, 수입요건을 가능한 한 구조화한다.
+- 중국, 일본, EU, 미국 등 주요 국가부터 확장한다.
+- 국가별 데이터 갱신 링크와 runbook은 docs에 남긴다.
+
+## Internal Tax
+
+- 한국 내국세 매핑은 공식 자료 또는 국민신문고 답변 자료 확보 후 정교화한다.
+- 자료 확보 전에는 법령 기반 테스트 추정 로직만 제한적으로 사용한다.
+- 내국세는 HS CODE별 확정 세율처럼 과도하게 단정하지 않는다.
+
+## Work Tracking
+
+- 날짜별 실제 작업은 `docs/WORK_LOG.md`에 기록한다.
+- 중요한 제품·기술 결정은 이 문서에 기록한다.
+- 세부 코드 변경 이력은 Git commit을 기준으로 추적한다.
+
