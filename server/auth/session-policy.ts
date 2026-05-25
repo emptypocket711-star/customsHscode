@@ -98,3 +98,48 @@ export async function validatePersonalActiveSession({
 
   return { valid: true as const };
 }
+
+export async function checkCompanyIpAllowance({
+  accountType,
+  allowedIpCount,
+  userId
+}: {
+  accountType: AccountType | null;
+  allowedIpCount: number | null;
+  userId: string;
+}) {
+  if (accountType !== "company") {
+    return { allowed: true as const };
+  }
+
+  const { ipAddress } = await getRequestClientInfo();
+  if (!ipAddress || ipAddress === "unknown") {
+    return { allowed: true as const };
+  }
+
+  const maxIpCount = Math.max(1, allowedIpCount ?? 5);
+  const supabase = createSupabaseServiceRoleClient();
+  const { data, error } = await supabase
+    .from("account_access_events")
+    .select("ip_address")
+    .eq("user_id", userId)
+    .eq("event_type", "login_success")
+    .not("ip_address", "is", null)
+    .limit(1000);
+
+  if (error) {
+    return { allowed: true as const, warning: "ip_lookup_failed" };
+  }
+
+  const usedIps = new Set((data ?? []).map((event) => event.ip_address).filter(Boolean) as string[]);
+  if (usedIps.has(ipAddress) || usedIps.size < maxIpCount) {
+    return { allowed: true as const };
+  }
+
+  return {
+    allowed: false as const,
+    currentIp: ipAddress,
+    maxIpCount,
+    usedIpCount: usedIps.size
+  };
+}

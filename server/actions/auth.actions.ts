@@ -20,7 +20,11 @@ import {
 } from "@/lib/supabase/server";
 import { createSupabaseServiceRoleClient, hasSupabaseServiceRoleEnv } from "@/lib/supabase/service-role";
 import { recordAccountAccessEvent } from "@/server/audit/account-audit";
-import { activateUserSession, clearActiveUserSessionCookie } from "@/server/auth/session-policy";
+import {
+  activateUserSession,
+  checkCompanyIpAllowance,
+  clearActiveUserSessionCookie
+} from "@/server/auth/session-policy";
 
 function stringValue(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -245,10 +249,42 @@ export async function authenticateAction(
   const { data: profile } = user
     ? await supabase
         .from("profiles")
-        .select("company_id,account_type")
+        .select("company_id,account_type,allowed_ip_count")
         .eq("id", user.id)
         .maybeSingle()
     : { data: null };
+
+  if (user) {
+    const accountType = profile?.account_type === "personal" ? "personal" : "company";
+    const ipAllowance = await checkCompanyIpAllowance({
+      accountType,
+      allowedIpCount: profile?.allowed_ip_count ?? null,
+      userId: user.id
+    });
+
+    if (!ipAllowance.allowed) {
+      await recordAccountAccessEvent({
+        eventType: "login_failure",
+        userId: user.id,
+        email: parsed.data.email,
+        companyId: profile?.company_id ?? null,
+        metadata: {
+          currentIp: ipAllowance.currentIp,
+          maxIpCount: ipAllowance.maxIpCount,
+          reason: "company_ip_limit_exceeded",
+          usedIpCount: ipAllowance.usedIpCount
+        }
+      });
+      await supabase.auth.signOut();
+      await clearRememberSessionPreference();
+      await clearActiveUserSessionCookie();
+      return {
+        status: "error",
+        mode: "login",
+        message: `허용된 접속 IP 수(${ipAllowance.maxIpCount}개)를 초과했습니다. 개발자 또는 관리자에게 문의해 주세요.`
+      };
+    }
+  }
 
   await recordAccountAccessEvent({
     eventType: "login_success",
