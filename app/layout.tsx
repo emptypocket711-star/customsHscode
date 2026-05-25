@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { Analytics } from "@vercel/analytics/next";
 import { NavigationProgress } from "@/components/navigation-progress";
 import "./globals.css";
 
@@ -20,6 +21,7 @@ export default function RootLayout({
           <NavigationProgress />
         </Suspense>
         {children}
+        <Analytics />
       </body>
     </html>
   );
