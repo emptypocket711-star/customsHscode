@@ -29,6 +29,7 @@ describe("authFormSchema", () => {
       passwordConfirm: "Password123!",
       accountType: "company",
       fullName: "구본현",
+      businessNo: "123-45-67890",
       businessTypes: ["importer"]
     });
 
@@ -44,6 +45,7 @@ describe("authFormSchema", () => {
       accountType: "company",
       fullName: "구본현",
       companyName: "테스트상사",
+      businessNo: "123-45-67890",
       businessTypes: ["importer"]
     });
 
@@ -59,6 +61,7 @@ describe("authFormSchema", () => {
       accountType: "company",
       fullName: "구본현",
       companyName: "테스트상사",
+      businessNo: "123-45-67890",
       businessTypes: []
     });
 
@@ -80,6 +83,22 @@ describe("authFormSchema", () => {
       email: "user@example.com",
       password: "password123",
       passwordConfirm: "password123",
+      accountType: "company",
+      fullName: "구본현",
+      companyName: "테스트상사",
+      businessNo: "123-45-67890",
+      businessTypes: ["importer"]
+    });
+
+    expect(parsed.success).toBe(false);
+  });
+
+  it("requires business registration number for company signup", () => {
+    const parsed = authFormSchema.safeParse({
+      mode: "signup",
+      email: "user@example.com",
+      password: "Password123!",
+      passwordConfirm: "Password123!",
       accountType: "company",
       fullName: "구본현",
       companyName: "테스트상사",

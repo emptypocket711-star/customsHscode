@@ -25,6 +25,7 @@ export function SignupCompletionForm({ email }: { email: string }) {
   const [fullName, setFullName] = useState("");
   const [accountType, setAccountType] = useState<SignupAccountType | null>(null);
   const [companyName, setCompanyName] = useState("");
+  const [businessNo, setBusinessNo] = useState("");
   const [selectedBusinessTypes, setSelectedBusinessTypes] = useState<string[]>([]);
 
   const passwordChecks = {
@@ -37,12 +38,13 @@ export function SignupCompletionForm({ email }: { email: string }) {
   const isPasswordStrong = Object.values(passwordChecks).every(Boolean);
   const isPasswordConfirmValid = password.length > 0 && password === passwordConfirm;
   const isCompanySignup = accountType === "company";
+  const isBusinessNoValid = businessNo.replace(/\D/g, "").length === 10;
   const canSubmit =
     accountType !== null &&
     isPasswordStrong &&
     isPasswordConfirmValid &&
     fullName.trim().length > 0 &&
-    (!isCompanySignup || (companyName.trim().length > 0 && selectedBusinessTypes.length > 0)) &&
+    (!isCompanySignup || (companyName.trim().length > 0 && isBusinessNoValid && selectedBusinessTypes.length > 0)) &&
     !authPending;
 
   return (
@@ -94,6 +96,18 @@ export function SignupCompletionForm({ email }: { email: string }) {
           {isCompanySignup ? (
             <>
               <CompanyNameInput companyName={companyName} disabled={authPending} onValueChange={setCompanyName} />
+              <AuthInput
+                autoComplete="off"
+                disabled={authPending}
+                icon={Building2}
+                inputMode="numeric"
+                label="사업자등록번호"
+                maxLength={12}
+                name="businessNo"
+                onChange={(value) => setBusinessNo(formatBusinessNo(value))}
+                placeholder="000-00-00000"
+                value={businessNo}
+              />
               <BusinessTypeCheckboxes disabled={authPending} selectedValues={selectedBusinessTypes} onChange={setSelectedBusinessTypes} />
             </>
           ) : null}
@@ -178,6 +192,13 @@ function PasswordRules({ checks }: { checks: { length: boolean; lowercase: boole
   );
 }
 
+function formatBusinessNo(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 10);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 5) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
+}
+
 function BusinessTypeCheckboxes({
   disabled,
   onChange,
@@ -221,7 +242,9 @@ function AuthInput({
   autoComplete,
   disabled,
   icon: Icon,
+  inputMode,
   label,
+  maxLength,
   name,
   onChange,
   placeholder,
@@ -231,7 +254,9 @@ function AuthInput({
   autoComplete?: string;
   disabled?: boolean;
   icon: LucideIcon;
+  inputMode?: "none" | "text" | "tel" | "url" | "email" | "numeric" | "decimal" | "search";
   label: string;
+  maxLength?: number;
   name: string;
   onChange?: (value: string) => void;
   placeholder: string;
@@ -247,6 +272,8 @@ function AuthInput({
           autoComplete={autoComplete}
           className="focus-ring h-12 w-full rounded-lg border border-slate-200 bg-white pl-12 pr-4 text-base font-medium text-slate-950 shadow-sm placeholder:text-slate-400"
           disabled={disabled}
+          inputMode={inputMode}
+          maxLength={maxLength}
           name={name}
           onChange={onChange ? (event) => onChange(event.target.value) : undefined}
           placeholder={placeholder}

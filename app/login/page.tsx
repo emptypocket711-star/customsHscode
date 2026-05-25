@@ -17,6 +17,23 @@ async function getCurrentUser() {
   }
 }
 
+async function getPostAuthPath(userId: string) {
+  if (!hasSupabaseEnv()) return "/dashboard";
+
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("onboarding_completed_at")
+      .eq("id", userId)
+      .maybeSingle();
+
+    return profile?.onboarding_completed_at ? "/dashboard" : "/auth/complete-signup";
+  } catch {
+    return "/auth/complete-signup";
+  }
+}
+
 export default async function LoginPage({
   searchParams
 }: {
@@ -27,7 +44,7 @@ export default async function LoginPage({
   const mode = params.mode === "signup" ? "signup" : params.mode === "reset" ? "reset" : "login";
 
   if (user) {
-    redirect("/dashboard");
+    redirect(await getPostAuthPath(user.id));
   }
 
   return (

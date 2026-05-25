@@ -5,7 +5,7 @@ const allowedTypes = new Set(["signup", "invite", "magiclink", "recovery", "emai
 
 function safeNextPath(value: string | null, type: string) {
   if (type === "recovery") return "/auth/update-password";
-  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/dashboard";
+  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/auth/complete-signup";
   return value;
 }
 

@@ -38,6 +38,7 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
   const [signupFullName, setSignupFullName] = useState("");
   const [accountType, setAccountType] = useState<SignupAccountType | null>(null);
   const [companyName, setCompanyName] = useState("");
+  const [businessNo, setBusinessNo] = useState("");
   const [selectedBusinessTypes, setSelectedBusinessTypes] = useState<string[]>([]);
   const [resendCooldown, setResendCooldown] = useState(0);
   const lastCooldownMessageRef = useRef<string | undefined>(undefined);
@@ -86,13 +87,14 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
   const isSignupPasswordStrong = Object.values(signupPasswordChecks).every(Boolean);
   const isSignupPasswordConfirmValid = signupPassword.length > 0 && signupPassword === signupPasswordConfirm;
   const isCompanySignup = accountType === "company";
+  const isBusinessNoValid = businessNo.replace(/\D/g, "").length === 10;
   const canCompleteSignup =
     accountType !== null &&
     verifiedSignupEmail &&
     isSignupPasswordStrong &&
     isSignupPasswordConfirmValid &&
     signupFullName.trim().length > 0 &&
-    (!isCompanySignup || (companyName.trim().length > 0 && selectedBusinessTypes.length > 0)) &&
+    (!isCompanySignup || (companyName.trim().length > 0 && isBusinessNoValid && selectedBusinessTypes.length > 0)) &&
     !authPending;
 
   return (
@@ -235,6 +237,18 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
                     disabled={authPending || !verifiedSignupEmail}
                     onValueChange={setCompanyName}
                   />
+                  <AuthInput
+                    autoComplete="off"
+                    disabled={authPending || !verifiedSignupEmail}
+                    icon={Building2}
+                    inputMode="numeric"
+                    label="사업자등록번호"
+                    maxLength={12}
+                    name="businessNo"
+                    onChange={(value) => setBusinessNo(formatBusinessNo(value))}
+                    placeholder="000-00-00000"
+                    value={businessNo}
+                  />
                   <BusinessTypeCheckboxes disabled={authPending || !verifiedSignupEmail} selectedValues={selectedBusinessTypes} onChange={setSelectedBusinessTypes} />
                 </>
               ) : null}
@@ -354,6 +368,13 @@ function passwordChecks(password: string) {
     number: /\d/.test(password),
     special: /[^A-Za-z0-9]/.test(password)
   };
+}
+
+function formatBusinessNo(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 10);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 5) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
 }
 
 function PasswordRules({ checks }: { checks: ReturnType<typeof passwordChecks> }) {

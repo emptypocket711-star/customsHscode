@@ -40,10 +40,21 @@ function arrayValue(formData: FormData, key: string) {
   return formData.getAll(key).filter((value): value is string => typeof value === "string");
 }
 
-async function ensureClientProfile(accountType: "personal" | "company", companyName?: string, fullName?: string, businessTypes?: string[]) {
+function normalizeBusinessNo(value?: string) {
+  return value ? value.replace(/\D/g, "") : undefined;
+}
+
+async function ensureClientProfile(
+  accountType: "personal" | "company",
+  companyName?: string,
+  fullName?: string,
+  businessTypes?: string[],
+  businessNo?: string
+) {
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc("ensure_client_profile", {
     p_account_type: accountType,
+    p_business_no: businessNo || null,
     p_business_types: businessTypes && businessTypes.length > 0 ? businessTypes : null,
     p_company_name: companyName || null,
     p_full_name: fullName || null
@@ -90,6 +101,7 @@ export async function authenticateAction(
     accountType: stringValue(formData, "accountType"),
     fullName: stringValue(formData, "fullName"),
     companyName: stringValue(formData, "companyName"),
+    businessNo: stringValue(formData, "businessNo"),
     businessTypes: arrayValue(formData, "businessTypes")
   });
 
@@ -140,6 +152,7 @@ export async function authenticateAction(
         full_name: parsed.data.fullName || "",
         account_type: parsed.data.accountType || "personal",
         company_name: parsed.data.companyName || "",
+        business_no: normalizeBusinessNo(parsed.data.businessNo) || "",
         business_types: parsed.data.businessTypes || []
       }
     });
@@ -153,7 +166,13 @@ export async function authenticateAction(
     }
 
     await setRememberSessionPreference(parsed.data.rememberSession ?? true);
-    await ensureClientProfile(parsed.data.accountType ?? "personal", parsed.data.companyName, parsed.data.fullName, parsed.data.businessTypes);
+    await ensureClientProfile(
+      parsed.data.accountType ?? "personal",
+      parsed.data.companyName,
+      parsed.data.fullName,
+      parsed.data.businessTypes,
+      normalizeBusinessNo(parsed.data.businessNo)
+    );
     revalidatePath("/", "layout");
     redirect("/dashboard");
   }

@@ -5,6 +5,7 @@ export const accountTypeSchema = z.enum(["personal", "company"]);
 export const businessTypeSchema = z.enum(["customs_broker", "forwarder", "exporter", "importer"]);
 export const strongPasswordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,128}$/;
 export const strongPasswordMessage = "비밀번호는 숫자, 영문 소문자, 영문 대문자, 특수문자를 모두 포함한 8자 이상이어야 합니다.";
+const businessNoPattern = /^\d{3}-?\d{2}-?\d{5}$/;
 
 export const authFormSchema = z
   .object({
@@ -16,6 +17,7 @@ export const authFormSchema = z
     accountType: accountTypeSchema.optional(),
     fullName: z.string().trim().max(80).optional(),
     companyName: z.string().trim().max(120).optional(),
+    businessNo: z.string().trim().max(12).optional(),
     businessTypes: z.array(businessTypeSchema).optional()
   })
   .superRefine((data, ctx) => {
@@ -64,6 +66,14 @@ export const authFormSchema = z
         code: "custom",
         path: ["companyName"],
         message: "회사명을 입력해 주세요."
+      });
+    }
+
+    if (data.mode === "signup" && data.accountType === "company" && (!data.businessNo || !businessNoPattern.test(data.businessNo))) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["businessNo"],
+        message: "사업자등록번호 10자리를 입력해 주세요."
       });
     }
 
