@@ -1,6 +1,18 @@
 "use client";
 
-import { Calculator, ChevronLeft, ChevronRight, Database, FileSearch, Globe2, LayoutDashboard, Menu, Search, type LucideIcon } from "lucide-react";
+import {
+  Calculator,
+  ChevronLeft,
+  ChevronRight,
+  Database,
+  FileSearch,
+  Globe2,
+  LayoutDashboard,
+  Menu,
+  Search,
+  UsersRound,
+  type LucideIcon
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -16,6 +28,10 @@ const userNavItems = [
 const operationNavItems = [
   { href: "/legal-updates", label: "자료 관리", icon: Database },
   { href: "/staff/review", label: "검토 큐", icon: FileSearch }
+];
+
+const companyNavItems = [
+  { href: "/settings/members", label: "회사 구성원", icon: UsersRound }
 ];
 
 function isActivePath(pathname: string, href: string) {
@@ -76,7 +92,7 @@ function NavGroup({
   );
 }
 
-export function AppSideNav({ showOperations }: { showOperations: boolean }) {
+export function AppSideNav({ showCompanyAdmin, showOperations }: { showCompanyAdmin: boolean; showOperations: boolean }) {
   const [collapsed, setCollapsed] = useState(true);
   const pathname = usePathname();
 
@@ -96,6 +112,7 @@ export function AppSideNav({ showOperations }: { showOperations: boolean }) {
         </summary>
         <nav className="mt-2 grid gap-3 rounded-md border border-slate-200 bg-white p-2 shadow-sm">
           <NavGroup items={userNavItems} pathname={pathname} title="일반 조회" />
+          {showCompanyAdmin ? <NavGroup items={companyNavItems} pathname={pathname} title="회사 관리" /> : null}
           {showOperations ? <NavGroup items={operationNavItems} pathname={pathname} title="운영" /> : null}
         </nav>
       </details>
@@ -122,6 +139,7 @@ export function AppSideNav({ showOperations }: { showOperations: boolean }) {
             )}
           </button>
           <NavGroup collapsed={collapsed} items={userNavItems} pathname={pathname} title="일반 조회" />
+          {showCompanyAdmin ? <NavGroup collapsed={collapsed} items={companyNavItems} pathname={pathname} title="회사 관리" /> : null}
           {showOperations ? <NavGroup collapsed={collapsed} items={operationNavItems} pathname={pathname} title="운영" /> : null}
         </nav>
       </aside>
