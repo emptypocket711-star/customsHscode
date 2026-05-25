@@ -160,9 +160,9 @@ export function DashboardHome({
               <span className="px-2 pb-3">품명 검색 AI</span>
               <Link className="px-2 pb-3 hover:text-blue-700" href="/hs/overseas">해외 HS 검색</Link>
             </div>
-            <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(260px,1fr)_160px_220px_auto]">
+            <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(280px,1fr)_160px_220px_120px] lg:items-end">
               <label className="grid min-w-0 gap-1.5">
-                <span className="sr-only">HS CODE 또는 품명</span>
+                <span className="text-xs font-semibold text-[var(--text-secondary)]">검색어</span>
                 <div className="relative">
                   <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                   <input
@@ -188,13 +188,13 @@ export function DashboardHome({
                   ))}
                 </select>
               </label>
-              <button className="focus-ring inline-flex h-12 items-center justify-center gap-2 self-end rounded-md bg-[var(--brand-solid)] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--brand-solid-hover)]" type="submit">
+              <button className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-md bg-[var(--brand-solid)] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--brand-solid-hover)]" type="submit">
                 <Search aria-hidden="true" size={18} />
                 조회
               </button>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="mt-4 flex flex-wrap items-center gap-2">
               <span className="text-xs font-semibold text-[var(--text-muted)]">인기 검색어</span>
               {quickExamples.map((item) => (
                 <Link className="focus-ring rounded-full border border-[var(--border-subtle)] bg-[var(--surface-muted)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-800" href={item.href} key={item.href}>
