@@ -31,11 +31,11 @@ export default async function LoginPage({
   }
 
   return (
-    <main className="min-h-screen overflow-hidden bg-white">
+    <main className="min-h-screen overflow-hidden bg-white bg-[url('/login-hero.png')] bg-cover bg-center">
       <div className="grid min-h-screen lg:grid-cols-2">
         <section
           aria-label="HS FINDER 소개 이미지"
-          className="hidden min-h-screen bg-[url('/login-hero.png')] bg-cover bg-center lg:block"
+          className="hidden min-h-screen lg:block"
         >
           <div className="sr-only">HS FINDER 소개 이미지</div>
         </section>
