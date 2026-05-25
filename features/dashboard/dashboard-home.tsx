@@ -1,18 +1,23 @@
 import Link from "next/link";
 import {
   ArrowRight,
+  Bookmark,
   Calculator,
   ClipboardList,
+  Clock3,
   FileSearch,
   Globe2,
   Layers3,
   Search,
   ShieldCheck,
-  Sparkles
+  Star,
+  type LucideIcon
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { SourceFooter } from "@/components/ui/source-footer";
 import { destinationCountryOptions } from "@/features/export-diagnosis/country-options";
+import { formatHsCode } from "@/lib/hs-code";
+import type { HsFavoriteItem } from "@/server/repositories/hs-favorite.repository";
 
 type DashboardStat = {
   label: string;
@@ -44,10 +49,18 @@ const workflowLinks = [
   }
 ];
 
+const statIcons = [Search, Bookmark, FileSearch, Calculator];
+
 const quickExamples = [
   { label: "3401.30-0000", href: "/hs/direct?query=3401.30-0000&direction=import&destinationCountry=ALL" },
   { label: "작업용 조끼", href: "/hs/direct?query=%EC%9E%91%EC%97%85%EC%9A%A9%20%EC%A1%B0%EB%81%BC&direction=import&destinationCountry=ALL" },
   { label: "graceday hand cream", href: "/hs/direct?query=graceday%20hand%20cream&direction=import&destinationCountry=ALL" }
+];
+
+const recentLookups = [
+  { code: "8471.60-9000", name: "키보드", time: "최근 예시" },
+  { code: "8528.52-2000", name: "모니터", time: "최근 예시" },
+  { code: "6211.33-0000", name: "작업용 조끼", time: "최근 예시" }
 ];
 
 const comparisonSteps = [
@@ -62,38 +75,75 @@ function toneClass(tone: string) {
   return "bg-slate-100 text-slate-700 ring-slate-200";
 }
 
-export function DashboardHome({ basisDate, stats }: { basisDate: string; stats: DashboardStat[] }) {
+export function DashboardHome({
+  basisDate,
+  favorites,
+  stats
+}: {
+  basisDate: string;
+  favorites: HsFavoriteItem[];
+  stats: DashboardStat[];
+}) {
   return (
-    <div className="grid gap-5">
+    <div className="grid gap-4">
       <section className="overflow-hidden rounded-lg border border-[var(--border-subtle)] bg-[var(--surface)] shadow-[var(--shadow-panel)]">
-        <div className="border-b border-[var(--border-subtle)] bg-[var(--surface-raised)] px-4 py-3 sm:px-5">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="border-b border-[var(--border-subtle)] bg-[var(--surface-raised)] px-4 py-5 sm:px-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge tone="info">2026년형 전문 관세 SaaS</Badge>
                 <span className="text-xs font-medium text-[var(--text-muted)]">기준일 {basisDate}</span>
               </div>
-              <h1 className="mt-3 text-2xl font-semibold tracking-normal text-[var(--text-primary)] sm:text-3xl">
-                HS FINDER
+              <h1 className="mt-4 text-2xl font-semibold tracking-normal text-[var(--text-primary)] sm:text-3xl">
+                안녕하세요, HS FINDER입니다.
               </h1>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
                 HS CODE, 품명, 국가 정보를 기준으로 관세율과 수출입요건을 빠르게 조회하고 비교합니다.
               </p>
             </div>
-            <div className="grid grid-cols-3 gap-2 rounded-md border border-[var(--border-subtle)] bg-white p-2 text-center shadow-sm sm:min-w-[360px]">
-              <MiniMetric label="조회 기준" value="HS/품명" />
-              <MiniMetric label="국가 기준" value="수입·수출" />
-              <MiniMetric label="결과 형태" value="비교형" />
+            <div className="rounded-md border border-[var(--border-subtle)] bg-white px-4 py-3 text-sm font-semibold text-[var(--text-primary)] shadow-sm">
+              {new Intl.DateTimeFormat("ko-KR", {
+                timeZone: "Asia/Seoul",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+                weekday: "short"
+              }).format(new Date(`${basisDate}T00:00:00+09:00`))}
             </div>
           </div>
         </div>
 
-        <div className="grid gap-5 p-4 sm:p-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <form action="/hs/direct" className="grid gap-4" method="get">
+        <div className="grid gap-4 p-4 sm:p-6">
+          <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {stats.slice(0, 4).map((stat, index) => {
+              const Icon = statIcons[index] ?? FileSearch;
+              return (
+                <div className="rounded-lg border border-[var(--border-subtle)] bg-white p-4 shadow-sm" key={stat.label}>
+                  <div className="flex items-center gap-3">
+                    <span className={`grid size-11 place-items-center rounded-lg ring-1 ${index === 0 ? "bg-violet-50 text-violet-700 ring-violet-100" : index === 1 ? "bg-blue-50 text-blue-700 ring-blue-100" : index === 2 ? "bg-emerald-50 text-emerald-700 ring-emerald-100" : "bg-orange-50 text-orange-700 ring-orange-100"}`}>
+                      <Icon aria-hidden="true" size={21} />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-[var(--text-muted)]">{stat.label}</p>
+                      <p className="mt-1 text-2xl font-semibold text-[var(--text-primary)]">{stat.value}</p>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-xs leading-5 text-[var(--text-secondary)]">{stat.note}</p>
+                </div>
+              );
+            })}
+          </section>
+
+          <form action="/hs/direct" className="rounded-lg border border-[var(--border-subtle)] bg-white p-4 shadow-sm" method="get">
             <input defaultValue={basisDate} name="basisDate" type="hidden" />
-            <div className="grid gap-3 lg:grid-cols-[minmax(260px,1fr)_180px_220px_auto]">
+            <div className="flex gap-6 border-b border-[var(--border-subtle)] text-sm font-semibold text-[var(--text-secondary)]">
+              <span className="border-b-2 border-blue-700 px-2 pb-3 text-blue-700">HS CODE 직접 검색</span>
+              <span className="px-2 pb-3">품명 검색 AI</span>
+              <Link className="px-2 pb-3 hover:text-blue-700" href="/hs/overseas">해외 HS 검색</Link>
+            </div>
+            <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(260px,1fr)_160px_220px_auto]">
               <label className="grid min-w-0 gap-1.5">
-                <span className="text-xs font-semibold text-[var(--text-secondary)]">HS CODE 또는 품명</span>
+                <span className="sr-only">HS CODE 또는 품명</span>
                 <div className="relative">
                   <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                   <input
@@ -126,7 +176,7 @@ export function DashboardHome({ basisDate, stats }: { basisDate: string; stats: 
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold text-[var(--text-muted)]">빠른 테스트</span>
+              <span className="text-xs font-semibold text-[var(--text-muted)]">인기 검색어</span>
               {quickExamples.map((item) => (
                 <Link className="focus-ring rounded-full border border-[var(--border-subtle)] bg-[var(--surface-muted)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-800" href={item.href} key={item.href}>
                   {item.label}
@@ -134,33 +184,7 @@ export function DashboardHome({ basisDate, stats }: { basisDate: string; stats: 
               ))}
             </div>
           </form>
-
-          <aside className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-muted)] p-4">
-            <div className="flex items-center gap-2">
-              <span className="grid size-9 place-items-center rounded-md bg-white text-blue-700 shadow-sm">
-                <Sparkles aria-hidden="true" size={18} />
-              </span>
-              <div>
-                <p className="text-sm font-semibold text-[var(--text-primary)]">품명 검색 보조</p>
-                <p className="text-xs text-[var(--text-muted)]">오타·제품코드·외국어 품명 후보화</p>
-              </div>
-            </div>
-            <div className="mt-4 grid gap-2 text-xs leading-5 text-[var(--text-secondary)]">
-              <p className="rounded-md bg-white p-3 shadow-sm">검색어가 불명확하면 후보 HS와 보완 질문을 함께 표시합니다.</p>
-              <p className="rounded-md bg-white p-3 shadow-sm">HS 10자리 확정 전에는 4자리·6자리 경로를 먼저 비교합니다.</p>
-            </div>
-          </aside>
         </div>
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat) => (
-          <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface)] p-4 shadow-[var(--shadow-panel)]" key={stat.label}>
-            <p className="text-xs font-semibold text-[var(--text-muted)]">{stat.label}</p>
-            <p className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">{stat.value}</p>
-            <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">{stat.note}</p>
-          </div>
-        ))}
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
@@ -220,15 +244,66 @@ export function DashboardHome({ basisDate, stats }: { basisDate: string; stats: 
           </div>
         </div>
       </section>
+
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <DashboardListCard
+          emptyText="아직 즐겨찾기한 HS CODE가 없습니다."
+          icon={Star}
+          items={favorites.map((favorite) => ({
+            href: `/hs/direct?query=${favorite.hskCode}&direction=import&destinationCountry=ALL&basisDate=${favorite.basisDate ?? basisDate}`,
+            title: formatHsCode(favorite.hskCode),
+            subtitle: favorite.displayName ?? "저장한 HS CODE",
+            meta: favorite.basisDate ?? basisDate
+          }))}
+          title="즐겨찾기 HS CODE"
+        />
+        <DashboardListCard
+          icon={Clock3}
+          items={recentLookups.map((item) => ({
+            href: `/hs/direct?query=${item.code}&direction=import&destinationCountry=ALL&basisDate=${basisDate}`,
+            title: formatHsCode(item.code),
+            subtitle: item.name,
+            meta: item.time
+          }))}
+          title="최근 검색 예시"
+        />
+      </section>
     </div>
   );
 }
 
-function MiniMetric({ label, value }: { label: string; value: string }) {
+function DashboardListCard({
+  emptyText,
+  icon: Icon,
+  items,
+  title
+}: {
+  emptyText?: string;
+  icon: LucideIcon;
+  items: { href: string; title: string; subtitle: string; meta: string }[];
+  title: string;
+}) {
   return (
-    <div className="rounded-md bg-[var(--surface-muted)] px-2 py-2">
-      <p className="text-[11px] font-semibold text-[var(--text-muted)]">{label}</p>
-      <p className="mt-1 truncate text-sm font-semibold text-[var(--text-primary)]">{value}</p>
+    <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface)] shadow-[var(--shadow-panel)]">
+      <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-5 py-4">
+        <div className="flex items-center gap-2">
+          <Icon aria-hidden="true" className="text-blue-700" size={18} />
+          <h2 className="text-base font-semibold text-[var(--text-primary)]">{title}</h2>
+        </div>
+      </div>
+      <div className="divide-y divide-[var(--border-subtle)] px-4">
+        {items.length ? items.map((item) => (
+          <Link className="focus-ring flex items-center justify-between gap-3 py-3 text-sm" href={item.href} key={`${item.title}-${item.subtitle}`}>
+            <span className="min-w-0">
+              <span className="block font-mono font-semibold text-blue-700">{item.title}</span>
+              <span className="mt-0.5 block truncate text-xs text-[var(--text-secondary)]">{item.subtitle}</span>
+            </span>
+            <span className="shrink-0 text-xs text-[var(--text-muted)]">{item.meta}</span>
+          </Link>
+        )) : (
+          <div className="py-6 text-sm text-[var(--text-secondary)]">{emptyText}</div>
+        )}
+      </div>
     </div>
   );
 }

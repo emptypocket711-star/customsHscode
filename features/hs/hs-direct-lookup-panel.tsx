@@ -1,4 +1,4 @@
-import { ExternalLink, Search } from "lucide-react";
+import { ExternalLink, Search, Star } from "lucide-react";
 import Link from "next/link";
 import { Fragment } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +31,8 @@ import { buildHsHierarchyPath, type HsHierarchyNode } from "@/lib/hs-hierarchy";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import { getSeoulDateString } from "@/lib/utils";
 import { cachedLookup, lookupCacheKey } from "@/server/cache/lookup-cache";
+import { toggleHsFavoriteAction } from "@/server/actions/hs-favorite.actions";
+import { favoriteCodeSet } from "@/server/repositories/hs-favorite.repository";
 import {
   findExportDestinationCustomsCodes,
   findExportDestinationTariffsByDestinationCode,
@@ -600,6 +602,33 @@ function hsLookupHref({
   return `${path}?${params.toString()}`;
 }
 
+function currentHsDirectReturnTo({
+  basisDate,
+  destinationCountry,
+  destinationHsCode,
+  direction,
+  originCountry,
+  query
+}: {
+  basisDate: string;
+  destinationCountry: string;
+  destinationHsCode?: string;
+  direction: "import" | "export";
+  originCountry: string;
+  query: string;
+}) {
+  const params = new URLSearchParams({
+    query,
+    direction,
+    destinationCountry,
+    basisDate
+  });
+
+  if (destinationHsCode) params.set("destinationHsCode", destinationHsCode);
+  if (originCountry && originCountry !== "ALL") params.set("originCountry", originCountry);
+  return `/hs/direct?${params.toString()}`;
+}
+
 function HsHierarchyTrail({
   nodes,
   currentCode,
@@ -851,6 +880,38 @@ function HsCodeSideNavigator({
         </div>
       </div>
     </aside>
+  );
+}
+
+function HsFavoriteToggleButton({
+  basisDate,
+  displayName,
+  hskCode,
+  isFavorite,
+  returnTo
+}: {
+  basisDate: string;
+  displayName: string;
+  hskCode: string;
+  isFavorite: boolean;
+  returnTo: string;
+}) {
+  return (
+    <form action={toggleHsFavoriteAction}>
+      <input name="hskCode" type="hidden" value={hskCode} />
+      <input name="displayName" type="hidden" value={displayName} />
+      <input name="basisDate" type="hidden" value={basisDate} />
+      <input name="returnTo" type="hidden" value={returnTo} />
+      <button
+        className={`focus-ring inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold ${
+          isFavorite ? "bg-amber-100 text-amber-900 hover:bg-amber-200" : "bg-white/15 text-white hover:bg-white/25"
+        }`}
+        type="submit"
+      >
+        <Star aria-hidden="true" className={isFavorite ? "fill-amber-500 text-amber-600" : ""} size={15} />
+        {isFavorite ? "즐겨찾기됨" : "즐겨찾기"}
+      </button>
+    </form>
   );
 }
 
@@ -2434,6 +2495,19 @@ export async function HsDirectLookupPanel({
     : shouldLookupProduct && isWeakProductName(searchQuery)
       ? buildProductSupplementGuidance(searchQuery)
       : null;
+  const favoriteCodes = lookupDirection === "import" && results.length && hasSupabaseEnv()
+    ? await createSupabaseServerClient()
+      .then((client) => favoriteCodeSet(client, results.map((result) => result.hskCode)))
+      .catch(() => new Set<string>())
+    : new Set<string>();
+  const favoriteReturnTo = currentHsDirectReturnTo({
+    query: searchQuery,
+    direction: lookupDirection,
+    destinationCountry: selectedDestinationCountry,
+    originCountry: selectedOriginCountry,
+    basisDate: resolvedBasisDate,
+    destinationHsCode
+  });
 
   return (
     <Card>
@@ -2806,6 +2880,13 @@ export async function HsDirectLookupPanel({
                     <div className="flex h-10 items-center justify-between gap-2 bg-blue-700 px-3 text-sm font-semibold text-white">
                       <span>품목 상세</span>
                       <div className="flex shrink-0 gap-2">
+                        <HsFavoriteToggleButton
+                          basisDate={result.basisDate}
+                          displayName={result.koreanName}
+                          hskCode={result.hskCode}
+                          isFavorite={favoriteCodes.has(result.hskCode)}
+                          returnTo={favoriteReturnTo}
+                        />
                         <Link
                           className="focus-ring inline-flex items-center justify-center rounded-md bg-white/15 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/25"
                           href={buildDutyEstimatorHref({
