@@ -186,6 +186,52 @@ export async function LegalUpdateCenter() {
           </div>
           {inventory.loadError ? <p className="mt-3 text-sm text-amber-800">조회 오류: {inventory.loadError}</p> : null}
 
+          <div className="mt-4 rounded-lg border border-indigo-100 bg-indigo-50 p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-indigo-950">원산지표시 데이터 커버리지</p>
+                <p className="mt-1 text-xs text-indigo-800">
+                  원산지표시대상 HS 패턴과 물품별 표시방법 연결 상태를 점검합니다.
+                </p>
+              </div>
+              <Badge tone={coverageTone(inventory.originMarkingCoverage.targetsMissingMethod)}>
+                표시방법 연결률 {inventory.originMarkingCoverage.methodCoverageRate}%
+              </Badge>
+            </div>
+            <div className="mt-3 grid gap-3 md:grid-cols-5">
+              <div>
+                <p className="text-xs font-medium text-indigo-700">대상 HS 패턴</p>
+                <p className="text-lg font-semibold text-indigo-950">{inventory.originMarkingCoverage.targetPatterns.toLocaleString("ko-KR")}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-indigo-700">표시방법 패턴</p>
+                <p className="text-lg font-semibold text-indigo-950">{inventory.originMarkingCoverage.methodPatterns.toLocaleString("ko-KR")}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-indigo-700">표시방법 연결</p>
+                <p className="text-lg font-semibold text-indigo-950">{inventory.originMarkingCoverage.targetsWithMethod.toLocaleString("ko-KR")}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-indigo-700">표시방법 미연결</p>
+                <p className={inventory.originMarkingCoverage.targetsMissingMethod ? "text-lg font-semibold text-amber-800" : "text-lg font-semibold text-indigo-950"}>
+                  {inventory.originMarkingCoverage.targetsMissingMethod.toLocaleString("ko-KR")}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-indigo-700">점검 상태</p>
+                <p className="text-sm font-semibold text-indigo-950">{inventory.originMarkingCoverage.targetsMissingMethod ? "보완 필요" : "사용 가능"}</p>
+              </div>
+            </div>
+            {inventory.originMarkingCoverage.missingMethodPatterns.length ? (
+              <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                <p className="font-semibold">표시방법 미연결 HS 패턴</p>
+                <p className="mt-1 font-mono text-xs leading-5">
+                  {inventory.originMarkingCoverage.missingMethodPatterns.join(", ")}
+                </p>
+              </div>
+            ) : null}
+          </div>
+
           <div className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50 p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>

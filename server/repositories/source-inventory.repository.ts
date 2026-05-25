@@ -53,6 +53,15 @@ export type RequirementPlaybookCoverage = {
   }>;
 };
 
+export type OriginMarkingCoverage = {
+  targetPatterns: number;
+  methodPatterns: number;
+  targetsWithMethod: number;
+  targetsMissingMethod: number;
+  methodCoverageRate: number;
+  missingMethodPatterns: string[];
+};
+
 type DomesticHsLookupSnapshotCoverageRow = {
   snapshot_basis_date: string | null;
   total_hsk10: number | string | null;
@@ -62,6 +71,10 @@ type DomesticHsLookupSnapshotCoverageRow = {
   with_public_notice_requirements: number | string | null;
   with_internal_taxes: number | string | null;
   last_refreshed_at: string | null;
+};
+
+type OriginMarkingPatternRow = {
+  hsk_pattern: string;
 };
 
 type RequirementRow = {
@@ -247,5 +260,41 @@ export async function getRequirementPlaybookCoverageFromSupabase(
     sourceVersions,
     stalePlaybooks,
     invalidSourceUrls
+  };
+}
+
+export async function getOriginMarkingCoverageFromSupabase(
+  supabase: SupabaseClient
+): Promise<OriginMarkingCoverage> {
+  const [targetsResult, methodsResult] = await Promise.all([
+    supabase
+      .from("origin_marking_targets")
+      .select("hsk_pattern")
+      .eq("status", "published")
+      .eq("is_target", true),
+    supabase
+      .from("origin_marking_methods")
+      .select("hsk_pattern")
+      .eq("status", "published")
+  ]);
+
+  if (targetsResult.error) throw new Error(targetsResult.error.message);
+  if (methodsResult.error) throw new Error(methodsResult.error.message);
+
+  const targetPatterns = new Set(((targetsResult.data ?? []) as OriginMarkingPatternRow[]).map((row) => row.hsk_pattern));
+  const methodPatterns = new Set(((methodsResult.data ?? []) as OriginMarkingPatternRow[]).map((row) => row.hsk_pattern));
+  const missingMethodPatterns = Array.from(targetPatterns)
+    .filter((pattern) => !methodPatterns.has(pattern))
+    .sort((a, b) => a.localeCompare(b))
+    .slice(0, 20);
+  const targetsWithMethod = Array.from(targetPatterns).filter((pattern) => methodPatterns.has(pattern)).length;
+
+  return {
+    targetPatterns: targetPatterns.size,
+    methodPatterns: methodPatterns.size,
+    targetsWithMethod,
+    targetsMissingMethod: targetPatterns.size - targetsWithMethod,
+    methodCoverageRate: targetPatterns.size ? Math.round((targetsWithMethod / targetPatterns.size) * 1000) / 10 : 0,
+    missingMethodPatterns
   };
 }

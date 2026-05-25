@@ -15,6 +15,8 @@ describe("source inventory service", () => {
     expect(inventory.domesticLookupCoverage.missingTariffRates).toBe(1);
     expect(inventory.requirementPlaybookCoverage.coverageRate).toBe(100);
     expect(inventory.requirementPlaybookCoverage.missingPlaybook).toBe(0);
+    expect(inventory.originMarkingCoverage.targetPatterns).toBeGreaterThan(100);
+    expect(inventory.originMarkingCoverage.methodCoverageRate).toBeGreaterThan(90);
   });
 
   it("adds diagnostics for usable, unpublished, and empty sources", () => {

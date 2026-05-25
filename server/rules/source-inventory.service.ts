@@ -5,9 +5,11 @@ import {
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import {
   getDomesticHsLookupSnapshotCoverageFromSupabase,
+  getOriginMarkingCoverageFromSupabase,
   getSourceVersionInventoryFromSupabase,
   getRequirementPlaybookCoverageFromSupabase,
   type DomesticHsLookupSnapshotCoverage,
+  type OriginMarkingCoverage,
   type RequirementPlaybookCoverage
 } from "@/server/repositories/source-inventory.repository";
 
@@ -17,6 +19,7 @@ export type SourceVersionInventoryResult = {
   loadError?: string;
   domesticLookupCoverage: DomesticHsLookupSnapshotCoverage;
   requirementPlaybookCoverage: RequirementPlaybookCoverage;
+  originMarkingCoverage: OriginMarkingCoverage;
   summary: {
     stagedCount: number;
     publishedCount: number;
@@ -109,6 +112,15 @@ const mockRequirementPlaybookCoverage: RequirementPlaybookCoverage = {
   ],
   stalePlaybooks: [],
   invalidSourceUrls: []
+};
+
+const mockOriginMarkingCoverage: OriginMarkingCoverage = {
+  targetPatterns: 645,
+  methodPatterns: 907,
+  targetsWithMethod: 612,
+  targetsMissingMethod: 33,
+  methodCoverageRate: 94.9,
+  missingMethodPatterns: ["0102", "0106", "0201"]
 };
 
 function inventoryGroupForTable(targetTable: string) {
@@ -238,6 +250,7 @@ export function getMockSourceVersionInventory(loadError?: string): SourceVersion
     loadError,
     domesticLookupCoverage: mockDomesticLookupCoverage,
     requirementPlaybookCoverage: mockRequirementPlaybookCoverage,
+    originMarkingCoverage: mockOriginMarkingCoverage,
     summary: summarize(items)
   };
 }
@@ -249,10 +262,11 @@ export async function getSourceVersionInventory(): Promise<SourceVersionInventor
 
   try {
     const supabase = await createSupabaseServerClient();
-    const [sourceItems, domesticLookupCoverage, requirementPlaybookCoverage] = await Promise.all([
+    const [sourceItems, domesticLookupCoverage, requirementPlaybookCoverage, originMarkingCoverage] = await Promise.all([
       getSourceVersionInventoryFromSupabase(supabase),
       getDomesticHsLookupSnapshotCoverageFromSupabase(supabase),
-      getRequirementPlaybookCoverageFromSupabase(supabase)
+      getRequirementPlaybookCoverageFromSupabase(supabase),
+      getOriginMarkingCoverageFromSupabase(supabase)
     ]);
     const items = withDiagnostics(sourceItems);
     return {
@@ -260,6 +274,7 @@ export async function getSourceVersionInventory(): Promise<SourceVersionInventor
       dataSource: "supabase",
       domesticLookupCoverage: domesticLookupCoverage ?? mockDomesticLookupCoverage,
       requirementPlaybookCoverage,
+      originMarkingCoverage,
       summary: summarize(items)
     };
   } catch (error) {
