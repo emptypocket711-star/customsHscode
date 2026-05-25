@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/service-role";
+import { recordAuditLog } from "@/server/audit/account-audit";
 import { isDeveloperEmail } from "@/server/auth/developer";
 
 export type DeveloperUserActionState = {
@@ -76,7 +77,7 @@ export async function updateManagedUserAction(
   void previousState;
 
   try {
-    await requireCurrentDeveloper();
+    const actor = await requireCurrentDeveloper();
 
     const parsed = updateUserSchema.safeParse({
       userId: stringValue(formData, "userId"),
@@ -101,6 +102,11 @@ export async function updateManagedUserAction(
     const input = parsed.data;
     const admin = createSupabaseServiceRoleClient();
     const businessNo = normalizeBusinessNo(input.businessNo);
+    const { data: beforeProfile } = await admin
+      .from("profiles")
+      .select("id,email,full_name,role,company_id,company_role,account_type,allowed_ip_count")
+      .eq("id", input.userId)
+      .maybeSingle();
 
     if (input.accountType === "company" && input.companyName && businessNo && businessNo.length !== 10) {
       return {
@@ -147,6 +153,25 @@ export async function updateManagedUserAction(
 
       if (companyError) throw companyError;
     }
+
+    await recordAuditLog({
+      action: "developer_user_update",
+      actorId: actor.id,
+      companyId: input.companyId || null,
+      targetTable: "auth.users",
+      targetId: input.userId,
+      before: beforeProfile,
+      after: {
+        email: input.email,
+        fullName: input.fullName || null,
+        role: input.role,
+        accountType: input.accountType,
+        companyRole: input.companyRole,
+        allowedIpCount: input.allowedIpCount,
+        companyName: input.companyName || null,
+        businessNo
+      }
+    });
 
     revalidatePath("/operations/users");
     return {
@@ -198,6 +223,11 @@ export async function deleteManagedUserAction(
     }
 
     const admin = createSupabaseServiceRoleClient();
+    const { data: beforeProfile } = await admin
+      .from("profiles")
+      .select("id,email,full_name,role,company_id,company_role,account_type,allowed_ip_count")
+      .eq("id", input.userId)
+      .maybeSingle();
     const { error } = await admin.auth.admin.deleteUser(input.userId);
     if (error) throw error;
 
@@ -218,6 +248,18 @@ export async function deleteManagedUserAction(
         if (companyError) throw companyError;
       }
     }
+
+    await recordAuditLog({
+      action: "developer_user_delete",
+      actorId: currentUser.id,
+      companyId: input.companyId || null,
+      targetTable: "auth.users",
+      targetId: input.userId,
+      before: beforeProfile,
+      after: {
+        deleted: true
+      }
+    });
 
     revalidatePath("/operations/users");
     return {

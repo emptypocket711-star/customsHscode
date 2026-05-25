@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
-import { Save, Trash2 } from "lucide-react";
+import type { ReactNode } from "react";
+import { useActionState, useMemo, useState } from "react";
+import { Filter, Save, Search, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import {
@@ -48,6 +49,34 @@ function StatusMessage({ state }: { state: DeveloperUserActionState }) {
 export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
   const [updateState, updateAction, updatePending] = useActionState(updateManagedUserAction, initialState);
   const [deleteState, deleteAction, deletePending] = useActionState(deleteManagedUserAction, initialState);
+  const [query, setQuery] = useState("");
+  const [accountTypeFilter, setAccountTypeFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [roleFilter, setRoleFilter] = useState("all");
+
+  const filteredUsers = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    return users.filter((user) => {
+      const matchesQuery =
+        !normalizedQuery ||
+        [
+          user.email,
+          user.fullName,
+          user.companyName,
+          user.businessNo,
+          user.id
+        ].some((value) => value.toLowerCase().includes(normalizedQuery));
+      const matchesAccountType = accountTypeFilter === "all" || user.accountType === accountTypeFilter;
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "completed" && user.onboardingCompletedAt) ||
+        (statusFilter === "incomplete" && !user.onboardingCompletedAt);
+      const matchesRole = roleFilter === "all" || user.role === roleFilter;
+
+      return matchesQuery && matchesAccountType && matchesStatus && matchesRole;
+    });
+  }, [accountTypeFilter, query, roleFilter, statusFilter, users]);
 
   return (
     <div className="grid gap-5">
@@ -76,21 +105,56 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
               <p className="mt-1 text-2xl font-semibold text-slate-950">{users.filter((user) => user.accountType === "personal").length}</p>
             </div>
           </div>
+          <div className="grid gap-3 rounded-md border border-slate-200 bg-white p-3 lg:grid-cols-[minmax(260px,1fr)_160px_160px_160px]">
+            <label className="grid gap-1 text-sm font-medium text-slate-700">
+              검색
+              <span className="relative">
+                <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
+                <input
+                  className="focus-ring h-10 w-full rounded-md border border-slate-300 pl-9 pr-3 text-slate-950"
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="이메일, 이름, 회사명, 사업자번호"
+                  value={query}
+                />
+              </span>
+            </label>
+            <FilterSelect label="회원 유형" onChange={setAccountTypeFilter} value={accountTypeFilter}>
+              <option value="all">전체</option>
+              <option value="personal">개인회원</option>
+              <option value="company">기업회원</option>
+            </FilterSelect>
+            <FilterSelect label="가입 상태" onChange={setStatusFilter} value={statusFilter}>
+              <option value="all">전체</option>
+              <option value="completed">가입 완료</option>
+              <option value="incomplete">추가정보 미완료</option>
+            </FilterSelect>
+            <FilterSelect label="권한" onChange={setRoleFilter} value={roleFilter}>
+              <option value="all">전체</option>
+              <option value="client">client</option>
+              <option value="customs_staff">customs_staff</option>
+              <option value="admin">admin</option>
+              <option value="developer">developer</option>
+            </FilterSelect>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-slate-600">
+            <Filter aria-hidden="true" size={16} />
+            <span>표시 중 {filteredUsers.length}명 / 전체 {users.length}명</span>
+          </div>
           <StatusMessage state={updateState} />
           <StatusMessage state={deleteState} />
         </CardBody>
       </Card>
 
       <div className="grid gap-3">
-        {users.length === 0 ? (
+        {filteredUsers.length === 0 ? (
           <Card>
             <CardBody>
-              <p className="text-sm text-slate-600">가입된 사용자가 없습니다.</p>
+              <p className="text-sm text-slate-600">{users.length === 0 ? "가입된 사용자가 없습니다." : "조건에 맞는 사용자가 없습니다."}</p>
             </CardBody>
           </Card>
         ) : null}
 
-        {users.map((user) => (
+        {filteredUsers.map((user) => (
           <Card key={user.id}>
             <CardBody className="grid gap-4">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -223,5 +287,30 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
         ))}
       </div>
     </div>
+  );
+}
+
+function FilterSelect({
+  children,
+  label,
+  onChange,
+  value
+}: {
+  children: ReactNode;
+  label: string;
+  onChange: (value: string) => void;
+  value: string;
+}) {
+  return (
+    <label className="grid gap-1 text-sm font-medium text-slate-700">
+      {label}
+      <select
+        className="focus-ring h-10 rounded-md border border-slate-300 bg-white px-3 text-slate-950"
+        onChange={(event) => onChange(event.target.value)}
+        value={value}
+      >
+        {children}
+      </select>
+    </label>
   );
 }

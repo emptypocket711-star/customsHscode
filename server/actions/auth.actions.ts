@@ -19,6 +19,7 @@ import {
   setRememberSessionPreference
 } from "@/lib/supabase/server";
 import { createSupabaseServiceRoleClient, hasSupabaseServiceRoleEnv } from "@/lib/supabase/service-role";
+import { recordAccountAccessEvent } from "@/server/audit/account-audit";
 
 function stringValue(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -53,7 +54,7 @@ async function ensureClientProfile(
   businessNo?: string
 ) {
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.rpc("ensure_client_profile", {
+  const { data, error } = await supabase.rpc("ensure_client_profile", {
     p_account_type: accountType,
     p_business_no: businessNo || null,
     p_business_types: businessTypes && businessTypes.length > 0 ? businessTypes : null,
@@ -62,6 +63,7 @@ async function ensureClientProfile(
   });
 
   if (error) throw new Error(error.message);
+  return typeof data === "string" ? data : null;
 }
 
 async function getPostLoginPath() {
@@ -150,6 +152,11 @@ export async function authenticateAction(
       };
     }
 
+    await recordAccountAccessEvent({
+      eventType: "password_reset_requested",
+      email: parsed.data.email
+    });
+
     return {
       status: "success",
       mode: "reset",
@@ -180,13 +187,21 @@ export async function authenticateAction(
     }
 
     await setRememberSessionPreference(parsed.data.rememberSession ?? true);
-    await ensureClientProfile(
+    const companyId = await ensureClientProfile(
       parsed.data.accountType ?? "personal",
       parsed.data.companyName,
       parsed.data.fullName,
       parsed.data.businessTypes,
       normalizeBusinessNo(parsed.data.businessNo)
     );
+    await recordAccountAccessEvent({
+      eventType: "signup_completed",
+      email: parsed.data.email,
+      companyId,
+      metadata: {
+        accountType: parsed.data.accountType ?? "personal"
+      }
+    });
     revalidatePath("/", "layout");
     redirect("/dashboard");
   }
@@ -197,12 +212,38 @@ export async function authenticateAction(
   });
 
   if (error) {
+    await recordAccountAccessEvent({
+      eventType: "login_failure",
+      email: parsed.data.email,
+      metadata: {
+        reason: error.message
+      }
+    });
+
     return {
       status: "error",
       mode: "login",
       message: error.message
     };
   }
+
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+  const { data: profile } = user
+    ? await supabase
+        .from("profiles")
+        .select("company_id")
+        .eq("id", user.id)
+        .maybeSingle()
+    : { data: null };
+
+  await recordAccountAccessEvent({
+    eventType: "login_success",
+    userId: user?.id,
+    email: parsed.data.email,
+    companyId: profile?.company_id ?? null
+  });
 
   await setRememberSessionPreference(parsed.data.rememberSession ?? true);
   revalidatePath("/", "layout");
@@ -272,6 +313,14 @@ export async function sendSignupEmailOtpAction(
       message: error.message
     };
   }
+
+  await recordAccountAccessEvent({
+    eventType: "signup_otp_requested",
+    email: parsed.data.email,
+    metadata: {
+      accountType
+    }
+  });
 
   return {
     status: "success",
@@ -356,6 +405,13 @@ export async function verifySignupEmailOtpAction(
 
     if (!fallback.error) {
       await setRememberSessionPreference(true);
+      await recordAccountAccessEvent({
+        eventType: "signup_email_verified",
+        email: parsed.data.email,
+        metadata: {
+          otpType: "magiclink"
+        }
+      });
       return {
         status: "success",
         email: parsed.data.email,
@@ -372,6 +428,13 @@ export async function verifySignupEmailOtpAction(
   }
 
   await setRememberSessionPreference(true);
+  await recordAccountAccessEvent({
+    eventType: "signup_email_verified",
+    email: parsed.data.email,
+    metadata: {
+      otpType: "email"
+    }
+  });
   return {
     status: "success",
     email: parsed.data.email,
@@ -425,6 +488,14 @@ export async function signOutAction() {
   }
 
   const supabase = await createSupabaseServerClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+  await recordAccountAccessEvent({
+    eventType: "sign_out",
+    userId: user?.id,
+    email: user?.email
+  });
   await supabase.auth.signOut();
   await clearRememberSessionPreference();
   revalidatePath("/", "layout");
