@@ -24,7 +24,7 @@ export default async function LoginPage({
 }) {
   const user = await getCurrentUser();
   const params = await searchParams;
-  const mode = params.mode === "signup" ? "signup" : "login";
+  const mode = params.mode === "signup" ? "signup" : params.mode === "reset" ? "reset" : "login";
 
   if (user) {
     redirect("/dashboard");
