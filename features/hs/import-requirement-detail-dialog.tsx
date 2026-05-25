@@ -41,6 +41,19 @@ function displayValue(value?: string | null) {
   return value?.trim() ? value : "-";
 }
 
+function lawSearchUrl(lawName: string) {
+  const query = encodeURIComponent(lawName.trim());
+  return `https://www.law.go.kr/LSW/lsSc.do?menuId=1&subMenuId=15&query=${query}`;
+}
+
+function LawLink({ lawName }: { lawName: string }) {
+  return (
+    <a className="font-semibold text-blue-700 underline-offset-2 hover:underline" href={lawSearchUrl(lawName)} rel="noreferrer" target="_blank">
+      {lawName}
+    </a>
+  );
+}
+
 function agencyDisplayText(agency: ImportRequirementDetailDialogProps["agencies"][number]) {
   return agency.contact?.websiteUrl?.trim() || agency.name;
 }
@@ -211,7 +224,9 @@ export function ImportRequirementDetailDialog({ type, name, relatedLaw, agencies
               </div>
               <div>
                 <div className="text-xs font-semibold text-slate-500">관련법령</div>
-                <div className="mt-1 font-semibold text-slate-900">{relatedLaw}</div>
+                <div className="mt-1">
+                  <LawLink lawName={relatedLaw} />
+                </div>
               </div>
               <div>
                 <div className="text-xs font-semibold text-slate-500">기관</div>
@@ -247,6 +262,9 @@ export function ImportRequirementDetailDialog({ type, name, relatedLaw, agencies
                   </div>
                 </FieldRow>
                 <FieldRow label="요건 내용">{displayValue(procedureSummary)}</FieldRow>
+                <FieldRow label="관련 법령">
+                  <LawLink lawName={relatedLaw} />
+                </FieldRow>
                 <FieldRow label="적용 내용">{displayValue(playbook?.applicationMethod)}</FieldRow>
                 <FieldRow label="처리/검사">{displayValue(playbook?.expectedLeadTime)}</FieldRow>
                 <FieldRow label="대상 제외 가능성">{displayValue(playbook?.exemptionPossibility)}</FieldRow>
