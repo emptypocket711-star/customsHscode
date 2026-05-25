@@ -4,6 +4,7 @@ import { AppHeader } from "@/components/app-header";
 import { AppSideNav } from "@/components/app-side-nav";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import { isDeveloperEmail } from "@/server/auth/developer";
+import { validatePersonalActiveSession } from "@/server/auth/session-policy";
 
 async function getCurrentUser() {
   if (!hasSupabaseEnv()) return null;
@@ -19,18 +20,17 @@ async function getCurrentUser() {
   }
 }
 
-async function getOnboardingPath(userId: string) {
+async function getProfileAccessState(userId: string) {
   if (!hasSupabaseEnv()) return null;
 
   const supabase = await createSupabaseServerClient();
   const { data: profile } = await supabase
     .from("profiles")
-    .select("onboarding_completed_at")
+    .select("account_type,onboarding_completed_at")
     .eq("id", userId)
     .maybeSingle();
 
-  if (profile?.onboarding_completed_at) return null;
-  return "/auth/complete-signup";
+  return profile ?? null;
 }
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
@@ -40,9 +40,17 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     redirect("/login");
   }
 
-  const onboardingPath = await getOnboardingPath(user.id);
-  if (onboardingPath) {
-    redirect(onboardingPath);
+  const profile = await getProfileAccessState(user.id);
+  if (!profile?.onboarding_completed_at) {
+    redirect("/auth/complete-signup");
+  }
+
+  const sessionCheck = await validatePersonalActiveSession({
+    accountType: profile.account_type === "personal" ? "personal" : "company",
+    userId: user.id
+  });
+  if (!sessionCheck.valid) {
+    redirect("/auth/session-ended");
   }
 
   return (

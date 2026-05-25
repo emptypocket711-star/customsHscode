@@ -20,6 +20,7 @@ import {
 } from "@/lib/supabase/server";
 import { createSupabaseServiceRoleClient, hasSupabaseServiceRoleEnv } from "@/lib/supabase/service-role";
 import { recordAccountAccessEvent } from "@/server/audit/account-audit";
+import { activateUserSession, clearActiveUserSessionCookie } from "@/server/auth/session-policy";
 
 function stringValue(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -202,6 +203,17 @@ export async function authenticateAction(
         accountType: parsed.data.accountType ?? "personal"
       }
     });
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+    if (user) {
+      await activateUserSession({
+        accountType: parsed.data.accountType ?? "personal",
+        email: parsed.data.email,
+        rememberSession: parsed.data.rememberSession ?? true,
+        userId: user.id
+      });
+    }
     revalidatePath("/", "layout");
     redirect("/dashboard");
   }
@@ -233,7 +245,7 @@ export async function authenticateAction(
   const { data: profile } = user
     ? await supabase
         .from("profiles")
-        .select("company_id")
+        .select("company_id,account_type")
         .eq("id", user.id)
         .maybeSingle()
     : { data: null };
@@ -244,6 +256,14 @@ export async function authenticateAction(
     email: parsed.data.email,
     companyId: profile?.company_id ?? null
   });
+  if (user) {
+    await activateUserSession({
+      accountType: profile?.account_type === "personal" ? "personal" : "company",
+      email: user.email ?? parsed.data.email,
+      rememberSession: parsed.data.rememberSession ?? true,
+      userId: user.id
+    });
+  }
 
   await setRememberSessionPreference(parsed.data.rememberSession ?? true);
   revalidatePath("/", "layout");
@@ -498,6 +518,7 @@ export async function signOutAction() {
   });
   await supabase.auth.signOut();
   await clearRememberSessionPreference();
+  await clearActiveUserSessionCookie();
   revalidatePath("/", "layout");
   redirect("/login");
 }
