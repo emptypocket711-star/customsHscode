@@ -213,6 +213,7 @@ export async function sendSignupEmailOtpAction(
   formData: FormData
 ): Promise<SignupOtpActionState> {
   const parsed = signupOtpSendFormSchema.safeParse({
+    accountType: stringValue(formData, "accountType"),
     email: stringValue(formData, "email")
   });
 
@@ -250,10 +251,15 @@ export async function sendSignupEmailOtpAction(
 
   const supabase = await createSupabaseServerClient({ rememberSession: true });
   const origin = await getAppOrigin();
+  const accountType = parsed.data.accountType ?? "personal";
+  const completionPath = encodeURIComponent(`/auth/complete-signup?accountType=${accountType}`);
   const { error } = await supabase.auth.signInWithOtp({
     email: parsed.data.email,
     options: {
-      emailRedirectTo: `${origin}/auth/callback?next=/auth/complete-signup`,
+      data: {
+        account_type: accountType
+      },
+      emailRedirectTo: `${origin}/auth/callback?next=${completionPath}`,
       shouldCreateUser: true
     }
   });

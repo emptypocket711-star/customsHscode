@@ -18,12 +18,18 @@ const businessTypeOptions = [
   { value: "importer", label: "수입기업" }
 ];
 
-export function SignupCompletionForm({ email }: { email: string }) {
+export function SignupCompletionForm({
+  email,
+  initialAccountType
+}: {
+  email: string;
+  initialAccountType?: SignupAccountType | null;
+}) {
   const [authState, authAction, authPending] = useActionState(authenticateAction, initialAuthState);
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [fullName, setFullName] = useState("");
-  const [accountType, setAccountType] = useState<SignupAccountType | null>(null);
+  const [accountType, setAccountType] = useState<SignupAccountType | null>(initialAccountType ?? null);
   const [companyName, setCompanyName] = useState("");
   const [businessNo, setBusinessNo] = useState("");
   const [selectedBusinessTypes, setSelectedBusinessTypes] = useState<string[]>([]);
@@ -52,7 +58,11 @@ export function SignupCompletionForm({ email }: { email: string }) {
       <input name="mode" type="hidden" value="signup" />
       <input name="email" type="hidden" value={email} />
       <input name="accountType" type="hidden" value={accountType ?? ""} />
-      <AccountTypeSelector disabled={authPending} value={accountType} onChange={setAccountType} />
+      {initialAccountType ? (
+        <SelectedAccountTypeSummary accountType={initialAccountType} />
+      ) : (
+        <AccountTypeSelector disabled={authPending} value={accountType} onChange={setAccountType} />
+      )}
       {accountType ? (
         <>
           <AuthInput
@@ -125,6 +135,24 @@ export function SignupCompletionForm({ email }: { email: string }) {
         </>
       ) : null}
     </form>
+  );
+}
+
+function SelectedAccountTypeSummary({ accountType }: { accountType: SignupAccountType }) {
+  const isCompany = accountType === "company";
+
+  return (
+    <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-950">
+      <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-blue-700 text-white">
+        {isCompany ? <Building2 aria-hidden="true" size={19} /> : <User aria-hidden="true" size={19} />}
+      </span>
+      <div>
+        <p className="text-sm font-semibold">선택한 회원 유형: {isCompany ? "기업회원" : "개인회원"}</p>
+        <p className="mt-1 text-xs leading-5 text-blue-800">
+          이메일 인증 전 선택한 유형으로 가입 정보를 입력합니다.
+        </p>
+      </div>
+    </div>
   );
 }
 

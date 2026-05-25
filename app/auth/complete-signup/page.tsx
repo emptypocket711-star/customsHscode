@@ -32,12 +32,25 @@ async function getSignupState(userId: string) {
   };
 }
 
-export default async function CompleteSignupPage() {
+function resolveAccountType(value: unknown) {
+  return value === "personal" || value === "company" ? value : null;
+}
+
+export default async function CompleteSignupPage({
+  searchParams
+}: {
+  searchParams: Promise<{ accountType?: string }>;
+}) {
   const user = await getCurrentUser();
+  const params = await searchParams;
 
   if (!user?.email) {
     redirect("/login?mode=signup");
   }
+
+  const initialAccountType =
+    resolveAccountType(params.accountType) ??
+    resolveAccountType(user.user_metadata?.account_type);
 
   const signupState = await getSignupState(user.id);
   if (signupState.completed) {
@@ -55,13 +68,13 @@ export default async function CompleteSignupPage() {
         </div>
         <section className="rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.10)] backdrop-blur sm:p-8">
           <div className="mb-7 text-center">
-            <h1 className="text-3xl font-semibold tracking-normal text-slate-950">회원가입 완료</h1>
+            <h1 className="text-3xl font-semibold tracking-normal text-slate-950">가입 정보 입력</h1>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              이메일 인증이 완료되었습니다. 회원 유형과 기본 정보를 입력해 주세요.
+              이메일 인증이 완료되었습니다. 기본 정보를 입력해 주세요.
             </p>
             <p className="mt-2 text-xs font-semibold text-blue-700">{user.email}</p>
           </div>
-          <SignupCompletionForm email={user.email} />
+          <SignupCompletionForm email={user.email} initialAccountType={initialAccountType} />
         </section>
       </div>
     </main>

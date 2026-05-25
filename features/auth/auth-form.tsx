@@ -155,6 +155,7 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
           {accountType ? (
             <div className="grid gap-5 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
               <form action={sendAction} className="grid gap-3">
+                <input name="accountType" type="hidden" value={accountType} />
                 <AuthInput
                   autoComplete="email"
                   disabled={pending || verifiedSignupEmail}

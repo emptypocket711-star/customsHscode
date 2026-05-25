@@ -115,7 +115,8 @@ export type UpdatePasswordActionState = {
 };
 
 export const signupOtpSendFormSchema = z.object({
-  email: z.email("이메일 형식을 확인해 주세요.").trim().max(255)
+  email: z.email("이메일 형식을 확인해 주세요.").trim().max(255),
+  accountType: accountTypeSchema.optional()
 });
 
 export const signupOtpVerifyFormSchema = z.object({
