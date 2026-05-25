@@ -30,6 +30,7 @@ describe("business registration status api", () => {
 
   it("maps active business status from public data response", async () => {
     vi.stubEnv("BUSINESS_REGISTRATION_STATUS_SERVICE_KEY", "service-key");
+    vi.stubEnv("BUSINESS_REGISTRATION_STATUS_LIVE_ENABLED", "true");
     vi.spyOn(globalThis, "fetch").mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -51,5 +52,18 @@ describe("business registration status api", () => {
       rawStatus: "계속사업자 / 부가가치세 일반과세자",
       validFormat: true
     });
+  });
+
+  it("keeps launch signup format-only even if a public data key exists", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    vi.stubEnv("BUSINESS_REGISTRATION_STATUS_SERVICE_KEY", "service-key");
+    vi.stubEnv("BUSINESS_REGISTRATION_STATUS_LIVE_ENABLED", "");
+
+    await expect(checkBusinessRegistrationStatus("1234567890")).resolves.toMatchObject({
+      businessNo: "1234567890",
+      configured: false,
+      validFormat: true
+    });
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 });

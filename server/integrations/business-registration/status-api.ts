@@ -20,7 +20,9 @@ function serviceKey() {
 }
 
 export function hasBusinessRegistrationStatusEnv() {
-  return Boolean(serviceKey());
+  const liveEnabled = process.env.BUSINESS_REGISTRATION_STATUS_LIVE_ENABLED === "1" ||
+    process.env.BUSINESS_REGISTRATION_STATUS_LIVE_ENABLED === "true";
+  return liveEnabled && Boolean(serviceKey());
 }
 
 export async function checkBusinessRegistrationStatus(value: string): Promise<BusinessRegistrationStatus> {
