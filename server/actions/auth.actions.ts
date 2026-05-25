@@ -73,6 +73,26 @@ async function requestCompanyJoin(companyId: string, fullName?: string, business
   if (error) throw new Error(error.message);
 }
 
+async function findExactCompanyByName(companyName?: string): Promise<CompanySuggestion | null> {
+  const name = companyName?.trim();
+  if (!name || !hasSupabaseEnv() || !hasSupabaseServiceRoleEnv()) return null;
+
+  const service = createSupabaseServiceRoleClient();
+  const { data, error } = await service
+    .from("companies")
+    .select("id, name")
+    .ilike("name", name)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data?.id || !data?.name) return null;
+  return {
+    id: String(data.id),
+    name: String(data.name)
+  };
+}
+
 async function getPostLoginPath() {
   const supabase = await createSupabaseServerClient();
   const {
@@ -181,8 +201,12 @@ export async function authenticateAction(
     }
 
     await setRememberSessionPreference(parsed.data.rememberSession ?? true);
-    if (parsed.data.selectedCompanyId) {
-      await requestCompanyJoin(parsed.data.selectedCompanyId, parsed.data.fullName, parsed.data.businessTypes);
+    const exactCompany = parsed.data.selectedCompanyId
+      ? { id: parsed.data.selectedCompanyId, name: parsed.data.companyName || "" }
+      : await findExactCompanyByName(parsed.data.companyName);
+
+    if (exactCompany?.id) {
+      await requestCompanyJoin(exactCompany.id, parsed.data.fullName, parsed.data.businessTypes);
       revalidatePath("/", "layout");
       redirect("/auth/company-pending");
     }
