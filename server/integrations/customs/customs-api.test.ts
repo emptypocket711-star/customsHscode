@@ -29,6 +29,15 @@ describe("customs api query helpers", () => {
     expect(hasCustomsOpenApiEnv("hs_code")).toBe(true);
   });
 
+  it("detects the tariff-rate specific service key", () => {
+    vi.stubEnv("CUSTOMS_API_TARIFF_RATE_URL", "https://example.test/tariff");
+    vi.stubEnv("CUSTOMS_API_TARIFF_RATE_SERVICE_KEY", "tariff-specific-key");
+    vi.stubEnv("CUSTOMS_API_SERVICE_KEY", "");
+    vi.stubEnv("PUBLIC_DATA_SERVICE_KEY", "");
+
+    expect(hasCustomsOpenApiEnv("tariff_rate")).toBe(true);
+  });
+
   it("normalizes hsk and direction for customs confirmation lookup", () => {
     expect(buildCustomsConfirmationQuery({ hskCode: "3304.99-1000", direction: "import" })).toEqual({
       hsSgn: "3304991000",

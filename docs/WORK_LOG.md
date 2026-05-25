@@ -85,6 +85,14 @@
 
 ## Verification Baseline
 
+### 국내 수입 10자리 조회 스냅샷
+
+- 운영 Supabase에 관세청 품목번호별 관세율표 20260211 데이터를 중복 제거 후 380,229개 published row로 적재했다.
+- 10자리 HSK 기준 `domestic_hs_lookup_snapshots` materialized view를 추가했다.
+- 스냅샷은 품명, 관세율, 세관장확인 수입요건, 통합공고, 내국세 후보를 HSK10 단위로 미리 묶는다.
+- 2026-05-25 기준 커버리지: HSK10 11,327개 중 11,326개 관세율 보유. 누락 1개는 `2424.00-0000 이사화물`.
+- 6자리 HS에는 관세율을 추론 표시하지 않고, 10자리 exact 관세율만 사용자 화면에 사용한다.
+
 최근 전체 검증 기준:
 
 - `npm run typecheck`
@@ -96,4 +104,3 @@
 
 - 52 test files passed
 - 246 tests passed
-

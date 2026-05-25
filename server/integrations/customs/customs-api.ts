@@ -43,6 +43,7 @@ const configs: Record<CustomsOpenApiSource, CustomsApiConfig> = {
   },
   tariff_rate: {
     endpointEnvName: "CUSTOMS_API_TARIFF_RATE_URL",
+    serviceKeyEnvName: "CUSTOMS_API_TARIFF_RATE_SERVICE_KEY",
     serviceKeyParamName: "crkyCn",
     sourceName: "관세청 관세율 조회",
     sourceVersion: "myc-openapi-api030-v1.0"

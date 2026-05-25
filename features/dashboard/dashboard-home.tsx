@@ -197,7 +197,12 @@ export function DashboardHome({
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <span className="text-xs font-semibold text-[var(--text-muted)]">인기 검색어</span>
               {quickExamples.map((item) => (
-                <Link className="focus-ring rounded-full border border-[var(--border-subtle)] bg-[var(--surface-muted)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-800" href={item.href} key={item.href}>
+                <Link
+                  className="focus-ring rounded-full border border-[var(--border-subtle)] bg-[var(--surface-muted)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-800"
+                  data-navigation-progress="인기검색어 조회"
+                  href={item.href}
+                  key={item.href}
+                >
                   {item.label}
                 </Link>
               ))}

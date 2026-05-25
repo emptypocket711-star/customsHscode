@@ -3,12 +3,17 @@ import {
   type SourceVersionInventoryItem
 } from "@/features/legal-updates/mock-source-inventory";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
-import { getSourceVersionInventoryFromSupabase } from "@/server/repositories/source-inventory.repository";
+import {
+  getDomesticHsLookupSnapshotCoverageFromSupabase,
+  getSourceVersionInventoryFromSupabase,
+  type DomesticHsLookupSnapshotCoverage
+} from "@/server/repositories/source-inventory.repository";
 
 export type SourceVersionInventoryResult = {
   items: SourceVersionInventoryItemWithDiagnostics[];
   dataSource: "mock" | "supabase";
   loadError?: string;
+  domesticLookupCoverage: DomesticHsLookupSnapshotCoverage;
   summary: {
     stagedCount: number;
     publishedCount: number;
@@ -48,6 +53,17 @@ const sourceInventoryGroups: Array<{ key: SourceVersionInventoryGroupSummary["gr
   { key: "destination", label: "상대국 관세", tables: ["export_destination_tariff_rates", "export_destination_customs_codes", "export_destination_additional_tariffs", "export_destination_trade_remedy_cases"] },
   { key: "sourceRegistry", label: "출처 레지스트리", tables: ["export_destination_data_sources"] }
 ];
+
+const mockDomesticLookupCoverage: DomesticHsLookupSnapshotCoverage = {
+  snapshotBasisDate: "2026-05-25",
+  totalHsk10: 11327,
+  withTariffRates: 11326,
+  missingTariffRates: 1,
+  withCustomsRequirements: 4806,
+  withPublicNoticeRequirements: 0,
+  withInternalTaxes: 135,
+  lastRefreshedAt: "2026-05-25T10:11:02+00:00"
+};
 
 function inventoryGroupForTable(targetTable: string) {
   return sourceInventoryGroups.find((group) => group.tables.includes(targetTable)) ?? {
@@ -174,6 +190,7 @@ export function getMockSourceVersionInventory(loadError?: string): SourceVersion
     items,
     dataSource: "mock",
     loadError,
+    domesticLookupCoverage: mockDomesticLookupCoverage,
     summary: summarize(items)
   };
 }
@@ -185,10 +202,15 @@ export async function getSourceVersionInventory(): Promise<SourceVersionInventor
 
   try {
     const supabase = await createSupabaseServerClient();
-    const items = withDiagnostics(await getSourceVersionInventoryFromSupabase(supabase));
+    const [sourceItems, domesticLookupCoverage] = await Promise.all([
+      getSourceVersionInventoryFromSupabase(supabase),
+      getDomesticHsLookupSnapshotCoverageFromSupabase(supabase)
+    ]);
+    const items = withDiagnostics(sourceItems);
     return {
       items,
       dataSource: "supabase",
+      domesticLookupCoverage: domesticLookupCoverage ?? mockDomesticLookupCoverage,
       summary: summarize(items)
     };
   } catch (error) {

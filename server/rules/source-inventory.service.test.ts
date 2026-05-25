@@ -9,6 +9,8 @@ describe("source inventory service", () => {
     expect(inventory.summary.totalRows).toBeGreaterThan(1_000_000);
     expect(inventory.summary.groupSummaries.map((group) => group.groupKey)).toContain("internalTax");
     expect(inventory.summary.groupSummaries.find((group) => group.groupKey === "internalTax")?.publishedCount).toBeGreaterThan(0);
+    expect(inventory.domesticLookupCoverage.withTariffRates).toBeGreaterThan(10_000);
+    expect(inventory.domesticLookupCoverage.missingTariffRates).toBe(1);
   });
 
   it("adds diagnostics for usable, unpublished, and empty sources", () => {

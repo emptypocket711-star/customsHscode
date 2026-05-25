@@ -113,6 +113,45 @@ export async function LegalUpdateCenter() {
           action={<Badge tone={inventory.dataSource === "supabase" ? "success" : "warning"}>{inventory.dataSource}</Badge>}
         />
         <CardBody>
+          <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50 p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-blue-950">국내 수입 10자리 조회 스냅샷</p>
+                <p className="mt-1 text-xs text-blue-800">
+                  HSK 10자리 기준으로 품명, 관세율, 수입요건, 통합공고, 내국세 후보를 미리 묶은 읽기 모델입니다.
+                </p>
+              </div>
+              <Badge tone={inventory.domesticLookupCoverage.missingTariffRates === 0 ? "success" : "warning"}>
+                관세율 누락 {inventory.domesticLookupCoverage.missingTariffRates.toLocaleString("ko-KR")}
+              </Badge>
+            </div>
+            <div className="mt-3 grid gap-3 md:grid-cols-6">
+              <div>
+                <p className="text-xs font-medium text-blue-700">HSK10</p>
+                <p className="text-lg font-semibold text-blue-950">{inventory.domesticLookupCoverage.totalHsk10.toLocaleString("ko-KR")}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-blue-700">관세율 보유</p>
+                <p className="text-lg font-semibold text-blue-950">{inventory.domesticLookupCoverage.withTariffRates.toLocaleString("ko-KR")}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-blue-700">세관장확인</p>
+                <p className="text-lg font-semibold text-blue-950">{inventory.domesticLookupCoverage.withCustomsRequirements.toLocaleString("ko-KR")}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-blue-700">통합공고</p>
+                <p className="text-lg font-semibold text-blue-950">{inventory.domesticLookupCoverage.withPublicNoticeRequirements.toLocaleString("ko-KR")}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-blue-700">내국세 후보</p>
+                <p className="text-lg font-semibold text-blue-950">{inventory.domesticLookupCoverage.withInternalTaxes.toLocaleString("ko-KR")}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-blue-700">기준일</p>
+                <p className="text-sm font-semibold text-blue-950">{inventory.domesticLookupCoverage.snapshotBasisDate ?? "-"}</p>
+              </div>
+            </div>
+          </div>
           <div className="grid gap-4 md:grid-cols-6">
             <div className="rounded-md border border-slate-200 p-4">
               <p className="text-sm font-medium text-slate-600">staged source</p>

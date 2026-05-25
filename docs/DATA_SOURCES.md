@@ -169,7 +169,7 @@ Current generated row counts:
 
 - `customs_hs_seed.sql`: 12,469 `hs_master` rows
 - `customs_standard_product_seed.sql`: 26,873 `standard_product_names` rows
-- `customs_domestic_tariff_seed.sql`: 760,428 `tariff_rates` rows
+- `customs_domestic_tariff_seed.sql`: 760,428 raw `tariff_rates` rows. The official workbook contains duplicate tariff rows across sheets; apply through a staging/temp-table dedupe step before inserting into production. The current production deduped import is 380,229 published rows.
 - `customs_export_destination_tariff_seed.sql`: 665,657 `export_destination_tariff_rates` rows
 
 Expected local files:
@@ -182,6 +182,23 @@ Expected local files:
 The first three files map to `hs_master`, `standard_product_names`, and `tariff_rates`. The country-by-country tariff zip maps to `export_destination_tariff_rates` because it is destination-country/export reference data and its FTA/agreement columns vary by country.
 
 Generated official rows are inserted as `staged`. Staff/admin users must review the source inventory and publish the intended `source_version` from the legal update center before customer-facing diagnosis uses those rows as published legal data.
+
+Domestic import lookup also maintains `domestic_hs_lookup_snapshots`, a materialized read model keyed by Korean HSK 10 digits. It pre-joins:
+
+- `hs_master`
+- `tariff_rates`
+- `customs_confirmation_requirements`
+- `integrated_public_notice_requirements`
+- `internal_tax_law_rules`
+
+This snapshot is for fast customer lookup and coverage checks only. The legal source of truth remains the versioned source tables. Refresh it after publishing official data:
+
+```sql
+select public.refresh_domestic_hs_lookup_snapshots();
+select * from public.get_domestic_hs_lookup_snapshot_coverage();
+```
+
+As of the 2026-05-25 production import, 11,326 of 11,327 published HSK10 rows have exact 10-digit tariff rates. The remaining no-tariff row is `2424.00-0000 이사화물`, which should be treated as a special-code/source-coverage exception rather than deriving tariff rates from HS6.
 
 ### 관세법령정보포털 CLIP
 
