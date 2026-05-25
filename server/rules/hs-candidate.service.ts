@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { mockHsMasterRecords, mockStandardProductNames } from "@/features/hs/mock-hs-data";
 import type { ProductHsRecommendationInput } from "@/features/hs/schemas";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
+import { logLookupTelemetry, productInputShape } from "@/server/observability/lookup-telemetry";
 import {
   augmentProductInputWithAiTerms,
   extractHsCodeHintsFromProductInput,
@@ -893,6 +894,7 @@ export function recommendHsCandidates(input: ProductHsRecommendationInput): HsCa
 }
 
 export async function recommendHsCandidatesForProduct(input: ProductHsRecommendationInput): Promise<HsCandidateRecommendation[]> {
+  const startedAt = Date.now();
   const { input: augmentedInput, normalization } = await normalizedProductSearch(input);
   const isAmbiguousAcronym = Boolean(ambiguousRuleForProductName(input.productName));
   const shouldKeepAiAlternatives = isAmbiguousAcronym || normalizeAiHsCodeHints(normalization).length > 1;
@@ -904,18 +906,40 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
     ];
     const aiHintCandidates = recommendAiHsCodeHintCandidates(augmentedInput, normalization, baseCandidates);
 
-    return pruneByUserHsHints(
+    const candidates = pruneByUserHsHints(
       input,
       pruneWeakProductRecommendations(
         mergeRecommendations([...baseCandidates, ...aiHintCandidates]),
         { keepAmbiguousAlternatives: shouldKeepAiAlternatives }
       )
     );
+    logLookupTelemetry("product_candidates_recommended", {
+      ...productInputShape(input),
+      status: "success",
+      sourceMode: "mock",
+      durationMs: Date.now() - startedAt,
+      resultCount: candidates.length,
+      aiHintCount: aiHintCandidates.length,
+      officialCandidateCount: baseCandidates.length,
+      normalizationCandidateCount: normalizeAiHsCodeHints(normalization).length
+    });
+    return candidates;
   }
 
   try {
     const supabase = await createSupabaseServerClient();
     if (normalization && isBareProductCodeInput(input.productName) && normalization.webSources.length === 0 && !hasOfficialDataLookupHint(normalization)) {
+      logLookupTelemetry("product_candidates_recommended", {
+        ...productInputShape(input),
+        status: "success",
+        sourceMode: "supabase",
+        durationMs: Date.now() - startedAt,
+        resultCount: 0,
+        aiHintCount: 0,
+        officialCandidateCount: 0,
+        normalizationCandidateCount: normalizeAiHsCodeHints(normalization).length,
+        bareProductCodeWithoutSource: true
+      });
       return [];
     }
     const officialHsMasterCandidates = normalization
@@ -936,11 +960,33 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       ...recommendAmbiguousProductCandidates(input),
       ...normalizedCandidates
     ]));
-    return pruneByUserHsHints(input, pruneWeakProductRecommendations(merged, {
+    const candidates = pruneByUserHsHints(input, pruneWeakProductRecommendations(merged, {
       keepAmbiguousAlternatives: shouldKeepAiAlternatives
     }));
+    logLookupTelemetry("product_candidates_recommended", {
+      ...productInputShape(input),
+      status: "success",
+      sourceMode: "supabase",
+      durationMs: Date.now() - startedAt,
+      resultCount: candidates.length,
+      aiHintCount: aiHintCandidates.length,
+      officialCandidateCount: officialHsMasterCandidates.length,
+      normalizationCandidateCount: normalizeAiHsCodeHints(normalization).length
+    });
+    return candidates;
   } catch {
     if (isBareProductCodeInput(input.productName) && augmentedInput.productName !== input.productName && !hasOfficialDataLookupHint(normalization)) {
+      logLookupTelemetry("product_candidates_recommended", {
+        ...productInputShape(input),
+        status: "fallback",
+        sourceMode: "mock_after_supabase_error",
+        durationMs: Date.now() - startedAt,
+        resultCount: 0,
+        aiHintCount: 0,
+        officialCandidateCount: 0,
+        normalizationCandidateCount: normalizeAiHsCodeHints(normalization).length,
+        bareProductCodeWithoutSource: true
+      });
       return [];
     }
     const mockOfficialCandidates = recommendHsCandidatesFromMockOfficialHsMasterSearch(augmentedInput, normalization);
@@ -950,9 +996,20 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       ...recommendAmbiguousProductCandidates(input),
       ...normalizedCandidates
     ]));
-    return pruneByUserHsHints(input, pruneWeakProductRecommendations(merged, {
+    const candidates = pruneByUserHsHints(input, pruneWeakProductRecommendations(merged, {
       keepAmbiguousAlternatives: shouldKeepAiAlternatives
     }));
+    logLookupTelemetry("product_candidates_recommended", {
+      ...productInputShape(input),
+      status: "fallback",
+      sourceMode: "mock_after_supabase_error",
+      durationMs: Date.now() - startedAt,
+      resultCount: candidates.length,
+      aiHintCount: aiHintCandidates.length,
+      officialCandidateCount: mockOfficialCandidates.length,
+      normalizationCandidateCount: normalizeAiHsCodeHints(normalization).length
+    });
+    return candidates;
   }
 }
 

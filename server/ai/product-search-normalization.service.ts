@@ -3,6 +3,7 @@ import type { ProductHsRecommendationInput } from "@/features/hs/schemas";
 import { getAiProvider, type AiProductSearchNormalizationResult } from "@/server/ai/provider";
 import { redactSensitiveText } from "@/server/ai/redaction";
 import { cachedLookup, lookupCacheKey } from "@/server/cache/lookup-cache";
+import { logLookupTelemetry, productInputShape } from "@/server/observability/lookup-telemetry";
 
 const productSearchNormalizationVersion = "product-search-normalization-v7";
 
@@ -159,6 +160,7 @@ export function extractHsCodeHintsFromProductInput(input: ProductHsRecommendatio
 }
 
 export async function normalizeProductSearchInput(input: ProductHsRecommendationInput): Promise<AiProductSearchNormalizationResult> {
+  const startedAt = Date.now();
   const redacted = redactSensitiveText(productInputText(input));
   const provider = getAiProvider();
   const userProvidedHsCodes = extractHsCodeHintsFromProductInput(input);
@@ -170,36 +172,62 @@ export async function normalizeProductSearchInput(input: ProductHsRecommendation
     redactedInput: redacted.redactedText,
     userProvidedHsCodes
   });
-  const normalization = await cachedLookup({
-    key: cacheKey,
-    ttlMs: Number(process.env.AI_NORMALIZATION_CACHE_TTL_MS || 7 * 24 * 60 * 60 * 1000),
-    load: () => provider.normalizeProductSearch({
-      task: "product_search_normalization",
-      basisDate: input.basisDate,
-      redactedInput: redacted.redactedText
-    })
-  });
-  const contextHints = productContextLookupHints(input, normalization);
+  try {
+    const normalization = await cachedLookup({
+      key: cacheKey,
+      ttlMs: Number(process.env.AI_NORMALIZATION_CACHE_TTL_MS || 7 * 24 * 60 * 60 * 1000),
+      load: () => provider.normalizeProductSearch({
+        task: "product_search_normalization",
+        basisDate: input.basisDate,
+        redactedInput: redacted.redactedText
+      })
+    });
+    const contextHints = productContextLookupHints(input, normalization);
 
-  return {
-    ...normalization,
-    candidateHsCodes: Array.from(new Set([
-      ...userProvidedHsCodes,
-      ...normalization.candidateHsCodes,
-      ...acronymHints.map((hint) => hint.code),
-      ...contextHints.map((hint) => hint.code)
-    ])).slice(0, 10),
-    candidateHsCodeReasons: [
-      ...userProvidedHsCodes.map((code) => ({
-        code,
-        reason: "사용자가 입력값에 함께 제공한 HS CODE 힌트입니다.",
-        requiredInfo: ["국내 HSK인지 해외 수입국 세번인지 확인", "품명·용도·재질과 해당 코드 설명의 일치 여부 확인"]
-      })),
-      ...normalization.candidateHsCodeReasons,
-      ...acronymHints,
-      ...contextHints
-    ].filter((item, index, items) => items.findIndex((candidate) => candidate.code === item.code) === index).slice(0, 10)
-  };
+    const result = {
+      ...normalization,
+      candidateHsCodes: Array.from(new Set([
+        ...userProvidedHsCodes,
+        ...normalization.candidateHsCodes,
+        ...acronymHints.map((hint) => hint.code),
+        ...contextHints.map((hint) => hint.code)
+      ])).slice(0, 10),
+      candidateHsCodeReasons: [
+        ...userProvidedHsCodes.map((code) => ({
+          code,
+          reason: "사용자가 입력값에 함께 제공한 HS CODE 힌트입니다.",
+          requiredInfo: ["국내 HSK인지 해외 수입국 세번인지 확인", "품명·용도·재질과 해당 코드 설명의 일치 여부 확인"]
+        })),
+        ...normalization.candidateHsCodeReasons,
+        ...acronymHints,
+        ...contextHints
+      ].filter((item, index, items) => items.findIndex((candidate) => candidate.code === item.code) === index).slice(0, 10)
+    };
+
+    logLookupTelemetry("product_search_normalized", {
+      ...productInputShape(input),
+      status: "success",
+      provider: provider.name,
+      model: provider.model,
+      durationMs: Date.now() - startedAt,
+      candidateCount: result.candidateHsCodes.length,
+      searchTermCount: result.searchTerms.length,
+      webSourceCount: result.webSources.length,
+      userHsHintCount: userProvidedHsCodes.length
+    });
+
+    return result;
+  } catch (error) {
+    logLookupTelemetry("product_search_normalized", {
+      ...productInputShape(input),
+      status: "error",
+      provider: provider.name,
+      model: provider.model,
+      durationMs: Date.now() - startedAt,
+      errorType: error instanceof Error ? error.name : "unknown"
+    });
+    throw error;
+  }
 }
 
 export function buildProductSearchNormalizationCacheKey(input: {

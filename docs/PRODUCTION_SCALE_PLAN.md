@@ -111,6 +111,7 @@ Implemented AI cache:
 - Public data API calls use `PUBLIC_DATA_REQUEST_TIMEOUT_MS`.
 - Do not enable live Customs API018 product-name fallback in production. Keep `CUSTOMS_API_PRODUCT_SEARCH_LIVE_ENABLED=false`, collect API018 rows into `customs_hs_code_search_items` on a scheduled basis, and query only reviewed/published stored rows during customer lookup.
 - Set `LOOKUP_CACHE_DEBUG=true` only in server logs when debugging cache behavior. Logs record cache event and namespace only, never the raw query key.
+- Set `LOOKUP_TELEMETRY_ENABLED=true` in server logs when checking lookup latency and AI candidate behavior. Product-name telemetry records duration, provider/model, candidate counts, source mode, and coarse input shape only. It must not log raw product names, invoice text, prompts, email addresses, tokens, or cache keys.
 
 ## Queue Policy
 
