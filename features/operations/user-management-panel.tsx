@@ -38,6 +38,7 @@ function formatEventType(value: string) {
     signup_email_verified: "이메일 인증",
     signup_completed: "가입 완료",
     password_reset_requested: "비밀번호 재설정 요청",
+    password_updated: "비밀번호 변경",
     sign_out: "로그아웃"
   };
 

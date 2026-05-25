@@ -131,6 +131,8 @@ describe("lookup governance guards", () => {
     const accountAccessEvents = read("supabase/migrations/20260525007500_account_access_events.sql");
     const activeUserSessions = read("supabase/migrations/20260525007600_active_user_sessions.sql");
     const hardening = read("supabase/migrations/20260525007800_harden_recent_user_data_rls.sql");
+    const passwordUpdateEvent = read("supabase/migrations/20260525007900_account_password_update_event.sql");
+    const authActions = read("server/actions/auth.actions.ts");
 
     expect(hsFavorites).toContain("and company_id = public.current_company_id()");
     expect(hardening).toContain("and company_id = public.current_company_id()");
@@ -142,5 +144,7 @@ describe("lookup governance guards", () => {
 
     expect(activeUserSessions).toContain("public.current_user_role() = 'developer'::public.user_role");
     expect(activeUserSessions).toContain("auth.role() = 'service_role'");
+    expect(passwordUpdateEvent).toContain("'password_updated'");
+    expect(authActions).toContain('eventType: "password_updated"');
   });
 });

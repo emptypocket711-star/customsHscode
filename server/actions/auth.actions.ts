@@ -593,6 +593,15 @@ export async function updatePasswordAction(
     };
   }
 
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+  await recordAccountAccessEvent({
+    eventType: "password_updated",
+    userId: user?.id,
+    email: user?.email
+  });
+
   revalidatePath("/", "layout");
   redirect("/dashboard");
 }

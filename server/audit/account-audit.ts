@@ -8,6 +8,7 @@ type AccountEventType =
   | "signup_email_verified"
   | "signup_completed"
   | "password_reset_requested"
+  | "password_updated"
   | "sign_out";
 
 function normalizeIp(value: string | null) {
