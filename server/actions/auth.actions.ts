@@ -18,6 +18,7 @@ import {
   hasSupabaseEnv,
   setRememberSessionPreference
 } from "@/lib/supabase/server";
+import { createSupabaseServiceRoleClient, hasSupabaseServiceRoleEnv } from "@/lib/supabase/service-role";
 
 function stringValue(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -84,6 +85,18 @@ async function getPostLoginPath() {
 async function getAppOrigin() {
   const headersList = await headers();
   return process.env.NEXT_PUBLIC_APP_URL || headersList.get("origin") || "http://localhost:3000";
+}
+
+async function getSignupEmailStatus(email: string) {
+  if (!hasSupabaseServiceRoleEnv()) return null;
+
+  const supabase = createSupabaseServiceRoleClient();
+  const { data, error } = await supabase
+    .rpc("get_signup_email_status", { p_email: email })
+    .maybeSingle<{ user_exists: boolean; onboarding_completed: boolean }>();
+
+  if (error) throw new Error(error.message);
+  return data;
 }
 
 export async function authenticateAction(
@@ -215,6 +228,23 @@ export async function sendSignupEmailOtpAction(
       status: "error",
       email: parsed.data.email,
       message: "Supabase 환경 변수가 없어 인증번호를 보낼 수 없습니다."
+    };
+  }
+
+  try {
+    const status = await getSignupEmailStatus(parsed.data.email);
+    if (status?.user_exists && status.onboarding_completed) {
+      return {
+        status: "error",
+        email: parsed.data.email,
+        message: "이미 가입이 완료된 이메일입니다. 로그인 메뉴에서 접속해 주세요."
+      };
+    }
+  } catch {
+    return {
+      status: "error",
+      email: parsed.data.email,
+      message: "가입 이메일 상태를 확인할 수 없습니다. 잠시 후 다시 시도해 주세요."
     };
   }
 
