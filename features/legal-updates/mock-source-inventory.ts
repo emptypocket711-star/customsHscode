@@ -91,6 +91,15 @@ export const mockSourceVersionInventory: SourceVersionInventoryItem[] = [
     latestPublishedAt: "2026-05-25T00:00:00+09:00"
   },
   {
+    targetTable: "requirement_playbooks",
+    sourceName: "수입요건 2차 법령 상세 playbook",
+    sourceVersion: "requirement-playbook-secondary-20260525",
+    status: "published",
+    rowCount: 7,
+    latestRetrievedAt: "2026-05-25T00:00:00+09:00",
+    latestPublishedAt: "2026-05-25T00:00:00+09:00"
+  },
+  {
     targetTable: "origin_marking_targets",
     sourceName: "대외무역관리규정 별표 8 원산지표시대상물품",
     sourceVersion: "origin-marking-targets-law-20260525",
