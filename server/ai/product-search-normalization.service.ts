@@ -5,7 +5,7 @@ import { redactSensitiveText } from "@/server/ai/redaction";
 import { cachedLookup, lookupCacheKey } from "@/server/cache/lookup-cache";
 import { logLookupTelemetry, productInputShape } from "@/server/observability/lookup-telemetry";
 
-const productSearchNormalizationVersion = "product-search-normalization-v10";
+const productSearchNormalizationVersion = "product-search-normalization-v11";
 
 function productInputText(input: ProductHsRecommendationInput) {
   const hsCodeHints = extractHsCodeHintsFromProductInput(input);
@@ -251,6 +251,20 @@ export function prioritizePrincipalArticleHsHints(input: {
   );
 }
 
+function focusedDisplayHsHints(normalization: AiProductSearchNormalizationResult, candidateHsCodes: string[]) {
+  const primaryCode = normalization.primaryCandidate?.code.replace(/[^0-9]/g, "");
+  if (
+    normalization.certainty === "high"
+    && normalization.displayMode === "single"
+    && primaryCode
+    && candidateHsCodes.some((code) => code === primaryCode || code.startsWith(primaryCode) || primaryCode.startsWith(code))
+  ) {
+    return [primaryCode];
+  }
+
+  return candidateHsCodes;
+}
+
 export function extractHsCodeHintsFromText(text: string) {
   const hints: string[] = [];
   const labeledPattern = /(?:\bhs(?:k|code)?\b|hscode|hs\s*code|세번|소호|품목번호|세번부호)\s*[:：#-]?\s*((?:\d[\d.\-\s]{2,18}\d))/gi;
@@ -303,17 +317,25 @@ export async function normalizeProductSearchInput(input: ProductHsRecommendation
     });
     const contextHints = productContextLookupHints(input, normalization);
 
+    const primaryCandidateReason = normalization.primaryCandidate
+      ? [{
+        code: normalization.primaryCandidate.code,
+        reason: normalization.primaryCandidate.reason,
+        requiredInfo: normalization.primaryCandidate.requiredInfo
+      }]
+      : [];
     const candidateHsCodeReasons = [
         ...userProvidedHsCodes.map((code) => ({
           code,
           reason: "사용자가 입력값에 함께 제공한 HS CODE 힌트입니다.",
           requiredInfo: ["국내 HSK인지 해외 수입국 세번인지 확인", "품명·용도·재질과 해당 코드 설명의 일치 여부 확인"]
         })),
+        ...primaryCandidateReason,
         ...normalization.candidateHsCodeReasons,
         ...acronymHints,
         ...contextHints
       ].filter((item, index, items) => items.findIndex((candidate) => candidate.code === item.code) === index).slice(0, 10);
-    const candidateHsCodes = prioritizePrincipalArticleHsHints({
+    const candidateHsCodes = focusedDisplayHsHints(normalization, prioritizePrincipalArticleHsHints({
       productInput: input,
       normalization,
       userProvidedHsCodes,
@@ -324,7 +346,7 @@ export async function normalizeProductSearchInput(input: ProductHsRecommendation
         ...contextHints.map((hint) => hint.code)
       ],
       candidateHsCodeReasons
-    }).slice(0, 10);
+    })).slice(0, 10);
     const result = {
       ...normalization,
       candidateHsCodes,

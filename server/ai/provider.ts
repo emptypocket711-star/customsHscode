@@ -25,7 +25,14 @@ export type AiProductSearchNormalizationPrompt = {
 export type AiProductSearchNormalizationResult = {
   provider: AiProviderName;
   model: string;
+  certainty?: "low" | "medium" | "high";
+  displayMode?: "single" | "multiple" | "needs_more_info";
   correctedProductName: string | null;
+  primaryCandidate?: {
+    code: string;
+    reason: string;
+    requiredInfo: string[];
+  } | null;
   searchTerms: string[];
   koreanTerms: string[];
   englishTerms: string[];
@@ -133,6 +140,8 @@ export class MockAiProvider implements AiProvider {
     return {
       provider: this.name,
       model: this.model,
+      certainty: escLike ? "low" : "medium",
+      displayMode: escLike ? "multiple" : "single",
       correctedProductName: escLike ? "ESC abbreviation"
         : mushroomPowderLike ? "mushroom powder"
         : printerLike ? "black and white printer"
@@ -141,6 +150,39 @@ export class MockAiProvider implements AiProvider {
         : batteryLike ? "lithium ion battery module"
         : electricFanLike ? "portable electric fan"
         : workVestLike ? "work or safety vest"
+        : null,
+      primaryCandidate: escLike ? null
+        : mushroomPowderLike ? {
+          code: "071239",
+          reason: "건조 버섯을 단순 분쇄한 분말로 해석될 가능성이 가장 높습니다.",
+          requiredInfo: ["건조 버섯 단순 분쇄품인지", "조미·혼합·추출·열처리 등 추가 가공 여부"]
+        }
+        : printerLike ? {
+          code: "844332",
+          reason: "컴퓨터나 네트워크에 연결 가능한 프린터 단독기로 해석될 가능성이 높습니다.",
+          requiredInfo: ["복사·팩스·스캔 기능 포함 여부", "인쇄 방식"]
+        }
+        : laserBeltLike ? {
+          code: "901910",
+          reason: "마사지·물리치료용 기기로 해석될 가능성이 높습니다.",
+          requiredInfo: ["마사지·물리치료 기능 여부", "의료기기 표시 목적"]
+        }
+        : excavatorLike ? {
+          code: "842952",
+          reason: "굴착·굴삭 장비로 해석될 가능성이 높습니다.",
+          requiredInfo: ["완제품/부분품 여부", "상부구조 360도 회전 여부"]
+        }
+        : batteryLike ? {
+          code: "850760",
+          reason: "리튬이온 축전지 또는 배터리 모듈로 해석될 가능성이 높습니다.",
+          requiredInfo: ["셀·모듈·팩 형태", "정격 전압·용량"]
+        }
+        : electricFanLike ? {
+          code: "841451",
+          reason: "전동기를 내장한 휴대용·탁상용 전기팬 완제품으로 해석될 가능성이 높습니다.",
+          requiredInfo: ["전동기 내장 여부", "출력과 설치 형태"]
+        }
+        : workVestLike ? null
         : null,
       searchTerms,
       koreanTerms: [
@@ -304,19 +346,21 @@ function aiProductSearchNormalizationInstructions() {
     "You are an assistant inside a Korean customs SaaS.",
     "Return JSON only.",
     "Do not final-confirm HS classification, tariff applicability, or legal requirements.",
-    "Normalize product-name search input: fix likely typos, expand synonyms, provide Korean and English search terms, product families, provisional HS lookup hints, and missing questions.",
+    "Normalize product-name search input: interpret what product the user means, fix likely typos, expand synonyms, provide Korean and English search terms, product families, provisional HS lookup hints, and missing questions.",
     "The input may be Korean, Chinese, Japanese, English, or another language. Translate and interpret the product name before producing HS lookup hints.",
     "If the input appears to be a brand name, trade name, product line, model name, SKU, catalog number, or non-descriptive short name, use web evidence when available to identify the underlying product type before choosing HS candidates.",
     "When the input contains a brand or product line plus a generic product phrase, treat the brand as secondary and classify lookup intent by the generic product phrase, principal function, use, and composition.",
-    "For every product name, provide candidateHsCodes as 3 to 8 plausible HS heading/subheading/code prefixes. Order them by product-context likelihood. Prefer HS6 prefixes; use HS4 when only the heading is reasonably inferable. Use HS10 only when the input clearly names a narrow commodity.",
-    "The first candidateHsCodes item must be the best code boundary for the identified finished article and principal function, not merely a related heading.",
+    "First decide certainty and displayMode. Use displayMode=single only when one product interpretation and one HS4/HS6 boundary is clearly more likely than alternatives. Use displayMode=multiple for ambiguous acronyms, generic words, or competing product interpretations. Use displayMode=needs_more_info when useful candidates cannot be formed without more information.",
+    "When certainty is high and displayMode is single, provide one primaryCandidate and keep candidateHsCodes focused on that primary code plus only essential conditional alternatives. Do not force 3 to 8 candidates in high-certainty cases.",
+    "When certainty is medium or low, provide candidateHsCodes as 2 to 8 plausible HS heading/subheading/code prefixes. Order them by product-context likelihood. Prefer HS6 prefixes; use HS4 when only the heading is reasonably inferable. Use HS10 only when the input clearly names a narrow commodity.",
+    "The primaryCandidate and first candidateHsCodes item must be the best code boundary for the identified finished article and principal function, not merely a related heading.",
     "For every candidateHsCodes item, also provide candidateHsCodeReasons with {code, reason, requiredInfo}. The code must match one of candidateHsCodes after removing punctuation.",
     "If the user input already includes an HS/HSK code hint, preserve it as a lookup hint. If it appears to be a foreign import code longer than HS6, include the shared HS6 prefix and do not assume the foreign national suffix equals Korean HSK.",
     "For each candidateHsCodes prefix, include matching Korean or English terms in searchTerms/koreanTerms/englishTerms that are likely to appear in an official HS description for that heading.",
     "candidateHsCodes are lookup hints only. They are not final classifications. Return useful HS4/HS6 candidates even when the exact national HS10 may need later official-data expansion.",
     "Do not require an exact official HS description match before returning candidateHsCodes. The app will show GPT HS4/HS6 candidates even when national HS10 expansion needs separate review.",
     "Give higher priority to the product phrase and surrounding context than to isolated ambiguous words. For example, cream alone can be dairy or cosmetic, but hand/moisture/skin cream should produce skin-care cosmetic lookup hints unless food/dairy terms are explicit.",
-    "If the input is ambiguous, return several competing HS4/HS6 lookup hints plus missing questions instead of a final conclusion.",
+    "If the input is ambiguous, set certainty=low, displayMode=multiple, return several competing HS4/HS6 lookup hints plus missing questions instead of a final conclusion.",
     "When the input includes typos, model numbers, abbreviations, or short trade names, infer likely product families and provide broad lookup hints that can surface candidates from official HS data.",
     "If web search is available and the input appears to be a model number, SKU, catalog number, or product code, use web search to identify the underlying product type before producing search terms.",
     "If web search is unavailable, inconclusive, or blocked, still use general product knowledge and the visible words to infer provisional HS4/HS6 lookup hints instead of returning an empty candidate list.",
@@ -331,7 +375,7 @@ function aiProductSearchNormalizationInstructions() {
     "Do not include candidate code boundaries that contradict the identified product family unless the input explicitly says the product may be that different article.",
     "Avoid highly specialized chemical, radioactive, military, or industrial headings unless the input explicitly indicates that specialization.",
     "Write Korean business SaaS copy for missingQuestions.",
-    "JSON shape: {\"correctedProductName\":\"string|null\",\"searchTerms\":[\"string\"],\"koreanTerms\":[\"string\"],\"englishTerms\":[\"string\"],\"productFamilies\":[\"string\"],\"candidateHsCodes\":[\"string\"],\"candidateHsCodeReasons\":[{\"code\":\"string\",\"reason\":\"string\",\"requiredInfo\":[\"string\"]}],\"webSources\":[{\"title\":\"string\",\"url\":\"string\"}],\"missingQuestions\":[\"string\"]}"
+    "JSON shape: {\"certainty\":\"high|medium|low\",\"displayMode\":\"single|multiple|needs_more_info\",\"correctedProductName\":\"string|null\",\"primaryCandidate\":{\"code\":\"string\",\"reason\":\"string\",\"requiredInfo\":[\"string\"]}|null,\"searchTerms\":[\"string\"],\"koreanTerms\":[\"string\"],\"englishTerms\":[\"string\"],\"productFamilies\":[\"string\"],\"candidateHsCodes\":[\"string\"],\"candidateHsCodeReasons\":[{\"code\":\"string\",\"reason\":\"string\",\"requiredInfo\":[\"string\"]}],\"webSources\":[{\"title\":\"string\",\"url\":\"string\"}],\"missingQuestions\":[\"string\"]}"
   ].join("\n");
 }
 
@@ -434,20 +478,53 @@ function parseAiProductSearchNormalizationJson(text: string, fallback: AiProduct
   try {
     const parsed = JSON.parse(text) as Partial<AiProductSearchNormalizationResult>;
     const rawParsed = parsed as Partial<AiProductSearchNormalizationResult> & { normalizedProductName?: unknown };
+    const certainty = parsed.certainty === "high" || parsed.certainty === "medium" || parsed.certainty === "low"
+      ? parsed.certainty
+      : fallback.certainty;
+    const displayMode = parsed.displayMode === "single" || parsed.displayMode === "multiple" || parsed.displayMode === "needs_more_info"
+      ? parsed.displayMode
+      : fallback.displayMode;
+    const rawPrimaryCandidate = parsed.primaryCandidate && typeof parsed.primaryCandidate === "object"
+      ? parsed.primaryCandidate as { code?: unknown; hsCode?: unknown; hs_code?: unknown; hskCode?: unknown; hsk_code?: unknown; reason?: unknown; description?: unknown; requiredInfo?: unknown }
+      : null;
+    const primaryCodeSource = rawPrimaryCandidate
+      ? [rawPrimaryCandidate.code, rawPrimaryCandidate.hsCode, rawPrimaryCandidate.hs_code, rawPrimaryCandidate.hskCode, rawPrimaryCandidate.hsk_code]
+        .find((field): field is string => typeof field === "string") ?? ""
+      : "";
+    const primaryCode = primaryCodeSource.replace(/[^0-9]/g, "");
+    const primaryReason = rawPrimaryCandidate && typeof rawPrimaryCandidate.reason === "string" && rawPrimaryCandidate.reason.trim()
+      ? rawPrimaryCandidate.reason.trim()
+      : rawPrimaryCandidate && typeof rawPrimaryCandidate.description === "string" && rawPrimaryCandidate.description.trim()
+      ? rawPrimaryCandidate.description.trim()
+      : "";
+    const primaryCandidate = primaryCode.length >= 4 && primaryCode.length <= 10 && primaryReason
+      ? {
+        code: primaryCode,
+        reason: primaryReason,
+        requiredInfo: stringArray(rawPrimaryCandidate?.requiredInfo, 5)
+      }
+      : fallback.primaryCandidate ?? null;
+    const candidateHsCodes = Array.from(new Set([
+      ...(primaryCandidate ? [primaryCandidate.code] : []),
+      ...hsCodeArray(parsed.candidateHsCodes, 8)
+    ])).slice(0, 8);
 
     return {
       provider: fallback.provider,
       model: fallback.model,
+      certainty,
+      displayMode,
       correctedProductName: typeof parsed.correctedProductName === "string" && parsed.correctedProductName.trim()
         ? parsed.correctedProductName.trim()
         : typeof rawParsed.normalizedProductName === "string" && rawParsed.normalizedProductName.trim()
         ? rawParsed.normalizedProductName.trim()
         : fallback.correctedProductName,
+      primaryCandidate,
       searchTerms: stringArray(parsed.searchTerms, 12),
       koreanTerms: stringArray(parsed.koreanTerms, 8),
       englishTerms: stringArray(parsed.englishTerms, 8),
       productFamilies: stringArray(parsed.productFamilies, 6),
-      candidateHsCodes: hsCodeArray(parsed.candidateHsCodes, 8),
+      candidateHsCodes,
       candidateHsCodeReasons: Array.isArray(parsed.candidateHsCodeReasons)
         ? parsed.candidateHsCodeReasons
           .map((item) => {

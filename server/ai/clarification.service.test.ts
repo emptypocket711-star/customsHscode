@@ -98,7 +98,7 @@ describe("normalizeProductSearchInput", () => {
     });
 
     expect(key).toContain("ai-product-normalization");
-    expect(key).toContain("product-search-normalization-v10");
+    expect(key).toContain("product-search-normalization-v11");
     expect(key).toContain("901910");
     expect(key).not.toContain("secret");
     expect(key).not.toContain("ABC-123");
@@ -212,13 +212,51 @@ describe("normalizeProductSearchInput", () => {
     expect(instructions).toContain("brand name, trade name, product line, model name, SKU, catalog number");
     expect(instructions).toContain("brand or product line plus a generic product phrase");
     expect(instructions).toContain("If web search is unavailable, inconclusive, or blocked");
-    expect(instructions).toContain("3 to 8 plausible HS heading/subheading/code prefixes");
+    expect(instructions).toContain("First decide certainty and displayMode");
+    expect(instructions).toContain("Do not force 3 to 8 candidates in high-certainty cases");
     expect(instructions).toContain("Prefer HS6 prefixes");
     expect(instructions).toContain("Return useful HS4/HS6 candidates even when the exact national HS10 may need later official-data expansion");
     expect(instructions).toContain("Do not require an exact official HS description match before returning candidateHsCodes");
     expect(instructions).toContain("do not prioritize accumulator/battery headings only because the article contains an internal battery");
     expect(instructions).toContain("classify lookup intent by the traded finished article first");
     expect(instructions).toContain("If web search identifies a product but the visible words can reasonably indicate another product family");
+  });
+
+  it("parses high-certainty single primary candidates before alternatives", () => {
+    const fallback = {
+      provider: "openai" as const,
+      model: "test",
+      correctedProductName: null,
+      searchTerms: [],
+      koreanTerms: [],
+      englishTerms: [],
+      productFamilies: [],
+      candidateHsCodes: [],
+      candidateHsCodeReasons: [],
+      webSources: [],
+      missingQuestions: []
+    };
+    const parsed = aiProviderInternals.parseAiProductSearchNormalizationJson(JSON.stringify({
+      certainty: "high",
+      displayMode: "single",
+      correctedProductName: "smart watch",
+      primaryCandidate: {
+        code: "8517.62",
+        reason: "스마트폰과 통신하는 웨어러블 전자기기 가능성이 가장 높음",
+        requiredInfo: ["셀룰러 통신 여부"]
+      },
+      candidateHsCodes: ["9102.12", "8517.62"],
+      candidateHsCodeReasons: [
+        { code: "910212", reason: "시계 형태 대체 가능성", requiredInfo: ["스마트 기능 범위"] }
+      ],
+      searchTerms: ["smart watch"]
+    }), fallback);
+
+    expect(parsed.certainty).toBe("high");
+    expect(parsed.displayMode).toBe("single");
+    expect(parsed.primaryCandidate?.code).toBe("851762");
+    expect(parsed.candidateHsCodes[0]).toBe("851762");
+    expect(parsed.candidateHsCodes).toContain("910212");
   });
 
   it("retries brand-name product normalization without web search when the web request fails", async () => {
