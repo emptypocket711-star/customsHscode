@@ -17,11 +17,42 @@ async function getCurrentUser() {
   }
 }
 
+async function getSignupState(userId: string) {
+  if (!hasSupabaseEnv()) return { completed: false, pendingJoin: false };
+
+  const supabase = await createSupabaseServerClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("onboarding_completed_at")
+    .eq("id", userId)
+    .maybeSingle();
+
+  const { data: joinRequest } = await supabase
+    .from("company_join_requests")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("status", "pending")
+    .maybeSingle();
+
+  return {
+    completed: Boolean(profile?.onboarding_completed_at),
+    pendingJoin: Boolean(joinRequest?.id)
+  };
+}
+
 export default async function CompleteSignupPage() {
   const user = await getCurrentUser();
 
   if (!user?.email) {
     redirect("/login?mode=signup");
+  }
+
+  const signupState = await getSignupState(user.id);
+  if (signupState.completed) {
+    redirect("/dashboard");
+  }
+  if (signupState.pendingJoin) {
+    redirect("/auth/company-pending");
   }
 
   return (

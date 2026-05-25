@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useState, useTransition } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Building2, CheckCircle2, Lock, LogIn, Mail, User, UserPlus, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import {
   authenticateAction,
   searchCompanySuggestionsAction,
+  type CompanySuggestion,
   sendSignupEmailOtpAction,
   verifySignupEmailOtpAction
 } from "@/server/actions/auth.actions";
@@ -34,8 +35,11 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
   const [signupEmail, setSignupEmail] = useState(sendState.email ?? "");
   const [otpToken, setOtpToken] = useState("");
   const [companyName, setCompanyName] = useState("");
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [selectedCompanyId, setSelectedCompanyId] = useState("");
+  const [suggestions, setSuggestions] = useState<CompanySuggestion[]>([]);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [suggestPending, startSuggestTransition] = useTransition();
+  const lastCooldownMessageRef = useRef<string | undefined>(undefined);
 
   const mode = authState.status === "idle" ? initialMode : authState.mode;
   const isLogin = mode === "login";
@@ -52,12 +56,33 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
     const timer = window.setTimeout(() => {
       startSuggestTransition(async () => {
         const result = await searchCompanySuggestionsAction(term);
-        setSuggestions(result.filter((name) => name !== companyName));
+        setSuggestions(result.filter((company) => company.name !== companyName));
       });
     }, 220);
 
     return () => window.clearTimeout(timer);
   }, [companyName, verifiedSignupEmail]);
+
+  useEffect(() => {
+    if (sendState.status !== "success" || lastCooldownMessageRef.current === sendState.message) return;
+
+    lastCooldownMessageRef.current = sendState.message;
+    const startTimer = window.setTimeout(() => setResendCooldown(60), 0);
+    const timer = window.setInterval(() => {
+      setResendCooldown((value) => {
+        if (value <= 1) {
+          window.clearInterval(timer);
+          return 0;
+        }
+        return value - 1;
+      });
+    }, 1000);
+
+    return () => {
+      window.clearTimeout(startTimer);
+      window.clearInterval(timer);
+    };
+  }, [sendState.status, sendState.message]);
 
   const title = useMemo(() => {
     if (isReset) return "비밀번호 찾기";
@@ -110,11 +135,17 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
             />
             <button
               className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-800 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
-              disabled={pending || verifiedSignupEmail || !signupEmail}
+              disabled={pending || verifiedSignupEmail || !signupEmail || resendCooldown > 0}
               type="submit"
             >
               <Mail aria-hidden="true" size={16} />
-              {sendPending ? "전송 중" : verifiedSignupEmail ? "이메일 인증 완료" : "인증번호 전송"}
+              {sendPending
+                ? "전송 중"
+                : verifiedSignupEmail
+                  ? "이메일 인증 완료"
+                  : resendCooldown > 0
+                    ? `재전송 대기 ${resendCooldown}초`
+                    : "인증번호 전송"}
             </button>
           </form>
 
@@ -152,6 +183,7 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
             <form action={authAction} className="grid gap-5">
               <input name="mode" type="hidden" value="signup" />
               <input name="email" type="hidden" value={activeEmail} />
+              <input name="selectedCompanyId" type="hidden" value={selectedCompanyId} />
               <AuthInput
                 autoComplete="new-password"
                 disabled={authPending}
@@ -181,8 +213,14 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
               <CompanyNameInput
                 companyName={companyName}
                 disabled={authPending}
-                onSelect={setCompanyName}
-                onValueChange={setCompanyName}
+                onSelect={(company) => {
+                  setCompanyName(company.name);
+                  setSelectedCompanyId(company.id);
+                }}
+                onValueChange={(value) => {
+                  setCompanyName(value);
+                  setSelectedCompanyId("");
+                }}
                 suggestions={visibleSuggestions}
                 suggestPending={suggestPending}
               />
@@ -279,9 +317,9 @@ function CompanyNameInput({
 }: {
   companyName: string;
   disabled?: boolean;
-  onSelect: (value: string) => void;
+  onSelect: (value: CompanySuggestion) => void;
   onValueChange: (value: string) => void;
-  suggestions: string[];
+  suggestions: CompanySuggestion[];
   suggestPending: boolean;
 }) {
   return (
@@ -301,14 +339,14 @@ function CompanyNameInput({
         <div className="overflow-hidden rounded-lg border border-blue-100 bg-blue-50/70">
           <p className="border-b border-blue-100 px-3 py-2 text-xs font-semibold text-blue-900">기존에 가입된 기업명이 있습니다.</p>
           <div className="grid">
-            {suggestions.map((name) => (
+            {suggestions.map((company) => (
               <button
                 className="px-3 py-2 text-left text-sm font-semibold text-slate-800 transition hover:bg-white"
-                key={name}
-                onClick={() => onSelect(name)}
+                key={company.id}
+                onClick={() => onSelect(company)}
                 type="button"
               >
-                {name}
+                {company.name}
               </button>
             ))}
           </div>

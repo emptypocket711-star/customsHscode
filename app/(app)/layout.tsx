@@ -19,11 +19,38 @@ async function getCurrentUser() {
   }
 }
 
+async function getOnboardingPath(userId: string) {
+  if (!hasSupabaseEnv()) return null;
+
+  const supabase = await createSupabaseServerClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("onboarding_completed_at")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (profile?.onboarding_completed_at) return null;
+
+  const { data: joinRequest } = await supabase
+    .from("company_join_requests")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("status", "pending")
+    .maybeSingle();
+
+  return joinRequest?.id ? "/auth/company-pending" : "/auth/complete-signup";
+}
+
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const user = await getCurrentUser();
 
   if (!user) {
     redirect("/login");
+  }
+
+  const onboardingPath = await getOnboardingPath(user.id);
+  if (onboardingPath) {
+    redirect(onboardingPath);
   }
 
   return (

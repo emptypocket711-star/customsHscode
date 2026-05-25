@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useState, useTransition } from "react";
 import { Building2, Lock, User, UserPlus, type LucideIcon } from "lucide-react";
-import { authenticateAction, searchCompanySuggestionsAction } from "@/server/actions/auth.actions";
+import { authenticateAction, searchCompanySuggestionsAction, type CompanySuggestion } from "@/server/actions/auth.actions";
 import type { AuthActionState } from "@/features/auth/schemas";
 
 const initialAuthState: AuthActionState = {
@@ -20,7 +20,8 @@ const businessTypeOptions = [
 export function SignupCompletionForm({ email }: { email: string }) {
   const [authState, authAction, authPending] = useActionState(authenticateAction, initialAuthState);
   const [companyName, setCompanyName] = useState("");
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [selectedCompanyId, setSelectedCompanyId] = useState("");
+  const [suggestions, setSuggestions] = useState<CompanySuggestion[]>([]);
   const [suggestPending, startSuggestTransition] = useTransition();
 
   useEffect(() => {
@@ -30,7 +31,7 @@ export function SignupCompletionForm({ email }: { email: string }) {
     const timer = window.setTimeout(() => {
       startSuggestTransition(async () => {
         const result = await searchCompanySuggestionsAction(term);
-        setSuggestions(result.filter((name) => name !== companyName));
+        setSuggestions(result.filter((company) => company.name !== companyName));
       });
     }, 220);
 
@@ -43,6 +44,7 @@ export function SignupCompletionForm({ email }: { email: string }) {
     <form action={authAction} className="grid gap-5">
       <input name="mode" type="hidden" value="signup" />
       <input name="email" type="hidden" value={email} />
+      <input name="selectedCompanyId" type="hidden" value={selectedCompanyId} />
       <AuthInput
         autoComplete="new-password"
         disabled={authPending}
@@ -72,8 +74,14 @@ export function SignupCompletionForm({ email }: { email: string }) {
       <CompanyNameInput
         companyName={companyName}
         disabled={authPending}
-        onSelect={setCompanyName}
-        onValueChange={setCompanyName}
+        onSelect={(company) => {
+          setCompanyName(company.name);
+          setSelectedCompanyId(company.id);
+        }}
+        onValueChange={(value) => {
+          setCompanyName(value);
+          setSelectedCompanyId("");
+        }}
         suggestions={visibleSuggestions}
         suggestPending={suggestPending}
       />
@@ -119,9 +127,9 @@ function CompanyNameInput({
 }: {
   companyName: string;
   disabled?: boolean;
-  onSelect: (value: string) => void;
+  onSelect: (value: CompanySuggestion) => void;
   onValueChange: (value: string) => void;
-  suggestions: string[];
+  suggestions: CompanySuggestion[];
   suggestPending: boolean;
 }) {
   return (
@@ -141,14 +149,14 @@ function CompanyNameInput({
         <div className="overflow-hidden rounded-lg border border-blue-100 bg-blue-50/70">
           <p className="border-b border-blue-100 px-3 py-2 text-xs font-semibold text-blue-900">기존에 가입된 기업명이 있습니다.</p>
           <div className="grid">
-            {suggestions.map((name) => (
+            {suggestions.map((company) => (
               <button
                 className="px-3 py-2 text-left text-sm font-semibold text-slate-800 transition hover:bg-white"
-                key={name}
-                onClick={() => onSelect(name)}
+                key={company.id}
+                onClick={() => onSelect(company)}
                 type="button"
               >
-                {name}
+                {company.name}
               </button>
             ))}
           </div>

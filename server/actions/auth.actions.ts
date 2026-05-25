@@ -20,6 +20,11 @@ import {
 } from "@/lib/supabase/server";
 import { createSupabaseServiceRoleClient, hasSupabaseServiceRoleEnv } from "@/lib/supabase/service-role";
 
+export type CompanySuggestion = {
+  id: string;
+  name: string;
+};
+
 function stringValue(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" ? value : undefined;
@@ -52,6 +57,43 @@ async function ensureClientProfile(companyName?: string, fullName?: string, busi
   if (error) throw new Error(error.message);
 }
 
+async function requestCompanyJoin(companyId: string, fullName?: string, businessTypes?: string[]) {
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("request_company_join", {
+    p_business_types: businessTypes && businessTypes.length > 0 ? businessTypes : null,
+    p_company_id: companyId,
+    p_full_name: fullName || null
+  });
+
+  if (error) throw new Error(error.message);
+}
+
+async function getPostLoginPath() {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user) return "/login";
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("company_id, onboarding_completed_at")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (profile?.onboarding_completed_at) return "/dashboard";
+
+  const { data: joinRequest } = await supabase
+    .from("company_join_requests")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("status", "pending")
+    .maybeSingle();
+
+  return joinRequest?.id ? "/auth/company-pending" : "/auth/complete-signup";
+}
+
 async function getAppOrigin() {
   const headersList = await headers();
   return process.env.NEXT_PUBLIC_APP_URL || headersList.get("origin") || "http://localhost:3000";
@@ -71,6 +113,7 @@ export async function authenticateAction(
     rememberSession: mode === "login" ? booleanValue(formData, "rememberSession") : true,
     fullName: stringValue(formData, "fullName"),
     companyName: stringValue(formData, "companyName"),
+    selectedCompanyId: stringValue(formData, "selectedCompanyId"),
     businessTypes: arrayValue(formData, "businessTypes")
   });
 
@@ -133,6 +176,12 @@ export async function authenticateAction(
     }
 
     await setRememberSessionPreference(parsed.data.rememberSession ?? true);
+    if (parsed.data.selectedCompanyId) {
+      await requestCompanyJoin(parsed.data.selectedCompanyId, parsed.data.fullName, parsed.data.businessTypes);
+      revalidatePath("/", "layout");
+      redirect("/auth/company-pending");
+    }
+
     await ensureClientProfile(parsed.data.companyName, parsed.data.fullName, parsed.data.businessTypes);
     revalidatePath("/", "layout");
     redirect("/dashboard");
@@ -152,12 +201,11 @@ export async function authenticateAction(
   }
 
   await setRememberSessionPreference(parsed.data.rememberSession ?? true);
-  await ensureClientProfile(undefined, parsed.data.fullName);
   revalidatePath("/", "layout");
-  redirect("/dashboard");
+  redirect(await getPostLoginPath());
 }
 
-export async function searchCompanySuggestionsAction(query: string): Promise<string[]> {
+export async function searchCompanySuggestionsAction(query: string): Promise<CompanySuggestion[]> {
   const term = query.trim();
   if (term.length < 2 || !hasSupabaseEnv() || !hasSupabaseServiceRoleEnv()) return [];
 
@@ -170,13 +218,20 @@ export async function searchCompanySuggestionsAction(query: string): Promise<str
   const service = createSupabaseServiceRoleClient();
   const { data, error } = await service
     .from("companies")
-    .select("name")
+    .select("id, name")
     .ilike("name", `%${term}%`)
     .order("name", { ascending: true })
     .limit(6);
 
   if (error || !data) return [];
-  return [...new Set(data.map((row) => String(row.name)).filter(Boolean))];
+  const seen = new Set<string>();
+  return data.flatMap((row) => {
+    const id = String(row.id ?? "");
+    const name = String(row.name ?? "");
+    if (!id || !name || seen.has(id)) return [];
+    seen.add(id);
+    return [{ id, name }];
+  });
 }
 
 export async function sendSignupEmailOtpAction(
@@ -223,7 +278,7 @@ export async function sendSignupEmailOtpAction(
   return {
     status: "success",
     email: parsed.data.email,
-    message: "인증번호를 전송했습니다. 메일함에서 6자리 코드를 확인해 주세요."
+    message: "인증번호를 전송했습니다. 메일함에서 인증번호를 확인해 주세요."
   };
 }
 

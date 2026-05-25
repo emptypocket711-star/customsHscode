@@ -12,6 +12,7 @@ export const authFormSchema = z
     rememberSession: z.boolean().optional(),
     fullName: z.string().trim().max(80).optional(),
     companyName: z.string().trim().max(120).optional(),
+    selectedCompanyId: z.uuid().optional(),
     businessTypes: z.array(businessTypeSchema).optional()
   })
   .superRefine((data, ctx) => {
