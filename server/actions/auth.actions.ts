@@ -199,7 +199,7 @@ export async function sendSignupEmailOtpAction(
   const { error } = await supabase.auth.signInWithOtp({
     email: parsed.data.email,
     options: {
-      emailRedirectTo: `${origin}/auth/callback?next=/dashboard`,
+      emailRedirectTo: `${origin}/auth/callback?next=/auth/complete-signup`,
       shouldCreateUser: true
     }
   });
