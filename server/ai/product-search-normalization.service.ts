@@ -4,7 +4,7 @@ import { getAiProvider, type AiProductSearchNormalizationResult } from "@/server
 import { redactSensitiveText } from "@/server/ai/redaction";
 import { cachedLookup, lookupCacheKey } from "@/server/cache/lookup-cache";
 
-const productSearchNormalizationVersion = "product-search-normalization-v6";
+const productSearchNormalizationVersion = "product-search-normalization-v7";
 
 function productInputText(input: ProductHsRecommendationInput) {
   const hsCodeHints = extractHsCodeHintsFromProductInput(input);

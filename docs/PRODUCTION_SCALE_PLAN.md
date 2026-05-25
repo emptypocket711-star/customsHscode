@@ -106,7 +106,7 @@ Implemented AI cache:
 - `normalizeProductSearchInput` now uses `cachedLookup`.
 - The cache key stores provider, model, basis date, HS hints, and a SHA-256 hash of redacted input.
 - Raw product text, invoice text, model descriptions, and contact-like values must not appear in cache keys.
-- Product-name GPT normalization uses `OPENAI_PRODUCT_SEARCH_TIMEOUT_MS` so slow AI calls can fall back quickly without blocking the whole lookup page.
+- Product-name GPT normalization uses `OPENAI_PRODUCT_SEARCH_TIMEOUT_MS`; web-search assisted product lookups still get at least 12 seconds so Korean names, typo correction, and model-number lookup do not fall back before OpenAI responds.
 - Product clarification uses `OPENAI_CLARIFICATION_TIMEOUT_MS` and falls back to deterministic guidance when the AI explanation is slow.
 - Public data API calls use `PUBLIC_DATA_REQUEST_TIMEOUT_MS`.
 - Do not enable live Customs API018 product-name fallback in production. Keep `CUSTOMS_API_PRODUCT_SEARCH_LIVE_ENABLED=false`, collect API018 rows into `customs_hs_code_search_items` on a scheduled basis, and query only reviewed/published stored rows during customer lookup.

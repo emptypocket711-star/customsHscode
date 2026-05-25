@@ -69,6 +69,15 @@ function reasoningEffortForResponses(model: string, webSearch: boolean) {
   return webSearch ? "low" : "none";
 }
 
+function envNumber(name: string, fallback: number) {
+  const value = Number(process.env[name]);
+  return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+function productSearchRequestTimeoutMs(configuredTimeoutMs: number, webSearch: boolean) {
+  return webSearch ? Math.max(configuredTimeoutMs, 12_000) : configuredTimeoutMs;
+}
+
 export class MockAiProvider implements AiProvider {
   name: AiProviderName = "mock";
   model = "mock-clarification-v1";
@@ -474,9 +483,9 @@ export class OpenAiProvider implements AiProvider {
   name: AiProviderName = "openai";
   model = process.env.OPENAI_MODEL || "gpt-4.1-mini";
   private readonly apiKey: string | undefined;
-  private readonly timeoutMs = Number(process.env.OPENAI_TIMEOUT_MS || 15000);
-  private readonly clarificationTimeoutMs = Number(process.env.OPENAI_CLARIFICATION_TIMEOUT_MS || 2000);
-  private readonly productSearchTimeoutMs = Number(process.env.OPENAI_PRODUCT_SEARCH_TIMEOUT_MS || 30000);
+  private readonly timeoutMs = envNumber("OPENAI_TIMEOUT_MS", 15_000);
+  private readonly clarificationTimeoutMs = envNumber("OPENAI_CLARIFICATION_TIMEOUT_MS", 2_000);
+  private readonly productSearchTimeoutMs = envNumber("OPENAI_PRODUCT_SEARCH_TIMEOUT_MS", 30_000);
 
   constructor(apiKey = process.env.OPENAI_API_KEY) {
     this.apiKey = apiKey;
@@ -596,15 +605,16 @@ export class OpenAiProvider implements AiProvider {
     };
 
     if (!this.apiKey) return fallback;
+    const useWebSearch = this.shouldUseWebSearchForProductSearch(prompt);
 
     const response = await this.requestResponsesApi(
       this.responseBody(
         prompt,
         aiProductSearchNormalizationInstructions(),
         2600,
-        { webSearch: this.shouldUseWebSearchForProductSearch(prompt) }
+        { webSearch: useWebSearch }
       ),
-      this.productSearchTimeoutMs
+      productSearchRequestTimeoutMs(this.productSearchTimeoutMs, useWebSearch)
     );
 
     if (!response) return fallback;
@@ -650,5 +660,6 @@ export const aiProviderInternals = {
   webSourcesFromOpenAiResponse,
   parseAiClarificationJson,
   parseAiProductSearchNormalizationJson,
-  reasoningEffortForResponses
+  reasoningEffortForResponses,
+  productSearchRequestTimeoutMs
 };

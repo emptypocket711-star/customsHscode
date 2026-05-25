@@ -93,6 +93,7 @@ describe("normalizeProductSearchInput", () => {
     });
 
     expect(key).toContain("ai-product-normalization");
+    expect(key).toContain("product-search-normalization-v7");
     expect(key).toContain("901910");
     expect(key).not.toContain("secret");
     expect(key).not.toContain("ABC-123");
@@ -246,5 +247,11 @@ describe("OpenAI provider parsing", () => {
     expect(aiProviderInternals.reasoningEffortForResponses("gpt-5.4-mini", false)).toBe("none");
     expect(aiProviderInternals.reasoningEffortForResponses("gpt-5.4-mini", true)).toBe("low");
     expect(aiProviderInternals.reasoningEffortForResponses("gpt-4.1-mini", false)).toBeNull();
+  });
+
+  it("keeps web-assisted product search calls above the minimum response window", () => {
+    expect(aiProviderInternals.productSearchRequestTimeoutMs(3000, true)).toBe(12000);
+    expect(aiProviderInternals.productSearchRequestTimeoutMs(3000, false)).toBe(3000);
+    expect(aiProviderInternals.productSearchRequestTimeoutMs(30000, true)).toBe(30000);
   });
 });
