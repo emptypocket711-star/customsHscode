@@ -84,7 +84,7 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
         {isLogin ? (
           <div className="flex items-center justify-between text-sm">
             <label className="inline-flex items-center gap-2 text-slate-600">
-              <input className="size-4 rounded border-slate-300" disabled={pending} type="checkbox" />
+              <input className="size-4 rounded border-slate-300" disabled={pending} name="rememberSession" type="checkbox" />
               로그인 상태 유지
             </label>
             <span className="font-semibold text-blue-700">비밀번호 찾기</span>

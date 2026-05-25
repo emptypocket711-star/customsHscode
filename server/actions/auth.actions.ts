@@ -3,11 +3,20 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { authFormSchema, type AuthActionState } from "@/features/auth/schemas";
-import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
+import {
+  clearRememberSessionPreference,
+  createSupabaseServerClient,
+  hasSupabaseEnv,
+  setRememberSessionPreference
+} from "@/lib/supabase/server";
 
 function stringValue(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" ? value : undefined;
+}
+
+function booleanValue(formData: FormData, key: string) {
+  return formData.get(key) === "on";
 }
 
 async function ensureClientProfile(companyName?: string, fullName?: string) {
@@ -28,6 +37,7 @@ export async function authenticateAction(
     mode: stringValue(formData, "mode") ?? "login",
     email: stringValue(formData, "email"),
     password: stringValue(formData, "password"),
+    rememberSession: booleanValue(formData, "rememberSession"),
     fullName: stringValue(formData, "fullName"),
     companyName: stringValue(formData, "companyName")
   });
@@ -50,7 +60,7 @@ export async function authenticateAction(
     };
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient({ rememberSession: parsed.data.rememberSession ?? true });
 
   if (parsed.data.mode === "signup") {
     const { data, error } = await supabase.auth.signUp({
@@ -73,6 +83,7 @@ export async function authenticateAction(
     }
 
     if (data.session) {
+      await setRememberSessionPreference(parsed.data.rememberSession ?? true);
       await ensureClientProfile(parsed.data.companyName, parsed.data.fullName);
       revalidatePath("/", "layout");
       redirect("/dashboard");
@@ -98,6 +109,7 @@ export async function authenticateAction(
     };
   }
 
+  await setRememberSessionPreference(parsed.data.rememberSession ?? true);
   await ensureClientProfile(undefined, parsed.data.fullName);
   revalidatePath("/", "layout");
   redirect("/dashboard");
@@ -110,6 +122,7 @@ export async function signOutAction() {
 
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
+  await clearRememberSessionPreference();
   revalidatePath("/", "layout");
   redirect("/login");
 }
