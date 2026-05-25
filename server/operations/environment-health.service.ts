@@ -104,6 +104,12 @@ export function getEnvironmentHealthGroups(): EnvironmentHealthGroup[] {
           label: "품명 검색 timeout",
           description: "품명 검색이 너무 빨리 fallback 되지 않도록 조정하는 제한 시간입니다.",
           required: false
+        }),
+        envItem({
+          key: "LOOKUP_TELEMETRY_ENABLED",
+          label: "Lookup telemetry",
+          description: "품명 검색 지연과 후보 수를 원문 없이 서버 로그로 확인할 때만 true로 켭니다.",
+          required: false
         })
       ]
     },
@@ -150,7 +156,13 @@ export function getEnvironmentHealthGroups(): EnvironmentHealthGroup[] {
         envItem({
           key: "BUSINESS_REGISTRATION_STATUS_SERVICE_KEY",
           label: "사업자 상태조회 key",
-          description: "설정되면 회원가입 화면에서 계속사업자 여부를 확인합니다. 미설정 시 형식 검증만 수행합니다.",
+          description: "상태조회 key입니다. live 플래그가 꺼져 있으면 키가 있어도 회원가입은 형식 검증만 수행합니다.",
+          required: false
+        }),
+        envItem({
+          key: "BUSINESS_REGISTRATION_STATUS_LIVE_ENABLED",
+          label: "사업자 상태조회 live",
+          description: "true일 때만 회원가입 서버 액션에서 국세청/공공데이터 사업자 상태조회를 호출합니다.",
           required: false
         }),
         envItem({
