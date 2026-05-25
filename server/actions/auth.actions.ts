@@ -273,6 +273,41 @@ export async function sendSignupEmailOtpAction(
   };
 }
 
+export async function checkSignupEmailAvailabilityAction(email: string): Promise<SignupOtpActionState> {
+  const parsed = signupOtpSendFormSchema.safeParse({ email });
+
+  if (!parsed.success) {
+    return {
+      status: "error",
+      email,
+      message: parsed.error.issues[0]?.message ?? "이메일 형식을 확인해 주세요."
+    };
+  }
+
+  try {
+    const status = await getSignupEmailStatus(parsed.data.email);
+    if (status?.user_exists && status.onboarding_completed) {
+      return {
+        status: "error",
+        email: parsed.data.email,
+        message: "이미 가입이 완료된 이메일입니다. 다른 이메일을 입력해 주세요."
+      };
+    }
+
+    return {
+      status: "success",
+      email: parsed.data.email,
+      message: status?.user_exists ? "가입 절차를 이어갈 수 있는 이메일입니다." : "사용 가능한 이메일입니다."
+    };
+  } catch {
+    return {
+      status: "error",
+      email: parsed.data.email,
+      message: "이메일 중복 여부를 확인할 수 없습니다."
+    };
+  }
+}
+
 export async function verifySignupEmailOtpAction(
   _previousState: SignupOtpActionState,
   formData: FormData

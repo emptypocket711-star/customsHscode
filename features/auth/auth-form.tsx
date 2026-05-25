@@ -1,10 +1,11 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Building2, CheckCircle2, Lock, LogIn, Mail, User, UserPlus, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import {
   authenticateAction,
+  checkSignupEmailAvailabilityAction,
   sendSignupEmailOtpAction,
   verifySignupEmailOtpAction
 } from "@/server/actions/auth.actions";
@@ -31,7 +32,9 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
   const [authState, authAction, authPending] = useActionState(authenticateAction, initialAuthState);
   const [sendState, sendAction, sendPending] = useActionState(sendSignupEmailOtpAction, initialOtpState);
   const [verifyState, verifyAction, verifyPending] = useActionState(verifySignupEmailOtpAction, initialOtpState);
+  const [emailCheckPending, startEmailCheckTransition] = useTransition();
   const [signupEmail, setSignupEmail] = useState(sendState.email ?? "");
+  const [emailAvailability, setEmailAvailability] = useState<SignupOtpActionState>({ status: "idle" });
   const [otpToken, setOtpToken] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupPasswordConfirm, setSignupPasswordConfirm] = useState("");
@@ -42,14 +45,20 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
   const [selectedBusinessTypes, setSelectedBusinessTypes] = useState<string[]>([]);
   const [resendCooldown, setResendCooldown] = useState(0);
   const lastCooldownMessageRef = useRef<string | undefined>(undefined);
+  const emailCheckRequestRef = useRef(0);
 
   const mode = authState.status === "idle" ? initialMode : authState.mode;
   const isLogin = mode === "login";
   const isSignup = mode === "signup";
   const isReset = mode === "reset";
-  const verifiedSignupEmail = Boolean(isSignup && verifyState.verified);
-  const activeEmail = verifyState.email || sendState.email || signupEmail;
+  const normalizedSignupEmail = signupEmail.trim().toLowerCase();
+  const verifiedSignupEmail = Boolean(isSignup && verifyState.verified && verifyState.email?.toLowerCase() === normalizedSignupEmail);
+  const sendStateMatchesEmail = sendState.email?.toLowerCase() === normalizedSignupEmail;
+  const activeEmail = verifiedSignupEmail ? verifyState.email : sendStateMatchesEmail ? sendState.email : signupEmail;
   const pending = authPending || sendPending || verifyPending;
+  const emailLooksValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(signupEmail.trim());
+  const isSignupEmailAvailable = emailAvailability.status === "success" && emailAvailability.email?.toLowerCase() === normalizedSignupEmail;
+  const isSignupEmailBlocked = emailAvailability.status === "error" && emailAvailability.email?.toLowerCase() === normalizedSignupEmail;
 
   useEffect(() => {
     if (sendState.status !== "success" || lastCooldownMessageRef.current === sendState.message) return;
@@ -71,6 +80,26 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
       window.clearInterval(timer);
     };
   }, [sendState.status, sendState.message]);
+
+  useEffect(() => {
+    if (!isSignup || !accountType || verifiedSignupEmail) return;
+
+    const requestId = emailCheckRequestRef.current + 1;
+    emailCheckRequestRef.current = requestId;
+
+    if (!emailLooksValid) return;
+
+    const timer = window.setTimeout(() => {
+      startEmailCheckTransition(async () => {
+        const result = await checkSignupEmailAvailabilityAction(signupEmail);
+        if (emailCheckRequestRef.current === requestId) {
+          setEmailAvailability(result);
+        }
+      });
+    }, 450);
+
+    return () => window.clearTimeout(timer);
+  }, [accountType, emailLooksValid, isSignup, signupEmail, verifiedSignupEmail]);
 
   const title = useMemo(() => {
     if (isReset) return "비밀번호 찾기";
@@ -132,14 +161,22 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
                   icon={Mail}
                   label="이메일"
                   name="email"
-                  onChange={(value) => setSignupEmail(value)}
+                  onChange={(value) => {
+                    setSignupEmail(value);
+                    setOtpToken("");
+                  }}
                   placeholder="이메일을 입력하세요"
                   type="email"
                   value={signupEmail}
                 />
+                {emailCheckPending ? (
+                  <p className="rounded-lg border border-slate-200 bg-white p-3 text-sm font-medium text-slate-600">이메일 중복 여부를 확인하고 있습니다.</p>
+                ) : emailAvailability.message && emailAvailability.email?.toLowerCase() === normalizedSignupEmail ? (
+                  <StatusMessage state={emailAvailability} />
+                ) : null}
                 <button
                   className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-800 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
-                  disabled={pending || verifiedSignupEmail || !signupEmail || resendCooldown > 0}
+                  disabled={pending || verifiedSignupEmail || !isSignupEmailAvailable || isSignupEmailBlocked || resendCooldown > 0}
                   type="submit"
                 >
                   <Mail aria-hidden="true" size={16} />
@@ -153,9 +190,9 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
                 </button>
               </form>
 
-              {sendState.message ? <StatusMessage state={sendState} /> : null}
+              {sendState.message && sendStateMatchesEmail ? <StatusMessage state={sendState} /> : null}
 
-              {sendState.status === "success" && !verifiedSignupEmail ? (
+              {sendState.status === "success" && sendStateMatchesEmail && !verifiedSignupEmail ? (
                 <form action={verifyAction} className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4">
                   <input name="email" type="hidden" value={activeEmail} />
                   <input name="otp" type="hidden" value={otpToken.replace(/\D/g, "")} />
