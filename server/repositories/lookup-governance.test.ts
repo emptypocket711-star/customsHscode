@@ -128,6 +128,20 @@ describe("lookup governance guards", () => {
     expect(sideNav).toContain("showOperations ? <NavGroup");
   });
 
+  it("keeps expensive public routes behind rate limits", () => {
+    const proxy = read("proxy.ts");
+    const rateLimit = read("lib/rate-limit.ts");
+
+    for (const path of ["/login", "/auth", "/hs", "/documents", "/duty-estimator"]) {
+      expect(proxy, `${path} must be covered by proxy rate limiting`).toContain(path);
+    }
+
+    expect(proxy).toContain("checkRateLimitAsync");
+    expect(rateLimit).toContain("RATE_LIMIT_ENABLED");
+    expect(proxy).toContain("X-RateLimit-Remaining");
+    expect(proxy).toContain("status: 429");
+  });
+
   it("keeps recent user-data policies company scoped and service-role only where needed", () => {
     const hsFavorites = read("supabase/migrations/20260525003000_hs_favorites.sql");
     const hsLookupHistory = read("supabase/migrations/20260525007700_hs_lookup_history.sql");
