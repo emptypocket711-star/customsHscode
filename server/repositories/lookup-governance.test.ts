@@ -114,6 +114,7 @@ describe("lookup governance guards", () => {
     const usersPage = read("app/(app)/operations/users/page.tsx");
     const healthPage = read("app/(app)/operations/health/page.tsx");
     const documentUploadPage = read("app/(app)/documents/upload/page.tsx");
+    const overseasPage = read("app/(app)/hs/overseas/page.tsx");
     const sideNav = read("components/app-side-nav.tsx");
 
     expect(appLayout).toContain("isDeveloperEmail(user.email)");
@@ -122,6 +123,8 @@ describe("lookup governance guards", () => {
     expect(healthPage).toContain("requireDeveloperRole()");
     expect(documentUploadPage).toContain("requireDeveloperRole()");
     expect(documentUploadPage).toContain("문서 업로드 준비 중");
+    expect(overseasPage).toContain("recordHsLookupHistory");
+    expect(overseasPage).toContain('direction: "export"');
     expect(sideNav).toContain("showOperations ? <NavGroup");
   });
 

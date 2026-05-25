@@ -80,6 +80,18 @@ function displayLookupMeta(item: HsLookupHistoryItem) {
   return `${direction} · ${item.destinationCountry}`;
 }
 
+function lookupHistoryHref(item: HsLookupHistoryItem) {
+  const params = new URLSearchParams({
+    query: item.query,
+    direction: item.direction,
+    destinationCountry: item.destinationCountry,
+    basisDate: item.basisDate
+  });
+
+  const path = item.direction === "export" && item.destinationCountry !== "ALL" ? "/hs/overseas" : "/hs/direct";
+  return `${path}?${params.toString()}`;
+}
+
 export function DashboardHome({
   basisDate,
   favorites,
@@ -268,7 +280,7 @@ export function DashboardHome({
           icon={Clock3}
           emptyText="아직 저장된 최근 검색이 없습니다."
           items={lookupHistory.map((item) => ({
-            href: `/hs/direct?query=${encodeURIComponent(item.query)}&direction=${item.direction}&destinationCountry=${item.destinationCountry}&basisDate=${item.basisDate}`,
+            href: lookupHistoryHref(item),
             title: displayLookupTitle(item.query),
             subtitle: displayLookupMeta(item),
             meta: item.basisDate
