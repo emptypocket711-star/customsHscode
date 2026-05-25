@@ -15,6 +15,13 @@ function safeReturnTo(value?: string) {
   return value;
 }
 
+function withFavoriteStatus(returnTo: string, status: "added" | "removed" | "error") {
+  const [path, query = ""] = returnTo.split("?");
+  const params = new URLSearchParams(query);
+  params.set("favoriteStatus", status);
+  return `${path}?${params.toString()}`;
+}
+
 export async function toggleHsFavoriteAction(formData: FormData) {
   if (!hasSupabaseEnv()) {
     redirect(safeReturnTo(stringValue(formData, "returnTo")));
@@ -23,13 +30,21 @@ export async function toggleHsFavoriteAction(formData: FormData) {
   const supabase = await createSupabaseServerClient();
   const returnTo = safeReturnTo(stringValue(formData, "returnTo"));
 
-  await toggleHsFavorite(supabase, {
-    hskCode: stringValue(formData, "hskCode") ?? "",
-    displayName: stringValue(formData, "displayName"),
-    basisDate: stringValue(formData, "basisDate")
-  });
+  let status: "added" | "removed" | "error" = "error";
 
-  revalidatePath("/dashboard");
-  revalidatePath("/hs/direct");
-  redirect(returnTo);
+  try {
+    const result = await toggleHsFavorite(supabase, {
+      hskCode: stringValue(formData, "hskCode") ?? "",
+      displayName: stringValue(formData, "displayName"),
+      basisDate: stringValue(formData, "basisDate")
+    });
+
+    status = result.status;
+    revalidatePath("/dashboard");
+    revalidatePath("/hs/direct");
+  } catch {
+    status = "error";
+  }
+
+  redirect(withFavoriteStatus(returnTo, status));
 }

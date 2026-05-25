@@ -4,7 +4,16 @@ import { HsDirectLookupPanel } from "@/features/hs/hs-direct-lookup-panel";
 export default async function HsDirectPage({
   searchParams
 }: {
-  searchParams: Promise<{ query?: string; hskCode?: string; direction?: string; destinationCountry?: string; originCountry?: string; basisDate?: string; destinationHsCode?: string }>;
+  searchParams: Promise<{
+    query?: string;
+    hskCode?: string;
+    direction?: string;
+    destinationCountry?: string;
+    originCountry?: string;
+    basisDate?: string;
+    destinationHsCode?: string;
+    favoriteStatus?: string;
+  }>;
 }) {
   const params = await searchParams;
 
@@ -19,6 +28,7 @@ export default async function HsDirectPage({
         destinationCountry={params.destinationCountry}
         direction={params.direction}
         destinationHsCode={params.destinationHsCode}
+        favoriteStatus={params.favoriteStatus}
         hskCode={params.hskCode}
         originCountry={params.originCountry}
         query={params.query}

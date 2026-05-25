@@ -1,4 +1,4 @@
-import { ExternalLink, Search, Star } from "lucide-react";
+import { ExternalLink, Search } from "lucide-react";
 import Link from "next/link";
 import { Fragment } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -31,7 +31,7 @@ import { buildHsHierarchyPath, type HsHierarchyNode } from "@/lib/hs-hierarchy";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import { getSeoulDateString } from "@/lib/utils";
 import { cachedLookup, lookupCacheKey } from "@/server/cache/lookup-cache";
-import { toggleHsFavoriteAction } from "@/server/actions/hs-favorite.actions";
+import { HsFavoriteToggleButton } from "@/features/hs/hs-favorite-toggle-button";
 import { favoriteCodeSet } from "@/server/repositories/hs-favorite.repository";
 import {
   findExportDestinationCustomsCodes,
@@ -883,38 +883,6 @@ function HsCodeSideNavigator({
   );
 }
 
-function HsFavoriteToggleButton({
-  basisDate,
-  displayName,
-  hskCode,
-  isFavorite,
-  returnTo
-}: {
-  basisDate: string;
-  displayName: string;
-  hskCode: string;
-  isFavorite: boolean;
-  returnTo: string;
-}) {
-  return (
-    <form action={toggleHsFavoriteAction}>
-      <input name="hskCode" type="hidden" value={hskCode} />
-      <input name="displayName" type="hidden" value={displayName} />
-      <input name="basisDate" type="hidden" value={basisDate} />
-      <input name="returnTo" type="hidden" value={returnTo} />
-      <button
-        className={`focus-ring inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold ${
-          isFavorite ? "bg-amber-100 text-amber-900 hover:bg-amber-200" : "bg-white/15 text-white hover:bg-white/25"
-        }`}
-        type="submit"
-      >
-        <Star aria-hidden="true" className={isFavorite ? "fill-amber-500 text-amber-600" : ""} size={15} />
-        {isFavorite ? "즐겨찾기됨" : "즐겨찾기"}
-      </button>
-    </form>
-  );
-}
-
 type Hs6NavigationSource = {
   hs6: string;
   koreanName: string;
@@ -925,6 +893,29 @@ type ExportLookupSource = {
   hskCode: string;
   hs6?: string;
 };
+
+function FavoriteStatusMessage({ status }: { status?: string }) {
+  if (!status) return null;
+
+  const message =
+    status === "added"
+      ? "즐겨찾기에 저장했습니다."
+      : status === "removed"
+        ? "즐겨찾기에서 해제했습니다."
+        : "즐겨찾기 처리 중 오류가 발생했습니다. 다시 시도해 주세요.";
+
+  return (
+    <p
+      className={
+        status === "error"
+          ? "mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-800"
+          : "mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800"
+      }
+    >
+      {message}
+    </p>
+  );
+}
 
 function isGenericHsLabel(label?: string | null) {
   const normalized = (label ?? "").replace(/[\s.:-]/g, "").toLowerCase();
@@ -2315,6 +2306,7 @@ export async function HsDirectLookupPanel({
   destinationCountry,
   originCountry,
   destinationHsCode,
+  favoriteStatus,
   defaultDirection = "import",
   exportResultMode = "domestic",
   panelTitle = "통합 조회",
@@ -2327,6 +2319,7 @@ export async function HsDirectLookupPanel({
   destinationCountry?: string;
   originCountry?: string;
   destinationHsCode?: string;
+  favoriteStatus?: string;
   defaultDirection?: "import" | "export";
   exportResultMode?: "domestic" | "destination";
   panelTitle?: string;
@@ -2513,6 +2506,7 @@ export async function HsDirectLookupPanel({
     <Card>
       <CardHeader title={panelTitle} />
       <CardBody>
+        <FavoriteStatusMessage status={favoriteStatus} />
         <form className={`grid gap-4 ${showDirectionSelect ? "lg:grid-cols-[minmax(240px,1fr)_130px_minmax(220px,260px)_minmax(180px,230px)_auto]" : "lg:grid-cols-[minmax(260px,1fr)_minmax(240px,300px)_minmax(180px,230px)_auto]"}`} method="get">
           <QueryField defaultValue={searchQuery} label="HS CODE 또는 품명" name="query" placeholder="예: 3401.30-0000 또는 입술화장품" />
           {showDirectionSelect ? <DirectionSelect defaultValue={lookupDirection} /> : <DirectionHiddenField value={lookupDirection} />}
