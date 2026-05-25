@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
 import { LogIn, UserPlus } from "lucide-react";
+import Link from "next/link";
 import { authenticateAction } from "@/server/actions/auth.actions";
 import type { AuthActionState } from "@/features/auth/schemas";
 
@@ -10,27 +11,25 @@ const initialState: AuthActionState = {
   mode: "login"
 };
 
-export function AuthForm() {
-  const [mode, setMode] = useState<"login" | "signup">("login");
+export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "signup" }) {
   const [state, formAction, pending] = useActionState(authenticateAction, initialState);
+  const mode = state.status === "idle" ? initialMode : state.mode;
 
   return (
     <div className="mx-auto w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
       <div className="grid grid-cols-2 rounded-md bg-slate-100 p-1">
-        <button
-          className={`focus-ring rounded-md px-3 py-2 text-sm font-semibold ${mode === "login" ? "bg-white text-slate-950 shadow-sm" : "text-slate-600"}`}
-          onClick={() => setMode("login")}
-          type="button"
+        <Link
+          className={`focus-ring rounded-md px-3 py-2 text-center text-sm font-semibold ${mode === "login" ? "bg-white text-slate-950 shadow-sm" : "text-slate-600"}`}
+          href="/login?mode=login"
         >
           로그인
-        </button>
-        <button
-          className={`focus-ring rounded-md px-3 py-2 text-sm font-semibold ${mode === "signup" ? "bg-white text-slate-950 shadow-sm" : "text-slate-600"}`}
-          onClick={() => setMode("signup")}
-          type="button"
+        </Link>
+        <Link
+          className={`focus-ring rounded-md px-3 py-2 text-center text-sm font-semibold ${mode === "signup" ? "bg-white text-slate-950 shadow-sm" : "text-slate-600"}`}
+          href="/login?mode=signup"
         >
           회원가입
-        </button>
+        </Link>
       </div>
 
       <form action={formAction} className="mt-5 grid gap-4">

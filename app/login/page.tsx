@@ -16,8 +16,14 @@ async function getCurrentUser() {
   }
 }
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams
+}: {
+  searchParams: Promise<{ mode?: string }>;
+}) {
   const user = await getCurrentUser();
+  const params = await searchParams;
+  const mode = params.mode === "signup" ? "signup" : "login";
 
   if (user) {
     redirect("/dashboard");
@@ -33,7 +39,7 @@ export default async function LoginPage() {
           </p>
         </div>
       </div>
-      <AuthForm />
+      <AuthForm initialMode={mode} />
     </main>
   );
 }
