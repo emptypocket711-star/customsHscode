@@ -2249,10 +2249,16 @@ function ExportDomesticDiagnosisSection({
 
 function AiClarificationPanel({
   analysis,
-  candidates
+  candidates,
+  direction,
+  destinationCountry,
+  originCountry
 }: {
   analysis: ProductClarificationResult;
   candidates: HsCandidateRecommendation[];
+  direction: "import" | "export";
+  destinationCountry: string;
+  originCountry: string;
 }) {
   const candidateByCode = new Map(candidates.map((candidate) => [candidate.hskCode, candidate]));
 
@@ -2282,9 +2288,18 @@ function AiClarificationPanel({
           <div className="mt-2 grid gap-2">
             {analysis.suggestedCandidateCodes.length ? analysis.suggestedCandidateCodes.map((code) => {
               const candidate = candidateByCode.get(code);
+              const href = hsLookupHref({
+                hskCode: code,
+                direction,
+                destinationCountry,
+                originCountry,
+                basisDate: candidate?.basisDate ?? getSeoulDateString()
+              });
               return (
                 <div className="rounded-md border border-violet-100 bg-white px-3 py-2" key={code}>
-                  <div className="font-mono text-sm font-semibold text-blue-700">{formatHsCode(code)}</div>
+                  <Link className="font-mono text-sm font-semibold text-blue-700 underline-offset-2 hover:underline" href={href}>
+                    {formatHsCode(code)}
+                  </Link>
                   <div className="mt-1 text-sm font-medium text-slate-900">{candidate?.koreanName ?? "후보 품명 확인 필요"}</div>
                 </div>
               );
@@ -2677,7 +2692,15 @@ export async function HsDirectLookupPanel({
           />
         ) : null}
 
-        {aiClarification && productCandidates.length ? <AiClarificationPanel analysis={aiClarification} candidates={productCandidates} /> : null}
+        {aiClarification && productCandidates.length ? (
+          <AiClarificationPanel
+            analysis={aiClarification}
+            candidates={productCandidates}
+            destinationCountry={selectedDestinationCountry}
+            direction={lookupDirection}
+            originCountry={selectedOriginCountry}
+          />
+        ) : null}
 
         {productCandidates.length ? (
           <div className="mt-5 overflow-hidden rounded-md border border-slate-200">

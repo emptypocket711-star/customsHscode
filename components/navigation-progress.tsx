@@ -58,9 +58,18 @@ function progressStages(form: HTMLFormElement, label: string) {
 }
 
 function linkProgressStages(label: string) {
+  if (/HS|상세|후보|검색|조회|CODE|코드/i.test(label)) {
+    return [
+      `${label} 조회를 준비하고 있습니다`,
+      "선택한 코드와 품명 기준으로 상세 데이터를 조회하고 있습니다",
+      "관세율, 내국세, 요건 정보를 함께 구성하고 있습니다",
+      "검색 결과 화면을 생성하고 있습니다"
+    ];
+  }
+
   return [
     `${label} 요청을 준비하고 있습니다`,
-    "선택한 HS CODE 기준으로 상세 데이터를 조회하고 있습니다",
+    "선택한 화면의 데이터를 불러오고 있습니다",
     "검색 결과 화면을 생성하고 있습니다"
   ];
 }
@@ -129,8 +138,9 @@ export function NavigationProgress() {
     function handleClick(event: MouseEvent) {
       if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       const target = event.target instanceof Element ? event.target : null;
-      const link = target?.closest<HTMLAnchorElement>("a[data-navigation-progress]");
+      const link = target?.closest<HTMLAnchorElement>("a[href]");
       if (!link) return;
+      if (link.dataset.navigationProgress === "off") return;
 
       const href = link.getAttribute("href");
       if (!href || href.startsWith("#") || href.startsWith("http") || link.target) return;
