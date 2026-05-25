@@ -2,6 +2,8 @@ import { z } from "zod";
 
 export const authModeSchema = z.enum(["login", "signup", "reset"]);
 export const businessTypeSchema = z.enum(["customs_broker", "forwarder", "exporter", "importer"]);
+export const strongPasswordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,128}$/;
+export const strongPasswordMessage = "비밀번호는 숫자, 영문 소문자, 영문 대문자, 특수문자를 모두 포함한 8자 이상이어야 합니다.";
 
 export const authFormSchema = z
   .object({
@@ -16,11 +18,19 @@ export const authFormSchema = z
     businessTypes: z.array(businessTypeSchema).optional()
   })
   .superRefine((data, ctx) => {
-    if (data.mode !== "reset" && (!data.password || data.password.length < 8)) {
+    if (data.mode === "login" && !data.password) {
       ctx.addIssue({
         code: "custom",
         path: ["password"],
-        message: "비밀번호는 8자 이상이어야 합니다."
+        message: "비밀번호를 입력해 주세요."
+      });
+    }
+
+    if (data.mode === "signup" && (!data.password || !strongPasswordPattern.test(data.password))) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["password"],
+        message: strongPasswordMessage
       });
     }
 
@@ -59,7 +69,7 @@ export type AuthActionState = {
 
 export const updatePasswordFormSchema = z
   .object({
-    password: z.string().min(8, "비밀번호는 8자 이상이어야 합니다.").max(128),
+    password: z.string().regex(strongPasswordPattern, strongPasswordMessage),
     passwordConfirm: z.string().min(8, "비밀번호 확인을 입력해 주세요.").max(128)
   })
   .superRefine((data, ctx) => {

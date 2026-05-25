@@ -6,18 +6,27 @@ describe("authFormSchema", () => {
     const parsed = authFormSchema.safeParse({
       mode: "login",
       email: "user@example.com",
-      password: "password123"
+      password: "legacy-password"
     });
 
     expect(parsed.success).toBe(true);
+  });
+
+  it("requires password for login", () => {
+    const parsed = authFormSchema.safeParse({
+      mode: "login",
+      email: "user@example.com"
+    });
+
+    expect(parsed.success).toBe(false);
   });
 
   it("requires company name for signup", () => {
     const parsed = authFormSchema.safeParse({
       mode: "signup",
       email: "user@example.com",
-      password: "password123",
-      passwordConfirm: "password123",
+      password: "Password123!",
+      passwordConfirm: "Password123!",
       businessTypes: ["importer"]
     });
 
@@ -28,8 +37,8 @@ describe("authFormSchema", () => {
     const parsed = authFormSchema.safeParse({
       mode: "signup",
       email: "user@example.com",
-      password: "password123",
-      passwordConfirm: "password456",
+      password: "Password123!",
+      passwordConfirm: "Password456!",
       companyName: "테스트상사",
       businessTypes: ["importer"]
     });
@@ -41,8 +50,8 @@ describe("authFormSchema", () => {
     const parsed = authFormSchema.safeParse({
       mode: "signup",
       email: "user@example.com",
-      password: "password123",
-      passwordConfirm: "password123",
+      password: "Password123!",
+      passwordConfirm: "Password123!",
       companyName: "테스트상사",
       businessTypes: []
     });
@@ -57,5 +66,18 @@ describe("authFormSchema", () => {
     });
 
     expect(parsed.success).toBe(true);
+  });
+
+  it("requires strong password composition for signup", () => {
+    const parsed = authFormSchema.safeParse({
+      mode: "signup",
+      email: "user@example.com",
+      password: "password123",
+      passwordConfirm: "password123",
+      companyName: "테스트상사",
+      businessTypes: ["importer"]
+    });
+
+    expect(parsed.success).toBe(false);
   });
 });

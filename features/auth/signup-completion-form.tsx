@@ -19,8 +19,12 @@ const businessTypeOptions = [
 
 export function SignupCompletionForm({ email }: { email: string }) {
   const [authState, authAction, authPending] = useActionState(authenticateAction, initialAuthState);
+  const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [fullName, setFullName] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
+  const [selectedBusinessTypes, setSelectedBusinessTypes] = useState<string[]>([]);
   const [suggestions, setSuggestions] = useState<CompanySuggestion[]>([]);
   const [suggestPending, startSuggestTransition] = useTransition();
 
@@ -39,6 +43,22 @@ export function SignupCompletionForm({ email }: { email: string }) {
   }, [companyName]);
 
   const visibleSuggestions = companyName.trim().length >= 2 ? suggestions : [];
+  const passwordChecks = {
+    length: password.length >= 8,
+    lowercase: /[a-z]/.test(password),
+    uppercase: /[A-Z]/.test(password),
+    number: /\d/.test(password),
+    special: /[^A-Za-z0-9]/.test(password)
+  };
+  const isPasswordStrong = Object.values(passwordChecks).every(Boolean);
+  const isPasswordConfirmValid = password.length > 0 && password === passwordConfirm;
+  const canSubmit =
+    isPasswordStrong &&
+    isPasswordConfirmValid &&
+    fullName.trim().length > 0 &&
+    companyName.trim().length > 0 &&
+    selectedBusinessTypes.length > 0 &&
+    !authPending;
 
   return (
     <form action={authAction} className="grid gap-5">
@@ -51,25 +71,37 @@ export function SignupCompletionForm({ email }: { email: string }) {
         icon={Lock}
         label="비밀번호"
         name="password"
-        placeholder="8자 이상 입력하세요"
+        onChange={setPassword}
+        placeholder="숫자, 영문 대소문자, 특수문자 포함"
         type="password"
+        value={password}
       />
+      <PasswordRules checks={passwordChecks} />
       <AuthInput
         autoComplete="new-password"
         disabled={authPending}
         icon={Lock}
         label="비밀번호 확인"
         name="passwordConfirm"
+        onChange={setPasswordConfirm}
         placeholder="비밀번호를 다시 입력하세요"
         type="password"
+        value={passwordConfirm}
       />
+      {passwordConfirm ? (
+        <p className={`text-xs font-semibold ${isPasswordConfirmValid ? "text-emerald-700" : "text-red-700"}`}>
+          {isPasswordConfirmValid ? "비밀번호가 일치합니다." : "비밀번호가 일치하지 않습니다."}
+        </p>
+      ) : null}
       <AuthInput
         autoComplete="name"
         disabled={authPending}
         icon={User}
         label="이름"
         name="fullName"
+        onChange={setFullName}
         placeholder="이름을 입력하세요"
+        value={fullName}
       />
       <CompanyNameInput
         companyName={companyName}
@@ -85,11 +117,11 @@ export function SignupCompletionForm({ email }: { email: string }) {
         suggestions={visibleSuggestions}
         suggestPending={suggestPending}
       />
-      <BusinessTypeCheckboxes disabled={authPending} />
+      <BusinessTypeCheckboxes disabled={authPending} selectedValues={selectedBusinessTypes} onChange={setSelectedBusinessTypes} />
 
       <button
         className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-100 transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-500"
-        disabled={authPending}
+        disabled={!canSubmit}
         type="submit"
       >
         <UserPlus aria-hidden="true" size={17} />
@@ -166,7 +198,42 @@ function CompanyNameInput({
   );
 }
 
-function BusinessTypeCheckboxes({ disabled }: { disabled?: boolean }) {
+function PasswordRules({ checks }: { checks: { length: boolean; lowercase: boolean; uppercase: boolean; number: boolean; special: boolean } }) {
+  const rules = [
+    { passed: checks.length, label: "8자 이상" },
+    { passed: checks.lowercase, label: "영문 소문자" },
+    { passed: checks.uppercase, label: "영문 대문자" },
+    { passed: checks.number, label: "숫자" },
+    { passed: checks.special, label: "특수문자" }
+  ];
+
+  return (
+    <div className="grid grid-cols-2 gap-1.5 text-xs sm:grid-cols-5">
+      {rules.map((rule) => (
+        <span
+          className={`rounded-md px-2 py-1 text-center font-semibold ${rule.passed ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}
+          key={rule.label}
+        >
+          {rule.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function BusinessTypeCheckboxes({
+  disabled,
+  onChange,
+  selectedValues
+}: {
+  disabled?: boolean;
+  onChange: (values: string[]) => void;
+  selectedValues: string[];
+}) {
+  function toggle(value: string, checked: boolean) {
+    onChange(checked ? [...selectedValues, value] : selectedValues.filter((item) => item !== value));
+  }
+
   return (
     <fieldset className="grid gap-3">
       <legend className="text-sm font-semibold text-slate-800">업무 유형</legend>
@@ -176,7 +243,15 @@ function BusinessTypeCheckboxes({ disabled }: { disabled?: boolean }) {
             className="flex min-h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm"
             key={option.value}
           >
-            <input className="size-4 rounded border-slate-300" disabled={disabled} name="businessTypes" type="checkbox" value={option.value} />
+            <input
+              checked={selectedValues.includes(option.value)}
+              className="size-4 rounded border-slate-300"
+              disabled={disabled}
+              name="businessTypes"
+              onChange={(event) => toggle(option.value, event.target.checked)}
+              type="checkbox"
+              value={option.value}
+            />
             {option.label}
           </label>
         ))}
