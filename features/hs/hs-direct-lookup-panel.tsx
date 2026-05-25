@@ -245,6 +245,75 @@ type GroupedImportRequirement = {
   }>;
 };
 
+const requirementBadgeStyles: Record<string, string> = {
+  검역: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  인증: "bg-blue-50 text-blue-700 ring-blue-200",
+  허가: "bg-rose-50 text-rose-700 ring-rose-200",
+  신고: "bg-amber-50 text-amber-800 ring-amber-200",
+  승인: "bg-purple-50 text-purple-700 ring-purple-200",
+  확인: "bg-slate-100 text-slate-700 ring-slate-200",
+  검사: "bg-cyan-50 text-cyan-700 ring-cyan-200",
+  CITES: "bg-lime-50 text-lime-700 ring-lime-200",
+  화학물질: "bg-orange-50 text-orange-700 ring-orange-200",
+  방사선: "bg-fuchsia-50 text-fuchsia-700 ring-fuchsia-200",
+  안전: "bg-indigo-50 text-indigo-700 ring-indigo-200",
+  식품: "bg-green-50 text-green-700 ring-green-200",
+  의약: "bg-violet-50 text-violet-700 ring-violet-200"
+};
+
+function requirementKindLabels(requirement: Pick<GroupedImportRequirement, "name" | "relatedLaw">) {
+  const text = `${requirement.name} ${requirement.relatedLaw}`;
+  const labels: string[] = [];
+
+  if (/검역/.test(text)) labels.push("검역");
+  if (/인증|형식승인|적합성평가/.test(text)) labels.push("인증");
+  if (/허가/.test(text)) labels.push("허가");
+  if (/신고/.test(text)) labels.push("신고");
+  if (/승인/.test(text)) labels.push("승인");
+  if (/확인|요건/.test(text)) labels.push("확인");
+  if (/검사/.test(text)) labels.push("검사");
+  if (/국제적멸종위기|CITES/.test(text)) labels.push("CITES");
+  if (/화학|화학물질|농약|비료|오존층|석면/.test(text)) labels.push("화학물질");
+  if (/방사|원자력/.test(text)) labels.push("방사선");
+  if (/안전|전기용품|어린이제품|고압가스|액화석유가스|산업안전/.test(text)) labels.push("안전");
+  if (/식품|먹는물|위생용품|사료/.test(text)) labels.push("식품");
+  if (/의약|의료기기|마약|인체조직/.test(text)) labels.push("의약");
+
+  return Array.from(new Set(labels)).slice(0, 3);
+}
+
+function RequirementKindBadges({ requirement }: { requirement: GroupedImportRequirement }) {
+  const labels = requirementKindLabels(requirement);
+  if (!labels.length) return <span className="text-slate-400">-</span>;
+
+  return (
+    <div className="flex flex-wrap gap-1">
+      {labels.map((label) => (
+        <span
+          className={[
+            "inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-semibold ring-1",
+            requirementBadgeStyles[label] ?? "bg-slate-100 text-slate-700 ring-slate-200"
+          ].join(" ")}
+          key={label}
+        >
+          {label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function PlaybookStatusBadge({ hasPlaybook }: { hasPlaybook: boolean }) {
+  return (
+    <span className={[
+      "inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-semibold ring-1",
+      hasPlaybook ? "bg-blue-50 text-blue-700 ring-blue-200" : "bg-slate-100 text-slate-600 ring-slate-200"
+    ].join(" ")}>
+      {hasPlaybook ? "상세 있음" : "상세 준비중"}
+    </span>
+  );
+}
+
 function AgencyCell({ agencies }: { agencies: GroupedImportRequirement["agencies"] }) {
   if (!agencies.length) return "-";
   if (agencies.length > 1) return `${agencies.length}개 기관`;
@@ -3055,20 +3124,20 @@ export async function HsDirectLookupPanel({
                     <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">수입요건</div>
                     {result.importRequirements.length ? (
                       <div className="overflow-x-auto">
-                        <table className="w-full min-w-[760px] text-left text-sm">
+                        <table className="w-full min-w-[860px] text-left text-sm">
                           <thead className="border-y border-slate-200 text-xs font-semibold text-slate-500">
                             <tr>
-                              <th className="px-3 py-2">구분</th>
-                              <th className="px-3 py-2">요건서류</th>
-                              <th className="px-3 py-2">관련법령</th>
+                              <th className="px-3 py-2">성격</th>
+                              <th className="px-3 py-2">요건</th>
+                              <th className="px-3 py-2">법령</th>
                               <th className="px-3 py-2">기관</th>
-                              <th className="px-3 py-2">내용</th>
+                              <th className="px-3 py-2">상세</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100">
                             {groupedImportRequirements(result.importRequirements).map((item) => (
                               <tr key={`${item.type}-${item.name}-${item.relatedLaw}`}>
-                                <td className="whitespace-nowrap px-3 py-2 text-slate-700">{item.type}</td>
+                                <td className="px-3 py-2"><RequirementKindBadges requirement={item} /></td>
                                 <td className="px-3 py-2">
                                   <ImportRequirementDetailDialog
                                     agencies={item.agencies}
@@ -3081,7 +3150,7 @@ export async function HsDirectLookupPanel({
                                 </td>
                                 <td className="px-3 py-2 text-slate-700">{item.relatedLaw}</td>
                                 <td className="px-3 py-2 text-slate-700"><AgencyCell agencies={item.agencies} /></td>
-                                <td className="px-3 py-2 leading-6 text-slate-700">{item.procedureSummary ?? "-"}</td>
+                                <td className="px-3 py-2"><PlaybookStatusBadge hasPlaybook={Boolean(item.playbook)} /></td>
                               </tr>
                             ))}
                           </tbody>
