@@ -117,6 +117,7 @@ export class MockAiProvider implements AiProvider {
     const laserBeltLike = /la[sz]er/.test(input) && /belt|벨트|cs-?\d+/i.test(input);
     const printerLike = /printer|printing|print\s+machine|프린터|인쇄기/.test(input);
     const batteryLike = /battery|batteries|lithium|배터리|전지|리튬/.test(input);
+    const electricFanLike = /electric\s*fan|portable\s*fan|handheld\s*fan|desk\s*fan|usb\s*fan|rechargeable\s*fan|선풍기|손\s*선풍기|휴대용\s*선풍기|탁상용\s*선풍기|미니\s*팬|전기\s*팬/.test(input);
     const workVestLike = /작업\s*용?\s*조끼|안전\s*조끼|반사\s*조끼|형광\s*조끼|work\s*vest|safety\s*vest|reflective\s*vest|hi-?vis|high\s*visibility|waistcoat|vest/.test(input);
     const searchTerms = [
       ...(escLike ? ["esc", "escape key", "keyboard", "electronic stability control", "electrostatic chuck", "키보드", "제동장치", "정전척"] : []),
@@ -125,6 +126,7 @@ export class MockAiProvider implements AiProvider {
       ...(laserBeltLike ? ["laser belt", "massage belt", "massage apparatus", "massager", "physiotherapy", "물리치료", "마사지용 기기"] : []),
       ...(printerLike ? ["printer", "laser printer", "black and white printer", "monochrome printer", "프린터", "레이저 프린터", "인쇄기"] : []),
       ...(batteryLike ? ["battery", "lithium battery", "lithium ion battery", "battery module", "배터리", "리튬이온", "축전지"] : []),
+      ...(electricFanLike ? ["electric fan", "portable fan", "handheld fan", "desk fan", "선풍기", "휴대용 선풍기", "전기 팬"] : []),
       ...(workVestLike ? ["work vest", "safety vest", "reflective vest", "waistcoat", "작업용 조끼", "안전 조끼", "반사 조끼", "직물제 의류", "편직물 의류"] : [])
     ];
 
@@ -137,6 +139,7 @@ export class MockAiProvider implements AiProvider {
         : laserBeltLike ? "laser belt massage apparatus"
         : excavatorLike ? "excavation equipment / excavator"
         : batteryLike ? "lithium ion battery module"
+        : electricFanLike ? "portable electric fan"
         : workVestLike ? "work or safety vest"
         : null,
       searchTerms,
@@ -147,6 +150,7 @@ export class MockAiProvider implements AiProvider {
         ...(laserBeltLike ? ["마사지용 기기", "물리치료", "안마"] : []),
         ...(printerLike ? ["프린터", "레이저 프린터", "인쇄기"] : []),
         ...(batteryLike ? ["배터리", "리튬이온", "축전지"] : []),
+        ...(electricFanLike ? ["선풍기", "휴대용 선풍기", "전기 팬"] : []),
         ...(workVestLike ? ["작업용 조끼", "안전 조끼", "반사 조끼", "직물제 의류", "편직물 의류"] : [])
       ],
       englishTerms: [
@@ -156,6 +160,7 @@ export class MockAiProvider implements AiProvider {
         ...(laserBeltLike ? ["laser belt", "massage belt", "massage apparatus", "massager", "physiotherapy"] : []),
         ...(printerLike ? ["printer", "laser printer", "black and white printer", "monochrome printer"] : []),
         ...(batteryLike ? ["battery", "lithium battery", "lithium ion battery", "battery module"] : []),
+        ...(electricFanLike ? ["electric fan", "portable fan", "handheld fan", "desk fan"] : []),
         ...(workVestLike ? ["work vest", "safety vest", "reflective vest", "waistcoat", "woven apparel", "knitted apparel"] : [])
       ],
       productFamilies: [
@@ -165,6 +170,7 @@ export class MockAiProvider implements AiProvider {
         ...(laserBeltLike ? ["medical or massage apparatus"] : []),
         ...(printerLike ? ["office machine", "printing machinery"] : []),
         ...(batteryLike ? ["accumulator", "electrical battery"] : []),
+        ...(electricFanLike ? ["air pump or fan", "household electric appliance"] : []),
         ...(workVestLike ? ["workwear", "apparel", "protective clothing"] : [])
       ],
       candidateHsCodes: [
@@ -174,6 +180,7 @@ export class MockAiProvider implements AiProvider {
         ...(laserBeltLike ? ["901910"] : []),
         ...(printerLike ? ["844332", "844331", "844339"] : []),
         ...(batteryLike ? ["850760"] : []),
+        ...(electricFanLike ? ["841451", "841459"] : []),
         ...(workVestLike ? ["621133", "621143", "611030", "6211"] : [])
       ],
       candidateHsCodeReasons: [
@@ -233,6 +240,18 @@ export class MockAiProvider implements AiProvider {
           reason: "리튬이온 축전지 또는 배터리 모듈로 해석될 가능성이 있어 제8507호 계열 확인이 필요합니다.",
           requiredInfo: ["셀·모듈·팩 형태", "리튬이온 축전지 여부", "정격 전압·용량과 최종 사용처"]
         }] : []),
+        ...(electricFanLike ? [
+          {
+            code: "841451",
+            reason: "전동기를 내장한 휴대용·탁상용 전기팬 완제품으로 해석될 가능성이 있습니다.",
+            requiredInfo: ["전동기를 내장한 팬 완제품인지", "출력", "휴대용·탁상용·천장용 등 설치 형태", "배터리 별도 판매 여부"]
+          },
+          {
+            code: "841459",
+            reason: "제8414.51호에 해당하지 않는 기타 팬 구조라면 제8414.59호 계열도 함께 확인해야 합니다.",
+            requiredInfo: ["팬 종류와 설치 형태", "모터 내장 여부", "산업용·가정용 구분"]
+          }
+        ] : []),
         ...(workVestLike ? [
           {
             code: "621133",
@@ -259,6 +278,8 @@ export class MockAiProvider implements AiProvider {
         ? ["마사지·물리치료용 기기인지, 단순 벨트류인지 확인이 필요합니다.", "레이저 조사 기능 외 진동·압박·온열 등 마사지 기능이 있는지 확인이 필요합니다.", "의료기기 허가·표시 목적이 있는지 확인이 필요합니다."]
         : batteryLike
         ? ["셀·모듈·팩 중 어느 형태인지 확인이 필요합니다.", "리튬이온 축전지인지, 일차전지인지 확인이 필요합니다.", "정격 전압·용량과 최종 사용처 확인이 필요합니다."]
+        : electricFanLike
+        ? ["전동기를 내장한 팬 완제품인지 확인이 필요합니다.", "출력과 설치 형태(휴대용·탁상용·천장용 등)를 확인해야 합니다.", "내장 배터리인지 별도 배터리 판매품인지 확인이 필요합니다."]
         : workVestLike
         ? ["편직물/뜨개질 제품인지 직물제 제품인지 확인이 필요합니다.", "겉감 재질과 섬유 조성 확인이 필요합니다.", "반사띠·형광색 등 안전용 기능 여부와 성별 구분 확인이 필요합니다."]
         : ["제품의 정확한 용도, 재질, 구성, 완제품/부분품 여부 확인이 필요합니다."]
@@ -304,6 +325,8 @@ function aiProductSearchNormalizationInstructions() {
     "For apparel, workwear, protective clothing, vests, waistcoats, safety vests, reflective vests, and uniforms, do not jump to a narrow fiber-specific HS10 unless the input states the fiber. First separate Chapter 61 knitted/crocheted apparel from Chapter 62 non-knitted woven apparel, then ask for fabric construction, fiber composition, gender/unisex use, coating, and safety/PPE function. For work/safety vests, include Chapter 62 woven other garments and Chapter 61 knitted vest alternatives when unclear.",
     "Treat likely misspellings such as lazer/laser cautiously. For laser belt or lazer belt, include therapy/massage apparatus and optical/laser-device lookup hints unless web evidence clearly proves a different product.",
     "Classify lookup intent by the finished article, principal function, and use before material. Do not suggest headings merely because a material word appears in the description.",
+    "For rechargeable finished articles, do not prioritize accumulator/battery headings only because the article contains an internal battery. Use battery headings only when the traded good is the battery, cell, module, pack, or spare battery itself.",
+    "For electric fans, portable fans, handheld fans, desk fans, USB fans, and Korean terms such as 손선풍기 or 휴대용 선풍기, prioritize HS 8414 fan headings before any battery heading unless the input says battery only or replacement battery.",
     "Do not include candidate code boundaries that contradict the identified product family unless the input explicitly says the product may be that different article.",
     "Avoid highly specialized chemical, radioactive, military, or industrial headings unless the input explicitly indicates that specialization.",
     "Write Korean business SaaS copy for missingQuestions.",

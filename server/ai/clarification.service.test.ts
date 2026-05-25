@@ -93,7 +93,7 @@ describe("normalizeProductSearchInput", () => {
     });
 
     expect(key).toContain("ai-product-normalization");
-    expect(key).toContain("product-search-normalization-v8");
+    expect(key).toContain("product-search-normalization-v9");
     expect(key).toContain("901910");
     expect(key).not.toContain("secret");
     expect(key).not.toContain("ABC-123");
@@ -210,6 +210,8 @@ describe("normalizeProductSearchInput", () => {
     expect(instructions).toContain("Prefer HS6 prefixes");
     expect(instructions).toContain("Return useful HS4/HS6 candidates even when the exact national HS10 may need later official-data expansion");
     expect(instructions).toContain("Do not require an exact official HS description match before returning candidateHsCodes");
+    expect(instructions).toContain("do not prioritize accumulator/battery headings only because the article contains an internal battery");
+    expect(instructions).toContain("손선풍기");
     expect(instructions).toContain("If web search identifies a product but the visible words can reasonably indicate another product family");
   });
 

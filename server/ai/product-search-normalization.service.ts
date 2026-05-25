@@ -5,7 +5,7 @@ import { redactSensitiveText } from "@/server/ai/redaction";
 import { cachedLookup, lookupCacheKey } from "@/server/cache/lookup-cache";
 import { logLookupTelemetry, productInputShape } from "@/server/observability/lookup-telemetry";
 
-const productSearchNormalizationVersion = "product-search-normalization-v8";
+const productSearchNormalizationVersion = "product-search-normalization-v9";
 
 function productInputText(input: ProductHsRecommendationInput) {
   const hsCodeHints = extractHsCodeHintsFromProductInput(input);
@@ -88,6 +88,14 @@ function productContextLookupHints(input: ProductHsRecommendationInput, normaliz
       code: "847160",
       reason: "입력값에 컴퓨터용 키보드 또는 입력장치 문맥이 있어 제8471.60호 계열 확인이 우선 필요합니다.",
       requiredInfo: ["키보드 완제품인지 키캡·스위치 등 부분품인지", "컴퓨터용 입력장치인지", "유선·무선 여부와 인터페이스"]
+    });
+  }
+
+  if (/(electric\s*fan|portable\s*fan|handheld\s*fan|desk\s*fan|usb\s*fan|rechargeable\s*fan|선풍기|손\s*선풍기|휴대용\s*선풍기|탁상용\s*선풍기|미니\s*팬|전기\s*팬)/i.test(text)) {
+    hints.push({
+      code: "841451",
+      reason: "입력값에 전기팬·휴대용 선풍기 완제품 문맥이 있어 제8414.51호 계열 확인이 우선 필요합니다.",
+      requiredInfo: ["전동기를 내장한 팬 완제품인지", "출력과 날개/하우징 구조", "휴대용·탁상용·천장용 등 설치 형태", "배터리가 내장형인지 별도 배터리인지"]
     });
   }
 

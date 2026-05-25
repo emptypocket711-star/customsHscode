@@ -155,6 +155,18 @@ describe("recommendHsCandidates", () => {
     expect(candidates.map((candidate) => candidate.hskCode)).not.toContain("847130");
   });
 
+  it("prioritizes finished electric fan candidates over internal battery headings", async () => {
+    const candidates = await recommendHsCandidatesForProduct({
+      productName: "손선풍기",
+      basisDate: "2026-05-21"
+    });
+
+    expect(candidates.length).toBeGreaterThan(0);
+    expect(candidates[0]?.hs6).toBe("841451");
+    expect(candidates.some((candidate) => candidate.hs6.startsWith("8507"))).toBe(false);
+    expect(candidates[0]?.reason).toContain("전기팬");
+  });
+
   it("uses product-family AI guardrails for brand plus generic cosmetic names", async () => {
     const candidates = await recommendHsCandidatesForProduct({
       productName: "graceday hand cream",

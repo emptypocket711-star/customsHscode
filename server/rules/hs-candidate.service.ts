@@ -357,6 +357,13 @@ const contextConflictRules = [
     blockedCandidateTerms: ["portable automatic data processing", "휴대용 자동자료처리", "노트북"]
   },
   {
+    label: "electric-fan-vs-internal-battery",
+    inputContextTerms: ["electric fan", "portable fan", "handheld fan", "desk fan", "usb fan", "rechargeable fan", "선풍기", "손선풍기", "휴대용 선풍기", "탁상용 선풍기", "미니팬", "전기팬"],
+    preservingInputTerms: ["battery pack", "replacement battery", "spare battery", "battery only", "cell", "배터리팩", "교체용 배터리", "예비 배터리", "배터리만", "셀"],
+    blockedCandidatePrefixes: ["8507"],
+    blockedCandidateTerms: ["battery", "accumulator", "축전지", "배터리"]
+  },
+  {
     label: "ready-to-drink-beverage-vs-food-preparation",
     inputContextTerms: ["beverage", "drink", "ready-to-drink", "soft drink", "juice drink", "flavored water", "음료", "음료수", "마시는"],
     preservingInputTerms: ["concentrate", "syrup", "powder", "extract", "base", "농축", "시럽", "분말", "원액", "엑기스"],
