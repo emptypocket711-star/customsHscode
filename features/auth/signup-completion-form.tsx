@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { Building2, Lock, User, UserPlus, type LucideIcon } from "lucide-react";
 import { authenticateAction } from "@/server/actions/auth.actions";
+import { AccountTypeSelector, type SignupAccountType } from "@/features/auth/account-type-selector";
 import type { AuthActionState } from "@/features/auth/schemas";
 
 const initialAuthState: AuthActionState = {
@@ -22,7 +23,7 @@ export function SignupCompletionForm({ email }: { email: string }) {
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [fullName, setFullName] = useState("");
-  const [accountType, setAccountType] = useState<"personal" | "company">("personal");
+  const [accountType, setAccountType] = useState<SignupAccountType | null>(null);
   const [companyName, setCompanyName] = useState("");
   const [selectedBusinessTypes, setSelectedBusinessTypes] = useState<string[]>([]);
 
@@ -37,6 +38,7 @@ export function SignupCompletionForm({ email }: { email: string }) {
   const isPasswordConfirmValid = password.length > 0 && password === passwordConfirm;
   const isCompanySignup = accountType === "company";
   const canSubmit =
+    accountType !== null &&
     isPasswordStrong &&
     isPasswordConfirmValid &&
     fullName.trim().length > 0 &&
@@ -47,63 +49,67 @@ export function SignupCompletionForm({ email }: { email: string }) {
     <form action={authAction} className="grid gap-5">
       <input name="mode" type="hidden" value="signup" />
       <input name="email" type="hidden" value={email} />
-      <input name="accountType" type="hidden" value={accountType} />
+      <input name="accountType" type="hidden" value={accountType ?? ""} />
       <AccountTypeSelector disabled={authPending} value={accountType} onChange={setAccountType} />
-      <AuthInput
-        autoComplete="new-password"
-        disabled={authPending}
-        icon={Lock}
-        label="비밀번호"
-        name="password"
-        onChange={setPassword}
-        placeholder="숫자, 영문 대소문자, 특수문자 포함"
-        type="password"
-        value={password}
-      />
-      <PasswordRules checks={passwordChecks} />
-      <AuthInput
-        autoComplete="new-password"
-        disabled={authPending}
-        icon={Lock}
-        label="비밀번호 확인"
-        name="passwordConfirm"
-        onChange={setPasswordConfirm}
-        placeholder="비밀번호를 다시 입력하세요"
-        type="password"
-        value={passwordConfirm}
-      />
-      {passwordConfirm ? (
-        <p className={`text-xs font-semibold ${isPasswordConfirmValid ? "text-emerald-700" : "text-red-700"}`}>
-          {isPasswordConfirmValid ? "비밀번호가 일치합니다." : "비밀번호가 일치하지 않습니다."}
-        </p>
-      ) : null}
-      <AuthInput
-        autoComplete="name"
-        disabled={authPending}
-        icon={User}
-        label="이름"
-        name="fullName"
-        onChange={setFullName}
-        placeholder="이름을 입력하세요"
-        value={fullName}
-      />
-      {isCompanySignup ? (
+      {accountType ? (
         <>
-          <CompanyNameInput companyName={companyName} disabled={authPending} onValueChange={setCompanyName} />
-          <BusinessTypeCheckboxes disabled={authPending} selectedValues={selectedBusinessTypes} onChange={setSelectedBusinessTypes} />
+          <AuthInput
+            autoComplete="new-password"
+            disabled={authPending}
+            icon={Lock}
+            label="비밀번호"
+            name="password"
+            onChange={setPassword}
+            placeholder="숫자, 영문 대소문자, 특수문자 포함"
+            type="password"
+            value={password}
+          />
+          <PasswordRules checks={passwordChecks} />
+          <AuthInput
+            autoComplete="new-password"
+            disabled={authPending}
+            icon={Lock}
+            label="비밀번호 확인"
+            name="passwordConfirm"
+            onChange={setPasswordConfirm}
+            placeholder="비밀번호를 다시 입력하세요"
+            type="password"
+            value={passwordConfirm}
+          />
+          {passwordConfirm ? (
+            <p className={`text-xs font-semibold ${isPasswordConfirmValid ? "text-emerald-700" : "text-red-700"}`}>
+              {isPasswordConfirmValid ? "비밀번호가 일치합니다." : "비밀번호가 일치하지 않습니다."}
+            </p>
+          ) : null}
+          <AuthInput
+            autoComplete="name"
+            disabled={authPending}
+            icon={User}
+            label="이름"
+            name="fullName"
+            onChange={setFullName}
+            placeholder="이름을 입력하세요"
+            value={fullName}
+          />
+          {isCompanySignup ? (
+            <>
+              <CompanyNameInput companyName={companyName} disabled={authPending} onValueChange={setCompanyName} />
+              <BusinessTypeCheckboxes disabled={authPending} selectedValues={selectedBusinessTypes} onChange={setSelectedBusinessTypes} />
+            </>
+          ) : null}
+
+          <button
+            className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-100 transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-500"
+            disabled={!canSubmit}
+            type="submit"
+          >
+            <UserPlus aria-hidden="true" size={17} />
+            {authPending ? "처리 중" : "회원가입 완료"}
+          </button>
+
+          {authState.message ? <StatusMessage state={authState} /> : null}
         </>
       ) : null}
-
-      <button
-        className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-100 transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-500"
-        disabled={!canSubmit}
-        type="submit"
-      >
-        <UserPlus aria-hidden="true" size={17} />
-        {authPending ? "처리 중" : "회원가입 완료"}
-      </button>
-
-      {authState.message ? <StatusMessage state={authState} /> : null}
     </form>
   );
 }
@@ -121,47 +127,6 @@ function StatusMessage({ state }: { state: { status: "idle" | "success" | "error
     >
       {state.message}
     </p>
-  );
-}
-
-function AccountTypeSelector({
-  disabled,
-  onChange,
-  value
-}: {
-  disabled?: boolean;
-  onChange: (value: "personal" | "company") => void;
-  value: "personal" | "company";
-}) {
-  const options = [
-    { value: "personal" as const, label: "개인회원", description: "이메일 인증 후 바로 사용" },
-    { value: "company" as const, label: "기업회원", description: "회사명 기준 업무공간 생성" }
-  ];
-
-  return (
-    <fieldset className="grid gap-2">
-      <legend className="text-sm font-semibold text-slate-800">회원 유형</legend>
-      <div className="grid gap-2 sm:grid-cols-2">
-        {options.map((option) => {
-          const selected = value === option.value;
-
-          return (
-            <button
-              className={`focus-ring rounded-lg border px-4 py-3 text-left transition ${
-                selected ? "border-blue-500 bg-blue-50 text-blue-950" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-              }`}
-              disabled={disabled}
-              key={option.value}
-              onClick={() => onChange(option.value)}
-              type="button"
-            >
-              <span className="block text-sm font-semibold">{option.label}</span>
-              <span className="mt-1 block text-xs text-slate-500">{option.description}</span>
-            </button>
-          );
-        })}
-      </div>
-    </fieldset>
   );
 }
 

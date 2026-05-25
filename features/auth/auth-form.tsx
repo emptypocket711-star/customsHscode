@@ -8,6 +8,7 @@ import {
   sendSignupEmailOtpAction,
   verifySignupEmailOtpAction
 } from "@/server/actions/auth.actions";
+import { AccountTypeSelector, type SignupAccountType } from "@/features/auth/account-type-selector";
 import type { AuthActionState, SignupOtpActionState } from "@/features/auth/schemas";
 
 const initialAuthState: AuthActionState = {
@@ -35,7 +36,7 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
   const [signupPassword, setSignupPassword] = useState("");
   const [signupPasswordConfirm, setSignupPasswordConfirm] = useState("");
   const [signupFullName, setSignupFullName] = useState("");
-  const [accountType, setAccountType] = useState<"personal" | "company">("personal");
+  const [accountType, setAccountType] = useState<SignupAccountType | null>(null);
   const [companyName, setCompanyName] = useState("");
   const [selectedBusinessTypes, setSelectedBusinessTypes] = useState<string[]>([]);
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -86,6 +87,8 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
   const isSignupPasswordConfirmValid = signupPassword.length > 0 && signupPassword === signupPasswordConfirm;
   const isCompanySignup = accountType === "company";
   const canCompleteSignup =
+    accountType !== null &&
+    verifiedSignupEmail &&
     isSignupPasswordStrong &&
     isSignupPasswordConfirmValid &&
     signupFullName.trim().length > 0 &&
@@ -116,73 +119,80 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
 
       {isSignup ? (
         <div className="mt-7 grid gap-5">
-          <form action={sendAction} className="grid gap-3">
-            <AuthInput
-              autoComplete="email"
-              disabled={pending || verifiedSignupEmail}
-              icon={Mail}
-              label="이메일"
-              name="email"
-              onChange={(value) => setSignupEmail(value)}
-              placeholder="이메일을 입력하세요"
-              type="email"
-              value={signupEmail}
-            />
-            <button
-              className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-800 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
-              disabled={pending || verifiedSignupEmail || !signupEmail || resendCooldown > 0}
-              type="submit"
-            >
-              <Mail aria-hidden="true" size={16} />
-              {sendPending
-                ? "전송 중"
-                : verifiedSignupEmail
-                  ? "이메일 인증 완료"
-                  : resendCooldown > 0
-                    ? `재전송 대기 ${resendCooldown}초`
-                    : "인증번호 전송"}
-            </button>
-          </form>
+          <AccountTypeSelector disabled={pending} value={accountType} onChange={setAccountType} />
 
-          {sendState.message ? <StatusMessage state={sendState} /> : null}
+          {accountType ? (
+            <div className="grid gap-5 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+              <form action={sendAction} className="grid gap-3">
+                <AuthInput
+                  autoComplete="email"
+                  disabled={pending || verifiedSignupEmail}
+                  icon={Mail}
+                  label="이메일"
+                  name="email"
+                  onChange={(value) => setSignupEmail(value)}
+                  placeholder="이메일을 입력하세요"
+                  type="email"
+                  value={signupEmail}
+                />
+                <button
+                  className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-800 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
+                  disabled={pending || verifiedSignupEmail || !signupEmail || resendCooldown > 0}
+                  type="submit"
+                >
+                  <Mail aria-hidden="true" size={16} />
+                  {sendPending
+                    ? "전송 중"
+                    : verifiedSignupEmail
+                      ? "이메일 인증 완료"
+                      : resendCooldown > 0
+                        ? `재전송 대기 ${resendCooldown}초`
+                        : "인증번호 전송"}
+                </button>
+              </form>
 
-          {sendState.status === "success" && !verifiedSignupEmail ? (
-            <form action={verifyAction} className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <input name="email" type="hidden" value={activeEmail} />
-              <input name="otp" type="hidden" value={otpToken.replace(/\D/g, "")} />
-              <AuthInput
-                autoComplete="one-time-code"
-                disabled={pending}
-                icon={CheckCircle2}
-                inputMode="numeric"
-                label="이메일 인증번호"
-                maxLength={10}
-                name="token"
-                onChange={(value) => setOtpToken(value.replace(/\D/g, "").slice(0, 8))}
-                placeholder="이메일 인증번호"
-                type="text"
-                value={otpToken}
-              />
-              <button
-                className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-500"
-                disabled={pending}
-                type="submit"
-              >
-                {verifyPending ? "확인 중" : "이메일 인증 확인"}
-              </button>
-              {verifyState.message ? <StatusMessage state={verifyState} /> : null}
-            </form>
-          ) : null}
+              {sendState.message ? <StatusMessage state={sendState} /> : null}
 
-          {verifiedSignupEmail ? (
-            <form action={authAction} className="grid gap-5">
+              {sendState.status === "success" && !verifiedSignupEmail ? (
+                <form action={verifyAction} className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4">
+                  <input name="email" type="hidden" value={activeEmail} />
+                  <input name="otp" type="hidden" value={otpToken.replace(/\D/g, "")} />
+                  <AuthInput
+                    autoComplete="one-time-code"
+                    disabled={pending}
+                    icon={CheckCircle2}
+                    inputMode="numeric"
+                    label="이메일 인증번호"
+                    maxLength={10}
+                    name="token"
+                    onChange={(value) => setOtpToken(value.replace(/\D/g, "").slice(0, 8))}
+                    placeholder="이메일 인증번호"
+                    type="text"
+                    value={otpToken}
+                  />
+                  <button
+                    className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-500"
+                    disabled={pending}
+                    type="submit"
+                  >
+                    {verifyPending ? "확인 중" : "이메일 인증 확인"}
+                  </button>
+                  {verifyState.message ? <StatusMessage state={verifyState} /> : null}
+                </form>
+              ) : null}
+
+              <form action={authAction} className="grid gap-5">
               <input name="mode" type="hidden" value="signup" />
               <input name="email" type="hidden" value={activeEmail} />
               <input name="accountType" type="hidden" value={accountType} />
-              <AccountTypeSelector disabled={authPending} value={accountType} onChange={setAccountType} />
+              {!verifiedSignupEmail ? (
+                <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-medium text-amber-900">
+                  이메일 인증을 완료하면 아래 가입 정보를 입력할 수 있습니다.
+                </p>
+              ) : null}
               <AuthInput
                 autoComplete="new-password"
-                disabled={authPending}
+                disabled={authPending || !verifiedSignupEmail}
                 icon={Lock}
                 label="비밀번호"
                 name="password"
@@ -194,7 +204,7 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
               <PasswordRules checks={signupPasswordChecks} />
               <AuthInput
                 autoComplete="new-password"
-                disabled={authPending}
+                disabled={authPending || !verifiedSignupEmail}
                 icon={Lock}
                 label="비밀번호 확인"
                 name="passwordConfirm"
@@ -210,7 +220,7 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
               ) : null}
               <AuthInput
                 autoComplete="name"
-                disabled={authPending}
+                disabled={authPending || !verifiedSignupEmail}
                 icon={User}
                 label="이름"
                 name="fullName"
@@ -222,10 +232,10 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
                 <>
                   <CompanyNameInput
                     companyName={companyName}
-                    disabled={authPending}
+                    disabled={authPending || !verifiedSignupEmail}
                     onValueChange={setCompanyName}
                   />
-                  <BusinessTypeCheckboxes disabled={authPending} selectedValues={selectedBusinessTypes} onChange={setSelectedBusinessTypes} />
+                  <BusinessTypeCheckboxes disabled={authPending || !verifiedSignupEmail} selectedValues={selectedBusinessTypes} onChange={setSelectedBusinessTypes} />
                 </>
               ) : null}
 
@@ -240,6 +250,7 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
 
               {authState.message ? <StatusMessage state={authState} /> : null}
             </form>
+            </div>
           ) : null}
         </div>
       ) : (
@@ -307,47 +318,6 @@ function StatusMessage({ state }: { state: { status: "idle" | "success" | "error
     >
       {state.message}
     </p>
-  );
-}
-
-function AccountTypeSelector({
-  disabled,
-  onChange,
-  value
-}: {
-  disabled?: boolean;
-  onChange: (value: "personal" | "company") => void;
-  value: "personal" | "company";
-}) {
-  const options = [
-    { value: "personal" as const, label: "개인회원", description: "이메일 인증 후 바로 사용" },
-    { value: "company" as const, label: "기업회원", description: "회사명 기준 업무공간 생성" }
-  ];
-
-  return (
-    <fieldset className="grid gap-2">
-      <legend className="text-sm font-semibold text-slate-800">회원 유형</legend>
-      <div className="grid gap-2 sm:grid-cols-2">
-        {options.map((option) => {
-          const selected = value === option.value;
-
-          return (
-            <button
-              className={`focus-ring rounded-lg border px-4 py-3 text-left transition ${
-                selected ? "border-blue-500 bg-blue-50 text-blue-950" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-              }`}
-              disabled={disabled}
-              key={option.value}
-              onClick={() => onChange(option.value)}
-              type="button"
-            >
-              <span className="block text-sm font-semibold">{option.label}</span>
-              <span className="mt-1 block text-xs text-slate-500">{option.description}</span>
-            </button>
-          );
-        })}
-      </div>
-    </fieldset>
   );
 }
 
