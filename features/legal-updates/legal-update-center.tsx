@@ -48,6 +48,12 @@ function sourceDiagnosticTone(severity: SourceVersionInventoryDiagnosticSeverity
   return "neutral";
 }
 
+function coverageTone(missingCount: number, warningCount = 0): "success" | "warning" | "neutral" {
+  if (missingCount > 0) return "warning";
+  if (warningCount > 0) return "neutral";
+  return "success";
+}
+
 const updateRunbook = [
   {
     target: "국내 HS/관세율/표준품명",
@@ -179,6 +185,91 @@ export async function LegalUpdateCenter() {
             </div>
           </div>
           {inventory.loadError ? <p className="mt-3 text-sm text-amber-800">조회 오류: {inventory.loadError}</p> : null}
+
+          <div className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50 p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-emerald-950">수입요건 상세 playbook 커버리지</p>
+                <p className="mt-1 text-xs text-emerald-800">
+                  세관장확인 수입요건 조합과 법령 상세 playbook 연결 상태를 점검합니다.
+                </p>
+              </div>
+              <Badge tone={coverageTone(inventory.requirementPlaybookCoverage.missingPlaybook, inventory.requirementPlaybookCoverage.invalidSourceUrls.length)}>
+                연결률 {inventory.requirementPlaybookCoverage.coverageRate}%
+              </Badge>
+            </div>
+            <div className="mt-3 grid gap-3 md:grid-cols-5">
+              <div>
+                <p className="text-xs font-medium text-emerald-700">전체 요건 조합</p>
+                <p className="text-lg font-semibold text-emerald-950">{inventory.requirementPlaybookCoverage.totalRequirementPairs.toLocaleString("ko-KR")}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-emerald-700">상세 연결</p>
+                <p className="text-lg font-semibold text-emerald-950">{inventory.requirementPlaybookCoverage.withPlaybook.toLocaleString("ko-KR")}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-emerald-700">미연결</p>
+                <p className={inventory.requirementPlaybookCoverage.missingPlaybook ? "text-lg font-semibold text-amber-800" : "text-lg font-semibold text-emerald-950"}>
+                  {inventory.requirementPlaybookCoverage.missingPlaybook.toLocaleString("ko-KR")}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-emerald-700">URL 점검</p>
+                <p className={inventory.requirementPlaybookCoverage.invalidSourceUrls.length ? "text-lg font-semibold text-amber-800" : "text-lg font-semibold text-emerald-950"}>
+                  {inventory.requirementPlaybookCoverage.invalidSourceUrls.length.toLocaleString("ko-KR")}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-emerald-700">오래된 항목</p>
+                <p className={inventory.requirementPlaybookCoverage.stalePlaybooks.length ? "text-lg font-semibold text-amber-800" : "text-lg font-semibold text-emerald-950"}>
+                  {inventory.requirementPlaybookCoverage.stalePlaybooks.length.toLocaleString("ko-KR")}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 lg:grid-cols-2">
+              <div className="rounded-md border border-emerald-200 bg-white p-3">
+                <p className="text-xs font-semibold text-slate-500">source_version별 playbook</p>
+                <div className="mt-2 grid gap-2">
+                  {inventory.requirementPlaybookCoverage.sourceVersions.map((source) => (
+                    <div className="flex items-center justify-between gap-3 rounded border border-slate-100 px-2 py-1.5" key={source.sourceVersion}>
+                      <span className="font-mono text-xs text-slate-700">{source.sourceVersion}</span>
+                      <span className="text-sm font-semibold text-slate-950">{source.rowCount.toLocaleString("ko-KR")}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-md border border-emerald-200 bg-white p-3">
+                <p className="text-xs font-semibold text-slate-500">미연결 요건</p>
+                {inventory.requirementPlaybookCoverage.missingRequirements.length ? (
+                  <div className="mt-2 grid gap-2">
+                    {inventory.requirementPlaybookCoverage.missingRequirements.slice(0, 8).map((requirement) => (
+                      <div className="rounded border border-slate-100 px-2 py-1.5" key={`${requirement.requirementDocumentName}-${requirement.relatedLaw}`}>
+                        <p className="text-sm font-semibold text-slate-950">{requirement.requirementDocumentName}</p>
+                        <p className="mt-0.5 text-xs text-slate-500">{requirement.relatedLaw} / {requirement.rowCount.toLocaleString("ko-KR")}건</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-2 rounded border border-emerald-100 bg-emerald-50 px-2 py-2 text-sm font-medium text-emerald-800">현재 미연결 요건이 없습니다.</p>
+                )}
+              </div>
+            </div>
+
+            {inventory.requirementPlaybookCoverage.invalidSourceUrls.length || inventory.requirementPlaybookCoverage.stalePlaybooks.length ? (
+              <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                <p className="font-semibold">점검 필요</p>
+                {inventory.requirementPlaybookCoverage.invalidSourceUrls.length ? (
+                  <p className="mt-1">국가법령정보센터 법령 URL 형식이 아닌 playbook이 있습니다.</p>
+                ) : null}
+                {inventory.requirementPlaybookCoverage.stalePlaybooks.length ? (
+                  <p className="mt-1">최근 수집일이 180일을 넘은 playbook이 있습니다.</p>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+
           <div className="mt-4 grid gap-3 md:grid-cols-5">
             {inventory.summary.groupSummaries.map((group) => (
               <div className="rounded-md border border-slate-200 bg-slate-50 p-3" key={group.groupKey}>

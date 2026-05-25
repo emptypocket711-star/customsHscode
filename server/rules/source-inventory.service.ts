@@ -6,7 +6,9 @@ import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/serve
 import {
   getDomesticHsLookupSnapshotCoverageFromSupabase,
   getSourceVersionInventoryFromSupabase,
-  type DomesticHsLookupSnapshotCoverage
+  getRequirementPlaybookCoverageFromSupabase,
+  type DomesticHsLookupSnapshotCoverage,
+  type RequirementPlaybookCoverage
 } from "@/server/repositories/source-inventory.repository";
 
 export type SourceVersionInventoryResult = {
@@ -14,6 +16,7 @@ export type SourceVersionInventoryResult = {
   dataSource: "mock" | "supabase";
   loadError?: string;
   domesticLookupCoverage: DomesticHsLookupSnapshotCoverage;
+  requirementPlaybookCoverage: RequirementPlaybookCoverage;
   summary: {
     stagedCount: number;
     publishedCount: number;
@@ -64,6 +67,48 @@ const mockDomesticLookupCoverage: DomesticHsLookupSnapshotCoverage = {
   withPublicNoticeRequirements: 0,
   withInternalTaxes: 135,
   lastRefreshedAt: "2026-05-25T10:11:02+00:00"
+};
+
+const mockRequirementPlaybookCoverage: RequirementPlaybookCoverage = {
+  totalRequirementPairs: 55,
+  withPlaybook: 55,
+  missingPlaybook: 0,
+  coverageRate: 100,
+  missingRequirements: [],
+  sourceVersions: [
+    {
+      sourceVersion: "requirement-playbook-remaining-20260525",
+      rowCount: 15,
+      latestRetrievedAt: "2026-05-25T00:00:00+09:00",
+      latestPublishedAt: "2026-05-25T00:00:00+09:00"
+    },
+    {
+      sourceVersion: "requirement-playbook-tertiary-20260525",
+      rowCount: 20,
+      latestRetrievedAt: "2026-05-25T00:00:00+09:00",
+      latestPublishedAt: "2026-05-25T00:00:00+09:00"
+    },
+    {
+      sourceVersion: "requirement-playbook-secondary-20260525",
+      rowCount: 7,
+      latestRetrievedAt: "2026-05-25T00:00:00+09:00",
+      latestPublishedAt: "2026-05-25T00:00:00+09:00"
+    },
+    {
+      sourceVersion: "requirement-playbook-core-20260525",
+      rowCount: 12,
+      latestRetrievedAt: "2026-05-25T00:00:00+09:00",
+      latestPublishedAt: "2026-05-25T00:00:00+09:00"
+    },
+    {
+      sourceVersion: "requirement-playbook-import-food-20260525",
+      rowCount: 1,
+      latestRetrievedAt: "2026-05-25T00:00:00+09:00",
+      latestPublishedAt: "2026-05-25T00:00:00+09:00"
+    }
+  ],
+  stalePlaybooks: [],
+  invalidSourceUrls: []
 };
 
 function inventoryGroupForTable(targetTable: string) {
@@ -192,6 +237,7 @@ export function getMockSourceVersionInventory(loadError?: string): SourceVersion
     dataSource: "mock",
     loadError,
     domesticLookupCoverage: mockDomesticLookupCoverage,
+    requirementPlaybookCoverage: mockRequirementPlaybookCoverage,
     summary: summarize(items)
   };
 }
@@ -203,15 +249,17 @@ export async function getSourceVersionInventory(): Promise<SourceVersionInventor
 
   try {
     const supabase = await createSupabaseServerClient();
-    const [sourceItems, domesticLookupCoverage] = await Promise.all([
+    const [sourceItems, domesticLookupCoverage, requirementPlaybookCoverage] = await Promise.all([
       getSourceVersionInventoryFromSupabase(supabase),
-      getDomesticHsLookupSnapshotCoverageFromSupabase(supabase)
+      getDomesticHsLookupSnapshotCoverageFromSupabase(supabase),
+      getRequirementPlaybookCoverageFromSupabase(supabase)
     ]);
     const items = withDiagnostics(sourceItems);
     return {
       items,
       dataSource: "supabase",
       domesticLookupCoverage: domesticLookupCoverage ?? mockDomesticLookupCoverage,
+      requirementPlaybookCoverage,
       summary: summarize(items)
     };
   } catch (error) {

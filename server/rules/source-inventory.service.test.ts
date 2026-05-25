@@ -13,6 +13,8 @@ describe("source inventory service", () => {
     expect(inventory.summary.groupSummaries.find((group) => group.groupKey === "originMarking")?.publishedCount).toBe(2);
     expect(inventory.domesticLookupCoverage.withTariffRates).toBeGreaterThan(10_000);
     expect(inventory.domesticLookupCoverage.missingTariffRates).toBe(1);
+    expect(inventory.requirementPlaybookCoverage.coverageRate).toBe(100);
+    expect(inventory.requirementPlaybookCoverage.missingPlaybook).toBe(0);
   });
 
   it("adds diagnostics for usable, unpublished, and empty sources", () => {
