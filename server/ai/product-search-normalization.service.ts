@@ -5,7 +5,7 @@ import { redactSensitiveText } from "@/server/ai/redaction";
 import { cachedLookup, lookupCacheKey } from "@/server/cache/lookup-cache";
 import { logLookupTelemetry, productInputShape } from "@/server/observability/lookup-telemetry";
 
-const productSearchNormalizationVersion = "product-search-normalization-v9";
+const productSearchNormalizationVersion = "product-search-normalization-v10";
 
 function productInputText(input: ProductHsRecommendationInput) {
   const hsCodeHints = extractHsCodeHintsFromProductInput(input);
@@ -149,6 +149,108 @@ function productContextLookupHints(input: ProductHsRecommendationInput, normaliz
   return hints;
 }
 
+type AiHsCodeReason = AiProductSearchNormalizationResult["candidateHsCodeReasons"][number];
+
+function normalizedHsCode(code: string) {
+  return code.replace(/[^0-9]/g, "");
+}
+
+const componentOrMaterialHintPatterns = [
+  {
+    prefixes: ["8507"],
+    terms: ["battery", "batteries", "accumulator", "cell", "module", "pack", "배터리", "축전지", "전지", "셀", "모듈", "팩"]
+  },
+  {
+    prefixes: ["4010"],
+    terms: ["belt", "belts", "conveyor belt", "transmission belt", "벨트", "전동용 벨트", "컨베이어 벨트"]
+  },
+  {
+    prefixes: ["3926", "7326", "7616"],
+    terms: ["part", "parts", "component", "article of", "plastic article", "metal article", "부품", "부분품", "제품", "플라스틱 제품", "금속 제품"]
+  }
+];
+
+const explicitComponentIntentTerms = [
+  "replacement",
+  "spare",
+  "part",
+  "parts",
+  "component",
+  "accessory",
+  "battery only",
+  "cell only",
+  "module only",
+  "교체용",
+  "예비",
+  "부품",
+  "부분품",
+  "구성품",
+  "액세서리",
+  "배터리만",
+  "셀만",
+  "모듈만"
+];
+
+function reasonTextForCode(reasons: AiHsCodeReason[], code: string) {
+  return reasons
+    .filter((reason) => {
+      const reasonCode = normalizedHsCode(reason.code);
+      return code.startsWith(reasonCode) || reasonCode.startsWith(code) || code.slice(0, 6) === reasonCode.slice(0, 6);
+    })
+    .map((reason) => `${reason.reason} ${reason.requiredInfo.join(" ")}`)
+    .join(" ")
+    .toLowerCase();
+}
+
+function isComponentOrMaterialHint(code: string, reasons: AiHsCodeReason[]) {
+  const reasonText = reasonTextForCode(reasons, code);
+
+  return componentOrMaterialHintPatterns.some((pattern) =>
+    pattern.prefixes.some((prefix) => code.startsWith(prefix))
+    && pattern.terms.some((term) => reasonText.includes(term.toLowerCase()))
+  );
+}
+
+function hasExplicitComponentIntent(input: ProductHsRecommendationInput, normalization: AiProductSearchNormalizationResult) {
+  const text = [
+    input.productName,
+    input.productUsage,
+    input.material,
+    input.composition,
+    input.functions,
+    input.modelName,
+    normalization.correctedProductName,
+    ...normalization.searchTerms,
+    ...normalization.koreanTerms,
+    ...normalization.englishTerms,
+    ...normalization.productFamilies
+  ].filter(Boolean).join(" ").toLowerCase();
+  return explicitComponentIntentTerms.some((term) => text.includes(term.toLowerCase()));
+}
+
+export function prioritizePrincipalArticleHsHints(input: {
+  productInput: ProductHsRecommendationInput;
+  normalization: AiProductSearchNormalizationResult;
+  userProvidedHsCodes: string[];
+  candidateHsCodes: string[];
+  candidateHsCodeReasons: AiHsCodeReason[];
+}) {
+  const normalizedUserHints = new Set(input.userProvidedHsCodes.map(normalizedHsCode));
+  const codes = Array.from(new Set(input.candidateHsCodes.map(normalizedHsCode).filter((code) => code.length >= 4 && code.length <= 10)));
+  if (codes.length <= 1 || hasExplicitComponentIntent(input.productInput, input.normalization)) return codes;
+
+  const principalArticleCodes = codes.filter((code) =>
+    !normalizedUserHints.has(code)
+    && !isComponentOrMaterialHint(code, input.candidateHsCodeReasons)
+  );
+  if (!principalArticleCodes.length) return codes;
+
+  return codes.filter((code) =>
+    normalizedUserHints.has(code)
+    || !isComponentOrMaterialHint(code, input.candidateHsCodeReasons)
+  );
+}
+
 export function extractHsCodeHintsFromText(text: string) {
   const hints: string[] = [];
   const labeledPattern = /(?:\bhs(?:k|code)?\b|hscode|hs\s*code|세번|소호|품목번호|세번부호)\s*[:：#-]?\s*((?:\d[\d.\-\s]{2,18}\d))/gi;
@@ -201,15 +303,7 @@ export async function normalizeProductSearchInput(input: ProductHsRecommendation
     });
     const contextHints = productContextLookupHints(input, normalization);
 
-    const result = {
-      ...normalization,
-      candidateHsCodes: Array.from(new Set([
-        ...userProvidedHsCodes,
-        ...normalization.candidateHsCodes,
-        ...acronymHints.map((hint) => hint.code),
-        ...contextHints.map((hint) => hint.code)
-      ])).slice(0, 10),
-      candidateHsCodeReasons: [
+    const candidateHsCodeReasons = [
         ...userProvidedHsCodes.map((code) => ({
           code,
           reason: "사용자가 입력값에 함께 제공한 HS CODE 힌트입니다.",
@@ -218,7 +312,23 @@ export async function normalizeProductSearchInput(input: ProductHsRecommendation
         ...normalization.candidateHsCodeReasons,
         ...acronymHints,
         ...contextHints
-      ].filter((item, index, items) => items.findIndex((candidate) => candidate.code === item.code) === index).slice(0, 10)
+      ].filter((item, index, items) => items.findIndex((candidate) => candidate.code === item.code) === index).slice(0, 10);
+    const candidateHsCodes = prioritizePrincipalArticleHsHints({
+      productInput: input,
+      normalization,
+      userProvidedHsCodes,
+      candidateHsCodes: [
+        ...userProvidedHsCodes,
+        ...normalization.candidateHsCodes,
+        ...acronymHints.map((hint) => hint.code),
+        ...contextHints.map((hint) => hint.code)
+      ],
+      candidateHsCodeReasons
+    }).slice(0, 10);
+    const result = {
+      ...normalization,
+      candidateHsCodes,
+      candidateHsCodeReasons
     };
 
     logLookupTelemetry("product_search_normalized", {

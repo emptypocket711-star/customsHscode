@@ -326,7 +326,7 @@ function aiProductSearchNormalizationInstructions() {
     "Treat likely misspellings such as lazer/laser cautiously. For laser belt or lazer belt, include therapy/massage apparatus and optical/laser-device lookup hints unless web evidence clearly proves a different product.",
     "Classify lookup intent by the finished article, principal function, and use before material. Do not suggest headings merely because a material word appears in the description.",
     "For rechargeable finished articles, do not prioritize accumulator/battery headings only because the article contains an internal battery. Use battery headings only when the traded good is the battery, cell, module, pack, or spare battery itself.",
-    "For electric fans, portable fans, handheld fans, desk fans, USB fans, and Korean terms such as 손선풍기 or 휴대용 선풍기, prioritize HS 8414 fan headings before any battery heading unless the input says battery only or replacement battery.",
+    "For any finished article that contains a component, classify lookup intent by the traded finished article first. Component, material, accessory, spare-part, and battery headings should be secondary unless the input explicitly says the traded good is that component or replacement part.",
     "Do not include candidate code boundaries that contradict the identified product family unless the input explicitly says the product may be that different article.",
     "Avoid highly specialized chemical, radioactive, military, or industrial headings unless the input explicitly indicates that specialization.",
     "Write Korean business SaaS copy for missingQuestions.",

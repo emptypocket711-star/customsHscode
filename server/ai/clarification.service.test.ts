@@ -3,7 +3,8 @@ import { analyzeDocumentExtractionClarification, analyzeProductClarification } f
 import {
   augmentProductInputWithAiTerms,
   buildProductSearchNormalizationCacheKey,
-  normalizeProductSearchInput
+  normalizeProductSearchInput,
+  prioritizePrincipalArticleHsHints
 } from "@/server/ai/product-search-normalization.service";
 import { aiProviderInternals } from "@/server/ai/provider";
 import { redactSensitiveText } from "@/server/ai/redaction";
@@ -93,7 +94,7 @@ describe("normalizeProductSearchInput", () => {
     });
 
     expect(key).toContain("ai-product-normalization");
-    expect(key).toContain("product-search-normalization-v9");
+    expect(key).toContain("product-search-normalization-v10");
     expect(key).toContain("901910");
     expect(key).not.toContain("secret");
     expect(key).not.toContain("ABC-123");
@@ -211,8 +212,63 @@ describe("normalizeProductSearchInput", () => {
     expect(instructions).toContain("Return useful HS4/HS6 candidates even when the exact national HS10 may need later official-data expansion");
     expect(instructions).toContain("Do not require an exact official HS description match before returning candidateHsCodes");
     expect(instructions).toContain("do not prioritize accumulator/battery headings only because the article contains an internal battery");
-    expect(instructions).toContain("손선풍기");
+    expect(instructions).toContain("classify lookup intent by the traded finished article first");
     expect(instructions).toContain("If web search identifies a product but the visible words can reasonably indicate another product family");
+  });
+
+  it("keeps finished-article AI hints ahead of component or material hints generically", () => {
+    const normalization = {
+      provider: "openai" as const,
+      model: "test",
+      correctedProductName: "rechargeable desk appliance",
+      searchTerms: ["rechargeable", "finished appliance"],
+      koreanTerms: ["충전식 완제품"],
+      englishTerms: ["finished article"],
+      productFamilies: ["finished appliance"],
+      candidateHsCodes: ["9405", "850760", "3926"],
+      candidateHsCodeReasons: [
+        { code: "9405", reason: "완제품의 주기능 후보입니다.", requiredInfo: ["용도", "구조"] },
+        { code: "850760", reason: "내장 배터리 또는 배터리 모듈 가능성입니다.", requiredInfo: ["배터리 cell pack 여부"] },
+        { code: "3926", reason: "플라스틱 부품 또는 케이스 가능성입니다.", requiredInfo: ["part component 여부"] }
+      ],
+      webSources: [],
+      missingQuestions: []
+    };
+
+    expect(prioritizePrincipalArticleHsHints({
+      productInput: { productName: "충전식 탁상용 완제품", basisDate: "2026-05-24" },
+      normalization,
+      userProvidedHsCodes: [],
+      candidateHsCodes: normalization.candidateHsCodes,
+      candidateHsCodeReasons: normalization.candidateHsCodeReasons
+    })).toEqual(["9405"]);
+  });
+
+  it("preserves component hints when the user explicitly searches for a replacement component", () => {
+    const normalization = {
+      provider: "openai" as const,
+      model: "test",
+      correctedProductName: "replacement battery pack",
+      searchTerms: ["replacement battery pack"],
+      koreanTerms: ["교체용 배터리팩"],
+      englishTerms: ["replacement battery"],
+      productFamilies: ["battery pack"],
+      candidateHsCodes: ["850760", "9405"],
+      candidateHsCodeReasons: [
+        { code: "850760", reason: "교체용 배터리 pack 가능성입니다.", requiredInfo: ["cell 구성"] },
+        { code: "9405", reason: "장착 대상 완제품 가능성입니다.", requiredInfo: ["완제품 여부"] }
+      ],
+      webSources: [],
+      missingQuestions: []
+    };
+
+    expect(prioritizePrincipalArticleHsHints({
+      productInput: { productName: "교체용 배터리팩", basisDate: "2026-05-24" },
+      normalization,
+      userProvidedHsCodes: [],
+      candidateHsCodes: normalization.candidateHsCodes,
+      candidateHsCodeReasons: normalization.candidateHsCodeReasons
+    })).toEqual(["850760", "9405"]);
   });
 
   it("parses multilingual GPT product candidates without requiring official-name matches", () => {
