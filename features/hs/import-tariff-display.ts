@@ -314,15 +314,98 @@ function tariffDisplayScore(tariff: ImportTariffDisplayRow) {
   return score;
 }
 
+const cielAgreementOrder = [
+  "FEF",
+  "FGB",
+  "FEU",
+  "FCN",
+  "E1",
+  "E2",
+  "E3",
+  "FIN",
+  "FAS",
+  "FVN",
+  "FKH",
+  "FPH",
+  "FID",
+  "FAU",
+  "FNZ",
+  "FTR",
+  "FIL",
+  "FAE",
+  "FRCCN",
+  "FRCAS",
+  "FRCAU",
+  "FRCNZ",
+  "FRCJP",
+  "FCA",
+  "FUS",
+  "FCECR",
+  "FCESV",
+  "FCEHN",
+  "FCEINI",
+  "FCENI",
+  "FCEPA",
+  "FCO",
+  "FPE",
+  "FCL"
+];
+
+function agreementDisplayOrder(rateType: string) {
+  const normalized = normalizedRateType(rateType);
+  const canonical = canonicalRateType(rateType);
+  const exactIndex = cielAgreementOrder.findIndex((item) => normalized.startsWith(item));
+  if (exactIndex >= 0) return exactIndex;
+  const canonicalIndex = cielAgreementOrder.findIndex((item) => canonical.startsWith(item));
+  return canonicalIndex >= 0 ? canonicalIndex : 999;
+}
+
+function commonDisplayOrder(rateType: string) {
+  const canonical = canonicalRateType(rateType);
+  if (canonical === "A" || canonical === "BASIC") return 10;
+  if (canonical === "C" || canonical === "WTO") return 20;
+  if (canonical === "D") return 30;
+  if (canonical === "R") return 40;
+  if (canonical === "U") return 50;
+  if (canonical === "W") return 310;
+  if (canonical === "G") return 320;
+  if (canonical === "F") return 330;
+  if (canonical === "L") return 340;
+  if (canonical === "P") return 350;
+  if (canonical === "B") return 360;
+  return 900;
+}
+
+function importTariffDisplayOrder(tariff: ImportTariffDisplayRow) {
+  if (isFtaRateType(tariff.rateType) || isAsiaPacificAgreementTariff(tariff.rateType)) {
+    return 100 + agreementDisplayOrder(tariff.rateType);
+  }
+
+  return commonDisplayOrder(tariff.rateType);
+}
+
+function sortImportTariffsForDisplay<T extends ImportTariffDisplayRow>(tariffs: T[]) {
+  return tariffs.toSorted((a, b) =>
+    importTariffDisplayOrder(a) - importTariffDisplayOrder(b)
+    || agreementDisplayOrder(a.rateType) - agreementDisplayOrder(b.rateType)
+    || normalizedRateType(a.rateType).localeCompare(normalizedRateType(b.rateType))
+    || a.rateText.localeCompare(b.rateText)
+  );
+}
+
+function uniqueDisplayTariffs<T extends ImportTariffDisplayRow>(tariffs: T[], countryCode: string) {
+  return Array.from(
+    new Map(
+      tariffs
+        .toSorted((a, b) => tariffDisplayScore(a) - tariffDisplayScore(b))
+        .map((tariff) => [[tariff.rateType, tariff.rateText, displayImportTariffLabel(tariff, countryCode)].join("|"), tariff])
+    ).values()
+  );
+}
+
 export function filterImportTariffsForCountry<T extends ImportTariffDisplayRow>(tariffs: T[], countryCode: string) {
   if (isAllCountries(countryCode)) {
-    return Array.from(
-      new Map(
-        tariffs
-          .toSorted((a, b) => tariffDisplayScore(a) - tariffDisplayScore(b))
-          .map((tariff) => [[tariff.rateType, tariff.rateText, displayImportTariffLabel(tariff, countryCode)].join("|"), tariff])
-      ).values()
-    ).sort((a, b) => importTariffApplicationPriorityNumber(a.rateType) - importTariffApplicationPriorityNumber(b.rateType) || a.rateType.localeCompare(b.rateType));
+    return sortImportTariffsForDisplay(uniqueDisplayTariffs(tariffs, countryCode));
   }
 
   const filtered = tariffs.filter(
@@ -333,13 +416,7 @@ export function filterImportTariffsForCountry<T extends ImportTariffDisplayRow>(
       (isLeastDevelopedCountry(countryCode) && isLeastDevelopedCountryTariff(tariff.rateType))
   );
 
-  return Array.from(
-    new Map(
-      filtered
-        .toSorted((a, b) => tariffDisplayScore(a) - tariffDisplayScore(b))
-        .map((tariff) => [[tariff.rateType, tariff.rateText, displayImportTariffLabel(tariff, countryCode)].join("|"), tariff])
-    ).values()
-  ).sort((a, b) => importTariffApplicationPriorityNumber(a.rateType) - importTariffApplicationPriorityNumber(b.rateType) || a.rateType.localeCompare(b.rateType));
+  return sortImportTariffsForDisplay(uniqueDisplayTariffs(filtered, countryCode));
 }
 
 export function importTariffApplicationPriorityNumber(rateType: string) {

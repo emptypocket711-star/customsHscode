@@ -31,7 +31,7 @@ describe("import tariff display", () => {
   it("keeps common tariffs and selected-country FTA only", () => {
     const labels = filterImportTariffsForCountry(rows, "CHN").map((row) => displayImportTariffLabel(row, "CHN"));
 
-    expect(labels).toEqual(["한-중 FTA 관세율", "WTO 협정관세", "아·태협정 양허관세(일반)", "아·태협정 양허관세(일반 세부 A1)", "WTO 양허관세(추천)", "WTO 양허관세(미추천)", "할당관세(세부1)", "할당관세(세부3)", "기본관세"]);
+    expect(labels).toEqual(["기본관세", "WTO 협정관세", "한-중 FTA 관세율", "아·태협정 양허관세(일반)", "아·태협정 양허관세(일반 세부 A1)", "WTO 양허관세(추천)", "WTO 양허관세(미추천)", "할당관세(세부1)", "할당관세(세부3)"]);
     expect(labels).not.toContain("한-미 FTA 관세율");
     expect(labels).not.toContain("최빈개발도상국 특혜관세");
   });
@@ -40,7 +40,7 @@ describe("import tariff display", () => {
     const filtered = filterImportTariffsForCountry(rows, "ALL");
     const labels = filtered.map((row) => displayImportTariffLabel(row, "ALL"));
 
-    expect(filtered.map((row) => row.rateType)).toEqual(["FCN1", "FEU1", "FRCJP1", "FUS1", "C", "E1", "E1A1", "E2", "E3", "W1", "W2", "P1", "P3", "R", "A", "U"]);
+    expect(filtered.map((row) => row.rateType)).toEqual(["A", "C", "R", "U", "FEU1", "FCN1", "E1", "E1A1", "E2", "E3", "FRCJP1", "FUS1", "W1", "W2", "P1", "P3"]);
     expect(labels).toContain("한-중 FTA 관세율");
     expect(labels).toContain("한-미 FTA 관세율");
     expect(labels).toContain("한-EU FTA 관세율");
@@ -88,7 +88,7 @@ describe("import tariff display", () => {
   it("calculates display priority after country filtering", () => {
     const filtered = filterImportTariffsForCountry(rows, "USA");
 
-    expect(importTariffApplicationPriority(filtered[0]!)).toBe("2순위");
+    expect(importTariffApplicationPriority(filtered.find((row) => row.rateType === "FUS1")!)).toBe("2순위");
     expect(importTariffApplicationPriority(rows[1]!)).toBe("3순위");
     expect(importTariffApplicationPriority(rows[0]!)).toBe("7순위");
     expect(importTariffApplicationPriority(rows[11]!)).toBe("기타");
