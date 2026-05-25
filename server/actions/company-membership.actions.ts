@@ -5,6 +5,7 @@ import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/serve
 
 export type CompanyJoinRequestItem = {
   id: string;
+  companyName: string | null;
   email: string;
   fullName: string;
   requestedBusinessTypes: string[];
@@ -21,6 +22,7 @@ export type CompanyMemberItem = {
 
 export type CompanyMembershipData = {
   canManage: boolean;
+  isDeveloper: boolean;
   companyName: string | null;
   requests: CompanyJoinRequestItem[];
   members: CompanyMemberItem[];
@@ -42,6 +44,7 @@ export async function loadCompanyMembershipData(): Promise<CompanyMembershipData
   if (!hasSupabaseEnv()) {
     return {
       canManage: true,
+      isDeveloper: true,
       companyName: "Mock 회사",
       requests: [],
       members: [],
@@ -57,6 +60,7 @@ export async function loadCompanyMembershipData(): Promise<CompanyMembershipData
   if (!user) {
     return {
       canManage: false,
+      isDeveloper: false,
       companyName: null,
       requests: [],
       members: [],
@@ -76,11 +80,13 @@ export async function loadCompanyMembershipData(): Promise<CompanyMembershipData
   const relatedCompany = profile?.companies as { name?: unknown } | { name?: unknown }[] | null | undefined;
   const companyNameValue = Array.isArray(relatedCompany) ? relatedCompany[0]?.name : relatedCompany?.name;
   const companyName = typeof companyNameValue === "string" ? companyNameValue : null;
-  const canManage = Boolean(companyId && (companyRole === "admin" || appRole === "developer"));
+  const isDeveloper = appRole === "developer";
+  const canManage = Boolean(companyId && (companyRole === "admin" || isDeveloper));
 
   if (profileError || !companyId) {
     return {
       canManage: false,
+      isDeveloper,
       companyName,
       requests: [],
       members: [],
@@ -90,12 +96,18 @@ export async function loadCompanyMembershipData(): Promise<CompanyMembershipData
 
   const [requestsResult, membersResult] = await Promise.all([
     canManage
-      ? supabase
-          .from("company_join_requests")
-          .select("id, email, full_name, requested_business_types, created_at")
-          .eq("company_id", companyId)
-          .eq("status", "pending")
-          .order("created_at", { ascending: true })
+      ? isDeveloper
+        ? supabase
+            .from("company_join_requests")
+            .select("id, email, full_name, requested_business_types, created_at, companies(name)")
+            .eq("status", "pending")
+            .order("created_at", { ascending: true })
+        : supabase
+            .from("company_join_requests")
+            .select("id, email, full_name, requested_business_types, created_at, companies(name)")
+            .eq("company_id", companyId)
+            .eq("status", "pending")
+            .order("created_at", { ascending: true })
       : Promise.resolve({ data: [], error: null }),
     supabase
       .from("profiles")
@@ -105,13 +117,19 @@ export async function loadCompanyMembershipData(): Promise<CompanyMembershipData
       .order("created_at", { ascending: true })
   ]);
 
-  const requests = (requestsResult.data ?? []).map((row) => ({
-    id: String(row.id),
-    email: String(row.email ?? "-"),
-    fullName: String(row.full_name ?? "-"),
-    requestedBusinessTypes: toStringArray(row.requested_business_types),
-    createdAt: String(row.created_at ?? "")
-  }));
+  const requests = (requestsResult.data ?? []).map((row) => {
+    const requestCompany = row.companies as { name?: unknown } | { name?: unknown }[] | null | undefined;
+    const requestCompanyNameValue = Array.isArray(requestCompany) ? requestCompany[0]?.name : requestCompany?.name;
+
+    return {
+      id: String(row.id),
+      companyName: typeof requestCompanyNameValue === "string" ? requestCompanyNameValue : null,
+      email: String(row.email ?? "-"),
+      fullName: String(row.full_name ?? "-"),
+      requestedBusinessTypes: toStringArray(row.requested_business_types),
+      createdAt: String(row.created_at ?? "")
+    };
+  });
 
   const members = (membersResult.data ?? []).map((row) => ({
     id: String(row.id),
@@ -123,6 +141,7 @@ export async function loadCompanyMembershipData(): Promise<CompanyMembershipData
 
   return {
     canManage,
+    isDeveloper,
     companyName,
     requests,
     members,

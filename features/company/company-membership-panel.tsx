@@ -40,7 +40,7 @@ export function CompanyMembershipPanel({ data }: { data: CompanyMembershipData }
             }
           >
             <ShieldCheck aria-hidden="true" size={14} />
-            {data.canManage ? "회사 관리자" : "일반 구성원"}
+            {data.isDeveloper ? "개발자 운영 권한" : data.canManage ? "회사 관리자" : "일반 구성원"}
           </span>
         </div>
         {data.message ? (
@@ -52,7 +52,11 @@ export function CompanyMembershipPanel({ data }: { data: CompanyMembershipData }
         <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-200 px-5 py-4">
             <h2 className="text-base font-semibold tracking-normal text-slate-950">합류 요청</h2>
-            <p className="mt-1 text-sm text-slate-600">같은 회사명으로 가입한 사용자의 소속 요청을 승인하거나 거절합니다.</p>
+            <p className="mt-1 text-sm text-slate-600">
+              {data.isDeveloper
+                ? "전체 회사의 대기 중인 합류 요청을 승인하거나 거절합니다."
+                : "같은 회사명으로 가입한 사용자의 소속 요청을 승인하거나 거절합니다."}
+            </p>
           </div>
           {state.message ? (
             <p
@@ -65,7 +69,7 @@ export function CompanyMembershipPanel({ data }: { data: CompanyMembershipData }
               {state.message}
             </p>
           ) : null}
-          <JoinRequestList formAction={formAction} pending={pending} requests={data.requests} />
+          <JoinRequestList formAction={formAction} pending={pending} requests={data.requests} showCompanyName={data.isDeveloper} />
         </section>
       ) : null}
 
@@ -83,11 +87,13 @@ export function CompanyMembershipPanel({ data }: { data: CompanyMembershipData }
 function JoinRequestList({
   formAction,
   pending,
-  requests
+  requests,
+  showCompanyName
 }: {
   formAction: (payload: FormData) => void;
   pending: boolean;
   requests: CompanyJoinRequestItem[];
+  showCompanyName?: boolean;
 }) {
   if (requests.length === 0) {
     return (
@@ -103,6 +109,11 @@ function JoinRequestList({
       {requests.map((request) => (
         <div className="grid gap-4 px-5 py-4 lg:grid-cols-[1fr_auto]" key={request.id}>
           <div>
+            {showCompanyName ? (
+              <p className="mb-2 w-fit rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-800">
+                {request.companyName ?? "회사명 확인 필요"}
+              </p>
+            ) : null}
             <p className="text-sm font-semibold text-slate-950">{request.fullName}</p>
             <p className="mt-1 text-sm text-slate-600">{request.email}</p>
             <div className="mt-3 flex flex-wrap gap-1.5">
