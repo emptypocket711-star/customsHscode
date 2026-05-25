@@ -410,6 +410,19 @@ function appendRequirementCopyLines(lines: string[], requirements: GroupedImport
   }
 }
 
+function appendOriginMarkingCopyLines(lines: string[], originMarking: HsDirectLookupResult["originMarking"] | null | undefined) {
+  lines.push("원산지 표시");
+
+  if (!originMarking?.isTarget) {
+    lines.push("원산지표시대상으로 조회되는 항목은 없습니다.");
+    return;
+  }
+
+  const method = originMarking.method?.methodSummary ? ` / 표시방법 : ${originMarking.method.methodSummary}` : "";
+  const condition = originMarking.conditionText ? ` / 조건 : ${originMarking.conditionText}` : "";
+  lines.push(`원산지표시대상(Y)${method}${condition}`);
+}
+
 function isBasicTariffLabel(label: string) {
   return label.includes("기본세율") || label.includes("기본관세");
 }
@@ -483,6 +496,7 @@ function hsCopySummaryText({
   result: {
     hskCode: string;
     koreanName: string;
+    originMarking?: HsDirectLookupResult["originMarking"];
   };
   displayTariffs: Array<{
     rateType: string;
@@ -520,6 +534,7 @@ function hsCopySummaryText({
   }
 
   appendRequirementCopyLines(lines, groupedRequirements);
+  appendOriginMarkingCopyLines(lines, result.originMarking);
 
   return lines.join("\n");
 }
@@ -639,6 +654,7 @@ function productCandidateCopySummaryText({
     }
 
     appendRequirementCopyLines(lines, requirements);
+    appendOriginMarkingCopyLines(lines, lookup?.originMarking);
   });
 
   return lines.join("\n");
