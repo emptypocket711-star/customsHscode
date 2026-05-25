@@ -1,12 +1,10 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { Building2, CheckCircle2, Lock, LogIn, Mail, User, UserPlus, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import {
   authenticateAction,
-  searchCompanySuggestionsAction,
-  type CompanySuggestion,
   sendSignupEmailOtpAction,
   verifySignupEmailOtpAction
 } from "@/server/actions/auth.actions";
@@ -37,12 +35,10 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
   const [signupPassword, setSignupPassword] = useState("");
   const [signupPasswordConfirm, setSignupPasswordConfirm] = useState("");
   const [signupFullName, setSignupFullName] = useState("");
+  const [accountType, setAccountType] = useState<"personal" | "company">("personal");
   const [companyName, setCompanyName] = useState("");
-  const [selectedCompanyId, setSelectedCompanyId] = useState("");
   const [selectedBusinessTypes, setSelectedBusinessTypes] = useState<string[]>([]);
-  const [suggestions, setSuggestions] = useState<CompanySuggestion[]>([]);
   const [resendCooldown, setResendCooldown] = useState(0);
-  const [suggestPending, startSuggestTransition] = useTransition();
   const lastCooldownMessageRef = useRef<string | undefined>(undefined);
 
   const mode = authState.status === "idle" ? initialMode : authState.mode;
@@ -52,20 +48,6 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
   const verifiedSignupEmail = Boolean(isSignup && verifyState.verified);
   const activeEmail = verifyState.email || sendState.email || signupEmail;
   const pending = authPending || sendPending || verifyPending;
-
-  useEffect(() => {
-    const term = companyName.trim();
-    if (!verifiedSignupEmail || term.length < 2) return;
-
-    const timer = window.setTimeout(() => {
-      startSuggestTransition(async () => {
-        const result = await searchCompanySuggestionsAction(term);
-        setSuggestions(result.filter((company) => company.name !== companyName));
-      });
-    }, 220);
-
-    return () => window.clearTimeout(timer);
-  }, [companyName, verifiedSignupEmail]);
 
   useEffect(() => {
     if (sendState.status !== "success" || lastCooldownMessageRef.current === sendState.message) return;
@@ -99,16 +81,15 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
     if (isSignup) return "이메일 인증 후 업무 공간을 생성합니다.";
     return "HS FINDER에 오신 것을 환영합니다.";
   }, [isReset, isSignup]);
-  const visibleSuggestions = verifiedSignupEmail && companyName.trim().length >= 2 ? suggestions : [];
   const signupPasswordChecks = passwordChecks(signupPassword);
   const isSignupPasswordStrong = Object.values(signupPasswordChecks).every(Boolean);
   const isSignupPasswordConfirmValid = signupPassword.length > 0 && signupPassword === signupPasswordConfirm;
+  const isCompanySignup = accountType === "company";
   const canCompleteSignup =
     isSignupPasswordStrong &&
     isSignupPasswordConfirmValid &&
     signupFullName.trim().length > 0 &&
-    companyName.trim().length > 0 &&
-    selectedBusinessTypes.length > 0 &&
+    (!isCompanySignup || (companyName.trim().length > 0 && selectedBusinessTypes.length > 0)) &&
     !authPending;
 
   return (
@@ -197,7 +178,8 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
             <form action={authAction} className="grid gap-5">
               <input name="mode" type="hidden" value="signup" />
               <input name="email" type="hidden" value={activeEmail} />
-              <input name="selectedCompanyId" type="hidden" value={selectedCompanyId} />
+              <input name="accountType" type="hidden" value={accountType} />
+              <AccountTypeSelector disabled={authPending} value={accountType} onChange={setAccountType} />
               <AuthInput
                 autoComplete="new-password"
                 disabled={authPending}
@@ -236,21 +218,16 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
                 placeholder="이름을 입력하세요"
                 value={signupFullName}
               />
-              <CompanyNameInput
-                companyName={companyName}
-                disabled={authPending}
-                onSelect={(company) => {
-                  setCompanyName(company.name);
-                  setSelectedCompanyId(company.id);
-                }}
-                onValueChange={(value) => {
-                  setCompanyName(value);
-                  setSelectedCompanyId("");
-                }}
-                suggestions={visibleSuggestions}
-                suggestPending={suggestPending}
-              />
-              <BusinessTypeCheckboxes disabled={authPending} selectedValues={selectedBusinessTypes} onChange={setSelectedBusinessTypes} />
+              {isCompanySignup ? (
+                <>
+                  <CompanyNameInput
+                    companyName={companyName}
+                    disabled={authPending}
+                    onValueChange={setCompanyName}
+                  />
+                  <BusinessTypeCheckboxes disabled={authPending} selectedValues={selectedBusinessTypes} onChange={setSelectedBusinessTypes} />
+                </>
+              ) : null}
 
               <button
                 className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-100 transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-500"
@@ -333,20 +310,55 @@ function StatusMessage({ state }: { state: { status: "idle" | "success" | "error
   );
 }
 
+function AccountTypeSelector({
+  disabled,
+  onChange,
+  value
+}: {
+  disabled?: boolean;
+  onChange: (value: "personal" | "company") => void;
+  value: "personal" | "company";
+}) {
+  const options = [
+    { value: "personal" as const, label: "개인회원", description: "이메일 인증 후 바로 사용" },
+    { value: "company" as const, label: "기업회원", description: "회사명 기준 업무공간 생성" }
+  ];
+
+  return (
+    <fieldset className="grid gap-2">
+      <legend className="text-sm font-semibold text-slate-800">회원 유형</legend>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {options.map((option) => {
+          const selected = value === option.value;
+
+          return (
+            <button
+              className={`focus-ring rounded-lg border px-4 py-3 text-left transition ${
+                selected ? "border-blue-500 bg-blue-50 text-blue-950" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+              }`}
+              disabled={disabled}
+              key={option.value}
+              onClick={() => onChange(option.value)}
+              type="button"
+            >
+              <span className="block text-sm font-semibold">{option.label}</span>
+              <span className="mt-1 block text-xs text-slate-500">{option.description}</span>
+            </button>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
 function CompanyNameInput({
   companyName,
   disabled,
-  onSelect,
-  onValueChange,
-  suggestions,
-  suggestPending
+  onValueChange
 }: {
   companyName: string;
   disabled?: boolean;
-  onSelect: (value: CompanySuggestion) => void;
   onValueChange: (value: string) => void;
-  suggestions: CompanySuggestion[];
-  suggestPending: boolean;
 }) {
   return (
     <div className="grid gap-2">
@@ -360,24 +372,6 @@ function CompanyNameInput({
         placeholder="회사명을 입력하세요"
         value={companyName}
       />
-      {suggestPending ? <p className="text-xs font-medium text-slate-500">기존 회사명을 확인 중입니다.</p> : null}
-      {suggestions.length > 0 ? (
-        <div className="overflow-hidden rounded-lg border border-blue-100 bg-blue-50/70">
-          <p className="border-b border-blue-100 px-3 py-2 text-xs font-semibold text-blue-900">기존에 가입된 기업명이 있습니다.</p>
-          <div className="grid">
-            {suggestions.map((company) => (
-              <button
-                className="px-3 py-2 text-left text-sm font-semibold text-slate-800 transition hover:bg-white"
-                key={company.id}
-                onClick={() => onSelect(company)}
-                type="button"
-              >
-                {company.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

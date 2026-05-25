@@ -18,21 +18,10 @@ import {
   hasSupabaseEnv,
   setRememberSessionPreference
 } from "@/lib/supabase/server";
-import { createSupabaseServiceRoleClient, hasSupabaseServiceRoleEnv } from "@/lib/supabase/service-role";
-
-export type CompanySuggestion = {
-  id: string;
-  name: string;
-};
 
 function stringValue(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" ? value : undefined;
-}
-
-function nonEmptyStringValue(formData: FormData, key: string) {
-  const value = stringValue(formData, key)?.trim();
-  return value ? value : undefined;
 }
 
 function firstStringValue(formData: FormData, keys: string[]) {
@@ -51,46 +40,16 @@ function arrayValue(formData: FormData, key: string) {
   return formData.getAll(key).filter((value): value is string => typeof value === "string");
 }
 
-async function ensureClientProfile(companyName?: string, fullName?: string, businessTypes?: string[]) {
+async function ensureClientProfile(accountType: "personal" | "company", companyName?: string, fullName?: string, businessTypes?: string[]) {
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc("ensure_client_profile", {
+    p_account_type: accountType,
     p_business_types: businessTypes && businessTypes.length > 0 ? businessTypes : null,
     p_company_name: companyName || null,
     p_full_name: fullName || null
   });
 
   if (error) throw new Error(error.message);
-}
-
-async function requestCompanyJoin(companyId: string, fullName?: string, businessTypes?: string[]) {
-  const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.rpc("request_company_join", {
-    p_business_types: businessTypes && businessTypes.length > 0 ? businessTypes : null,
-    p_company_id: companyId,
-    p_full_name: fullName || null
-  });
-
-  if (error) throw new Error(error.message);
-}
-
-async function findExactCompanyByName(companyName?: string): Promise<CompanySuggestion | null> {
-  const name = companyName?.trim();
-  if (!name || !hasSupabaseEnv() || !hasSupabaseServiceRoleEnv()) return null;
-
-  const service = createSupabaseServiceRoleClient();
-  const { data, error } = await service
-    .from("companies")
-    .select("id, name")
-    .ilike("name", name)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  if (error || !data?.id || !data?.name) return null;
-  return {
-    id: String(data.id),
-    name: String(data.name)
-  };
 }
 
 async function getPostLoginPath() {
@@ -108,15 +67,7 @@ async function getPostLoginPath() {
     .maybeSingle();
 
   if (profile?.onboarding_completed_at) return "/dashboard";
-
-  const { data: joinRequest } = await supabase
-    .from("company_join_requests")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("status", "pending")
-    .maybeSingle();
-
-  return joinRequest?.id ? "/auth/company-pending" : "/auth/complete-signup";
+  return "/auth/complete-signup";
 }
 
 async function getAppOrigin() {
@@ -136,9 +87,9 @@ export async function authenticateAction(
     password: stringValue(formData, "password"),
     passwordConfirm: stringValue(formData, "passwordConfirm"),
     rememberSession: mode === "login" ? booleanValue(formData, "rememberSession") : true,
+    accountType: stringValue(formData, "accountType"),
     fullName: stringValue(formData, "fullName"),
     companyName: stringValue(formData, "companyName"),
-    selectedCompanyId: nonEmptyStringValue(formData, "selectedCompanyId"),
     businessTypes: arrayValue(formData, "businessTypes")
   });
 
@@ -187,6 +138,7 @@ export async function authenticateAction(
       password: parsed.data.password!,
       data: {
         full_name: parsed.data.fullName || "",
+        account_type: parsed.data.accountType || "personal",
         company_name: parsed.data.companyName || "",
         business_types: parsed.data.businessTypes || []
       }
@@ -201,17 +153,7 @@ export async function authenticateAction(
     }
 
     await setRememberSessionPreference(parsed.data.rememberSession ?? true);
-    const exactCompany = parsed.data.selectedCompanyId
-      ? { id: parsed.data.selectedCompanyId, name: parsed.data.companyName || "" }
-      : await findExactCompanyByName(parsed.data.companyName);
-
-    if (exactCompany?.id) {
-      await requestCompanyJoin(exactCompany.id, parsed.data.fullName, parsed.data.businessTypes);
-      revalidatePath("/", "layout");
-      redirect("/auth/company-pending");
-    }
-
-    await ensureClientProfile(parsed.data.companyName, parsed.data.fullName, parsed.data.businessTypes);
+    await ensureClientProfile(parsed.data.accountType ?? "personal", parsed.data.companyName, parsed.data.fullName, parsed.data.businessTypes);
     revalidatePath("/", "layout");
     redirect("/dashboard");
   }
@@ -232,35 +174,6 @@ export async function authenticateAction(
   await setRememberSessionPreference(parsed.data.rememberSession ?? true);
   revalidatePath("/", "layout");
   redirect(await getPostLoginPath());
-}
-
-export async function searchCompanySuggestionsAction(query: string): Promise<CompanySuggestion[]> {
-  const term = query.trim();
-  if (term.length < 2 || !hasSupabaseEnv() || !hasSupabaseServiceRoleEnv()) return [];
-
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
-  if (!user) return [];
-
-  const service = createSupabaseServiceRoleClient();
-  const { data, error } = await service
-    .from("companies")
-    .select("id, name")
-    .ilike("name", `%${term}%`)
-    .order("name", { ascending: true })
-    .limit(6);
-
-  if (error || !data) return [];
-  const seen = new Set<string>();
-  return data.flatMap((row) => {
-    const id = String(row.id ?? "");
-    const name = String(row.name ?? "");
-    if (!id || !name || seen.has(id)) return [];
-    seen.add(id);
-    return [{ id, name }];
-  });
 }
 
 export async function sendSignupEmailOtpAction(

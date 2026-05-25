@@ -18,7 +18,7 @@ async function getCurrentUser() {
 }
 
 async function getSignupState(userId: string) {
-  if (!hasSupabaseEnv()) return { completed: false, pendingJoin: false };
+  if (!hasSupabaseEnv()) return { completed: false };
 
   const supabase = await createSupabaseServerClient();
   const { data: profile } = await supabase
@@ -27,16 +27,8 @@ async function getSignupState(userId: string) {
     .eq("id", userId)
     .maybeSingle();
 
-  const { data: joinRequest } = await supabase
-    .from("company_join_requests")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("status", "pending")
-    .maybeSingle();
-
   return {
-    completed: Boolean(profile?.onboarding_completed_at),
-    pendingJoin: Boolean(joinRequest?.id)
+    completed: Boolean(profile?.onboarding_completed_at)
   };
 }
 
@@ -50,9 +42,6 @@ export default async function CompleteSignupPage() {
   const signupState = await getSignupState(user.id);
   if (signupState.completed) {
     redirect("/dashboard");
-  }
-  if (signupState.pendingJoin) {
-    redirect("/auth/company-pending");
   }
 
   return (
@@ -68,7 +57,7 @@ export default async function CompleteSignupPage() {
           <div className="mb-7 text-center">
             <h1 className="text-3xl font-semibold tracking-normal text-slate-950">회원가입 완료</h1>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              이메일 인증이 완료되었습니다. 비밀번호와 회사 정보를 입력해 주세요.
+              이메일 인증이 완료되었습니다. 회원 유형과 기본 정보를 입력해 주세요.
             </p>
             <p className="mt-2 text-xs font-semibold text-blue-700">{user.email}</p>
           </div>

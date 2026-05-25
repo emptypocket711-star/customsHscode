@@ -30,37 +30,7 @@ async function getOnboardingPath(userId: string) {
     .maybeSingle();
 
   if (profile?.onboarding_completed_at) return null;
-
-  const { data: joinRequest } = await supabase
-    .from("company_join_requests")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("status", "pending")
-    .maybeSingle();
-
-  return joinRequest?.id ? "/auth/company-pending" : "/auth/complete-signup";
-}
-
-async function getProfileFlags(userId: string, email?: string | null) {
-  const developer = isDeveloperEmail(email);
-  if (!hasSupabaseEnv()) {
-    return {
-      showCompanyAdmin: true,
-      showOperations: developer
-    };
-  }
-
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
-    .from("profiles")
-    .select("company_role")
-    .eq("id", userId)
-    .maybeSingle();
-
-  return {
-    showCompanyAdmin: developer || data?.company_role === "admin",
-    showOperations: developer
-  };
+  return "/auth/complete-signup";
 }
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
@@ -75,13 +45,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     redirect(onboardingPath);
   }
 
-  const profileFlags = await getProfileFlags(user.id, user.email);
-
   return (
     <div className="min-h-screen">
       <AppHeader email={user.email ?? null} />
       <div className="mx-auto flex w-full max-w-[1680px] flex-col gap-5 px-4 py-5 sm:px-6 lg:flex-row lg:gap-5 lg:px-8">
-        <AppSideNav showCompanyAdmin={profileFlags.showCompanyAdmin} showOperations={profileFlags.showOperations} />
+        <AppSideNav showOperations={isDeveloperEmail(user.email)} />
         <main className="min-w-0 flex-1">{children}</main>
       </div>
     </div>

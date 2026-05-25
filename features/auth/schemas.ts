@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const authModeSchema = z.enum(["login", "signup", "reset"]);
+export const accountTypeSchema = z.enum(["personal", "company"]);
 export const businessTypeSchema = z.enum(["customs_broker", "forwarder", "exporter", "importer"]);
 export const strongPasswordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,128}$/;
 export const strongPasswordMessage = "비밀번호는 숫자, 영문 소문자, 영문 대문자, 특수문자를 모두 포함한 8자 이상이어야 합니다.";
@@ -12,9 +13,9 @@ export const authFormSchema = z
     password: z.string().max(128).optional(),
     passwordConfirm: z.string().max(128).optional(),
     rememberSession: z.boolean().optional(),
+    accountType: accountTypeSchema.optional(),
     fullName: z.string().trim().max(80).optional(),
     companyName: z.string().trim().max(120).optional(),
-    selectedCompanyId: z.uuid().optional(),
     businessTypes: z.array(businessTypeSchema).optional()
   })
   .superRefine((data, ctx) => {
@@ -42,7 +43,23 @@ export const authFormSchema = z
       });
     }
 
-    if (data.mode === "signup" && !data.companyName) {
+    if (data.mode === "signup" && !data.accountType) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["accountType"],
+        message: "회원 유형을 선택해 주세요."
+      });
+    }
+
+    if (data.mode === "signup" && !data.fullName) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["fullName"],
+        message: "이름을 입력해 주세요."
+      });
+    }
+
+    if (data.mode === "signup" && data.accountType === "company" && !data.companyName) {
       ctx.addIssue({
         code: "custom",
         path: ["companyName"],
@@ -50,7 +67,7 @@ export const authFormSchema = z
       });
     }
 
-    if (data.mode === "signup" && (!data.businessTypes || data.businessTypes.length === 0)) {
+    if (data.mode === "signup" && data.accountType === "company" && (!data.businessTypes || data.businessTypes.length === 0)) {
       ctx.addIssue({
         code: "custom",
         path: ["businessTypes"],
