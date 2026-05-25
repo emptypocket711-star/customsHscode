@@ -55,6 +55,14 @@ function coverageScore(row: DestinationCoverageTableRow) {
 export function DestinationCoverageTable({ rows }: { rows: DestinationCoverageTableRow[] }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<CoverageFilter>("all");
+  const summary = useMemo(() => ({
+    total: rows.length,
+    ready: rows.filter(hasAnyImportData).length,
+    missingTariff: rows.filter((row) => row.tariffCount === 0).length,
+    missingInternalTax: rows.filter((row) => row.internalTaxCount === 0).length,
+    missingRequirement: rows.filter((row) => row.requirementCount === 0).length,
+    risk: rows.filter((row) => row.additionalTariffCount > 0 || row.tradeRemedyCount > 0).length
+  }), [rows]);
 
   const filteredRows = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -76,6 +84,15 @@ export function DestinationCoverageTable({ rows }: { rows: DestinationCoverageTa
 
   return (
     <div className="grid gap-3">
+      <div className="grid gap-2 md:grid-cols-3 xl:grid-cols-6">
+        <CoverageSummaryCard label="전체 국가" value={summary.total} />
+        <CoverageSummaryCard label="조회 가능" value={summary.ready} tone="success" />
+        <CoverageSummaryCard label="관세율 없음" value={summary.missingTariff} tone={summary.missingTariff ? "warning" : "neutral"} />
+        <CoverageSummaryCard label="내국세 없음" value={summary.missingInternalTax} tone={summary.missingInternalTax ? "warning" : "neutral"} />
+        <CoverageSummaryCard label="요건 없음" value={summary.missingRequirement} tone={summary.missingRequirement ? "warning" : "neutral"} />
+        <CoverageSummaryCard label="추가 리스크" value={summary.risk} tone={summary.risk ? "warning" : "neutral"} />
+      </div>
+
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <label className="relative block max-w-md flex-1">
           <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
@@ -137,6 +154,30 @@ export function DestinationCoverageTable({ rows }: { rows: DestinationCoverageTa
       <div className="text-xs text-slate-500">
         {formatCount(filteredRows.length)}개 국가 표시
       </div>
+    </div>
+  );
+}
+
+function CoverageSummaryCard({
+  label,
+  tone = "neutral",
+  value
+}: {
+  label: string;
+  tone?: "neutral" | "success" | "warning";
+  value: number;
+}) {
+  const className =
+    tone === "success"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-950"
+      : tone === "warning"
+        ? "border-amber-200 bg-amber-50 text-amber-950"
+        : "border-slate-200 bg-slate-50 text-slate-950";
+
+  return (
+    <div className={`rounded-md border p-3 ${className}`}>
+      <p className="text-xs font-semibold opacity-75">{label}</p>
+      <p className="mt-1 text-lg font-semibold">{formatCount(value)}</p>
     </div>
   );
 }
