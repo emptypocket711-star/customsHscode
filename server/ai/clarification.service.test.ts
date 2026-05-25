@@ -98,7 +98,7 @@ describe("normalizeProductSearchInput", () => {
     });
 
     expect(key).toContain("ai-product-normalization");
-    expect(key).toContain("product-search-normalization-v11");
+    expect(key).toContain("product-search-normalization-v12");
     expect(key).toContain("901910");
     expect(key).not.toContain("secret");
     expect(key).not.toContain("ABC-123");
@@ -132,14 +132,15 @@ describe("normalizeProductSearchInput", () => {
     expect(JSON.stringify(normalization)).not.toContain("9019102000");
   });
 
-  it("adds broad apparel candidates for unclear work vest names", async () => {
+  it("asks branch questions before showing apparel candidates for unclear work vest names", async () => {
     const normalization = await normalizeProductSearchInput({
       productName: "작업용 조끼",
       basisDate: "2026-05-24"
     });
 
-    expect(normalization.candidateHsCodes).toEqual(expect.arrayContaining(["621133", "621143", "611030", "6211"]));
-    expect(normalization.candidateHsCodes.indexOf("621133")).toBeLessThan(normalization.candidateHsCodes.indexOf("611030"));
+    expect(normalization.classificationState).toBe("needs_clarification");
+    expect(normalization.displayMode).toBe("needs_more_info");
+    expect(normalization.candidateHsCodes).toEqual([]);
     expect(normalization.missingQuestions.join(" ")).toContain("편직물");
   });
 
@@ -212,7 +213,9 @@ describe("normalizeProductSearchInput", () => {
     expect(instructions).toContain("brand name, trade name, product line, model name, SKU, catalog number");
     expect(instructions).toContain("brand or product line plus a generic product phrase");
     expect(instructions).toContain("If web search is unavailable, inconclusive, or blocked");
-    expect(instructions).toContain("First decide certainty and displayMode");
+    expect(instructions).toContain("Act as a classification interviewer first");
+    expect(instructions).toContain("First decide classificationState, certainty, and displayMode");
+    expect(instructions).toContain("Use classificationState=needs_clarification");
     expect(instructions).toContain("Do not force 3 to 8 candidates in high-certainty cases");
     expect(instructions).toContain("Prefer HS6 prefixes");
     expect(instructions).toContain("Return useful HS4/HS6 candidates even when the exact national HS10 may need later official-data expansion");

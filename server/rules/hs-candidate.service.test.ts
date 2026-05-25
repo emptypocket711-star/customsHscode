@@ -100,15 +100,13 @@ describe("recommendHsCandidates", () => {
     expect(candidates.find((candidate) => candidate.hs6 === "848690")?.reason).toContain("Electrostatic Chuck");
   });
 
-  it("prioritizes apparel HS candidates over plastic article matches for work vests", async () => {
+  it("asks for branch details before showing apparel HS candidates for unclear work vests", async () => {
     const candidates = await recommendHsCandidatesForProduct({
       productName: "작업용 조끼",
       basisDate: "2026-05-21"
     });
 
-    expect(candidates[0]?.hs6).toBe("621133");
-    expect(candidates.map((candidate) => candidate.hs6)).toEqual(expect.arrayContaining(["621143", "611030"]));
-    expect(candidates.some((candidate) => candidate.hs6 === "392690")).toBe(false);
+    expect(candidates).toEqual([]);
   });
 
   it("recommends construction machinery candidates from one-letter English omissions", () => {
@@ -426,7 +424,7 @@ describe("recommendHsCandidates", () => {
     expect(candidates.length).toBeGreaterThan(0);
     expect(candidates.map((candidate) => candidate.hskCode)).toEqual(expect.arrayContaining(["190190", "190590"]));
     expect(candidates.every((candidate) => candidate.lookupBasis === "ai_hs_hint")).toBe(true);
-    expect(candidates.find((candidate) => candidate.hskCode === "190190")?.reason).toContain("GPT가 제시한 예비 HS 후보");
+    expect(candidates.find((candidate) => candidate.hskCode === "190190")?.reason).toContain("일반적인 제품 설명 기준");
     expect(candidates.every((candidate) => candidate.riskNotes.includes("품목분류 확정"))).toBe(true);
   });
 

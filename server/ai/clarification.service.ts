@@ -1,6 +1,7 @@
 import type { HsCandidateRecommendation } from "@/server/rules/hs-candidate.service";
 import type { NormalizedShipmentDocument } from "@/server/rules/document-extraction.service";
 import { getAiProvider, type AiClarificationResult } from "@/server/ai/provider";
+import { normalizeProductSearchInput } from "@/server/ai/product-search-normalization.service";
 import { redactSensitiveText, type RedactionResult } from "@/server/ai/redaction";
 
 export type ProductClarificationInput = {
@@ -39,6 +40,37 @@ function productInputText(input: ProductClarificationInput) {
 export async function analyzeProductClarification(input: ProductClarificationInput): Promise<ProductClarificationResult> {
   const allowedCandidateCodes = input.officialCandidates.map((candidate) => candidate.hskCode);
   const redacted = redactSensitiveText(productInputText(input));
+  if (!input.officialCandidates.length) {
+    const normalization = await normalizeProductSearchInput({
+      productName: input.productName,
+      productUsage: input.productUsage,
+      material: input.material,
+      composition: input.composition,
+      functions: input.functions,
+      modelName: input.modelName,
+      basisDate: input.basisDate
+    }).catch(() => null);
+
+    if (normalization?.classificationState === "needs_clarification" || normalization?.displayMode === "needs_more_info") {
+      return {
+        provider: normalization.provider,
+        model: normalization.model,
+        confidence: normalization.certainty === "medium" ? "medium" : "low",
+        summary: normalization.userMessage ?? "HS CODE 특정에 필요한 정보가 부족합니다. 아래 조건을 보완하면 세번 후보를 좁힐 수 있습니다.",
+        missingQuestions: normalization.missingQuestions.length
+          ? normalization.missingQuestions
+          : ["제품의 용도, 재질, 구성, 완제품/부분품 여부 확인이 필요합니다."],
+        suggestedCandidateCodes: [],
+        riskNotes: [
+          "입력 정보만으로 세번을 특정하지 않고, 분류에 필요한 조건을 먼저 확인합니다.",
+          "보완 정보가 입력되면 가장 유력한 HS 후보를 다시 조회합니다."
+        ],
+        redaction: redacted.redactionCounts,
+        allowedCandidateCodes
+      };
+    }
+  }
+
   const provider = getAiProvider();
   const result = await provider.clarify({
     task: "product_clarification",

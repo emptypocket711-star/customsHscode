@@ -271,13 +271,13 @@ function recommendAiHsCodeHintCandidates(
       confidenceScore: Math.max(0.54, 0.69 - index * 0.04),
       koreanName: aiHsCodeHintLabel(code),
       reason: hintReason
-        ? `${hintReason.reason} GPT가 제시한 예비 HS 후보이며, 하위 HSK 10자리와 실제 제품 사양 확인이 필요합니다.`
-        : "GPT가 제품명 문맥에서 제시한 예비 HS 후보입니다. 하위 HSK 10자리와 실제 제품 사양 확인이 필요합니다.",
+        ? `${hintReason.reason} 일반적인 제품 설명 기준의 검토 방향이며, 하위 HSK 10자리와 실제 제품 사양 확인이 필요합니다.`
+        : "일반적인 제품 설명 기준으로 검토 가능한 HS 방향입니다. 하위 HSK 10자리와 실제 제품 사양 확인이 필요합니다.",
       requiredQuestions,
       riskNotes: "AI 예비 후보이며 품목분류 확정이 아닙니다. 동일 HS4/HS6 내에서도 재질, 성분, 용도, 가공상태에 따라 하위 세번이 달라질 수 있습니다.",
       scoreBreakdown: [
-        "GPT HS4/HS6 후보 우선 표시",
-        ...(hintReason ? [`GPT 후보 근거: ${hintReason.reason}`] : [])
+        "AI 분류 인터뷰 결과",
+        ...(hintReason ? [`검토 근거: ${hintReason.reason}`] : [])
       ],
       lookupBasis: "ai_hs_hint",
       reviewStatus: "suggested" as const,

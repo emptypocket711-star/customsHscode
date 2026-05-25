@@ -25,8 +25,10 @@ export type AiProductSearchNormalizationPrompt = {
 export type AiProductSearchNormalizationResult = {
   provider: AiProviderName;
   model: string;
+  classificationState?: "needs_clarification" | "single_likely_candidate" | "ambiguous_multiple_meanings";
   certainty?: "low" | "medium" | "high";
   displayMode?: "single" | "multiple" | "needs_more_info";
+  userMessage?: string | null;
   correctedProductName: string | null;
   primaryCandidate?: {
     code: string;
@@ -140,8 +142,14 @@ export class MockAiProvider implements AiProvider {
     return {
       provider: this.name,
       model: this.model,
-      certainty: escLike ? "low" : "medium",
-      displayMode: escLike ? "multiple" : "single",
+      classificationState: escLike ? "ambiguous_multiple_meanings" : workVestLike ? "needs_clarification" : "single_likely_candidate",
+      certainty: escLike || workVestLike ? "low" : "medium",
+      displayMode: escLike ? "multiple" : workVestLike ? "needs_more_info" : "single",
+      userMessage: escLike
+        ? "입력어 ESC는 여러 제품 의미로 해석될 수 있어 먼저 제품 종류 확인이 필요합니다."
+        : workVestLike
+        ? "작업용 조끼는 재질, 직물 구조, 안전 기능에 따라 세번이 갈릴 수 있어 추가 정보가 필요합니다."
+        : "일반적인 제품 설명 기준으로 우선 검토 가능한 HS 방향을 정리했습니다.",
       correctedProductName: escLike ? "ESC abbreviation"
         : mushroomPowderLike ? "mushroom powder"
         : printerLike ? "black and white printer"
@@ -223,7 +231,7 @@ export class MockAiProvider implements AiProvider {
         ...(printerLike ? ["844332", "844331", "844339"] : []),
         ...(batteryLike ? ["850760"] : []),
         ...(electricFanLike ? ["841451", "841459"] : []),
-        ...(workVestLike ? ["621133", "621143", "611030", "6211"] : [])
+        ...(workVestLike ? [] : [])
       ],
       candidateHsCodeReasons: [
         ...(escLike ? [
@@ -350,7 +358,12 @@ function aiProductSearchNormalizationInstructions() {
     "The input may be Korean, Chinese, Japanese, English, or another language. Translate and interpret the product name before producing HS lookup hints.",
     "If the input appears to be a brand name, trade name, product line, model name, SKU, catalog number, or non-descriptive short name, use web evidence when available to identify the underlying product type before choosing HS candidates.",
     "When the input contains a brand or product line plus a generic product phrase, treat the brand as secondary and classify lookup intent by the generic product phrase, principal function, use, and composition.",
-    "First decide certainty and displayMode. Use displayMode=single only when one product interpretation and one HS4/HS6 boundary is clearly more likely than alternatives. Use displayMode=multiple for ambiguous acronyms, generic words, or competing product interpretations. Use displayMode=needs_more_info when useful candidates cannot be formed without more information.",
+    "Act as a classification interviewer first, not a candidate-list generator.",
+    "First decide classificationState, certainty, and displayMode.",
+    "Use classificationState=needs_clarification when the product family may be known but missing branch facts can change the HS heading/subheading. In that case, ask only the minimum questions needed and do not show multiple HS candidates unless a user-provided HS hint exists.",
+    "Use classificationState=single_likely_candidate when one product interpretation and one HS4/HS6 boundary is clearly more likely. In that case, provide one primaryCandidate and a concise userMessage.",
+    "Use classificationState=ambiguous_multiple_meanings only when the same input can mean materially different products, such as an acronym, generic word, or product code with competing meanings.",
+    "Use displayMode=single only when one product interpretation and one HS4/HS6 boundary is clearly more likely than alternatives. Use displayMode=multiple for truly ambiguous meanings. Use displayMode=needs_more_info when branch questions must come first.",
     "When certainty is high and displayMode is single, provide one primaryCandidate and keep candidateHsCodes focused on that primary code plus only essential conditional alternatives. Do not force 3 to 8 candidates in high-certainty cases.",
     "When certainty is medium or low, provide candidateHsCodes as 2 to 8 plausible HS heading/subheading/code prefixes. Order them by product-context likelihood. Prefer HS6 prefixes; use HS4 when only the heading is reasonably inferable. Use HS10 only when the input clearly names a narrow commodity.",
     "The primaryCandidate and first candidateHsCodes item must be the best code boundary for the identified finished article and principal function, not merely a related heading.",
@@ -360,7 +373,8 @@ function aiProductSearchNormalizationInstructions() {
     "candidateHsCodes are lookup hints only. They are not final classifications. Return useful HS4/HS6 candidates even when the exact national HS10 may need later official-data expansion.",
     "Do not require an exact official HS description match before returning candidateHsCodes. The app will show GPT HS4/HS6 candidates even when national HS10 expansion needs separate review.",
     "Give higher priority to the product phrase and surrounding context than to isolated ambiguous words. For example, cream alone can be dairy or cosmetic, but hand/moisture/skin cream should produce skin-care cosmetic lookup hints unless food/dairy terms are explicit.",
-    "If the input is ambiguous, set certainty=low, displayMode=multiple, return several competing HS4/HS6 lookup hints plus missing questions instead of a final conclusion.",
+    "If the input is ambiguous because it can mean different products, set classificationState=ambiguous_multiple_meanings, certainty=low, displayMode=multiple, return competing meanings plus missing questions.",
+    "If the input is incomplete because branch facts are missing, set classificationState=needs_clarification, certainty=low or medium, displayMode=needs_more_info, primaryCandidate=null, and ask branch questions before returning a code.",
     "When the input includes typos, model numbers, abbreviations, or short trade names, infer likely product families and provide broad lookup hints that can surface candidates from official HS data.",
     "If web search is available and the input appears to be a model number, SKU, catalog number, or product code, use web search to identify the underlying product type before producing search terms.",
     "If web search is unavailable, inconclusive, or blocked, still use general product knowledge and the visible words to infer provisional HS4/HS6 lookup hints instead of returning an empty candidate list.",
@@ -375,7 +389,7 @@ function aiProductSearchNormalizationInstructions() {
     "Do not include candidate code boundaries that contradict the identified product family unless the input explicitly says the product may be that different article.",
     "Avoid highly specialized chemical, radioactive, military, or industrial headings unless the input explicitly indicates that specialization.",
     "Write Korean business SaaS copy for missingQuestions.",
-    "JSON shape: {\"certainty\":\"high|medium|low\",\"displayMode\":\"single|multiple|needs_more_info\",\"correctedProductName\":\"string|null\",\"primaryCandidate\":{\"code\":\"string\",\"reason\":\"string\",\"requiredInfo\":[\"string\"]}|null,\"searchTerms\":[\"string\"],\"koreanTerms\":[\"string\"],\"englishTerms\":[\"string\"],\"productFamilies\":[\"string\"],\"candidateHsCodes\":[\"string\"],\"candidateHsCodeReasons\":[{\"code\":\"string\",\"reason\":\"string\",\"requiredInfo\":[\"string\"]}],\"webSources\":[{\"title\":\"string\",\"url\":\"string\"}],\"missingQuestions\":[\"string\"]}"
+    "JSON shape: {\"classificationState\":\"needs_clarification|single_likely_candidate|ambiguous_multiple_meanings\",\"certainty\":\"high|medium|low\",\"displayMode\":\"single|multiple|needs_more_info\",\"userMessage\":\"string|null\",\"correctedProductName\":\"string|null\",\"primaryCandidate\":{\"code\":\"string\",\"reason\":\"string\",\"requiredInfo\":[\"string\"]}|null,\"searchTerms\":[\"string\"],\"koreanTerms\":[\"string\"],\"englishTerms\":[\"string\"],\"productFamilies\":[\"string\"],\"candidateHsCodes\":[\"string\"],\"candidateHsCodeReasons\":[{\"code\":\"string\",\"reason\":\"string\",\"requiredInfo\":[\"string\"]}],\"webSources\":[{\"title\":\"string\",\"url\":\"string\"}],\"missingQuestions\":[\"string\"]}"
   ].join("\n");
 }
 
@@ -478,6 +492,11 @@ function parseAiProductSearchNormalizationJson(text: string, fallback: AiProduct
   try {
     const parsed = JSON.parse(text) as Partial<AiProductSearchNormalizationResult>;
     const rawParsed = parsed as Partial<AiProductSearchNormalizationResult> & { normalizedProductName?: unknown };
+    const classificationState = parsed.classificationState === "needs_clarification"
+      || parsed.classificationState === "single_likely_candidate"
+      || parsed.classificationState === "ambiguous_multiple_meanings"
+      ? parsed.classificationState
+      : fallback.classificationState;
     const certainty = parsed.certainty === "high" || parsed.certainty === "medium" || parsed.certainty === "low"
       ? parsed.certainty
       : fallback.certainty;
@@ -512,8 +531,12 @@ function parseAiProductSearchNormalizationJson(text: string, fallback: AiProduct
     return {
       provider: fallback.provider,
       model: fallback.model,
+      classificationState,
       certainty,
       displayMode,
+      userMessage: typeof parsed.userMessage === "string" && parsed.userMessage.trim()
+        ? parsed.userMessage.trim()
+        : fallback.userMessage ?? null,
       correctedProductName: typeof parsed.correctedProductName === "string" && parsed.correctedProductName.trim()
         ? parsed.correctedProductName.trim()
         : typeof rawParsed.normalizedProductName === "string" && rawParsed.normalizedProductName.trim()

@@ -604,7 +604,7 @@ function productCandidateCopySummaryText({
     ])
   ).slice(0, 8);
   const lines = [
-    `품명 "${productName}"만으로는 정확한 HS CODE를 특정하기 어렵습니다.`,
+    clarification?.summary ?? `품명 "${productName}"만으로는 정확한 HS CODE를 특정하기 어렵습니다.`,
     "아래 정보가 부족하여 제품 용도와 구성에 따라 다른 세번이 적용될 수 있습니다."
   ];
 
@@ -617,7 +617,10 @@ function productCandidateCopySummaryText({
   }
 
   lines.push("");
-  lines.push("예상 가능한 내역은 아래와 같습니다. 정확한 제품 설명, 사진, 카탈로그, 재질/구성, 용도, 모델명, 장착 대상 정보를 주시면 다시 확인하겠습니다.");
+  lines.push(candidates.length === 1
+    ? "일반적인 제품 설명 기준으로 우선 검토 가능한 내역은 아래와 같습니다. 정확한 제품 설명, 사진, 카탈로그, 재질/구성, 용도, 모델명, 장착 대상 정보를 주시면 다시 확인하겠습니다."
+    : "예상 가능한 내역은 아래와 같습니다. 정확한 제품 설명, 사진, 카탈로그, 재질/구성, 용도, 모델명, 장착 대상 정보를 주시면 다시 확인하겠습니다."
+  );
 
   candidates.forEach((candidate, index) => {
     const lookup = lookupByHsk.get(candidate.hskCode);
@@ -2341,9 +2344,9 @@ function ProductNoResultPanel({
     <section className="mt-4 overflow-hidden rounded-md border border-amber-200 bg-amber-50">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200 px-3 py-2">
         <div>
-          <h2 className="text-sm font-semibold text-amber-950">품명 검색 결과 없음</h2>
+          <h2 className="text-sm font-semibold text-amber-950">HS CODE 특정 정보 부족</h2>
           <p className="mt-1 text-xs leading-5 text-amber-900">
-            입력한 품명만으로는 표시 가능한 HS 후보를 만들기 어렵습니다. 제품코드, 약어, 짧은 품명은 실제 제품 정보 보완이 필요할 수 있습니다.
+            {clarification?.summary ?? "입력한 품명만으로는 표시 가능한 HS 후보를 만들기 어렵습니다. 제품코드, 약어, 짧은 품명은 실제 제품 정보 보완이 필요할 수 있습니다."}
           </p>
         </div>
         <HsCopySummaryButton text={productNoResultCopySummaryText({ productName, clarification })} />

@@ -5,7 +5,7 @@ import { redactSensitiveText } from "@/server/ai/redaction";
 import { cachedLookup, lookupCacheKey } from "@/server/cache/lookup-cache";
 import { logLookupTelemetry, productInputShape } from "@/server/observability/lookup-telemetry";
 
-const productSearchNormalizationVersion = "product-search-normalization-v11";
+const productSearchNormalizationVersion = "product-search-normalization-v12";
 
 function productInputText(input: ProductHsRecommendationInput) {
   const hsCodeHints = extractHsCodeHintsFromProductInput(input);
@@ -252,6 +252,10 @@ export function prioritizePrincipalArticleHsHints(input: {
 }
 
 function focusedDisplayHsHints(normalization: AiProductSearchNormalizationResult, candidateHsCodes: string[]) {
+  if (normalization.classificationState === "needs_clarification" || normalization.displayMode === "needs_more_info") {
+    return [];
+  }
+
   const primaryCode = normalization.primaryCandidate?.code.replace(/[^0-9]/g, "");
   if (
     normalization.certainty === "high"
@@ -315,7 +319,8 @@ export async function normalizeProductSearchInput(input: ProductHsRecommendation
         redactedInput: redacted.redactedText
       })
     });
-    const contextHints = productContextLookupHints(input, normalization);
+    const needsClarificationFirst = normalization.classificationState === "needs_clarification" || normalization.displayMode === "needs_more_info";
+    const contextHints = needsClarificationFirst ? [] : productContextLookupHints(input, normalization);
 
     const primaryCandidateReason = normalization.primaryCandidate
       ? [{
@@ -331,22 +336,26 @@ export async function normalizeProductSearchInput(input: ProductHsRecommendation
           requiredInfo: ["국내 HSK인지 해외 수입국 세번인지 확인", "품명·용도·재질과 해당 코드 설명의 일치 여부 확인"]
         })),
         ...primaryCandidateReason,
-        ...normalization.candidateHsCodeReasons,
-        ...acronymHints,
+        ...(needsClarificationFirst ? [] : normalization.candidateHsCodeReasons),
+        ...(needsClarificationFirst ? [] : acronymHints),
         ...contextHints
       ].filter((item, index, items) => items.findIndex((candidate) => candidate.code === item.code) === index).slice(0, 10);
-    const candidateHsCodes = focusedDisplayHsHints(normalization, prioritizePrincipalArticleHsHints({
+    const prioritizedHsCodes = prioritizePrincipalArticleHsHints({
       productInput: input,
       normalization,
       userProvidedHsCodes,
       candidateHsCodes: [
         ...userProvidedHsCodes,
-        ...normalization.candidateHsCodes,
-        ...acronymHints.map((hint) => hint.code),
+        ...(needsClarificationFirst ? [] : normalization.candidateHsCodes),
+        ...(needsClarificationFirst ? [] : acronymHints.map((hint) => hint.code)),
         ...contextHints.map((hint) => hint.code)
       ],
       candidateHsCodeReasons
-    })).slice(0, 10);
+    });
+    const candidateHsCodes = (needsClarificationFirst
+      ? userProvidedHsCodes
+      : focusedDisplayHsHints(normalization, prioritizedHsCodes)
+    ).slice(0, 10);
     const result = {
       ...normalization,
       candidateHsCodes,
