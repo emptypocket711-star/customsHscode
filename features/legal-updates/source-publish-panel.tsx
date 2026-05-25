@@ -53,6 +53,12 @@ const sourcePresets = [
     prefix: false
   },
   {
+    label: "수입요건 법령 상세 playbook",
+    targetTable: "requirement_playbooks",
+    sourceVersion: "requirement-playbook-",
+    prefix: true
+  },
+  {
     label: "관세청 통계부호 API019",
     targetTable: "customs_statistical_codes",
     sourceVersion: "myc-openapi-api019-v1.0",
@@ -132,6 +138,7 @@ export function SourcePublishPanel() {
                 <option value="export_destination_tariff_rates">export_destination_tariff_rates</option>
                 <option value="customs_confirmation_requirements">customs_confirmation_requirements</option>
                 <option value="integrated_public_notice_requirements">integrated_public_notice_requirements</option>
+                <option value="requirement_playbooks">requirement_playbooks</option>
                 <option value="customs_statistical_codes">customs_statistical_codes</option>
                 <option value="internal_tax_law_rules">internal_tax_law_rules</option>
                 <option value="export_destination_customs_codes">export_destination_customs_codes</option>
@@ -140,6 +147,8 @@ export function SourcePublishPanel() {
                 <option value="export_destination_additional_tariffs">export_destination_additional_tariffs</option>
                 <option value="export_destination_trade_remedy_cases">export_destination_trade_remedy_cases</option>
                 <option value="export_destination_data_sources">export_destination_data_sources</option>
+                <option value="origin_marking_targets">origin_marking_targets</option>
+                <option value="origin_marking_methods">origin_marking_methods</option>
               </select>
             </label>
           </div>

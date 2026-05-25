@@ -34,7 +34,27 @@ type ImportRequirementPreviewRecord = {
   agency: string | null;
   agency_contact?: RequirementAgencyContact | null;
   procedure_summary?: string | null;
+  playbook?: RequirementPlaybookRecord | null;
   source_name: string;
+  source_version: string;
+  effective_from: string;
+  effective_to: string | null;
+  status: string;
+};
+
+type RequirementPlaybookRecord = {
+  requirement_document_name: string;
+  related_law: string;
+  agency: string | null;
+  application_method: string | null;
+  required_documents: unknown;
+  expected_lead_time: string | null;
+  exemption_possibility: string | null;
+  common_rejection_reasons: unknown;
+  customer_request_template: string | null;
+  staff_checklist: unknown;
+  source_name: string;
+  source_url: string;
   source_version: string;
   effective_from: string;
   effective_to: string | null;
@@ -123,6 +143,18 @@ export type HsDirectLookupResult = {
     agency: string | null;
     agencyContact: RequirementAgencyContact | null;
     procedureSummary: string | null;
+    playbook: {
+      applicationMethod: string | null;
+      requiredDocuments: string[];
+      expectedLeadTime: string | null;
+      exemptionPossibility: string | null;
+      commonRejectionReasons: string[];
+      customerRequestTemplate: string | null;
+      staffChecklist: string[];
+      sourceName: string;
+      sourceUrl: string;
+      sourceVersion: string;
+    } | null;
     sourceName: string;
     sourceVersion: string;
   }>;
@@ -210,6 +242,10 @@ function uniqueTariffRates(tariffRates: TariffRatePreviewRecord[]) {
   );
 }
 
+function asStringList(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
 function originMarkingCandidatePatterns(hskCode: string) {
   const normalized = normalizeHskCode(hskCode);
   return Array.from(
@@ -274,6 +310,22 @@ function buildOriginMarkingInfo(
   };
 }
 
+function playbookKey(name: string, relatedLaw: string) {
+  return `${name.trim()}|${relatedLaw.trim()}`;
+}
+
+function attachRequirementPlaybooks(
+  requirements: ImportRequirementPreviewRecord[],
+  playbooks: RequirementPlaybookRecord[]
+) {
+  const playbookMap = new Map(playbooks.map((playbook) => [playbookKey(playbook.requirement_document_name, playbook.related_law), playbook]));
+
+  return requirements.map((requirement) => ({
+    ...requirement,
+    playbook: playbookMap.get(playbookKey(requirement.requirement_document_name, requirement.related_law)) ?? null
+  }));
+}
+
 function mapResult(
   record: HsMasterRecord,
   basisDate: string,
@@ -331,6 +383,20 @@ function mapResult(
       agency: item.agency,
       agencyContact: item.agency_contact ?? null,
       procedureSummary: item.procedure_summary ?? null,
+      playbook: "playbook" in item && item.playbook
+        ? {
+            applicationMethod: item.playbook.application_method,
+            requiredDocuments: asStringList(item.playbook.required_documents),
+            expectedLeadTime: item.playbook.expected_lead_time,
+            exemptionPossibility: item.playbook.exemption_possibility,
+            commonRejectionReasons: asStringList(item.playbook.common_rejection_reasons),
+            customerRequestTemplate: item.playbook.customer_request_template,
+            staffChecklist: asStringList(item.playbook.staff_checklist),
+            sourceName: item.playbook.source_name,
+            sourceUrl: item.playbook.source_url,
+            sourceVersion: item.playbook.source_version
+          }
+        : null,
       sourceName: item.source_name,
       sourceVersion: item.source_version
     })),
@@ -466,6 +532,33 @@ function attachRequirementAgencyContacts(
     ...requirement,
     agency_contact: (requirement.agency_code ? contacts.get(`code:${requirement.agency_code}`) : undefined) ?? (requirement.agency ? contacts.get(`name:${requirement.agency}`) : undefined) ?? null
   }));
+}
+
+async function findRequirementPlaybooks(
+  supabase: SupabaseClient,
+  requirements: ImportRequirementPreviewRecord[],
+  basisDate: string
+) {
+  const names = Array.from(new Set(requirements.map((item) => item.requirement_document_name).filter((value) => value.trim())));
+
+  if (!names.length) {
+    return [] as RequirementPlaybookRecord[];
+  }
+
+  const { data, error } = await supabase
+    .from("requirement_playbooks")
+    .select("requirement_document_name, related_law, agency, application_method, required_documents, expected_lead_time, exemption_possibility, common_rejection_reasons, customer_request_template, staff_checklist, source_name, source_url, source_version, effective_from, effective_to, status")
+    .in("requirement_document_name", names)
+    .lte("effective_from", basisDate)
+    .or(`effective_to.is.null,effective_to.gte.${basisDate}`)
+    .eq("status", "published")
+    .order("requirement_document_name");
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? []) as RequirementPlaybookRecord[];
 }
 
 async function findOriginMarkingRecords(supabase: SupabaseClient, hskCodes: string[], basisDate: string) {
@@ -656,7 +749,8 @@ async function lookupWithSupabase(
   }));
   const allRequirements = [...importRequirements, ...publicNoticeRequirements];
   const agencyContacts = await findRequirementAgencyContacts(supabase, allRequirements, basisDate);
-  const requirementsWithContacts = attachRequirementAgencyContacts(allRequirements, agencyContacts);
+  const requirementPlaybooks = await findRequirementPlaybooks(supabase, allRequirements, basisDate);
+  const requirementsWithContacts = attachRequirementPlaybooks(attachRequirementAgencyContacts(allRequirements, agencyContacts), requirementPlaybooks);
   const originMarkingRecords = await findOriginMarkingRecords(supabase, codes, basisDate);
 
   return records.map((record) =>

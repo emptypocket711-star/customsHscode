@@ -48,7 +48,7 @@ export type SourceVersionInventoryGroupSummary = {
 
 const sourceInventoryGroups: Array<{ key: SourceVersionInventoryGroupSummary["groupKey"]; label: string; tables: string[] }> = [
   { key: "domestic", label: "국내 HS/관세", tables: ["hs_master", "standard_product_names", "customs_hs_code_search_items", "tariff_rates"] },
-  { key: "requirements", label: "수입요건", tables: ["customs_confirmation_requirements", "integrated_public_notice_requirements", "export_destination_import_requirements"] },
+  { key: "requirements", label: "수입요건", tables: ["customs_confirmation_requirements", "integrated_public_notice_requirements", "requirement_playbooks", "export_destination_import_requirements"] },
   { key: "originMarking", label: "원산지표시", tables: ["origin_marking_targets", "origin_marking_methods"] },
   { key: "internalTax", label: "내국세", tables: ["customs_statistical_codes", "internal_tax_law_rules", "export_destination_internal_taxes"] },
   { key: "destination", label: "상대국 관세", tables: ["export_destination_tariff_rates", "export_destination_customs_codes", "export_destination_additional_tariffs", "export_destination_trade_remedy_cases"] },

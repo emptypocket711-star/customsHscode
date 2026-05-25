@@ -218,6 +218,18 @@ type ImportRequirementDisplayItem = {
     note: string | null;
   } | null;
   procedureSummary: string | null;
+  playbook: {
+    applicationMethod: string | null;
+    requiredDocuments: string[];
+    expectedLeadTime: string | null;
+    exemptionPossibility: string | null;
+    commonRejectionReasons: string[];
+    customerRequestTemplate: string | null;
+    staffChecklist: string[];
+    sourceName: string;
+    sourceUrl: string;
+    sourceVersion: string;
+  } | null;
 };
 
 type GroupedImportRequirement = {
@@ -225,6 +237,7 @@ type GroupedImportRequirement = {
   name: string;
   relatedLaw: string;
   procedureSummary: string | null;
+  playbook: ImportRequirementDisplayItem["playbook"];
   agencies: Array<{
     code: string | null;
     name: string;
@@ -262,6 +275,7 @@ function groupedImportRequirements(requirements: ImportRequirementDisplayItem[])
         name: requirement.name,
         relatedLaw: requirement.relatedLaw,
         procedureSummary: requirement.procedureSummary,
+        playbook: requirement.playbook,
         agencies: [] as GroupedImportRequirement["agencies"]
       };
 
@@ -3035,6 +3049,7 @@ export async function HsDirectLookupPanel({
                                   <ImportRequirementDetailDialog
                                     agencies={item.agencies}
                                     name={item.name}
+                                    playbook={item.playbook}
                                     procedureSummary={item.procedureSummary}
                                     relatedLaw={item.relatedLaw}
                                     type={item.type}

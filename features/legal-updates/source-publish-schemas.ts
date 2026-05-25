@@ -7,6 +7,7 @@ export const publishTargetTableSchema = z.enum([
   "export_destination_tariff_rates",
   "customs_confirmation_requirements",
   "integrated_public_notice_requirements",
+  "requirement_playbooks",
   "customs_statistical_codes",
   "internal_tax_law_rules",
   "export_destination_import_requirements",

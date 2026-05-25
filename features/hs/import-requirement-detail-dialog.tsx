@@ -18,6 +18,18 @@ type ImportRequirementDetailDialogProps = {
     } | null;
   }>;
   procedureSummary: string | null;
+  playbook: {
+    applicationMethod: string | null;
+    requiredDocuments: string[];
+    expectedLeadTime: string | null;
+    exemptionPossibility: string | null;
+    commonRejectionReasons: string[];
+    customerRequestTemplate: string | null;
+    staffChecklist: string[];
+    sourceName: string;
+    sourceUrl: string;
+    sourceVersion: string;
+  } | null;
 };
 
 function displayValue(value?: string | null) {
@@ -42,7 +54,19 @@ function AgencyDisplay({ agency }: { agency: ImportRequirementDetailDialogProps[
   return <span className="font-semibold text-slate-900">{agencyDisplayText(agency)}</span>;
 }
 
-export function ImportRequirementDetailDialog({ type, name, relatedLaw, agencies, procedureSummary }: ImportRequirementDetailDialogProps) {
+function DetailList({ items }: { items: string[] }) {
+  if (!items.length) return <span className="text-slate-500">-</span>;
+
+  return (
+    <ul className="list-disc space-y-1 pl-5">
+      {items.map((item) => (
+        <li key={item}>{item}</li>
+      ))}
+    </ul>
+  );
+}
+
+export function ImportRequirementDetailDialog({ type, name, relatedLaw, agencies, procedureSummary, playbook }: ImportRequirementDetailDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   return (
@@ -54,7 +78,7 @@ export function ImportRequirementDetailDialog({ type, name, relatedLaw, agencies
       >
         {name}
       </button>
-      <dialog className="w-[min(720px,calc(100vw-32px))] rounded-lg border border-slate-200 p-0 shadow-2xl backdrop:bg-slate-950/45" ref={dialogRef}>
+      <dialog className="w-[min(920px,calc(100vw-32px))] rounded-lg border border-slate-200 p-0 shadow-2xl backdrop:bg-slate-950/45" ref={dialogRef}>
         <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
           <h2 className="text-sm font-semibold text-slate-950">{name}</h2>
           <button
@@ -66,7 +90,8 @@ export function ImportRequirementDetailDialog({ type, name, relatedLaw, agencies
             <X aria-hidden="true" size={18} />
           </button>
         </div>
-        <div className="grid gap-4 p-4 text-sm">
+        <div className="max-h-[78vh] overflow-auto p-4 text-sm">
+          <div className="grid gap-4">
           <dl className="grid grid-cols-[120px_1fr] overflow-hidden rounded-md border border-slate-200">
             <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">구분</dt>
             <dd className="border-b border-slate-200 px-3 py-2">{type}</dd>
@@ -101,6 +126,39 @@ export function ImportRequirementDetailDialog({ type, name, relatedLaw, agencies
               )}
             </dd>
           </dl>
+
+          {playbook ? (
+            <section className="overflow-hidden rounded-md border border-slate-200">
+              <div className="border-b border-slate-200 bg-blue-700 px-3 py-2 text-sm font-semibold text-white">법령 상세</div>
+              <dl className="grid grid-cols-[140px_1fr] text-sm">
+                <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">적용 내용</dt>
+                <dd className="border-b border-slate-200 px-3 py-2 leading-6">{displayValue(playbook.applicationMethod)}</dd>
+                <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">필요 서류</dt>
+                <dd className="border-b border-slate-200 px-3 py-2 leading-6"><DetailList items={playbook.requiredDocuments} /></dd>
+                <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">처리/검사</dt>
+                <dd className="border-b border-slate-200 px-3 py-2 leading-6">{displayValue(playbook.expectedLeadTime)}</dd>
+                <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">대상 제외 가능성</dt>
+                <dd className="border-b border-slate-200 px-3 py-2 leading-6">{displayValue(playbook.exemptionPossibility)}</dd>
+                <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">주요 보완 사유</dt>
+                <dd className="border-b border-slate-200 px-3 py-2 leading-6"><DetailList items={playbook.commonRejectionReasons} /></dd>
+                <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">요청 문구</dt>
+                <dd className="border-b border-slate-200 px-3 py-2 leading-6">{displayValue(playbook.customerRequestTemplate)}</dd>
+                <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">확인 항목</dt>
+                <dd className="border-b border-slate-200 px-3 py-2 leading-6"><DetailList items={playbook.staffChecklist} /></dd>
+                <dt className="bg-slate-50 px-3 py-2 font-semibold text-slate-600">근거</dt>
+                <dd className="px-3 py-2 leading-6">
+                  <a className="font-medium text-blue-700 underline-offset-2 hover:underline" href={playbook.sourceUrl} rel="noreferrer" target="_blank">
+                    {playbook.sourceName}
+                  </a>
+                </dd>
+              </dl>
+            </section>
+          ) : (
+            <div className="rounded-md border border-amber-200 bg-amber-50 p-3 leading-6 text-amber-900">
+              현행 법령 상세 playbook이 아직 연결되지 않은 요건입니다. 관련법령과 관할기관 기준으로 세부 대상, 예외, 제출서류를 확인해야 합니다.
+            </div>
+          )}
+          </div>
         </div>
       </dialog>
     </>
