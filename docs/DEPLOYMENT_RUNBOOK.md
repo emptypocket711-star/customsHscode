@@ -22,6 +22,8 @@ select public.refresh_dashboard_metrics(current_date);
 DATABASE_URL='postgresql://postgres:...@...:5432/postgres' npm run db:refresh-dashboard-metrics
 ```
 
+운영 화면에서는 개발자 계정으로 `/legal-updates`에 접속해 `운영 집계 갱신` 버튼을 누르면 `refresh_dashboard_metrics`와 목적국 커버리지 materialized view를 함께 갱신한다.
+
 ## 2. Vercel 환경변수
 
 필수:

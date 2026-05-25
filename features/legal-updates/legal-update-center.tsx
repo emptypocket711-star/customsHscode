@@ -4,7 +4,9 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { SourceFooter } from "@/components/ui/source-footer";
 import { DestinationCoverageTable } from "@/features/dashboard/destination-coverage-table";
 import { CustomsApiConnectorPanel } from "@/features/legal-updates/customs-api-connector-panel";
+import { OperationsRefreshPanel } from "@/features/legal-updates/operations-refresh-panel";
 import { SourcePublishPanel } from "@/features/legal-updates/source-publish-panel";
+import { getSeoulDateString } from "@/lib/utils";
 import { loadDestinationCoverage } from "@/server/rules/dashboard-metrics.service";
 import { getLegalUpdateDashboard } from "@/server/rules/legal-update.service";
 import { getSourceVersionInventory, type SourceVersionInventoryDiagnosticSeverity } from "@/server/rules/source-inventory.service";
@@ -81,6 +83,7 @@ const updateRunbook = [
 
 export async function LegalUpdateCenter() {
   const dashboard = getLegalUpdateDashboard();
+  const basisDate = getSeoulDateString();
   const [inventory, destinationCoverageRows] = await Promise.all([
     getSourceVersionInventory(),
     loadDestinationCoverage()
@@ -89,6 +92,7 @@ export async function LegalUpdateCenter() {
   return (
     <div className="grid gap-5">
       <CustomsApiConnectorPanel />
+      <OperationsRefreshPanel basisDate={basisDate} />
       <SourcePublishPanel />
 
       <Card>
