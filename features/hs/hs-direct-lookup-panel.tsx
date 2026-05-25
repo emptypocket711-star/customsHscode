@@ -245,10 +245,6 @@ type GroupedImportRequirement = {
   }>;
 };
 
-function agencyDisplayText(agency: GroupedImportRequirement["agencies"][number]) {
-  return agency.contact?.websiteUrl?.trim() || agency.name;
-}
-
 function AgencyCell({ agencies }: { agencies: GroupedImportRequirement["agencies"] }) {
   if (!agencies.length) return "-";
   if (agencies.length > 1) return `${agencies.length}개 기관`;
@@ -295,6 +291,50 @@ function groupedImportRequirements(requirements: ImportRequirementDisplayItem[])
     ...group,
     agencies: group.agencies.sort((a, b) => a.name.localeCompare(b.name, "ko"))
   }));
+}
+
+function requirementRequestHints(requirements: GroupedImportRequirement[], limit = 5) {
+  const hints = new Set<string>();
+
+  for (const requirement of requirements) {
+    for (const document of requirement.playbook?.requiredDocuments ?? []) {
+      const normalized = document.replace(/^필요 시\s*/, "").trim();
+      if (normalized) hints.add(normalized);
+      if (hints.size >= limit) return Array.from(hints);
+    }
+
+    for (const checkItem of requirement.playbook?.staffChecklist ?? []) {
+      const normalized = checkItem.replace(/ 여부$/, "").replace(/ 확인$/, "").trim();
+      if (normalized) hints.add(normalized);
+      if (hints.size >= limit) return Array.from(hints);
+    }
+  }
+
+  return Array.from(hints);
+}
+
+function appendRequirementCopyLines(lines: string[], requirements: GroupedImportRequirement[]) {
+  lines.push("수입요건");
+
+  if (requirements.length) {
+    for (const requirement of requirements) {
+      lines.push(`- ${requirement.name} (${requirement.relatedLaw})`);
+    }
+
+    const requestHints = requirementRequestHints(requirements);
+    if (requestHints.length) {
+      lines.push("");
+      lines.push("확인 요청자료");
+      for (const hint of requestHints) {
+        lines.push(`- ${hint}`);
+      }
+    }
+
+    lines.push("수입요건 해당 여부와 제출서류는 제품 상세자료 확인 후 검토가 필요합니다.");
+  } else {
+    lines.push("세관장확인대상 수입요건은 조회되지 않았습니다.");
+    lines.push("다만 통합공고, 개별법령, 표시·인증·유통규제 의무가 존재할 수 있으므로 제품 상세자료 기준 확인이 필요합니다.");
+  }
 }
 
 function isBasicTariffLabel(label: string) {
@@ -406,15 +446,7 @@ function hsCopySummaryText({
     lines.push("부가세 : 10%");
   }
 
-  lines.push("수입요건");
-  if (groupedRequirements.length) {
-    for (const requirement of groupedRequirements) {
-      const agencies = requirement.agencies.map((agency) => agencyDisplayText(agency)).join(", ");
-      lines.push(`- ${requirement.relatedLaw} / ${requirement.name}${agencies ? ` / ${agencies}` : ""}`);
-    }
-  } else {
-    lines.push("수입 요건은 없습니다");
-  }
+  appendRequirementCopyLines(lines, groupedRequirements);
 
   return lines.join("\n");
 }
@@ -533,15 +565,7 @@ function productCandidateCopySummaryText({
       lines.push("부가세 : 10%");
     }
 
-    lines.push("수입요건");
-    if (requirements.length) {
-      for (const requirement of requirements) {
-        const agencies = requirement.agencies.map((agency) => agencyDisplayText(agency)).join(", ");
-        lines.push(`- ${requirement.relatedLaw} / ${requirement.name}${agencies ? ` / ${agencies}` : ""}`);
-      }
-    } else {
-      lines.push("수입 요건은 없습니다");
-    }
+    appendRequirementCopyLines(lines, requirements);
   });
 
   return lines.join("\n");
