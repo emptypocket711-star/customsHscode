@@ -41,6 +41,33 @@ type ImportRequirementPreviewRecord = {
   status: string;
 };
 
+type OriginMarkingTargetRecord = {
+  hsk_pattern: string;
+  pattern_type: string;
+  condition_text: string | null;
+  is_target: boolean;
+  source_name: string;
+  source_url: string;
+  source_version: string;
+  effective_from: string;
+  effective_to: string | null;
+  status: string;
+};
+
+type OriginMarkingMethodRecord = {
+  hsk_pattern: string;
+  pattern_type: string;
+  item_name: string;
+  method_summary: string;
+  note: string | null;
+  source_name: string;
+  source_url: string;
+  source_version: string;
+  effective_from: string;
+  effective_to: string | null;
+  status: string;
+};
+
 type RequirementAgencyContact = {
   agencyCode: string | null;
   agencyName: string;
@@ -99,6 +126,24 @@ export type HsDirectLookupResult = {
     sourceName: string;
     sourceVersion: string;
   }>;
+  originMarking: {
+    isTarget: boolean;
+    matchedPattern: string;
+    patternType: string;
+    conditionText: string | null;
+    targetSourceName: string;
+    targetSourceUrl: string;
+    targetSourceVersion: string;
+    method: {
+      matchedPattern: string;
+      itemName: string;
+      methodSummary: string;
+      note: string | null;
+      sourceName: string;
+      sourceUrl: string;
+      sourceVersion: string;
+    } | null;
+  } | null;
   classificationCases: Array<{
     title: string;
     itemName: string;
@@ -165,6 +210,70 @@ function uniqueTariffRates(tariffRates: TariffRatePreviewRecord[]) {
   );
 }
 
+function originMarkingCandidatePatterns(hskCode: string) {
+  const normalized = normalizeHskCode(hskCode);
+  return Array.from(
+    new Set(
+      [
+        normalized.length >= 10 ? normalized.slice(0, 10) : null,
+        normalized.length >= 6 ? normalized.slice(0, 6) : null,
+        normalized.length >= 4 ? normalized.slice(0, 4) : null,
+        normalized.length >= 2 ? normalized.slice(0, 2) : null
+      ].filter((value): value is string => Boolean(value))
+    )
+  );
+}
+
+function originMarkingSpecificity(pattern: string) {
+  return pattern.length;
+}
+
+function selectBestOriginMarkingTarget(records: OriginMarkingTargetRecord[], hskCode: string) {
+  const candidates = new Set(originMarkingCandidatePatterns(hskCode));
+  return records
+    .filter((record) => candidates.has(record.hsk_pattern) && record.is_target)
+    .toSorted((a, b) => originMarkingSpecificity(b.hsk_pattern) - originMarkingSpecificity(a.hsk_pattern))[0] ?? null;
+}
+
+function selectBestOriginMarkingMethod(records: OriginMarkingMethodRecord[], hskCode: string) {
+  const candidates = new Set(originMarkingCandidatePatterns(hskCode));
+  return records
+    .filter((record) => candidates.has(record.hsk_pattern))
+    .toSorted((a, b) => originMarkingSpecificity(b.hsk_pattern) - originMarkingSpecificity(a.hsk_pattern))[0] ?? null;
+}
+
+function buildOriginMarkingInfo(
+  hskCode: string,
+  targets: OriginMarkingTargetRecord[],
+  methods: OriginMarkingMethodRecord[]
+): HsDirectLookupResult["originMarking"] {
+  const target = selectBestOriginMarkingTarget(targets, hskCode);
+  if (!target) return null;
+
+  const method = selectBestOriginMarkingMethod(methods, hskCode);
+
+  return {
+    isTarget: target.is_target,
+    matchedPattern: target.hsk_pattern,
+    patternType: target.pattern_type,
+    conditionText: target.condition_text,
+    targetSourceName: target.source_name,
+    targetSourceUrl: target.source_url,
+    targetSourceVersion: target.source_version,
+    method: method
+      ? {
+          matchedPattern: method.hsk_pattern,
+          itemName: method.item_name,
+          methodSummary: method.method_summary,
+          note: method.note,
+          sourceName: method.source_name,
+          sourceUrl: method.source_url,
+          sourceVersion: method.source_version
+        }
+      : null
+  };
+}
+
 function mapResult(
   record: HsMasterRecord,
   basisDate: string,
@@ -173,7 +282,8 @@ function mapResult(
   tariffRates: TariffRatePreviewRecord[],
   importRequirements: ImportRequirementPreviewRecord[],
   classificationCases: HsClassificationCaseRecord[],
-  hierarchyLabels: Record<string, string | null | undefined> = {}
+  hierarchyLabels: Record<string, string | null | undefined> = {},
+  originMarking: HsDirectLookupResult["originMarking"] = null
 ): HsDirectLookupResult {
   return {
     hskCode: record.hsk_code,
@@ -224,6 +334,7 @@ function mapResult(
       sourceName: item.source_name,
       sourceVersion: item.source_version
     })),
+    originMarking,
     classificationCases: classificationCases.map((item) => ({
       title: item.title,
       itemName: item.item_name,
@@ -355,6 +466,48 @@ function attachRequirementAgencyContacts(
     ...requirement,
     agency_contact: (requirement.agency_code ? contacts.get(`code:${requirement.agency_code}`) : undefined) ?? (requirement.agency ? contacts.get(`name:${requirement.agency}`) : undefined) ?? null
   }));
+}
+
+async function findOriginMarkingRecords(supabase: SupabaseClient, hskCodes: string[], basisDate: string) {
+  const patterns = Array.from(new Set(hskCodes.flatMap(originMarkingCandidatePatterns)));
+
+  if (!patterns.length) {
+    return {
+      targets: [] as OriginMarkingTargetRecord[],
+      methods: [] as OriginMarkingMethodRecord[]
+    };
+  }
+
+  const { data: targetRows, error: targetError } = await supabase
+    .from("origin_marking_targets")
+    .select("hsk_pattern, pattern_type, condition_text, is_target, source_name, source_url, source_version, effective_from, effective_to, status")
+    .in("hsk_pattern", patterns)
+    .lte("effective_from", basisDate)
+    .or(`effective_to.is.null,effective_to.gte.${basisDate}`)
+    .eq("status", "published")
+    .order("hsk_pattern");
+
+  if (targetError) {
+    throw new Error(targetError.message);
+  }
+
+  const { data: methodRows, error: methodError } = await supabase
+    .from("origin_marking_methods")
+    .select("hsk_pattern, pattern_type, item_name, method_summary, note, source_name, source_url, source_version, effective_from, effective_to, status")
+    .in("hsk_pattern", patterns)
+    .lte("effective_from", basisDate)
+    .or(`effective_to.is.null,effective_to.gte.${basisDate}`)
+    .eq("status", "published")
+    .order("hsk_pattern");
+
+  if (methodError) {
+    throw new Error(methodError.message);
+  }
+
+  return {
+    targets: (targetRows ?? []) as OriginMarkingTargetRecord[],
+    methods: (methodRows ?? []) as OriginMarkingMethodRecord[]
+  };
 }
 
 async function lookupWithSupabase(
@@ -504,6 +657,7 @@ async function lookupWithSupabase(
   const allRequirements = [...importRequirements, ...publicNoticeRequirements];
   const agencyContacts = await findRequirementAgencyContacts(supabase, allRequirements, basisDate);
   const requirementsWithContacts = attachRequirementAgencyContacts(allRequirements, agencyContacts);
+  const originMarkingRecords = await findOriginMarkingRecords(supabase, codes, basisDate);
 
   return records.map((record) =>
     mapResult(
@@ -514,7 +668,8 @@ async function lookupWithSupabase(
       tariffRates.filter((item) => item.hsk_code === record.hsk_code),
       requirementsWithContacts.filter((item) => item.hsk_code === record.hsk_code),
       [],
-      hierarchyLabels
+      hierarchyLabels,
+      buildOriginMarkingInfo(record.hsk_code, originMarkingRecords.targets, originMarkingRecords.methods)
     )
   );
 }
@@ -566,7 +721,8 @@ function lookupWithMockData(hskCode: string, basisDate: string): HsDirectLookupR
             status: item.status
           })),
         mockHsClassificationCases.filter((item) => item.hsk_code === record.hsk_code),
-        {}
+        {},
+        null
       )
     );
 }
@@ -583,5 +739,9 @@ export async function lookupHsDirect(hskCode: string, basisDate: string) {
 export const hsMasterRepositoryInternals = {
   normalizeHskCode,
   matchesRequestedCode,
+  originMarkingCandidatePatterns,
+  selectBestOriginMarkingTarget,
+  selectBestOriginMarkingMethod,
+  buildOriginMarkingInfo,
   lookupWithMockData
 };

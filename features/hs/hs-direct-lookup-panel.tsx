@@ -17,6 +17,7 @@ import { DestinationImportRequirementDialog } from "@/features/hs/destination-im
 import { DestinationInternalTaxDialog, destinationInternalTaxText } from "@/features/hs/destination-internal-tax-dialog";
 import { DestinationTradeRemedyDialog } from "@/features/hs/destination-trade-remedy-dialog";
 import { ImportRequirementDetailDialog } from "@/features/hs/import-requirement-detail-dialog";
+import { OriginMarkingLinks } from "@/features/hs/origin-marking-dialogs";
 import { hsDirectLookupSchema } from "@/features/hs/schemas";
 import {
   buildHsSupplementGuidance,
@@ -2927,6 +2928,10 @@ export async function HsDirectLookupPanel({
                       <dd className="border-b border-slate-200 px-3 py-2">{displayValue(result.englishName)}</dd>
                       <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">단위</dt>
                       <dd className="border-b border-slate-200 px-3 py-2">수량 {displayValue(result.quantityUnit)} / 중량 {displayValue(result.weightUnit)}</dd>
+                      <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">원산지</dt>
+                      <dd className="border-b border-slate-200 px-3 py-2">
+                        <OriginMarkingLinks hskCode={result.hskCode} itemName={result.koreanName} originMarking={result.originMarking} />
+                      </dd>
                       <dt className="bg-slate-50 px-3 py-2 font-semibold text-slate-600">기준일</dt>
                       <dd className="px-3 py-2">조회기준일 {result.basisDate}</dd>
                     </dl>

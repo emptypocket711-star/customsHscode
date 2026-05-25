@@ -73,6 +73,24 @@ export const mockSourceVersionInventory: SourceVersionInventoryItem[] = [
     latestPublishedAt: null
   },
   {
+    targetTable: "origin_marking_targets",
+    sourceName: "대외무역관리규정 별표 8 원산지표시대상물품",
+    sourceVersion: "origin-marking-targets-law-20260525",
+    status: "published",
+    rowCount: 687,
+    latestRetrievedAt: "2026-05-25T00:00:00+09:00",
+    latestPublishedAt: "2026-05-25T00:00:00+09:00"
+  },
+  {
+    targetTable: "origin_marking_methods",
+    sourceName: "원산지제도 운영에 관한 고시 별표 3",
+    sourceVersion: "origin-marking-methods-law-20260525",
+    status: "published",
+    rowCount: 907,
+    latestRetrievedAt: "2026-05-25T00:00:00+09:00",
+    latestPublishedAt: "2026-05-25T00:00:00+09:00"
+  },
+  {
     targetTable: "internal_tax_law_rules",
     sourceName: "내국세 법령 테스트 룰",
     sourceVersion: "internal-tax-law-test-rules-20260524",

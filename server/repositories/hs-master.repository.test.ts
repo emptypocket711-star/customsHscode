@@ -50,4 +50,54 @@ describe("hs master repository mock lookup", () => {
     expect(results[0]?.classificationCases).toHaveLength(2);
     expect(results[0]?.hierarchyPath[0]?.label).toContain("화장품");
   });
+
+  it("matches origin marking rules by the most specific available HS prefix", () => {
+    const originMarking = hsMasterRepositoryInternals.buildOriginMarkingInfo(
+      "3923500000",
+      [
+        {
+          hsk_pattern: "39",
+          pattern_type: "hs2",
+          condition_text: null,
+          is_target: true,
+          source_name: "source",
+          source_url: "https://example.com/target",
+          source_version: "target-v1",
+          effective_from: "2026-01-01",
+          effective_to: null,
+          status: "published"
+        },
+        {
+          hsk_pattern: "3923",
+          pattern_type: "hs4",
+          condition_text: null,
+          is_target: true,
+          source_name: "source",
+          source_url: "https://example.com/target",
+          source_version: "target-v1",
+          effective_from: "2026-01-01",
+          effective_to: null,
+          status: "published"
+        }
+      ],
+      [
+        {
+          hsk_pattern: "3923",
+          pattern_type: "hs4",
+          item_name: "플라스틱제 포장용기",
+          method_summary: "현품에 원산지표시",
+          note: null,
+          source_name: "method",
+          source_url: "https://example.com/method",
+          source_version: "method-v1",
+          effective_from: "2026-01-01",
+          effective_to: null,
+          status: "published"
+        }
+      ]
+    );
+
+    expect(originMarking?.matchedPattern).toBe("3923");
+    expect(originMarking?.method?.methodSummary).toBe("현품에 원산지표시");
+  });
 });

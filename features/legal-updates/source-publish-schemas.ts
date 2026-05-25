@@ -14,7 +14,9 @@ export const publishTargetTableSchema = z.enum([
   "export_destination_customs_codes",
   "export_destination_additional_tariffs",
   "export_destination_trade_remedy_cases",
-  "export_destination_data_sources"
+  "export_destination_data_sources",
+  "origin_marking_targets",
+  "origin_marking_methods"
 ]);
 
 export const publishSourceVersionSchema = z.object({
