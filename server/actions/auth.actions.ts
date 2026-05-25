@@ -115,7 +115,8 @@ export async function authenticateAction(
     fullName: stringValue(formData, "fullName"),
     companyName: stringValue(formData, "companyName"),
     businessNo: stringValue(formData, "businessNo"),
-    businessTypes: arrayValue(formData, "businessTypes")
+    businessTypes: arrayValue(formData, "businessTypes"),
+    termsAccepted: mode === "signup" ? booleanValue(formData, "termsAccepted") : undefined
   });
 
   if (!parsed.success) {

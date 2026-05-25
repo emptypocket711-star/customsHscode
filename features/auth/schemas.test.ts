@@ -30,6 +30,7 @@ describe("authFormSchema", () => {
       accountType: "company",
       fullName: "구본현",
       businessNo: "123-45-67890",
+      termsAccepted: true,
       businessTypes: ["importer"]
     });
 
@@ -46,6 +47,7 @@ describe("authFormSchema", () => {
       fullName: "구본현",
       companyName: "테스트상사",
       businessNo: "123-45-67890",
+      termsAccepted: true,
       businessTypes: ["importer"]
     });
 
@@ -62,6 +64,7 @@ describe("authFormSchema", () => {
       fullName: "구본현",
       companyName: "테스트상사",
       businessNo: "123-45-67890",
+      termsAccepted: true,
       businessTypes: []
     });
 
@@ -87,6 +90,7 @@ describe("authFormSchema", () => {
       fullName: "구본현",
       companyName: "테스트상사",
       businessNo: "123-45-67890",
+      termsAccepted: true,
       businessTypes: ["importer"]
     });
 
@@ -102,6 +106,7 @@ describe("authFormSchema", () => {
       accountType: "company",
       fullName: "구본현",
       companyName: "테스트상사",
+      termsAccepted: true,
       businessTypes: ["importer"]
     });
 
@@ -115,9 +120,23 @@ describe("authFormSchema", () => {
       password: "Password123!",
       passwordConfirm: "Password123!",
       accountType: "personal",
-      fullName: "개인사용자"
+      fullName: "개인사용자",
+      termsAccepted: true
     });
 
     expect(parsed.success).toBe(true);
+  });
+
+  it("requires terms agreement for signup", () => {
+    const parsed = authFormSchema.safeParse({
+      mode: "signup",
+      email: "user@example.com",
+      password: "Password123!",
+      passwordConfirm: "Password123!",
+      accountType: "personal",
+      fullName: "개인사용자"
+    });
+
+    expect(parsed.success).toBe(false);
   });
 });

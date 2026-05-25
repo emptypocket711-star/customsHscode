@@ -43,6 +43,7 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
   const [companyName, setCompanyName] = useState("");
   const [businessNo, setBusinessNo] = useState("");
   const [selectedBusinessTypes, setSelectedBusinessTypes] = useState<string[]>([]);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const lastCooldownMessageRef = useRef<string | undefined>(undefined);
   const emailCheckRequestRef = useRef(0);
@@ -123,6 +124,7 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
     isSignupPasswordStrong &&
     isSignupPasswordConfirmValid &&
     signupFullName.trim().length > 0 &&
+    termsAccepted &&
     (!isCompanySignup || (companyName.trim().length > 0 && isBusinessNoValid && selectedBusinessTypes.length > 0)) &&
     !authPending;
 
@@ -150,6 +152,7 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
 
       {isSignup ? (
         <div className="mt-7 grid gap-5">
+          <SignupSteps accountType={accountType} emailVerified={verifiedSignupEmail} />
           <AccountTypeSelector disabled={pending} value={accountType} onChange={setAccountType} />
 
           {accountType ? (
@@ -173,7 +176,14 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
                 {emailCheckPending ? (
                   <p className="rounded-lg border border-slate-200 bg-white p-3 text-sm font-medium text-slate-600">이메일 중복 여부를 확인하고 있습니다.</p>
                 ) : emailAvailability.message && emailAvailability.email?.toLowerCase() === normalizedSignupEmail ? (
-                  <StatusMessage state={emailAvailability} />
+                  <div className="grid gap-2">
+                    <StatusMessage state={emailAvailability} />
+                    {isSignupEmailBlocked ? (
+                      <Link className="focus-ring inline-flex h-10 items-center justify-center rounded-lg bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-800" href="/login?mode=login">
+                        로그인하러 가기
+                      </Link>
+                    ) : null}
+                  </div>
                 ) : null}
                 <button
                   className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-800 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
@@ -221,87 +231,91 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
                 </form>
               ) : null}
 
-              <form action={authAction} className="grid gap-5">
-              <input name="mode" type="hidden" value="signup" />
-              <input name="email" type="hidden" value={activeEmail} />
-              <input name="accountType" type="hidden" value={accountType} />
-              {!verifiedSignupEmail ? (
-                <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-medium text-amber-900">
-                  이메일 인증을 완료하면 아래 가입 정보를 입력할 수 있습니다.
-                </p>
-              ) : null}
-              <AuthInput
-                autoComplete="new-password"
-                disabled={authPending || !verifiedSignupEmail}
-                icon={Lock}
-                label="비밀번호"
-                name="password"
-                onChange={setSignupPassword}
-                placeholder="숫자, 영문 대소문자, 특수문자 포함"
-                type="password"
-                value={signupPassword}
-              />
-              <PasswordRules checks={signupPasswordChecks} />
-              <AuthInput
-                autoComplete="new-password"
-                disabled={authPending || !verifiedSignupEmail}
-                icon={Lock}
-                label="비밀번호 확인"
-                name="passwordConfirm"
-                onChange={setSignupPasswordConfirm}
-                placeholder="비밀번호를 다시 입력하세요"
-                type="password"
-                value={signupPasswordConfirm}
-              />
-              {signupPasswordConfirm ? (
-                <p className={`text-xs font-semibold ${isSignupPasswordConfirmValid ? "text-emerald-700" : "text-red-700"}`}>
-                  {isSignupPasswordConfirmValid ? "비밀번호가 일치합니다." : "비밀번호가 일치하지 않습니다."}
-                </p>
-              ) : null}
-              <AuthInput
-                autoComplete="name"
-                disabled={authPending || !verifiedSignupEmail}
-                icon={User}
-                label="이름"
-                name="fullName"
-                onChange={setSignupFullName}
-                placeholder="이름을 입력하세요"
-                value={signupFullName}
-              />
-              {isCompanySignup ? (
-                <>
-                  <CompanyNameInput
-                    companyName={companyName}
-                    disabled={authPending || !verifiedSignupEmail}
-                    onValueChange={setCompanyName}
-                  />
+              {verifiedSignupEmail ? (
+                <form action={authAction} className="grid gap-5 rounded-xl border border-blue-100 bg-white p-4">
+                  <input name="mode" type="hidden" value="signup" />
+                  <input name="email" type="hidden" value={activeEmail} />
+                  <input name="accountType" type="hidden" value={accountType} />
+                  <SectionTitle title="가입정보 입력" description={accountType === "company" ? "기업회원은 회사 식별 정보와 업무 유형을 함께 입력합니다." : "개인회원은 이름과 비밀번호만 입력하면 가입을 완료할 수 있습니다."} />
                   <AuthInput
-                    autoComplete="off"
-                    disabled={authPending || !verifiedSignupEmail}
-                    icon={Building2}
-                    inputMode="numeric"
-                    label="사업자등록번호"
-                    maxLength={12}
-                    name="businessNo"
-                    onChange={(value) => setBusinessNo(formatBusinessNo(value))}
-                    placeholder="000-00-00000"
-                    value={businessNo}
+                    autoComplete="new-password"
+                    disabled={authPending}
+                    icon={Lock}
+                    label="비밀번호"
+                    name="password"
+                    onChange={setSignupPassword}
+                    placeholder="숫자, 영문 대소문자, 특수문자 포함"
+                    type="password"
+                    value={signupPassword}
                   />
-                  <BusinessTypeCheckboxes disabled={authPending || !verifiedSignupEmail} selectedValues={selectedBusinessTypes} onChange={setSelectedBusinessTypes} />
-                </>
-              ) : null}
+                  <PasswordRules checks={signupPasswordChecks} />
+                  <AuthInput
+                    autoComplete="new-password"
+                    disabled={authPending}
+                    icon={Lock}
+                    label="비밀번호 확인"
+                    name="passwordConfirm"
+                    onChange={setSignupPasswordConfirm}
+                    placeholder="비밀번호를 다시 입력하세요"
+                    type="password"
+                    value={signupPasswordConfirm}
+                  />
+                  {signupPasswordConfirm ? (
+                    <p className={`text-xs font-semibold ${isSignupPasswordConfirmValid ? "text-emerald-700" : "text-red-700"}`}>
+                      {isSignupPasswordConfirmValid ? "비밀번호가 일치합니다." : "비밀번호가 일치하지 않습니다."}
+                    </p>
+                  ) : null}
+                  <AuthInput
+                    autoComplete="name"
+                    disabled={authPending}
+                    icon={User}
+                    label="이름"
+                    name="fullName"
+                    onChange={setSignupFullName}
+                    placeholder="이름을 입력하세요"
+                    value={signupFullName}
+                  />
+                  {isCompanySignup ? (
+                    <>
+                      <CompanyNameInput
+                        companyName={companyName}
+                        disabled={authPending}
+                        onValueChange={setCompanyName}
+                      />
+                      <AuthInput
+                        autoComplete="off"
+                        disabled={authPending}
+                        icon={Building2}
+                        inputMode="numeric"
+                        label="사업자등록번호"
+                        maxLength={12}
+                        name="businessNo"
+                        onChange={(value) => setBusinessNo(formatBusinessNo(value))}
+                        placeholder="000-00-00000"
+                        value={businessNo}
+                      />
+                      <p className="-mt-3 text-xs leading-5 text-slate-500">현재는 형식만 확인하며, 정식 사업자 상태 조회는 추후 연동 예정입니다.</p>
+                      <BusinessTypeCheckboxes disabled={authPending} selectedValues={selectedBusinessTypes} onChange={setSelectedBusinessTypes} />
+                    </>
+                  ) : null}
+                  <TermsCheckbox checked={termsAccepted} disabled={authPending} onChange={setTermsAccepted} />
 
-              <button
-                className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-100 transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-500"
-                disabled={!canCompleteSignup}
-                type="submit"
-              >
-                <UserPlus aria-hidden="true" size={17} />
-                {authPending ? "처리 중" : "회원가입 완료"}
-              </button>
+                  <button
+                    className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-100 transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-500"
+                    disabled={!canCompleteSignup}
+                    type="submit"
+                  >
+                    <UserPlus aria-hidden="true" size={17} />
+                    {authPending ? "처리 중" : "회원가입 완료"}
+                  </button>
 
-              {authState.message ? <StatusMessage state={authState} /> : null}
-            </form>
+                  {authState.message ? <StatusMessage state={authState} /> : null}
+                </form>
+              ) : (
+                <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-medium text-amber-900">
+                  이메일 인증을 완료하면 가입정보 입력 단계가 열립니다.
+                </p>
+              )}
             </div>
           ) : null}
         </div>
@@ -370,6 +384,74 @@ function StatusMessage({ state }: { state: { status: "idle" | "success" | "error
     >
       {state.message}
     </p>
+  );
+}
+
+function SectionTitle({ title, description }: { title: string; description: string }) {
+  return (
+    <div>
+      <h2 className="text-base font-semibold text-slate-950">{title}</h2>
+      <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p>
+    </div>
+  );
+}
+
+function SignupSteps({
+  accountType,
+  emailVerified
+}: {
+  accountType: SignupAccountType | null;
+  emailVerified: boolean;
+}) {
+  const steps = [
+    { label: "회원유형", done: Boolean(accountType), active: !accountType },
+    { label: "이메일 인증", done: emailVerified, active: Boolean(accountType) && !emailVerified },
+    { label: "가입정보", done: false, active: emailVerified }
+  ];
+
+  return (
+    <ol className="grid grid-cols-3 overflow-hidden rounded-xl border border-slate-200 bg-white text-xs font-semibold">
+      {steps.map((step, index) => (
+        <li
+          className={`flex min-h-11 items-center justify-center gap-2 border-slate-200 px-2 text-center ${
+            index > 0 ? "border-l" : ""
+          } ${step.done ? "bg-emerald-50 text-emerald-800" : step.active ? "bg-blue-50 text-blue-800" : "text-slate-500"}`}
+          key={step.label}
+        >
+          <span className="grid size-5 place-items-center rounded-full border border-current text-[11px]">{index + 1}</span>
+          {step.label}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function TermsCheckbox({
+  checked,
+  disabled,
+  onChange
+}: {
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+      <input
+        checked={checked}
+        className="mt-0.5 size-4 rounded border-slate-300"
+        disabled={disabled}
+        name="termsAccepted"
+        onChange={(event) => onChange(event.target.checked)}
+        type="checkbox"
+      />
+      <span>
+        <span className="font-semibold text-slate-900">이용약관과 개인정보 처리방침에 동의합니다.</span>
+        <span className="mt-1 block text-xs leading-5 text-slate-500">
+          HS FINDER는 조회 이력, 가입 정보, 회사 식별 정보를 서비스 제공과 보안 관리 목적으로 처리합니다.
+        </span>
+      </span>
+    </label>
   );
 }
 

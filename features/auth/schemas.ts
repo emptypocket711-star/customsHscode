@@ -18,7 +18,8 @@ export const authFormSchema = z
     fullName: z.string().trim().max(80).optional(),
     companyName: z.string().trim().max(120).optional(),
     businessNo: z.string().trim().max(12).optional(),
-    businessTypes: z.array(businessTypeSchema).optional()
+    businessTypes: z.array(businessTypeSchema).optional(),
+    termsAccepted: z.boolean().optional()
   })
   .superRefine((data, ctx) => {
     if (data.mode === "login" && !data.password) {
@@ -58,6 +59,14 @@ export const authFormSchema = z
         code: "custom",
         path: ["fullName"],
         message: "이름을 입력해 주세요."
+      });
+    }
+
+    if (data.mode === "signup" && !data.termsAccepted) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["termsAccepted"],
+        message: "약관과 개인정보 처리방침에 동의해 주세요."
       });
     }
 

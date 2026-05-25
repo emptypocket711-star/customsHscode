@@ -33,6 +33,7 @@ export function SignupCompletionForm({
   const [companyName, setCompanyName] = useState("");
   const [businessNo, setBusinessNo] = useState("");
   const [selectedBusinessTypes, setSelectedBusinessTypes] = useState<string[]>([]);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const passwordChecks = {
     length: password.length >= 8,
@@ -50,6 +51,7 @@ export function SignupCompletionForm({
     isPasswordStrong &&
     isPasswordConfirmValid &&
     fullName.trim().length > 0 &&
+    termsAccepted &&
     (!isCompanySignup || (companyName.trim().length > 0 && isBusinessNoValid && selectedBusinessTypes.length > 0)) &&
     !authPending;
 
@@ -118,9 +120,11 @@ export function SignupCompletionForm({
                 placeholder="000-00-00000"
                 value={businessNo}
               />
+              <p className="-mt-3 text-xs leading-5 text-slate-500">현재는 형식만 확인하며, 정식 사업자 상태 조회는 추후 연동 예정입니다.</p>
               <BusinessTypeCheckboxes disabled={authPending} selectedValues={selectedBusinessTypes} onChange={setSelectedBusinessTypes} />
             </>
           ) : null}
+          <TermsCheckbox checked={termsAccepted} disabled={authPending} onChange={setTermsAccepted} />
 
           <button
             className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-100 transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-500"
@@ -169,6 +173,35 @@ function StatusMessage({ state }: { state: { status: "idle" | "success" | "error
     >
       {state.message}
     </p>
+  );
+}
+
+function TermsCheckbox({
+  checked,
+  disabled,
+  onChange
+}: {
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+      <input
+        checked={checked}
+        className="mt-0.5 size-4 rounded border-slate-300"
+        disabled={disabled}
+        name="termsAccepted"
+        onChange={(event) => onChange(event.target.checked)}
+        type="checkbox"
+      />
+      <span>
+        <span className="font-semibold text-slate-900">이용약관과 개인정보 처리방침에 동의합니다.</span>
+        <span className="mt-1 block text-xs leading-5 text-slate-500">
+          HS FINDER는 조회 이력, 가입 정보, 회사 식별 정보를 서비스 제공과 보안 관리 목적으로 처리합니다.
+        </span>
+      </span>
+    </label>
   );
 }
 
