@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useActionState, useMemo, useState } from "react";
-import { Activity, Filter, Save, Search, Trash2 } from "lucide-react";
+import { Activity, Filter, Network, Save, Search, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import {
@@ -269,6 +269,31 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
                   <span>온보딩 완료: {formatDate(user.onboardingCompletedAt)}</span>
                   <span>회사 타입: {user.companyType || "-"}</span>
                 </div>
+
+                {user.accountType === "company" ? (
+                  <div className="rounded-md border border-slate-200 bg-white p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="inline-flex items-center gap-2 text-sm font-semibold text-slate-800">
+                        <Network aria-hidden="true" size={16} />
+                        기업회원 IP 사용 현황
+                      </p>
+                      <Badge tone={user.usedLoginIps.length > user.allowedIpCount ? "warning" : "neutral"}>
+                        {user.usedLoginIps.length} / {user.allowedIpCount}
+                      </Badge>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {user.usedLoginIps.length === 0 ? (
+                        <span className="text-xs text-slate-500">로그인 성공 IP가 아직 없습니다.</span>
+                      ) : (
+                        user.usedLoginIps.map((ip) => (
+                          <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700" key={ip}>
+                            {ip}
+                          </span>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                ) : null}
 
                 <details className="rounded-md border border-slate-200 bg-white">
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-semibold text-slate-800">

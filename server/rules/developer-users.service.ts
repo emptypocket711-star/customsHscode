@@ -25,6 +25,7 @@ export type ManagedUser = {
   companyName: string;
   businessNo: string;
   companyType: string;
+  usedLoginIps: string[];
   recentAccessEvents: AccountAccessEvent[];
 };
 
@@ -74,6 +75,8 @@ export async function listManagedUsers(): Promise<ManagedUser[]> {
   const companyById = new Map<string, CompanyRow>();
   const eventsByUserId = new Map<string, AccountAccessEvent[]>();
   const eventsByEmail = new Map<string, AccountAccessEvent[]>();
+  const usedIpsByUserId = new Map<string, Set<string>>();
+  const usedIpsByEmail = new Map<string, Set<string>>();
 
   if (userIds.length > 0) {
     const { data: profiles, error: profileError } = await supabase
@@ -132,12 +135,24 @@ export async function listManagedUsers(): Promise<ManagedUser[]> {
         if (event.user_id) {
           const existing = eventsByUserId.get(event.user_id) ?? [];
           if (existing.length < 5) eventsByUserId.set(event.user_id, [...existing, normalizedEvent]);
+
+          if (event.event_type === "login_success" && event.ip_address) {
+            const usedIps = usedIpsByUserId.get(event.user_id) ?? new Set<string>();
+            usedIps.add(event.ip_address);
+            usedIpsByUserId.set(event.user_id, usedIps);
+          }
         }
 
         if (event.email) {
           const emailKey = event.email.toLowerCase();
           const existing = eventsByEmail.get(emailKey) ?? [];
           if (existing.length < 5) eventsByEmail.set(emailKey, [...existing, normalizedEvent]);
+
+          if (event.event_type === "login_success" && event.ip_address) {
+            const usedIps = usedIpsByEmail.get(emailKey) ?? new Set<string>();
+            usedIps.add(event.ip_address);
+            usedIpsByEmail.set(emailKey, usedIps);
+          }
         }
       }
     }
@@ -149,6 +164,7 @@ export async function listManagedUsers(): Promise<ManagedUser[]> {
       const company = profile?.company_id ? companyById.get(profile.company_id) : undefined;
       const emailKey = (user.email ?? profile?.email ?? "").toLowerCase();
       const recentAccessEvents = eventsByUserId.get(user.id) ?? eventsByEmail.get(emailKey) ?? [];
+      const usedLoginIps = Array.from(usedIpsByUserId.get(user.id) ?? usedIpsByEmail.get(emailKey) ?? []);
 
       return {
         id: user.id,
@@ -166,6 +182,7 @@ export async function listManagedUsers(): Promise<ManagedUser[]> {
         companyName: company?.name ?? String(user.user_metadata?.company_name ?? ""),
         businessNo: company?.business_no ?? String(user.user_metadata?.business_no ?? ""),
         companyType: company?.type ?? "",
+        usedLoginIps,
         recentAccessEvents
       } satisfies ManagedUser;
     })
