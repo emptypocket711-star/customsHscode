@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   Menu,
   Search,
+  Users,
   type LucideIcon
 } from "lucide-react";
 import Link from "next/link";
@@ -25,6 +26,7 @@ const userNavItems = [
 ];
 
 const operationNavItems = [
+  { href: "/operations/users", label: "사용자 관리", icon: Users },
   { href: "/legal-updates", label: "자료 관리", icon: Database },
   { href: "/staff/review", label: "검토 큐", icon: FileSearch }
 ];
