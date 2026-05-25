@@ -32,6 +32,7 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
   const [sendState, sendAction, sendPending] = useActionState(sendSignupEmailOtpAction, initialOtpState);
   const [verifyState, verifyAction, verifyPending] = useActionState(verifySignupEmailOtpAction, initialOtpState);
   const [signupEmail, setSignupEmail] = useState(sendState.email ?? "");
+  const [otpToken, setOtpToken] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [suggestPending, startSuggestTransition] = useTransition();
@@ -122,14 +123,19 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
           {sendState.status === "success" && !verifiedSignupEmail ? (
             <form action={verifyAction} className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
               <input name="email" type="hidden" value={activeEmail} />
+              <input name="otp" type="hidden" value={otpToken.replace(/\D/g, "")} />
               <AuthInput
                 autoComplete="one-time-code"
                 disabled={pending}
                 icon={CheckCircle2}
+                inputMode="numeric"
                 label="이메일 인증번호"
+                maxLength={10}
                 name="token"
-                placeholder="6자리 인증번호"
+                onChange={(value) => setOtpToken(value.replace(/\D/g, "").slice(0, 8))}
+                placeholder="이메일 인증번호"
                 type="text"
+                value={otpToken}
               />
               <button
                 className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-500"
@@ -336,6 +342,8 @@ function AuthInput({
   disabled,
   icon: Icon,
   label,
+  inputMode,
+  maxLength,
   name,
   onChange,
   placeholder,
@@ -346,6 +354,8 @@ function AuthInput({
   disabled?: boolean;
   icon: LucideIcon;
   label: string;
+  inputMode?: "none" | "text" | "tel" | "url" | "email" | "numeric" | "decimal" | "search";
+  maxLength?: number;
   name: string;
   onChange?: (value: string) => void;
   placeholder: string;
@@ -361,6 +371,8 @@ function AuthInput({
           autoComplete={autoComplete}
           className="focus-ring h-12 w-full rounded-lg border border-slate-200 bg-white pl-12 pr-4 text-base font-medium text-slate-950 shadow-sm placeholder:text-slate-400"
           disabled={disabled}
+          inputMode={inputMode}
+          maxLength={maxLength}
           name={name}
           onChange={onChange ? (event) => onChange(event.target.value) : undefined}
           placeholder={placeholder}

@@ -82,10 +82,10 @@ export const signupOtpSendFormSchema = z.object({
 
 export const signupOtpVerifyFormSchema = z.object({
   email: z.email("이메일 형식을 확인해 주세요.").trim().max(255),
-  token: z
-    .string()
-    .trim()
-    .regex(/^\d{6}$/, "이메일로 받은 6자리 인증번호를 입력해 주세요.")
+  token: z.preprocess(
+    (value) => (typeof value === "string" ? value.replace(/\D/g, "") : value),
+    z.string().regex(/^\d{6}$|^\d{8}$/, "이메일로 받은 인증번호 6자리 또는 8자리를 입력해 주세요.")
+  )
 });
 
 export type SignupOtpActionState = {

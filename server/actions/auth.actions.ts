@@ -25,6 +25,14 @@ function stringValue(formData: FormData, key: string) {
   return typeof value === "string" ? value : undefined;
 }
 
+function firstStringValue(formData: FormData, keys: string[]) {
+  for (const key of keys) {
+    const value = stringValue(formData, key);
+    if (value) return value;
+  }
+  return undefined;
+}
+
 function booleanValue(formData: FormData, key: string) {
   return formData.get(key) === "on";
 }
@@ -225,7 +233,7 @@ export async function verifySignupEmailOtpAction(
 ): Promise<SignupOtpActionState> {
   const parsed = signupOtpVerifyFormSchema.safeParse({
     email: stringValue(formData, "email"),
-    token: stringValue(formData, "token")
+    token: firstStringValue(formData, ["token", "otp", "code"])
   });
 
   if (!parsed.success) {
@@ -252,10 +260,27 @@ export async function verifySignupEmailOtpAction(
   });
 
   if (error) {
+    const fallback = await supabase.auth.verifyOtp({
+      email: parsed.data.email,
+      token: parsed.data.token,
+      type: "magiclink"
+    });
+
+    if (!fallback.error) {
+      await setRememberSessionPreference(true);
+
+      return {
+        status: "success",
+        email: parsed.data.email,
+        verified: true,
+        message: "이메일 인증이 완료되었습니다. 비밀번호와 회사 정보를 입력해 주세요."
+      };
+    }
+
     return {
       status: "error",
       email: parsed.data.email,
-      message: error.message
+      message: fallback.error.message || error.message
     };
   }
 
