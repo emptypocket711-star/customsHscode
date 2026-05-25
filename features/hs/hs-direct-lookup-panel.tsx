@@ -1,4 +1,4 @@
-import { ExternalLink, Search } from "lucide-react";
+import { ChevronDown, ExternalLink, FileText, Folder, Search } from "lucide-react";
 import Link from "next/link";
 import { Fragment } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -1018,6 +1018,22 @@ type Hs6NavigationSource = {
   hs6: string;
   koreanName: string;
   hierarchyPath: HsHierarchyNode[];
+  hskCode: string;
+};
+
+type HsPrefixTreeItem = {
+  hs4: string;
+  label: string;
+  count: number;
+  hs6Items: Array<{
+    hs6: string;
+    label: string;
+    count: number;
+    children: Array<{
+      hskCode: string;
+      koreanName: string;
+    }>;
+  }>;
 };
 
 type ExportLookupSource = {
@@ -1068,6 +1084,61 @@ function hs6NavigationLabel(group: Hs6NavigationSource[]) {
   }
 
   return hierarchyLabel || group[0]?.koreanName || "-";
+}
+
+function hs4NavigationLabel(group: Hs6NavigationSource[]) {
+  const hs4 = normalizeHsInput(group[0]?.hskCode).slice(0, 4);
+  const hierarchyLabel = group[0]?.hierarchyPath.find((node) => normalizeHsInput(node.code) === hs4)?.label;
+
+  if (!isGenericHsLabel(hierarchyLabel)) {
+    return hierarchyLabel ?? "-";
+  }
+
+  return hierarchyLabel || group[0]?.koreanName || "-";
+}
+
+function buildHsPrefixTreeItems(results: Hs6NavigationSource[]): HsPrefixTreeItem[] {
+  const hs4Groups = results.reduce((groups, result) => {
+    const hs4 = normalizeHsInput(result.hskCode).slice(0, 4);
+    const group = groups.get(hs4) ?? [];
+
+    group.push(result);
+    groups.set(hs4, group);
+
+    return groups;
+  }, new Map<string, Hs6NavigationSource[]>());
+
+  return Array.from(hs4Groups.entries())
+    .map(([hs4, hs4Group]) => {
+      const hs6Groups = hs4Group.reduce((groups, result) => {
+        const group = groups.get(result.hs6) ?? [];
+
+        group.push(result);
+        groups.set(result.hs6, group);
+
+        return groups;
+      }, new Map<string, Hs6NavigationSource[]>());
+
+      return {
+        hs4,
+        label: hs4NavigationLabel(hs4Group),
+        count: hs4Group.length,
+        hs6Items: Array.from(hs6Groups.entries())
+          .map(([hs6, hs6Group]) => ({
+            hs6,
+            label: hs6NavigationLabel(hs6Group),
+            count: hs6Group.length,
+            children: hs6Group
+              .map((result) => ({
+                hskCode: result.hskCode,
+                koreanName: result.koreanName
+              }))
+              .sort((a, b) => normalizeHsInput(a.hskCode).localeCompare(normalizeHsInput(b.hskCode)))
+          }))
+          .sort((a, b) => a.hs6.localeCompare(b.hs6))
+      };
+    })
+    .sort((a, b) => a.hs4.localeCompare(b.hs4));
 }
 
 function DestinationAdditionalTariffSummary({ rows }: { rows: ExportDestinationAdditionalTariffItem[] }) {
@@ -2377,14 +2448,14 @@ function ProductNoResultPanel({
   );
 }
 
-function Hs6Navigation({
+function HsPrefixFolderNavigation({
   items,
   activeHs6,
   basisDate,
   direction,
   destinationCountry
 }: {
-  items: Array<{ hs6: string; label: string; count: number }>;
+  items: HsPrefixTreeItem[];
   activeHs6: string;
   basisDate: string;
   direction: "import" | "export";
@@ -2398,47 +2469,71 @@ function Hs6Navigation({
         <div className="border-r border-blue-500 px-3 py-2 text-center">HSK</div>
         <div className="px-3 py-2 text-center">품명</div>
       </div>
-      <div className="max-h-[560px] overflow-auto">
-        <table className="w-full table-fixed border-collapse text-left text-xs">
-          <colgroup>
-            <col className="w-14" />
-            <col className="w-8" />
-            <col className="w-8" />
-            <col className="w-8" />
-            <col />
-          </colgroup>
-          <tbody>
-            {items.map((item) => {
-              const isActive = item.hs6 === activeHs6;
-              const parts = splitHskNavigatorCode(item.hs6);
-              const rowClass = isActive ? "bg-red-50 font-semibold text-red-600" : "text-slate-800 hover:bg-blue-50";
-              const codeClass = "border-r border-slate-200 px-1.5 py-1.5 text-right align-top font-mono font-semibold";
-              const href = hsLookupHref({
-                hskCode: item.hs6,
-                direction,
-                destinationCountry,
-                basisDate
-              });
+      <div className="max-h-[560px] overflow-auto text-xs">
+        {items.map((hs4Item) => {
+          const hs4Href = hsLookupHref({
+            hskCode: hs4Item.hs4,
+            direction,
+            destinationCountry,
+            basisDate
+          });
 
-              return (
-                <tr className={rowClass} key={item.hs6}>
-                  <HsNavigatorCodeCell className={codeClass} href={href} value={parts.hs4} />
-                  <HsNavigatorCodeCell className={codeClass} href={href} value={parts.hs6Tail} />
-                  <HsNavigatorCodeCell className={codeClass} href={href} value={parts.digit78} />
-                  <HsNavigatorCodeCell className={codeClass} href={href} value={parts.digit910} />
-                  <td className="px-2 py-1.5 align-top font-medium leading-5">
-                    <Link
-                      className="block truncate"
-                      href={href}
-                    >
-                      {item.label}
-                    </Link>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+          return (
+            <div className="border-b border-slate-100" key={hs4Item.hs4}>
+              <Link className="flex items-start gap-2 bg-slate-50 px-3 py-2 font-semibold text-slate-900 hover:bg-blue-50" href={hs4Href}>
+                <ChevronDown className="mt-0.5 size-3.5 shrink-0 text-slate-500" />
+                <Folder className="mt-0.5 size-4 shrink-0 text-blue-700" />
+                <span className="min-w-16 font-mono">{formatHsCode(hs4Item.hs4)}</span>
+                <span className="min-w-0 flex-1 truncate">{hs4Item.label}</span>
+                <span className="shrink-0 text-[11px] font-medium text-slate-500">{hs4Item.count}</span>
+              </Link>
+              <div>
+                {hs4Item.hs6Items.map((hs6Item) => {
+                  const isActive = hs6Item.hs6 === activeHs6;
+                  const hs6Href = hsLookupHref({
+                    hskCode: hs6Item.hs6,
+                    direction,
+                    destinationCountry,
+                    basisDate
+                  });
+
+                  return (
+                    <div key={hs6Item.hs6}>
+                      <Link
+                        className={`flex items-start gap-2 px-3 py-1.5 pl-8 font-medium hover:bg-blue-50 ${isActive ? "bg-red-50 text-red-600" : "text-slate-800"}`}
+                        href={hs6Href}
+                      >
+                        <ChevronDown className="mt-0.5 size-3.5 shrink-0 text-slate-400" />
+                        <Folder className={`mt-0.5 size-4 shrink-0 ${isActive ? "text-red-500" : "text-blue-500"}`} />
+                        <span className="min-w-16 font-mono">{formatHsCode(hs6Item.hs6)}</span>
+                        <span className="min-w-0 flex-1 truncate">{hs6Item.label}</span>
+                        <span className="shrink-0 text-[11px] text-slate-500">{hs6Item.count}</span>
+                      </Link>
+                      <div>
+                        {hs6Item.children.map((child) => (
+                          <Link
+                            className="flex items-start gap-2 px-3 py-1.5 pl-16 text-slate-700 hover:bg-blue-50"
+                            href={hsLookupHref({
+                              hskCode: child.hskCode,
+                              direction,
+                              destinationCountry,
+                              basisDate
+                            })}
+                            key={child.hskCode}
+                          >
+                            <FileText className="mt-0.5 size-3.5 shrink-0 text-slate-400" />
+                            <span className="min-w-24 font-mono font-semibold text-slate-700">{formatHsCode(child.hskCode)}</span>
+                            <span className="min-w-0 flex-1 truncate">{child.koreanName}</span>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </aside>
   );
@@ -2626,6 +2721,7 @@ export async function HsDirectLookupPanel({
       count: group.length
     }))
     .sort((a, b) => a.hs6.localeCompare(b.hs6));
+  const hsPrefixTreeItems = buildHsPrefixTreeItems(results);
   const hs6NavigationLabelByCode = new Map(hs6NavigationItems.map((item) => [item.hs6, item.label]));
   const activeHs6 = normalizedQuery.length === 6 ? normalizedQuery : hs6NavigationItems[0]?.hs6 ?? "";
   const lookupHierarchyPath = results[0]?.hierarchyPath.filter((node) => normalizeHsInput(node.code).length <= normalizedQuery.length) ?? [];
@@ -2922,12 +3018,12 @@ export async function HsDirectLookupPanel({
               </div>
             ) : null}
             <div className="grid lg:grid-cols-[360px_minmax(0,1fr)]">
-              <Hs6Navigation
+              <HsPrefixFolderNavigation
                 activeHs6={activeHs6}
                 basisDate={resolvedBasisDate}
                 destinationCountry={selectedDestinationCountry}
                 direction={lookupDirection}
-                items={hs6NavigationItems}
+                items={hsPrefixTreeItems}
               />
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[940px] text-left text-sm">
