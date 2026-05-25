@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { analyzeDocumentExtractionClarification, analyzeProductClarification } from "@/server/ai/clarification.service";
 import {
   augmentProductInputWithAiTerms,
@@ -6,7 +6,7 @@ import {
   normalizeProductSearchInput,
   prioritizePrincipalArticleHsHints
 } from "@/server/ai/product-search-normalization.service";
-import { aiProviderInternals } from "@/server/ai/provider";
+import { aiProviderInternals, OpenAiProvider } from "@/server/ai/provider";
 import { redactSensitiveText } from "@/server/ai/redaction";
 import { extractShipmentDocument } from "@/server/rules/document-extraction.service";
 import type { HsCandidateRecommendation } from "@/server/rules/hs-candidate.service";
@@ -29,6 +29,10 @@ const baseCandidate: HsCandidateRecommendation = {
   effectiveTo: null,
   basisDate: "2026-05-24"
 };
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe("redactSensitiveText", () => {
   it("redacts private contact and amount-like values", () => {
@@ -207,6 +211,7 @@ describe("normalizeProductSearchInput", () => {
     expect(instructions).toContain("Korean, Chinese, Japanese, English, or another language");
     expect(instructions).toContain("brand name, trade name, product line, model name, SKU, catalog number");
     expect(instructions).toContain("brand or product line plus a generic product phrase");
+    expect(instructions).toContain("If web search is unavailable, inconclusive, or blocked");
     expect(instructions).toContain("3 to 8 plausible HS heading/subheading/code prefixes");
     expect(instructions).toContain("Prefer HS6 prefixes");
     expect(instructions).toContain("Return useful HS4/HS6 candidates even when the exact national HS10 may need later official-data expansion");
@@ -214,6 +219,40 @@ describe("normalizeProductSearchInput", () => {
     expect(instructions).toContain("do not prioritize accumulator/battery headings only because the article contains an internal battery");
     expect(instructions).toContain("classify lookup intent by the traded finished article first");
     expect(instructions).toContain("If web search identifies a product but the visible words can reasonably indicate another product family");
+  });
+
+  it("retries brand-name product normalization without web search when the web request fails", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response("bad web tool", { status: 400 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        output_text: JSON.stringify({
+          correctedProductName: "smart watch",
+          searchTerms: ["smart watch", "wearable device"],
+          koreanTerms: ["스마트워치", "웨어러블 기기"],
+          englishTerms: ["smart watch"],
+          productFamilies: ["wearable electronic device"],
+          candidateHsCodes: ["851762", "910212", "852589"],
+          candidateHsCodeReasons: [
+            { code: "851762", reason: "스마트폰과 통신하는 웨어러블 전자기기 가능성", requiredInfo: ["통신 기능", "독립 통화 가능 여부"] },
+            { code: "910212", reason: "시계 형태 제품일 가능성", requiredInfo: ["스마트 기능 범위"] }
+          ],
+          missingQuestions: ["셀룰러 통신 가능 여부 확인"]
+        })
+      }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const provider = new OpenAiProvider("test-key");
+    const result = await provider.normalizeProductSearch({
+      task: "product_search_normalization",
+      basisDate: "2026-05-24",
+      redactedInput: "품명: 애플워치"
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string).tools).toBeDefined();
+    expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string).tools).toBeUndefined();
+    expect(result.candidateHsCodes).toEqual(["851762", "910212", "852589"]);
+    expect(result.searchTerms).toEqual(expect.arrayContaining(["smart watch", "스마트워치"]));
   });
 
   it("keeps finished-article AI hints ahead of component or material hints generically", () => {

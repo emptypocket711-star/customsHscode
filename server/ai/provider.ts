@@ -319,6 +319,7 @@ function aiProductSearchNormalizationInstructions() {
     "If the input is ambiguous, return several competing HS4/HS6 lookup hints plus missing questions instead of a final conclusion.",
     "When the input includes typos, model numbers, abbreviations, or short trade names, infer likely product families and provide broad lookup hints that can surface candidates from official HS data.",
     "If web search is available and the input appears to be a model number, SKU, catalog number, or product code, use web search to identify the underlying product type before producing search terms.",
+    "If web search is unavailable, inconclusive, or blocked, still use general product knowledge and the visible words to infer provisional HS4/HS6 lookup hints instead of returning an empty candidate list.",
     "When web search cannot identify the product code, return broad terms from the visible tokens and ask the user to provide product name, catalog page, photo, or specification sheet.",
     "If web search identifies a product but the visible words can reasonably indicate another product family, include both families as competing lookup hints and ask the user to confirm which product it is.",
     "For beverage trade names, distinguish pure fruit juice of HS 2009 from water/sugar-based non-alcoholic beverages of HS 2202. If web evidence shows a retail drink such as a diluted fruit-flavored beverage, prioritize HS 2202 and keep HS 2009 as a conditional alternative only when it is pure juice.",
@@ -642,9 +643,26 @@ export class OpenAiProvider implements AiProvider {
       productSearchRequestTimeoutMs(this.productSearchTimeoutMs, useWebSearch)
     );
 
-    if (!response) return fallback;
+    const noWebResponse = !response && useWebSearch
+      ? await this.requestResponsesApi(
+        this.responseBody(
+          {
+            ...prompt,
+            webSearchFallback: true,
+            fallbackInstruction: "Web search was unavailable. Use general product knowledge and visible product words to return provisional HS4/HS6 lookup hints. Do not return an empty candidate list for recognizable brand or trade names."
+          },
+          aiProductSearchNormalizationInstructions(),
+          2600,
+          { webSearch: false }
+        ),
+        this.productSearchTimeoutMs
+      )
+      : null;
 
-    const payload = await response.json() as unknown;
+    const effectiveResponse = response ?? noWebResponse;
+    if (!effectiveResponse) return fallback;
+
+    const payload = await effectiveResponse.json() as unknown;
     const outputText = outputTextFromOpenAiResponse(payload);
     if (process.env.OPENAI_PRODUCT_SEARCH_DEBUG === "1" || process.env.OPENAI_PRODUCT_SEARCH_DEBUG === "true") {
       console.info("[openai-product-search]", {
@@ -654,17 +672,43 @@ export class OpenAiProvider implements AiProvider {
     }
     const parsed = parseAiProductSearchNormalizationJson(outputText, fallback);
     const responseWebSources = webSourcesFromOpenAiResponse(payload);
+    const parsedWithRetry = parsed.candidateHsCodes.length || !useWebSearch
+      ? parsed
+      : await this.retryProductSearchWithoutWeb(prompt, fallback);
 
     return {
-      ...parsed,
-      webSources: parsed.webSources.length ? parsed.webSources : responseWebSources,
+      ...parsedWithRetry,
+      webSources: parsedWithRetry.webSources.length ? parsedWithRetry.webSources : responseWebSources,
       searchTerms: Array.from(new Set([
-        ...(parsed.correctedProductName ? [parsed.correctedProductName] : []),
-        ...parsed.searchTerms,
-        ...parsed.koreanTerms,
-        ...parsed.englishTerms
+        ...(parsedWithRetry.correctedProductName ? [parsedWithRetry.correctedProductName] : []),
+        ...parsedWithRetry.searchTerms,
+        ...parsedWithRetry.koreanTerms,
+        ...parsedWithRetry.englishTerms
       ].map((term) => term.toLowerCase()).filter((term) => term.length >= 2))).slice(0, 14)
     };
+  }
+
+  private async retryProductSearchWithoutWeb(
+    prompt: AiProductSearchNormalizationPrompt,
+    fallback: AiProductSearchNormalizationResult
+  ) {
+    const response = await this.requestResponsesApi(
+      this.responseBody(
+        {
+          ...prompt,
+          webSearchFallback: true,
+          fallbackInstruction: "The previous normalization produced no HS candidates. Use general product knowledge and visible product words to return 3 to 8 provisional HS4/HS6 lookup hints, missing questions, and Korean/English search terms. Do not final-confirm classification."
+        },
+        aiProductSearchNormalizationInstructions(),
+        2600,
+        { webSearch: false }
+      ),
+      this.productSearchTimeoutMs
+    );
+
+    if (!response) return fallback;
+    const payload = await response.json() as unknown;
+    return parseAiProductSearchNormalizationJson(outputTextFromOpenAiResponse(payload), fallback);
   }
 }
 
