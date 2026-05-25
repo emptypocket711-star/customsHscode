@@ -201,6 +201,10 @@ Use Supabase PostgreSQL.
 - common_rejection_reasons jsonb
 - customer_request_template text
 - staff_checklist jsonb
+- category text
+- risk_level text
+- workflow_type text
+- workflow_steps jsonb
 - status text
 - updated_at timestamptz
 

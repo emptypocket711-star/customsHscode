@@ -27,6 +27,10 @@ type ImportRequirementDetailDialogProps = {
     commonRejectionReasons: string[];
     customerRequestTemplate: string | null;
     staffChecklist: string[];
+    category: string | null;
+    riskLevel: string | null;
+    workflowType: string | null;
+    workflowSteps: string[];
     sourceName: string;
     sourceUrl: string;
     sourceVersion: string;
@@ -67,10 +71,11 @@ function DetailList({ items }: { items: string[] }) {
   );
 }
 
-type RequirementDetailTab = "summary" | "documents" | "supplement" | "agencies" | "request";
+type RequirementDetailTab = "summary" | "workflow" | "documents" | "supplement" | "agencies" | "request";
 
 const tabs: Array<{ key: RequirementDetailTab; label: string }> = [
   { key: "summary", label: "일반안내" },
+  { key: "workflow", label: "처리흐름" },
   { key: "documents", label: "필요서류" },
   { key: "supplement", label: "보완사유" },
   { key: "agencies", label: "기관문의" },
@@ -83,6 +88,35 @@ function FieldRow({ label, children }: { label: string; children: ReactNode }) {
       <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</div>
       <div className="leading-6 text-slate-800">{children}</div>
     </div>
+  );
+}
+
+function riskLabel(value?: string | null) {
+  if (value === "high") return "높음";
+  if (value === "medium") return "중간";
+  if (value === "low") return "낮음";
+  return "-";
+}
+
+function riskClassName(value?: string | null) {
+  if (value === "high") return "bg-rose-50 text-rose-700 ring-rose-200";
+  if (value === "medium") return "bg-amber-50 text-amber-800 ring-amber-200";
+  if (value === "low") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+  return "bg-slate-100 text-slate-600 ring-slate-200";
+}
+
+function WorkflowSteps({ steps }: { steps: string[] }) {
+  if (!steps.length) return <span className="text-slate-500">-</span>;
+
+  return (
+    <ol className="grid gap-2">
+      {steps.map((step, index) => (
+        <li className="flex gap-3 rounded-md border border-slate-200 bg-white p-3" key={`${index}-${step}`}>
+          <span className="grid size-6 shrink-0 place-items-center rounded-full bg-blue-700 text-xs font-semibold text-white">{index + 1}</span>
+          <span className="leading-6 text-slate-800">{step}</span>
+        </li>
+      ))}
+    </ol>
   );
 }
 
@@ -199,6 +233,19 @@ export function ImportRequirementDetailDialog({ type, name, relatedLaw, agencies
           <div className="p-4">
             {activeTab === "summary" ? (
               <section className="overflow-hidden rounded-md border border-slate-200">
+                <FieldRow label="분류">
+                  <div className="flex flex-wrap gap-1.5">
+                    <span className="rounded bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700 ring-1 ring-blue-200">
+                      {displayValue(playbook?.category)}
+                    </span>
+                    <span className="rounded bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+                      {displayValue(playbook?.workflowType)}
+                    </span>
+                    <span className={["rounded px-2 py-0.5 text-xs font-semibold ring-1", riskClassName(playbook?.riskLevel)].join(" ")}>
+                      위험도 {riskLabel(playbook?.riskLevel)}
+                    </span>
+                  </div>
+                </FieldRow>
                 <FieldRow label="요건 내용">{displayValue(procedureSummary)}</FieldRow>
                 <FieldRow label="적용 내용">{displayValue(playbook?.applicationMethod)}</FieldRow>
                 <FieldRow label="처리/검사">{displayValue(playbook?.expectedLeadTime)}</FieldRow>
@@ -212,6 +259,12 @@ export function ImportRequirementDetailDialog({ type, name, relatedLaw, agencies
                     "-"
                   )}
                 </FieldRow>
+              </section>
+            ) : null}
+
+            {activeTab === "workflow" ? (
+              <section className="overflow-hidden rounded-md border border-slate-200">
+                <FieldRow label="처리 흐름"><WorkflowSteps steps={playbook?.workflowSteps ?? []} /></FieldRow>
               </section>
             ) : null}
 

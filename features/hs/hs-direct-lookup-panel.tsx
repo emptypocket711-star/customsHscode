@@ -226,6 +226,10 @@ type ImportRequirementDisplayItem = {
     commonRejectionReasons: string[];
     customerRequestTemplate: string | null;
     staffChecklist: string[];
+    category: string | null;
+    riskLevel: string | null;
+    workflowType: string | null;
+    workflowSteps: string[];
     sourceName: string;
     sourceUrl: string;
     sourceVersion: string;

@@ -53,6 +53,10 @@ type RequirementPlaybookRecord = {
   common_rejection_reasons: unknown;
   customer_request_template: string | null;
   staff_checklist: unknown;
+  category: string | null;
+  risk_level: string | null;
+  workflow_type: string | null;
+  workflow_steps: unknown;
   source_name: string;
   source_url: string;
   source_version: string;
@@ -151,6 +155,10 @@ export type HsDirectLookupResult = {
       commonRejectionReasons: string[];
       customerRequestTemplate: string | null;
       staffChecklist: string[];
+      category: string | null;
+      riskLevel: string | null;
+      workflowType: string | null;
+      workflowSteps: string[];
       sourceName: string;
       sourceUrl: string;
       sourceVersion: string;
@@ -392,6 +400,10 @@ function mapResult(
             commonRejectionReasons: asStringList(item.playbook.common_rejection_reasons),
             customerRequestTemplate: item.playbook.customer_request_template,
             staffChecklist: asStringList(item.playbook.staff_checklist),
+            category: item.playbook.category,
+            riskLevel: item.playbook.risk_level,
+            workflowType: item.playbook.workflow_type,
+            workflowSteps: asStringList(item.playbook.workflow_steps),
             sourceName: item.playbook.source_name,
             sourceUrl: item.playbook.source_url,
             sourceVersion: item.playbook.source_version
@@ -547,7 +559,7 @@ async function findRequirementPlaybooks(
 
   const { data, error } = await supabase
     .from("requirement_playbooks")
-    .select("requirement_document_name, related_law, agency, application_method, required_documents, expected_lead_time, exemption_possibility, common_rejection_reasons, customer_request_template, staff_checklist, source_name, source_url, source_version, effective_from, effective_to, status")
+    .select("requirement_document_name, related_law, agency, application_method, required_documents, expected_lead_time, exemption_possibility, common_rejection_reasons, customer_request_template, staff_checklist, category, risk_level, workflow_type, workflow_steps, source_name, source_url, source_version, effective_from, effective_to, status")
     .in("requirement_document_name", names)
     .lte("effective_from", basisDate)
     .or(`effective_to.is.null,effective_to.gte.${basisDate}`)
