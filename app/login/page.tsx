@@ -31,7 +31,7 @@ export default async function LoginPage({
   }
 
   return (
-    <main className="min-h-screen overflow-hidden bg-white bg-[url('/login-hero.png')] bg-cover bg-center">
+    <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_20%_0%,#eef2ff_0,#f8fafc_42%,#ffffff_100%)] lg:bg-white lg:bg-[url('/login-hero.png')] lg:bg-cover lg:bg-center">
       <div className="grid min-h-screen lg:grid-cols-2">
         <section
           aria-label="HS FINDER 소개 이미지"
