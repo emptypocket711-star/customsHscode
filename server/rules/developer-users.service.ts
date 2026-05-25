@@ -1,3 +1,4 @@
+import type { User } from "@supabase/supabase-js";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/service-role";
 
 export type AccountAccessEvent = {
@@ -61,14 +62,20 @@ type AccountAccessEventRow = {
 
 export async function listManagedUsers(): Promise<ManagedUser[]> {
   const supabase = createSupabaseServiceRoleClient();
-  const { data: authData, error: authError } = await supabase.auth.admin.listUsers({
-    page: 1,
-    perPage: 1000
-  });
+  const users: User[] = [];
+  const perPage = 1000;
 
-  if (authError) throw authError;
+  for (let page = 1; page <= 50; page += 1) {
+    const { data: authData, error: authError } = await supabase.auth.admin.listUsers({
+      page,
+      perPage
+    });
 
-  const users = authData.users;
+    if (authError) throw authError;
+    users.push(...authData.users);
+    if (authData.users.length < perPage) break;
+  }
+
   const userIds = users.map((user) => user.id);
 
   const profileById = new Map<string, ProfileRow>();
