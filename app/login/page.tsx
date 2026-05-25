@@ -37,11 +37,18 @@ async function getPostAuthPath(userId: string) {
 export default async function LoginPage({
   searchParams
 }: {
-  searchParams: Promise<{ mode?: string }>;
+  searchParams: Promise<{ mode?: string; reason?: string }>;
 }) {
   const user = await getCurrentUser();
   const params = await searchParams;
   const mode = params.mode === "signup" ? "signup" : params.mode === "reset" ? "reset" : "login";
+  const notice =
+    params.reason === "session-replaced"
+      ? {
+          tone: "warning" as const,
+          message: "다른 위치에서 같은 개인회원 계정으로 로그인되어 현재 세션이 종료되었습니다. 다시 로그인해 주세요."
+        }
+      : undefined;
 
   if (user) {
     redirect(await getPostAuthPath(user.id));
@@ -78,7 +85,7 @@ export default async function LoginPage({
           </div>
 
           <div className="mx-auto flex w-full max-w-xl flex-1 items-center py-10">
-            <AuthForm initialMode={mode} />
+            <AuthForm initialMode={mode} notice={notice} />
           </div>
 
           <footer className="grid gap-4 text-center text-sm text-slate-500">

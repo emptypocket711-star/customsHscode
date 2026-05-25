@@ -28,7 +28,13 @@ const businessTypeOptions = [
   { value: "importer", label: "수입기업" }
 ];
 
-export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "signup" | "reset" }) {
+export function AuthForm({
+  initialMode = "login",
+  notice
+}: {
+  initialMode?: "login" | "signup" | "reset";
+  notice?: { tone: "info" | "warning"; message: string };
+}) {
   const [authState, authAction, authPending] = useActionState(authenticateAction, initialAuthState);
   const [sendState, sendAction, sendPending] = useActionState(sendSignupEmailOtpAction, initialOtpState);
   const [verifyState, verifyAction, verifyPending] = useActionState(verifySignupEmailOtpAction, initialOtpState);
@@ -149,6 +155,18 @@ export function AuthForm({ initialMode = "login" }: { initialMode?: "login" | "s
           회원가입
         </Link>
       </div>
+
+      {notice ? (
+        <p
+          className={
+            notice.tone === "warning"
+              ? "mt-5 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-medium text-amber-900"
+              : "mt-5 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm font-medium text-blue-900"
+          }
+        >
+          {notice.message}
+        </p>
+      ) : null}
 
       {isSignup ? (
         <div className="mt-7 grid gap-5">
