@@ -30,6 +30,11 @@ function stringValue(formData: FormData, key: string) {
   return typeof value === "string" ? value : undefined;
 }
 
+function nonEmptyStringValue(formData: FormData, key: string) {
+  const value = stringValue(formData, key)?.trim();
+  return value ? value : undefined;
+}
+
 function firstStringValue(formData: FormData, keys: string[]) {
   for (const key of keys) {
     const value = stringValue(formData, key);
@@ -113,7 +118,7 @@ export async function authenticateAction(
     rememberSession: mode === "login" ? booleanValue(formData, "rememberSession") : true,
     fullName: stringValue(formData, "fullName"),
     companyName: stringValue(formData, "companyName"),
-    selectedCompanyId: stringValue(formData, "selectedCompanyId"),
+    selectedCompanyId: nonEmptyStringValue(formData, "selectedCompanyId"),
     businessTypes: arrayValue(formData, "businessTypes")
   });
 
