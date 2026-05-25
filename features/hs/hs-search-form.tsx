@@ -16,7 +16,7 @@ function FieldError({ errors }: { errors?: string[] }) {
   return <p className="mt-1 text-sm font-medium text-red-700">{errors[0]}</p>;
 }
 
-export function HsSearchForm({ defaultSearchType = "hs_code" }: { defaultSearchType?: "hs_code" | "product_name" | "document" }) {
+export function HsSearchForm({ defaultSearchType = "hs_code" }: { defaultSearchType?: "hs_code" | "product_name" }) {
   const [state, formAction, pending] = useActionState(createHsSearchRequestAction, initialState);
 
   return (
@@ -35,7 +35,6 @@ export function HsSearchForm({ defaultSearchType = "hs_code" }: { defaultSearchT
           <select className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2" name="searchType" defaultValue={defaultSearchType}>
             <option value="hs_code">HS CODE로 조회</option>
             <option value="product_name">품명으로 HS 추천</option>
-            <option value="document">선적서류 기반 조회</option>
           </select>
           <FieldError errors={state.fieldErrors?.searchType} />
         </label>

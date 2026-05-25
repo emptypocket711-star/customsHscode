@@ -2,6 +2,34 @@
 
 이 문서는 HS FINDER 개발 중 실제로 수행한 작업, 검증 결과, 커밋을 날짜별로 남긴다.
 
+## 2026-05-26
+
+### 런칭 전 조회 UX 정리
+
+- `82427b9` Add Vercel Analytics tracking
+  - Vercel Analytics를 앱 레이아웃에 추가해 방문자 수와 페이지 조회수 집계를 시작할 수 있게 했다.
+  - 검증: typecheck, lint, build 통과.
+
+- `3b3d8b7` Show prefix HS lookups as folder tree
+  - 4자리/6자리 HS 조회 결과를 씨엘형 폴더 구조로 정리했다.
+  - 왼쪽 네비게이터에서 HS4, HS6, HSK 10자리 계층을 확인할 수 있게 했다.
+  - 검증: typecheck, lint, build 통과.
+
+- `2c3623e` Sort import tariffs in Ciel-style display order
+  - 수입 관세율을 기본관세, WTO, 주요 양허, FTA 순으로 사용자 친화적으로 정렬했다.
+  - 모든국가와 특정국가 조회 모두 같은 정렬 규칙을 사용한다.
+  - 검증: 관련 테스트, typecheck, lint, build 통과.
+
+- `8f11fb2` Make AI product search ask branch questions first
+  - 품명 검색 GPT 응답을 `needs_clarification`, `single_likely_candidate`, `ambiguous_multiple_meanings` 상태로 나누었다.
+  - 애매한 품명은 후보를 길게 나열하기보다 HS 특정에 필요한 분기 질문을 먼저 보여주도록 정리했다.
+  - 검증: 관련 테스트, typecheck, lint, build 통과.
+
+- `2e361d8` Support single high-certainty AI HS candidates
+  - GPT가 높은 확신도와 단일 후보를 반환하면 후보 1개만 노출하도록 했다.
+  - 확정이 어려운 경우에는 복수 후보 또는 보완 질문을 유지한다.
+  - 검증: 관련 테스트, typecheck, lint, build 통과.
+
 ## 2026-05-25
 
 ### 운영·런칭 준비

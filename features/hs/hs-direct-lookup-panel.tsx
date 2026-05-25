@@ -2480,7 +2480,7 @@ function HsPrefixFolderNavigation({
 
           return (
             <div className="border-b border-slate-100" key={hs4Item.hs4}>
-              <Link className="flex items-start gap-2 bg-slate-50 px-3 py-2 font-semibold text-slate-900 hover:bg-blue-50" href={hs4Href}>
+              <Link className="flex items-start gap-2 bg-slate-50 px-3 py-2 font-semibold text-slate-900 hover:bg-blue-50" data-navigation-progress="상세조회" href={hs4Href}>
                 <ChevronDown className="mt-0.5 size-3.5 shrink-0 text-slate-500" />
                 <Folder className="mt-0.5 size-4 shrink-0 text-blue-700" />
                 <span className="min-w-16 font-mono">{formatHsCode(hs4Item.hs4)}</span>
@@ -2501,6 +2501,7 @@ function HsPrefixFolderNavigation({
                     <div key={hs6Item.hs6}>
                       <Link
                         className={`flex items-start gap-2 px-3 py-1.5 pl-8 font-medium hover:bg-blue-50 ${isActive ? "bg-red-50 text-red-600" : "text-slate-800"}`}
+                        data-navigation-progress="상세조회"
                         href={hs6Href}
                       >
                         <ChevronDown className="mt-0.5 size-3.5 shrink-0 text-slate-400" />
@@ -2513,6 +2514,7 @@ function HsPrefixFolderNavigation({
                         {hs6Item.children.map((child) => (
                           <Link
                             className="flex items-start gap-2 px-3 py-1.5 pl-16 text-slate-700 hover:bg-blue-50"
+                            data-navigation-progress="상세조회"
                             href={hsLookupHref({
                               hskCode: child.hskCode,
                               direction,
@@ -3052,7 +3054,7 @@ export async function HsDirectLookupPanel({
                           {startsHs6Group ? (
                             <tr className="bg-slate-100">
                               <td className="px-3 py-2 font-mono text-xs font-semibold text-slate-700" colSpan={7}>
-                                <Link className="text-blue-700 underline-offset-2 hover:underline" href={hsLookupHref({
+                                <Link className="text-blue-700 underline-offset-2 hover:underline" data-navigation-progress="상세조회" href={hsLookupHref({
                                   hskCode: result.hs6,
                                   direction: lookupDirection,
                                   destinationCountry: selectedDestinationCountry,
@@ -3067,7 +3069,7 @@ export async function HsDirectLookupPanel({
                           ) : null}
                           <tr className={result.hs6 === activeHs6 ? "bg-blue-50/50" : undefined}>
                             <td className="whitespace-nowrap px-3 py-2 font-mono font-semibold">
-                              <Link className="text-blue-700 underline-offset-2 hover:underline" href={hsLookupHref({
+                              <Link className="text-blue-700 underline-offset-2 hover:underline" data-navigation-progress="상세조회" href={hsLookupHref({
                                 hskCode: result.hskCode,
                                 direction: lookupDirection,
                                 destinationCountry: selectedDestinationCountry,
@@ -3084,7 +3086,7 @@ export async function HsDirectLookupPanel({
                             </td>
                             <td className="px-3 py-2 text-slate-700">{result.englishName ?? "-"}</td>
                             <td className="whitespace-nowrap px-3 py-2">
-                              <Link className="font-semibold text-blue-700 underline-offset-2 hover:underline" href={hsLookupHref({
+                              <Link className="font-semibold text-blue-700 underline-offset-2 hover:underline" data-navigation-progress="상세조회" href={hsLookupHref({
                                 hskCode: result.hskCode,
                                 direction: lookupDirection,
                                 destinationCountry: selectedDestinationCountry,
