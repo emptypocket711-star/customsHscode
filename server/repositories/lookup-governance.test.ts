@@ -128,6 +128,18 @@ describe("lookup governance guards", () => {
     expect(sideNav).toContain("showOperations ? <NavGroup");
   });
 
+  it("keeps developer test login links gated and audited", () => {
+    const developerActions = read("server/actions/developer-user-management.actions.ts");
+    const userPanel = read("features/operations/user-management-panel.tsx");
+
+    expect(developerActions).toContain("generateManagedUserTestLoginLinkAction");
+    expect(developerActions).toContain("TEST_LOGIN_LINKS_ENABLED");
+    expect(developerActions).toContain("requireCurrentDeveloper()");
+    expect(developerActions).toContain("admin.auth.admin.generateLink");
+    expect(developerActions).toContain("developer_test_login_link_create");
+    expect(userPanel).toContain("테스트 로그인 링크");
+  });
+
   it("keeps expensive public routes behind rate limits", () => {
     const proxy = read("proxy.ts");
     const rateLimit = read("lib/rate-limit.ts");

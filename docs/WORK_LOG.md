@@ -30,6 +30,11 @@
   - 확정이 어려운 경우에는 복수 후보 또는 보완 질문을 유지한다.
   - 검증: 관련 테스트, typecheck, lint, build 통과.
 
+- `f8ffcbf` Harden multilingual product HS normalization
+  - 한글, 중국어, 일본어, 혼합언어 품명에서 GPT가 HS4/HS6 후보를 반환하지 못하는 경우를 줄이도록 프롬프트와 파서를 보강했다.
+  - GPT 응답의 `hsCandidates`, `hsCodes`, `hs6`, `primaryHsCandidate` 같은 별칭 필드도 읽도록 했다.
+  - 검증: 관련 테스트, typecheck, lint, 전체 테스트, build 통과.
+
 ## 2026-05-25
 
 ### 운영·런칭 준비

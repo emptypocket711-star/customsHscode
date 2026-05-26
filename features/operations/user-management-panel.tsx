@@ -2,11 +2,12 @@
 
 import type { ReactNode } from "react";
 import { useActionState, useMemo, useState } from "react";
-import { Activity, Filter, Network, Save, Search, Trash2 } from "lucide-react";
+import { Activity, ExternalLink, Filter, KeyRound, Network, Save, Search, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import {
   deleteManagedUserAction,
+  generateManagedUserTestLoginLinkAction,
   updateManagedUserAction,
   type DeveloperUserActionState
 } from "@/server/actions/developer-user-management.actions";
@@ -77,6 +78,7 @@ function StatusMessage({ state }: { state: DeveloperUserActionState }) {
 export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
   const [updateState, updateAction, updatePending] = useActionState(updateManagedUserAction, initialState);
   const [deleteState, deleteAction, deletePending] = useActionState(deleteManagedUserAction, initialState);
+  const [testLoginState, testLoginAction, testLoginPending] = useActionState(generateManagedUserTestLoginLinkAction, initialState);
   const [query, setQuery] = useState("");
   const [accountTypeFilter, setAccountTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -170,6 +172,7 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
           </div>
           <StatusMessage state={updateState} />
           <StatusMessage state={deleteState} />
+          <StatusMessage state={testLoginState} />
         </CardBody>
       </Card>
 
@@ -346,6 +349,51 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
                     저장
                   </button>
                 </div>
+              </form>
+
+              <form action={testLoginAction} className="grid gap-3 rounded-md border border-amber-200 bg-amber-50 p-3">
+                <input name="userId" type="hidden" value={user.id} />
+                <input name="email" type="hidden" value={user.email} />
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <p className="inline-flex items-center gap-2 text-sm font-semibold text-amber-950">
+                      <KeyRound aria-hidden="true" size={16} />
+                      테스트 로그인 링크
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-amber-900">
+                      개발자 테스트 전용입니다. 링크를 받은 사람은 비밀번호 없이 해당 계정으로 접속할 수 있으므로 공유하지 마세요.
+                    </p>
+                  </div>
+                  <button
+                    className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-md bg-amber-700 px-4 text-sm font-semibold text-white hover:bg-amber-800 disabled:cursor-not-allowed disabled:bg-slate-500"
+                    disabled={testLoginPending}
+                    type="submit"
+                  >
+                    <KeyRound aria-hidden="true" size={16} />
+                    {testLoginPending ? "생성 중" : "링크 생성"}
+                  </button>
+                </div>
+                {testLoginState.status === "success" && testLoginState.targetUserId === user.id && testLoginState.testLoginUrl ? (
+                  <div className="grid gap-2 rounded-md border border-amber-300 bg-white p-3">
+                    <label className="grid gap-1 text-xs font-semibold text-slate-700">
+                      생성된 링크
+                      <input
+                        className="focus-ring rounded-md border border-slate-300 px-3 py-2 font-mono text-xs text-slate-950"
+                        readOnly
+                        value={testLoginState.testLoginUrl}
+                      />
+                    </label>
+                    <a
+                      className="focus-ring inline-flex h-10 w-fit items-center gap-2 rounded-md bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-800"
+                      href={testLoginState.testLoginUrl}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      <ExternalLink aria-hidden="true" size={16} />
+                      새 창에서 테스트 로그인
+                    </a>
+                  </div>
+                ) : null}
               </form>
 
               <form
