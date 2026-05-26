@@ -12,14 +12,61 @@ export type DeveloperUserActionState = {
   status: "idle" | "success" | "error";
   message?: string;
   targetUserId?: string;
+  createdUserId?: string;
   testLoginUrl?: string;
 };
 
 const initialState: DeveloperUserActionState = { status: "idle" };
 
 const userRoleSchema = z.enum(["developer", "admin", "customs_staff", "client"]);
+const creatableUserRoleSchema = z.enum(["admin", "customs_staff", "client"]);
 const accountTypeSchema = z.enum(["personal", "company"]);
 const companyRoleSchema = z.enum(["admin", "member"]);
+
+const createUserSchema = z.object({
+  email: z.email("이메일 형식을 확인해 주세요.").trim().max(255),
+  password: z.string()
+    .min(8, "비밀번호는 8자 이상이어야 합니다.")
+    .regex(/[0-9]/, "비밀번호에는 숫자가 포함되어야 합니다.")
+    .regex(/[a-z]/, "비밀번호에는 영문 소문자가 포함되어야 합니다.")
+    .regex(/[A-Z]/, "비밀번호에는 영문 대문자가 포함되어야 합니다.")
+    .regex(/[^A-Za-z0-9]/, "비밀번호에는 특수문자가 포함되어야 합니다."),
+  passwordConfirm: z.string(),
+  fullName: z.string().trim().min(1, "이름을 입력해 주세요.").max(80),
+  role: creatableUserRoleSchema,
+  accountType: accountTypeSchema,
+  companyRole: companyRoleSchema,
+  allowedIpCount: z.coerce.number().int().min(1).max(100),
+  companyName: z.string().trim().max(120).optional(),
+  businessNo: z.string().trim().max(12).optional()
+}).superRefine((value, context) => {
+  if (value.password !== value.passwordConfirm) {
+    context.addIssue({
+      code: "custom",
+      message: "비밀번호 확인이 일치하지 않습니다.",
+      path: ["passwordConfirm"]
+    });
+  }
+
+  if (value.accountType === "company") {
+    if (!value.companyName) {
+      context.addIssue({
+        code: "custom",
+        message: "기업회원은 회사명을 입력해 주세요.",
+        path: ["companyName"]
+      });
+    }
+
+    const businessNo = normalizeBusinessNo(value.businessNo);
+    if (!businessNo || businessNo.length !== 10) {
+      context.addIssue({
+        code: "custom",
+        message: "기업회원은 사업자등록번호 숫자 10자리를 입력해 주세요.",
+        path: ["businessNo"]
+      });
+    }
+  }
+});
 
 const updateUserSchema = z.object({
   userId: z.uuid(),
@@ -53,6 +100,91 @@ function stringValue(formData: FormData, key: string) {
 function normalizeBusinessNo(value?: string) {
   const digits = value ? value.replace(/\D/g, "") : "";
   return digits || null;
+}
+
+function normalizeEmail(value: string) {
+  return value.trim().toLowerCase();
+}
+
+async function findAuthUserIdByEmail(admin: ReturnType<typeof createSupabaseServiceRoleClient>, email: string) {
+  const normalizedEmail = normalizeEmail(email);
+  const perPage = 1000;
+
+  for (let page = 1; page <= 50; page += 1) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
+    if (error) throw error;
+
+    const found = data.users.find((user) => normalizeEmail(user.email ?? "") === normalizedEmail);
+    if (found) return found.id;
+    if (data.users.length < perPage) return null;
+  }
+
+  return null;
+}
+
+async function resolveCompanyForCreate(
+  admin: ReturnType<typeof createSupabaseServiceRoleClient>,
+  input: z.infer<typeof createUserSchema>
+) {
+  if (input.accountType === "company") {
+    const companyName = input.companyName?.trim() || "미입력 회사";
+    const businessNo = normalizeBusinessNo(input.businessNo);
+
+    const { data: existingCompany, error: existingError } = await admin
+      .from("companies")
+      .select("id,name,business_no,type")
+      .eq("name", companyName)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingError) throw existingError;
+    if (existingCompany?.id) {
+      return {
+        id: existingCompany.id as string,
+        name: existingCompany.name as string,
+        businessNo: (existingCompany.business_no as string | null) || businessNo,
+        reused: true
+      };
+    }
+
+    const { data: company, error: companyError } = await admin
+      .from("companies")
+      .insert({
+        name: companyName,
+        business_no: businessNo,
+        type: "company"
+      })
+      .select("id,name,business_no")
+      .single();
+
+    if (companyError) throw companyError;
+    return {
+      id: company.id as string,
+      name: company.name as string,
+      businessNo: company.business_no as string | null,
+      reused: false
+    };
+  }
+
+  const localPart = input.email.split("@")[0] || "personal";
+  const companyName = input.companyName?.trim() || `${input.fullName || localPart} 개인회원`;
+  const { data: company, error: companyError } = await admin
+    .from("companies")
+    .insert({
+      name: companyName,
+      business_no: null,
+      type: "personal"
+    })
+    .select("id,name,business_no")
+    .single();
+
+  if (companyError) throw companyError;
+  return {
+    id: company.id as string,
+    name: company.name as string,
+    businessNo: null,
+    reused: false
+  };
 }
 
 async function requireCurrentDeveloper() {
@@ -90,6 +222,123 @@ async function requestOrigin() {
   const proto = headersList.get("x-forwarded-proto") || "http";
   if (!host) return process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   return `${proto}://${host}`;
+}
+
+export async function createManagedUserAction(
+  previousState: DeveloperUserActionState = initialState,
+  formData: FormData
+): Promise<DeveloperUserActionState> {
+  void previousState;
+
+  try {
+    const actor = await requireCurrentDeveloper();
+    const parsed = createUserSchema.safeParse({
+      email: stringValue(formData, "email"),
+      password: stringValue(formData, "password"),
+      passwordConfirm: stringValue(formData, "passwordConfirm"),
+      fullName: stringValue(formData, "fullName"),
+      role: stringValue(formData, "role"),
+      accountType: stringValue(formData, "accountType"),
+      companyRole: stringValue(formData, "companyRole"),
+      allowedIpCount: stringValue(formData, "allowedIpCount"),
+      companyName: stringValue(formData, "companyName"),
+      businessNo: stringValue(formData, "businessNo")
+    });
+
+    if (!parsed.success) {
+      return {
+        status: "error",
+        message: parsed.error.issues[0]?.message ?? "입력값을 확인해 주세요."
+      };
+    }
+
+    const input = parsed.data;
+    const admin = createSupabaseServiceRoleClient();
+    const normalizedEmail = normalizeEmail(input.email);
+    const existingUserId = await findAuthUserIdByEmail(admin, normalizedEmail);
+
+    if (existingUserId) {
+      return {
+        status: "error",
+        targetUserId: existingUserId,
+        message: "이미 등록된 이메일입니다. 기존 사용자를 수정해 주세요."
+      };
+    }
+
+    const company = await resolveCompanyForCreate(admin, input);
+    const allowedIpCount = input.accountType === "personal" ? 1 : input.allowedIpCount;
+    const companyRole = input.accountType === "personal" ? "member" : input.companyRole;
+    const businessNo = input.accountType === "company" ? normalizeBusinessNo(input.businessNo) : null;
+    const { data: createdUser, error: createError } = await admin.auth.admin.createUser({
+      email: normalizedEmail,
+      password: input.password,
+      email_confirm: true,
+      user_metadata: {
+        full_name: input.fullName,
+        account_type: input.accountType,
+        company_name: company.name,
+        business_no: businessNo || ""
+      }
+    });
+
+    if (createError) throw createError;
+    if (!createdUser.user?.id) {
+      throw new Error("Supabase Auth 사용자를 생성하지 못했습니다.");
+    }
+
+    const now = new Date().toISOString();
+    const { error: profileError } = await admin
+      .from("profiles")
+      .upsert({
+        id: createdUser.user.id,
+        email: normalizedEmail,
+        full_name: input.fullName,
+        role: input.role,
+        company_id: company.id,
+        company_role: companyRole,
+        account_type: input.accountType,
+        allowed_ip_count: allowedIpCount,
+        onboarding_completed_at: now
+      }, { onConflict: "id" });
+
+    if (profileError) {
+      await admin.auth.admin.deleteUser(createdUser.user.id);
+      throw profileError;
+    }
+
+    await recordAuditLog({
+      action: "developer_user_create",
+      actorId: actor.id,
+      companyId: company.id,
+      targetTable: "auth.users",
+      targetId: createdUser.user.id,
+      after: {
+        email: normalizedEmail,
+        fullName: input.fullName,
+        role: input.role,
+        accountType: input.accountType,
+        companyRole,
+        allowedIpCount,
+        companyId: company.id,
+        companyName: company.name,
+        companyReused: company.reused,
+        businessNo
+      }
+    });
+
+    revalidatePath("/operations/users");
+    return {
+      status: "success",
+      createdUserId: createdUser.user.id,
+      targetUserId: createdUser.user.id,
+      message: `${normalizedEmail} 사용자를 생성했습니다. 임시 비밀번호는 화면에 다시 표시하지 않습니다.`
+    };
+  } catch (error) {
+    return {
+      status: "error",
+      message: error instanceof Error ? error.message : "사용자를 생성하지 못했습니다."
+    };
+  }
 }
 
 export async function updateManagedUserAction(

@@ -158,11 +158,15 @@ describe("lookup governance guards", () => {
     const developerActions = read("server/actions/developer-user-management.actions.ts");
     const userPanel = read("features/operations/user-management-panel.tsx");
 
+    expect(developerActions).toContain("createManagedUserAction");
+    expect(developerActions).toContain("admin.auth.admin.createUser");
+    expect(developerActions).toContain("developer_user_create");
     expect(developerActions).toContain("generateManagedUserTestLoginLinkAction");
     expect(developerActions).toContain("TEST_LOGIN_LINKS_ENABLED");
     expect(developerActions).toContain("requireCurrentDeveloper()");
     expect(developerActions).toContain("admin.auth.admin.generateLink");
     expect(developerActions).toContain("developer_test_login_link_create");
+    expect(userPanel).toContain("유저 직접 생성");
     expect(userPanel).toContain("테스트 로그인 링크");
   });
 

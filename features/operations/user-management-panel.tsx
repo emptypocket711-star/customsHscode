@@ -2,10 +2,11 @@
 
 import type { ReactNode } from "react";
 import { useActionState, useEffect, useMemo, useState } from "react";
-import { Activity, ChevronDown, ExternalLink, Filter, KeyRound, Network, Save, Search, Trash2 } from "lucide-react";
+import { Activity, ChevronDown, ExternalLink, Filter, KeyRound, Network, Save, Search, Trash2, UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import {
+  createManagedUserAction,
   deleteManagedUserAction,
   generateManagedUserTestLoginLinkAction,
   updateManagedUserAction,
@@ -76,6 +77,7 @@ function StatusMessage({ state }: { state: DeveloperUserActionState }) {
 }
 
 export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
+  const [createState, createAction, createPending] = useActionState(createManagedUserAction, initialState);
   const [updateState, updateAction, updatePending] = useActionState(updateManagedUserAction, initialState);
   const [deleteState, deleteAction, deletePending] = useActionState(deleteManagedUserAction, initialState);
   const [testLoginState, testLoginAction, testLoginPending] = useActionState(generateManagedUserTestLoginLinkAction, initialState);
@@ -84,11 +86,13 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
   const [statusFilter, setStatusFilter] = useState("all");
   const [roleFilter, setRoleFilter] = useState("all");
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [createAccountType, setCreateAccountType] = useState<"personal" | "company">("company");
 
   useEffect(() => {
-    if (updateState.status === "idle" && deleteState.status === "idle" && testLoginState.status === "idle") return;
+    if (createState.status === "idle" && updateState.status === "idle" && deleteState.status === "idle" && testLoginState.status === "idle") return;
     window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
-  }, [deleteState.status, testLoginState.status, updateState.status]);
+  }, [createState.status, deleteState.status, testLoginState.status, updateState.status]);
 
   const filteredUsers = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -180,6 +184,166 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
           <StatusMessage state={deleteState} />
           <StatusMessage state={testLoginState} />
         </CardBody>
+      </Card>
+
+      <Card>
+        <button
+          aria-expanded={showCreateForm}
+          className="focus-ring flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition hover:bg-blue-50/60"
+          onClick={() => setShowCreateForm((current) => !current)}
+          type="button"
+        >
+          <span>
+            <span className="inline-flex items-center gap-2 text-base font-semibold text-slate-950">
+              <UserPlus aria-hidden="true" size={18} />
+              유저 직접 생성
+            </span>
+            <span className="mt-1 block text-sm text-slate-600">
+              개발자가 로그인 아이디와 임시 비밀번호를 직접 발급합니다. 생성 내역은 감사 로그에 기록됩니다.
+            </span>
+          </span>
+          <ChevronDown
+            aria-hidden="true"
+            className={showCreateForm ? "shrink-0 rotate-180 text-blue-700 transition-transform" : "shrink-0 text-slate-500 transition-transform"}
+            size={20}
+          />
+        </button>
+        <div className={showCreateForm ? "grid grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-out" : "grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 ease-out"}>
+          <div className="overflow-hidden">
+            <CardBody className="grid gap-4 border-t border-slate-200">
+              <StatusMessage state={createState} />
+              <form action={createAction} className="grid gap-4">
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  <label className="grid gap-1 text-sm font-medium text-slate-700">
+                    회원 유형
+                    <select
+                      className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-950"
+                      name="accountType"
+                      onChange={(event) => setCreateAccountType(event.target.value === "personal" ? "personal" : "company")}
+                      value={createAccountType}
+                    >
+                      <option value="company">기업회원</option>
+                      <option value="personal">개인회원</option>
+                    </select>
+                  </label>
+                  <label className="grid gap-1 text-sm font-medium text-slate-700">
+                    이메일 로그인 ID
+                    <input
+                      autoComplete="off"
+                      className="focus-ring rounded-md border border-slate-300 px-3 py-2 text-slate-950"
+                      name="email"
+                      placeholder="user@example.com"
+                      required
+                      type="email"
+                    />
+                  </label>
+                  <label className="grid gap-1 text-sm font-medium text-slate-700">
+                    이름
+                    <input
+                      className="focus-ring rounded-md border border-slate-300 px-3 py-2 text-slate-950"
+                      name="fullName"
+                      placeholder="사용자 이름"
+                      required
+                    />
+                  </label>
+                  <label className="grid gap-1 text-sm font-medium text-slate-700">
+                    앱 권한
+                    <select className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-950" name="role" defaultValue="client">
+                      <option value="client">client</option>
+                      <option value="customs_staff">customs_staff</option>
+                      <option value="admin">admin</option>
+                    </select>
+                  </label>
+                  <label className="grid gap-1 text-sm font-medium text-slate-700">
+                    임시 비밀번호
+                    <input
+                      autoComplete="new-password"
+                      className="focus-ring rounded-md border border-slate-300 px-3 py-2 text-slate-950"
+                      minLength={8}
+                      name="password"
+                      placeholder="8자 이상"
+                      required
+                      type="password"
+                    />
+                  </label>
+                  <label className="grid gap-1 text-sm font-medium text-slate-700">
+                    비밀번호 확인
+                    <input
+                      autoComplete="new-password"
+                      className="focus-ring rounded-md border border-slate-300 px-3 py-2 text-slate-950"
+                      minLength={8}
+                      name="passwordConfirm"
+                      required
+                      type="password"
+                    />
+                  </label>
+                  <label className="grid gap-1 text-sm font-medium text-slate-700">
+                    회사/공간명
+                    <input
+                      className="focus-ring rounded-md border border-slate-300 px-3 py-2 text-slate-950"
+                      name="companyName"
+                      placeholder={createAccountType === "company" ? "회사명" : "미입력 시 개인 공간명 자동 생성"}
+                      required={createAccountType === "company"}
+                    />
+                  </label>
+                  <label className="grid gap-1 text-sm font-medium text-slate-700">
+                    사업자등록번호
+                    <input
+                      className="focus-ring rounded-md border border-slate-300 px-3 py-2 text-slate-950 disabled:bg-slate-100 disabled:text-slate-400"
+                      disabled={createAccountType === "personal"}
+                      name="businessNo"
+                      placeholder="000-00-00000"
+                      required={createAccountType === "company"}
+                    />
+                  </label>
+                  <label className="grid gap-1 text-sm font-medium text-slate-700">
+                    회사 내 권한
+                    <select
+                      className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-950 disabled:bg-slate-100 disabled:text-slate-400"
+                      disabled={createAccountType === "personal"}
+                      name="companyRole"
+                      defaultValue="member"
+                    >
+                      <option value="member">member</option>
+                      <option value="admin">admin</option>
+                    </select>
+                  </label>
+                  <label className="grid gap-1 text-sm font-medium text-slate-700">
+                    허용 IP 수
+                    <input
+                      className="focus-ring rounded-md border border-slate-300 px-3 py-2 text-slate-950 disabled:bg-slate-100 disabled:text-slate-400"
+                      disabled={createAccountType === "personal"}
+                      max={100}
+                      min={1}
+                      name="allowedIpCount"
+                      defaultValue={createAccountType === "personal" ? 1 : 5}
+                      type="number"
+                    />
+                  </label>
+                </div>
+                {createAccountType === "personal" ? (
+                  <>
+                    <input name="companyRole" type="hidden" value="member" />
+                    <input name="allowedIpCount" type="hidden" value="1" />
+                  </>
+                ) : null}
+                <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
+                  비밀번호는 숫자, 영문 대문자, 영문 소문자, 특수문자를 모두 포함한 8자 이상이어야 합니다. 개발자 계정은 이 화면에서 새로 만들지 않습니다.
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    className="focus-ring inline-flex items-center gap-2 rounded-md bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-500"
+                    disabled={createPending}
+                    type="submit"
+                  >
+                    <UserPlus aria-hidden="true" size={16} />
+                    {createPending ? "생성 중" : "사용자 생성"}
+                  </button>
+                </div>
+              </form>
+            </CardBody>
+          </div>
+        </div>
       </Card>
 
       <div className="grid gap-3">
