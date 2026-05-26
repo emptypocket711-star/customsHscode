@@ -135,6 +135,15 @@
   - `RESEND_API_KEY`
   - `NOTIFICATION_FROM_EMAIL`
   - `JOB_WORKER_SECRET` 또는 `CRON_SECRET`
+- 2026-05-27 추가 정리:
+  - Vercel에서 관세청 38010 포트 호출이 불안정해 API001 전용 Vultr relay를 구성했다.
+  - relay health endpoint는 `http://158.247.223.35:8787/health`이며 systemd service 이름은 `hsfinder-cargo-relay`다.
+  - API005 장치장정보조회 데이터를 `customs_shed_info`에 적재했다.
+  - API005 `ldunPlcSnarYn = Y`는 CY, `N`은 CFS로 분류한다.
+  - API001 이벤트의 `shedSgn`을 API005 `shed_code`와 매칭해 `CY 반입`, `CFS 반입` 감시 조건을 지원한다.
+  - 감시 등록 시 이미 지나간 목표 상태가 있으면 즉시 메일을 보낸다.
+  - 감시는 메일 발송 성공 시에만 종료한다. 메일 실패 시 active 상태로 유지하고 다음 주기에 재시도한다.
+  - 상세 운영 절차는 `docs/CARGO_API001_RUNBOOK.md`를 기준으로 한다.
 
 ### 운영 공지사항
 

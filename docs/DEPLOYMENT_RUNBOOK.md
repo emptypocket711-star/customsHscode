@@ -50,6 +50,17 @@ DATABASE_URL='postgresql://postgres:...@...:5432/postgres' npm run db:refresh-da
 - `CUSTOMS_API_PRODUCT_SEARCH_LIVE_ENABLED=false`
 - `BACKGROUND_JOBS_ENABLED`는 worker/cron 준비 전까지 미설정 또는 `false`
 
+적하목록 조회·알림 기능을 켤 때 추가:
+
+- `CUSTOMS_API_CARGO_PROGRESS_RELAY_URL`
+- `CUSTOMS_API_CARGO_PROGRESS_RELAY_TOKEN`
+- `CUSTOMS_API_CARGO_PROGRESS_SERVICE_KEY`
+- `JOB_WORKER_SECRET`
+- `RESEND_API_KEY`
+- `NOTIFICATION_FROM_EMAIL`
+
+API001은 Vercel에서 관세청 `38010` 포트 직접 호출이 실패할 수 있어 현재 Vultr relay를 사용한다. 상세 운영 절차, relay 서버 정보, CY/CFS 판정 기준은 `docs/CARGO_API001_RUNBOOK.md`를 따른다.
+
 ## 3. 접근 제어
 
 - 첫 화면은 `/login`으로 진입한다.
