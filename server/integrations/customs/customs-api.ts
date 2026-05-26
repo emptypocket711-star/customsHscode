@@ -11,7 +11,8 @@ export type CustomsOpenApiSource =
   | "tariff_rate"
   | "statistical_code"
   | "exchange_rate"
-  | "cargo_progress";
+  | "cargo_progress"
+  | "shed_info";
 
 type CustomsApiConfig = {
   endpointEnvName: string;
@@ -72,6 +73,14 @@ const configs: Record<CustomsOpenApiSource, CustomsApiConfig> = {
     serviceKeyParamName: "crkyCn",
     sourceName: "관세청_화물통관진행정보",
     sourceVersion: "myc-openapi-api001-v1.0"
+  },
+  shed_info: {
+    endpointEnvName: "CUSTOMS_API_SHED_INFO_URL",
+    defaultEndpointUrl: "https://unipass.customs.go.kr:38010/ext/rest/shedInfoQry/retrieveShedInfo",
+    serviceKeyEnvName: "CUSTOMS_API_SHED_INFO_SERVICE_KEY",
+    serviceKeyParamName: "crkyCn",
+    sourceName: "관세청 장치장 정보",
+    sourceVersion: "myc-openapi-api005-v1.0"
   }
 };
 
@@ -80,7 +89,11 @@ function resolveEndpointUrl(config: CustomsApiConfig) {
 
   if (
     configuredUrl
-    && (config.endpointEnvName === "CUSTOMS_API_EXCHANGE_RATE_URL" || config.endpointEnvName === "CUSTOMS_API_CARGO_PROGRESS_URL")
+    && (
+      config.endpointEnvName === "CUSTOMS_API_EXCHANGE_RATE_URL"
+      || config.endpointEnvName === "CUSTOMS_API_CARGO_PROGRESS_URL"
+      || config.endpointEnvName === "CUSTOMS_API_SHED_INFO_URL"
+    )
   ) {
     try {
       const url = new URL(configuredUrl);
@@ -254,6 +267,16 @@ export function buildCustomsCargoProgressQuery(input: {
   };
 }
 
+export function buildCustomsShedInfoQuery(input: {
+  customsOfficeCode?: string;
+  shedCode?: string;
+}) {
+  return {
+    jrsdCstmCd: input.customsOfficeCode?.trim(),
+    snarSgn: input.shedCode?.trim()
+  };
+}
+
 function xmlValue(source: string, tagName: string) {
   const match = source.match(new RegExp(`<${tagName}>([\\s\\S]*?)</${tagName}>`, "i"));
   return match?.[1]?.trim() ?? "";
@@ -351,6 +374,8 @@ export type CustomsCargoProgressEvent = {
   status: string;
   statusCode: string;
   location: string;
+  shedCode: string;
+  shedName: string;
   agency: string;
   processingDetails: string;
 };
@@ -480,6 +505,8 @@ export function parseCustomsCargoProgressXml(rawText: string): CustomsCargoProgr
     status: firstXmlValue(block, ["cargTrcnRelaBsopTpcdNm", "prgsStts", "csclPrgsStts", "sttsNm"]),
     statusCode: firstXmlValue(block, ["cargTrcnRelaBsopTpcd", "prgsStCd", "csclPrgsSttsCd"]),
     location: firstXmlValue(block, ["shedNm", "prnm", "cstmNm", "whNm"]),
+    shedCode: firstXmlValue(block, ["shedSgn"]),
+    shedName: firstXmlValue(block, ["shedNm"]),
     agency: firstXmlValue(block, ["agncNm", "trnpAgntNm", "pckCmpyNm"]),
     processingDetails: firstXmlValue(block, ["rlbrCn", "rlbrBssNo", "bfhnGdncCn", "prcsDls", "rmrk", "dclrNo"])
   })).filter((item) => item.status || item.statusCode || item.eventTime);

@@ -1,0 +1,831 @@
+===== PAGE 1 =====
+    4.5세대 국가관세종합정보망   OPEN API 연계 가이드_v3.7                관세청의 사전 승인 없이 본 내용의 전부 또는 일부에 대한 복사, 전재, 배포, 사용을 금합니다. 
+
+
+
+===== PAGE 2 =====
+ Open API 연계 가이드  
+  Copyright ⓒ CUSTOMS.All Rights Reserved    
+목   차 1. 서비스 개요............................................................. 1 1.1 OPEN API 서비스 개요 ................................................. 1 1.2 기대효과 .............................................................. 1 2. 서비스 사용............................................................. 2 2.1 서비스 신청 ........................................................... 2 2.2 서비스 활용 ........................................................... 4 3. 서비스 사용............................................................. 6 3.1 서비스 목록 ........................................................... 6 3.2 서비스 명세 ........................................................... 9 3.2.1 화물통관 진행정보 ............................................................................................................................. 9 3.2.2 수출신고번호별 수출이행 내역 ...................................................................................................... 13 3.2.3 수출입요건 승인 내역 ...................................................................................................................... 17 3.2.4 검사검역 내역 ................................................................................................................................... 22 3.2.5 장치장 정보 ....................................................................................................................................... 25 3.2.6 화물운송주선업자 목록 .................................................................................................................... 27 3.2.7 화물운송주선업자 내역 .................................................................................................................... 29 3.2.8 항공사 목록 ....................................................................................................................................... 31 3.2.9 항공사 내역 ....................................................................................................................................... 33 3.2.10 통관고유부호................................................................................................................................... 35 3.2.11 해외공급자부호 ............................................................................................................................... 37 3.2.12 관세환율 정보 ................................................................................................................................. 39 3.2.13 관세사 목록 .................................................................................................................................... 41 3.2.14 관세사 내역 .................................................................................................................................... 43 3.2.15 간이정액 환급율표 ......................................................................................................................... 45 3.2.16 간이정액 적용/비적용 업체 .......................................................................................................... 47 3.2.17 수출이행기간 단축대상 품목 ........................................................................................................ 49 3.2.18 HS부호 ............................................................................................................................................ 51 3.2.19 통계부호 .......................................................................................................................................... 53 3.2.20 컨테이너내역................................................................................................................................... 56 3.2.21 입항보고내역(해상) ........................................................................................................................ 58 3.2.22 수입신고필증검증 ........................................................................................................................... 60 3.2.23 보세운송차량등록내역 ................................................................................................................... 62 3.2.24 입출항보고내역 ............................................................................................................................... 64 3.2.25 통관단일창구 처리이력 ................................................................................................................. 67 3.2.26 선박회사 목록 ................................................................................................................................. 69 3.2.27 선박회사 내역 ................................................................................................................................. 71 
+
+
+===== PAGE 3 =====
+ Open API 연계 가이드  
+  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.28 개인통관고유부호 유효성검증 ...................................................................................................... 73 3.2.29 세관장확인대상 물품 조회 ............................................................................................................ 76 3.2.30 관세율 기본 조회 ........................................................................................................................... 79 3.2.31 우편번호별 관할세관 정보 ............................................................................................................ 82 3.2.32 수출입신고 전자첨부서류 제출 완료 유무 ................................................................................. 84 3.2.33 농림축산검역본부 동축산물 업체코드 조회 ............................................................................... 86 3.2.34 재수입조건부 수출 잔량 정보 ...................................................................................................... 88 3.2.35 수출신고필증검증 ........................................................................................................................... 90 3.2.36 수출이행내역(차대번호) ................................................................................................................. 92 3.2.37 우편물통관 진행정보 ..................................................................................................................... 94 3.2.38 하선신고 목록조회 ......................................................................................................................... 96 3.2.39 출항허가(해상) ................................................................................................................................ 98 3.2.40 출항허가(항공) .............................................................................................................................. 101 3.2.42 재수출면세 이행잔량 조회 .......................................................................................................... 104 3.2.43 HS CODE 내비게이션 조회 ......................................................................................................... 106 3.2.44 입항보고내역(항공) ...................................................................................................................... 108 3.2.45 재수출 조건부 수입의 수출이행 기한 정보제공 ...................................................................... 110 3.2.46 재수출 이행 완료보고 처리정보 제공 ....................................................................................... 112 3.2.47 보세구역별 외국물품 장치기간 정보 ......................................................................................... 114 3.2.48 수입물품 보세구역 반출신고 정보............................................................................................. 116 3.2.49 수입 제세의 납부여부 및 납부일자 정보 ................................................................................. 118 3.2.50 담보해제 신청 처리현황 정보 .................................................................................................... 120 3.2.51 전자상거래수출 적재 이행 정보 ................................................................................................ 122 3.2.52 수출입신고서 정정신청 처리상태 제공 ..................................................................................... 124 3.2.53 적재지 검사정보 제공 ................................................................................................................. 126 3.2.54 보세운송 운송차량정보 제공 ...................................................................................................... 128 3.2.55 전자상거래업자부호 유효성 검증 .............................................................................................. 130 4. 오류 메시지........................................................... 132 4.1 오류 메시지 구조 .................................................... 132 4.2 오류 메시지 예시 .................................................... 132 
+
+
+===== PAGE 4 =====
+ OPEN API 연계 가이드  
+ -1-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+1. 서비스 개요 1.1  OPEN API 서비스 개요 ○ 관세청 4세대 인터넷 통관포털 (UNI-PASS)에서는 업체나 개인이 수출입 업무를 처리함에 있어 필요한 정보를 신속하고 편리하게 활용할 수 있도록 정보제공 채널(OPEN API)을 신설 ○ OPEN API*를 통해 제공하는 정보를 명확히 이해하고 활용할 수 있도록 연계 가이드 제공 * Open API(Application Programming Interface) : 기상청에서 제공하는 날씨 정보, 버스/지하철 노선 정보와 같이 공개된 정보를 일반인이 응용 프로그램과 서비스 개발에 활용할 수 있도록 제공하는 프로그램 인터페이스  1.2   기대효과 수출입 업무를 위한 업체 또는 개인의 프로그램에 Open API를 적용함으로써 필요 정보를 빠르고 쉽게 활용할 수 있으며 이를 통한 업무처리 효율성 제고    
+
+
+===== PAGE 5 =====
+ OPEN API 연계 가이드  
+ -2-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+2. 서비스 사용 2.1  서비스 신청 가. OPEN API 서비스 신청  Open API를 사용하기 위해서는 UNI-PASS회원으로 가입되어 있어야 하며,  로그인 후 아래 메뉴에서 Open API 서비스를 신청할 수 있다  l ‘Home > My메뉴 > 서비스관리 > OpenAPI사용관리’  ① 조회 - 신청기간: 전체, 서비스명: 전체, 처리상태: 전체 선택 후 “조회” 버튼을 클릭한다 - ‘23년 10월 현재 총 53종의 Open API를 제공하고 있으며, 이미 신청한 서비스는 신청일자 등이 기입되어 있음을 알 수 있다.  
+   
+
+
+
+===== PAGE 6 =====
+ OPEN API 연계 가이드  
+ -3-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+② 신청  - 신규 서비스를 신청하고자 할 경우, 해당 서비스명 왼쪽 박스를 체크한 후     하단에 “OPEN API 신청” 버튼을 클릭한다 
+  아래와 같은 메시지가 보이면 정상적으로 신청된 것이다 
+         
+
+
+
+===== PAGE 7 =====
+ OPEN API 연계 가이드  
+ -4-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+나. OPEN API 서비스 신청 처리 결과 확인 서비스에 대한 승인은 신청 즉시 이루어지며 다시한번 조회를 해보면 처리상태가 “승인”으로 변경되어 있음을 확인할 수 있다  또한 서비스를 활용하기 위해서는 본인에게 발급된 인증키가 반드시 필요하므로 이를 확인해야 한다  
+   2.2  서비스 활용 가. REST 방식의 인증키 활용 https://unipass.customs.go.kr:38010/ext/rest/statsSgnQry/retrieveStatsSgnBrkd?crkyCn=00인증키&statsSgnTp=부호코드  나. OPEN API 호출 예시 https://unipass.customs.go.kr:38010/ext/rest/cargCsclPrgsInfoQry/retrieveCargCsclPrgsInfo?crkyCn=0000000000042&blNo=11111111111111111111  
+
+
+
+===== PAGE 8 =====
+ OPEN API 연계 가이드  
+ -5-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+다. 메시지 구조 <응답메세지명> <ntceInfo/> <응답정보명>      …….. </응답정보명> <tCnt> 응답 레코드 수 </tCnt> </응답메세지명> <expDclrNoPrExpFfmnBrkdQryRtnVo> <ntceInfo/> <expDclrNoPrExpFfmnBrkdQryRsltVo> <acptDt>20091229</acptDt> <lcaSgn>122</lcaSgn> <loadDtyTmlm>20100128</loadDtyTmlm> <tkofDt>20100107</tkofDt> <csclPckKndSgn>BE</csclPckKndSgn> <shpmPckKndSgn>GT</shpmPckKndSgn> <mrn>10HDMUGG0182</mrn> <shpmPckGcnt>61</shpmPckGcnt> <expConsrBrno>5058507989</expConsrBrno> <ldnp>KRKPO</ldnp> <blNO>HDMUPGOHS9311600</blNO> <shpmCmplYn>N</shpmCmplYn> <mnurEcm>티지에스1001026</mnurEcm> <shpmWght>60678</shpmWght> <owr>티지에스파이프(주)</owr> <dvdeShpmWdrw>0</dvdeShpmWdrw> <expDclrNo>122100900340033</expDclrNo> <csclWght>60678.0</csclWght> <trbsPermNo/> <csclPckGcnt>61</csclPckGcnt> </expDclrNoPrExpFfmnBrkdQryRsltVo> <tCnt>1</tCnt> </expDclrNoPrExpFfmnBrkdQryRtnVo>  
+
+
+===== PAGE 9 =====
+ OPEN API 연계 가이드  
+ -6-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3. 서비스 사용 3.1  서비스 목록 ID 서비스명(국문) 서비스 설명 API001 화물통관 진행정보 수입화물의 일반정보와 진행상태별 정보 제공 API002 수출신고번호별 수출이행 내역 수출신고번호별 수출이행내역 및 잔량 정보 제공 API003 수출입요건 승인 내역 수출입화물의 요건승인내역 정보 제공 API004 검사검역 내역 수출입 화물의 검사/검역 정보 제공 API005 장치장 정보 보세구역 부호 및 주소 정보 제공 API006 화물운송주선업자 목록 화물운송주선업자 부호 및 상호 정보 제공 API007 화물운송주선업자 내역 화물운송주선업자 주소, 전화번호 등 정보 제공 API008 항공사 목록 항공사 부호 정보 제공 API009 항공사 내역 항공사 부호, 상호, 주소 등 상세 정보 제공 API010 통관고유부호 통관고유부호 및 상호 정보 제공 API011 해외공급자부호 해외공급자 부호 및 상호 정보 제공 API012 관세환율 정보 관세환율 정보 제공 API013 관세사 목록 관세사 부호 및 상호 정보 제공 API014 관세사 내역 관세사 부호 및 전화번호등 상세 정보 제공 API015 간이정액 환급율표 간이정액환급율 정보 제공 API016 간이정액 적용/비적용 업체 간이정액 환급 적용/비적용 업체 정보 제공 API017 수출이행기간 단축대상 품목 수출이행기간 단축대상 품목 정보 제공 API018 HS부호 HS 정보 제공 API019 통계부호 내국세율, 관세 감면/분납부호 등 통계부호 제공 
+
+
+===== PAGE 10 =====
+ OPEN API 연계 가이드  
+ -7-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+API020 컨테이너내역조회 컨테이너번호, 규격, 봉인번호 제공 API021 입항보고내역조회(해상) 적하목록관리번호, 호출번호 등 해상입항정보 제공 API022 수입신고필증검증 수입신고필증 검증 여부 제공 API023 보세운송차량등록내역 보세운송차량등록내역 조회 제공 API024 입출항보고내역조회 입출항보고내역 조회 제공 API025 통관단일창구 처리이력 통관단일창구 처리이력 조회 API026 선박회사 목록 선박회사 부호 정보 제공 API027 선박회사 내역 선박회사 부호, 상호, 주소 등 상세 정보 제공 API028 수입신고 개인통관고유부호 검증 개인통관고유부호 유효성검증 제공 API029 세관장확인대상 물품조회 세관장확인대상 물품조회 제공 API030 관세율 기본 조회 관세율 기본조회 제공 API031 우편번호별 관할세관 정보 전자상거래 수출신고 시 물품소재지에 따른 관할 세관부호 정보 제공 API032 수출입신고 전자첨부서류 제출 완료 유무 수출입신고번호에 대한 전자 첨부서류 제출 완료 확인 여부 제공 API033 농림축산검역본부 동축산물 업체코드 조회 농림축산검역본부 동축산물 업체코드 제공 API034 재수입조건부 수출 잔량 정보 재수입조건부 수출 잔량 정보 API035 수출신고필증검증 수출신고필증 검증 내역 조회 API036 수출이행내역(차대번호) 중고차에 대한 수출신고(수리)취하 여부 조회 API037 우편물통관 진행정보 우편물통관 진행정보 조회 API038 하선신고 목록조회 하선신고 목록조회 정보제공 API039 출항허가(해상) 해상 출항허가 정보 제공 API040 출항허가(항공) 항공 출항허가 정보 제공 API042 재수출면세 이행잔량 조회 재수출면세 이행잔량 정보 제공 
+
+
+===== PAGE 11 =====
+ OPEN API 연계 가이드  
+ -8-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+API043 HS CODE 내비게이션 무역통계의 HS10단위부호로 신고한 내역을 건수별로 순위를 집계한 정보를 제공 API044 입항보고내역조회(항공) 적하목록관리번호, 호출번호 등 항공입항정보 제공 API045 재수출 조건부 수입의 수출이행 기한 정보 재수출 조건부 수입의 수출이행 기한 정보 제공 API046 재수출 이행 완료보고 처리정보 제공 재수출 이행 완료보고 처리정보 서비스 제공 API047 보세구역별 외국물품 장치기간 정보 보세구역별 외국물품 장치기간 정보 제공 API048 수입물품 보세구역 반출신고 정보 수입물품의 보세구역 반출신고 정보 제공 API049 수입 제세의 납부여부 및 납부일자 정보 수입 제세의 납부여부 및 납부일자 정보 제공 API050 담보해제 신청 처리현황 정보  담보해제 신청 처리현황 정보 제공 API051 전자상거래수출 적재 이행 정보  전자상거래수출의 적재 이행 정보 제공 API052 수출입신고서 정정신청 처리상태 제공 수출입신고서 정정신청 처리상태 제공 API053 적재지 검사정보 제공 적재지 검사정보 제공 API054 보세운송 운송차량정보 제공 보세운송 운송차량정보 제공 API055 전자상거래업자부호 유효성 검증 사업자번호로 전자상거래업자부호 검증   
+
+
+===== PAGE 12 =====
+ OPEN API 연계 가이드  
+ -9-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2  서비스 명세 3.2.1  화물통관 진행정보 ① 서비스 개요 서비스 정보 서비스 ID API001 서비스명(국문) 화물통관 진행정보 서비스명(영문) retrieveCargCsclPrgsInfo 서비스 설명 수입화물의 일반정보와 진행상태별 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ cargCsclPrgsInfoQry 운영환경 https://unipass.customs.go.kr:38010/ext/rest/ cargCsclPrgsInfoQry 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 cargMtNo 화물관리번호 19 0 화물관리번호 15 ~ 19자리 mblNo MBL번호 20 0 Master BL No hblNo HBL번호 20 0 House BL No 
+
+
+===== PAGE 13 =====
+ OPEN API 연계 가이드  
+ -10-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+blYy BL 년도 4 0 입항년도(MBL 또는 HBL 입력시 필수 입력) * 조회결과가 단건이면 상세내용을 제공하고 다건이면 목록을 제공합니다 * ntceInfo(오류메시지 공통컬럼)에 ‘[N00]’으로 시작하는 메세지가 리턴되면 다건으로 판단하시고 목록조회 프로그램 개발하시면 됩니다. (화물관리번호, MBL번호, HBL번호, 입항일자, 양륙항코드, 양륙항명, 선사항공사부호, 선사항공사 제공) * 목록에서 화물관리번호를 이용하여 해당 Open API를 다시 호출하시면 상세내용 조회가 가능합니다 * 화물통관진행정보 데이터 보관주기 정책에 따라 '23.06.17(토) 부터 3년 이내 데이터만 조회 가능합니다.  ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 cargMtNo 화물관리번호 19 1  prgsStts 진행상태 300 1  prgsStCd 진행상태코드 6 1  shipNat 선박국적 2 1  shipNatNm 선박국적명 300 1  mblNo MBL번호 20 1  hblNo HBL번호 20 1  agnc 대리점 150 1  shcoFlcoSgn 선사항공사부호 4 1  shcoFlco 선사항공사 150 1  cargTp 화물구분 150 1  ldprCd 적재항코드 5 1  ldprNm 적재항명 200 1  lodCntyCd 적출국가코드 2 1  shipNm 선박명 75 1  pckGcnt 포장개수 10 1  pckUt 포장단위 2 1  blPt B/L유형 1 1  blPtNm B/L유형명 300 1  dsprCd 양륙항코드 5 1  dsprNm 양륙항명 200 1  etprCstm 입항세관 75 1  etprDt 입항일자 8 1  msrm 용적 19 1  
+
+
+===== PAGE 14 =====
+ OPEN API 연계 가이드  
+ -11-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+ttwg 총중량 19 1  wghtUt 중량단위 2 1  prnm 품명 300 1  cntrGcnt 컨테이너개수 10 1  cntrNo 컨테이너번호 11 1  csclPrgsStts 통관진행상태 300 1  prcsDttm 처리일시 14 1  frwrSgn 포워더부호 4 1  frwrEntsConm 포워더명 150 1  vydf 항차 7 1  spcnCargCd 특수화물코드 4 1  mtTrgtCargYnNm 관리대상화물여부명 100 1  rlseDtyPridPassTpcd 반출의무과태료여부 2 1  dclrDelyAdtxYn 신고지연가산세여부 2 1  cargTrcnRelaBsopTpcd 처리구분 300 0..n  rlbrDttm 반출입일시 14 0..n  rlbrCn 반출입내용 500 0..n  pckGcnt 포장개수 10 0..n  pckUt 포장단위 2 0..n  wght 중량 19 0..n  wghtUt 중량단위 2 0..n  shedSgn 장치장부호 8 0..n  shedNm 장치장명 150 0..n  prcsDttm 처리일시 14 0..n  dclrNo 신고번호 40 0..n  rlbrBssNo 반출입근거번호 30 0..n  bfhnGdncCn 사전안내내용 4000 0..n  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/cargCsclPrgsInfoQry/retrieveCargCsclPrgsInfo?crkyCn=[인증키]&cargMtNo=00ANLU083N59007001 응답 메시지 
+
+
+===== PAGE 15 =====
+ OPEN API 연계 가이드  
+ -12-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+  <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  - <cargCsclPrgsInfoQryRtnVo> <ntceInfo/> - <cargCsclPrgsInfoQryVo> <csclPrgsStts>수입신고수리</csclPrgsStts> <vydf/> <rlseDtyPridPassTpcd>N</rlseDtyPridPassTpcd> <prnm>MAG****LAY</prnm> <ldprCd>D****K</ldprCd> <shipNat>TH</shipNat> <blPt>C</blPt> <dsprNm>인천공항</dsprNm> <etprDt>2****6</etprDt> <prgsStCd>CAGE12</prgsStCd> <msrm/> <wghtUt>KG</wghtUt> <dsprCd>ICN</dsprCd> <cntrGcnt>0</cntrGcnt> <cargTp>수입 일반화물</cargTp> <shcoFlcoSgn>XJ</shcoFlcoSgn> <pckGcnt>6</pckGcnt> <etprCstm>인천세관</etprCstm> <shipNm>XJ700</shipNm> <hblNo>605118340404</hblNo> <prcsDttm>20****044</prcsDttm> <entsKoreNm>태화********회사</entsKoreNm> <frwrSgn>T**X</frwrSgn> <spcnCargCd/> <ttwg>1009</ttwg> <ldprNm>D****G</ldprNm> <dclrDelyAdtxYn>N</dclrDelyAdtxYn> <mtTrgtCargYnNm>N</mtTrgtCargYnNm> <cargMtNo>18XJ****0002</cargMtNo> <cntrNo/> <mblNo>94000499505</mblNo> <blPtNm>Consol</blPtNm> <lodCntyCd>TH</lodCntyCd> <prgsStts>반출완료</prgsStts> <shcoFlco>타이에어****티드</shcoFlco> <pckUt>CT</pckUt> <shipNatNm>태국</shipNatNm> <agnc/> </cargCsclPrgsInfoQryVo> <tCnt>8</tCnt> - <cargCsclPrgsInfoDtlQryVo> <shedNm>(주) ****공</shedNm> <prcsDttm>201****44</prcsDttm> <dclrNo>0407****0162</dclrNo> <rlbrDttm>20****54</rlbrDttm> <wght>1009</wght> <rlbrBssNo>41****3M</rlbrBssNo> <bfhnGdncCn/> 
+
+
+===== PAGE 16 =====
+ OPEN API 연계 가이드  
+ -13-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+<wghtUt>KG</wghtUt> <pckGcnt>6</pckGcnt> <cargTrcnRelaBsopTpcd>반출신고</cargTrcnRelaBsopTpcd> <pckUt>CT</pckUt> <rlbrCn>수입신고 수리후 반출</rlbrCn> <shedSgn>0****1</shedSgn> </cargCsclPrgsInfoDtlQryVo> </cargCsclPrgsInfoQryRtnVo> 3.2.2  수출신고번호별 수출이행 내역 ①  서비스 개요 서비스 정보 서비스 ID API002 서비스명(국문) 수출신고번호별 수출이행 내역 서비스명(영문) retrieveExpDclrNoPrExpFfmnBrkd 서비스 설명 수출신고번호별 수출이행내역 및 잔량 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ expDclrNoPrExpFfmnBrkdQry 운영환경 https://unipass.customs.go.kr:38010/ext/rest/ expDclrNoPrExpFfmnBrkdQry 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  
+
+
+===== PAGE 17 =====
+ OPEN API 연계 가이드  
+ -14-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 expDclrNo 수출신고번호 15 0  blNo B/L번호 30 0   ③ 응답메세지 상세(수출신고번호로 조회 할 경우) 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 shpmPckUt 선(기)적포장단위 2 1  mnurConm 제조자상호 150 1  shpmCmplYn 선적완료여부 1 1  acptDt 수리일자 8 1  acptDttm 수리일시 6 1  shpmWght 선적중량 19 1  exppnConm 수출자상호 150 1  loadDtyTmIm 적재의무기한 8 1  sanm 선박/편명 10 1  expDclrNo 수출신고번호 15 1  csclWght 통관중량 19 1  shpmPckGcnt 선(기)적포장개수 10 1  csclPckUt 통관포장단위 6 1  csclPckGcnt 통관포장개수 2 1  shpmPckUt 선(기)적포장단위 2 0..n  shpmWght 선적중량 19 0..n  tkofDt 출항일자 8 0..n  shpmPckGcnt 선(기)적포장개수 10 0..n  blNo B/L 번호 30 0..n  ldpInscTrgtYn 적재지검사대상여부 1 1  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ③ 응답메세지 상세 ( B/L No로 조회 할 경우 ) 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 acptDt 수리일자 8 1..n  acptDttm 수리일시 6 1..n  exppnConm 수출자상호 150 1..n  loadDtyTmIm 적재의무기한 8 1..n  shpmAirptPortNm 선적지 200 1..n  tkofDt 출항일자 8 1..n  
+
+
+===== PAGE 18 =====
+ OPEN API 연계 가이드  
+ -15-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+mrn 적하목록관리번호 12 1..n  shpmPckGcnt 선(기)적포장개수 10 1..n  csclPckUt 통관포장단위 2 1..n  shpmPckUt 선(기)적포장단위 10 1..n  shpmcmplYn 선적완료여부 1 1..n  shpmWght 선적중량 19 1..n  dvdeWdrw 분할회수 10 1..n  expDclrNo 수출신고번호 15 1..n  csclWght 통관중량 19 1..n  csclPckGcnt 통관포장개수 10 1..n  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제(수출신고번호로 조회 할 경우) REST(URI) https://unipass.customs.go.kr:38010/ext/rest/expDclrNoPrExpFfmnBrkdQry/retrieveExpDclrNoPrExpFfmnBrkd?crkyCn=[인증키]&expDclrNo=122100900340033 응답 메시지   <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  - <expDclrNoPrExpFfmnBrkdQryRtnVo>   <ntceInfo />  - <expDclrNoPrExpFfmnBrkdQryRsltVo>   <mnurConm>**전자(주)</mnurConm>    <shpmCmplYn>Y</shpmCmplYn>    <acptDt>20140915</acptDt>    <acptDttm>110958</acptDttm>    <shpmWght>6.405</shpmWght>    <exppnConm>**전자(주)</exppnConm>    <loadDtyTmlm>20141015</loadDtyTmlm>   <sanm>OZ321</sanm>   <expDclrNo>152101****57248</expDclrNo>    <csclWght>8.2</csclWght>    <csclPckUt>CT</csclPckUt>    <csclPckGcnt>1</csclPckGcnt>    </expDclrNoPrExpFfmnBrkdQryRsltVo>   <tCnt>1</tCnt>  - <expDclrNoPrExpFfmnBrkdDtlQryRsltVo>   <shpmPckUt>CT</shpmPckUt>    <shpmWght>6.405</shpmWght>   <tkofDt>20140916</tkofDt>    <shpmPckGcnt>1</shpmPckGcnt>    <blNo>***0389056</blNo>    </expDclrNoPrExpFfmnBrkdDtlQryRsltVo> 
+
+
+===== PAGE 19 =====
+ OPEN API 연계 가이드  
+ -16-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+  </expDclrNoPrExpFfmnBrkdQryRtnVo> 
+ ④ 요청/응답 메시지 예제( B/L No로 조회 할 경우 ) REST(URI) https://unipass.customs.go.kr:38010/ext/rest/expDclrNoPrExpFfmnBrkdQry/retrieveExpDclrNoPrExpFfmnBrkd?crkyCn=[인증키]&blNo=***0389056 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  - <expDclrNoPrExpFfmnBrkdQryRtnVo>   <ntceInfo />    <tCnt>1</tCnt>  - <expDclrNoPrExpFfmnBrkdBlNoQryRsltVo>   <acptDt>20091229</acptDt>    <acptDttm>110958</acptDttm>    <exppnConm>****파이프(주)</exppnConm>    <loadDtyTmlm>20100128</loadDtyTmlm>    <shpmAirptPortNm>Pohang</shpmAirptPortNm>    <tkofDt>20100107</tkofDt>    <mrn>10***GG0182</mrn>    <shpmPckGcnt>61</shpmPckGcnt>    <csclPckUt>BE</csclPckUt>   <shpmPckUt>CT</shpmPckUt>   <shpmCmplYn>N</shpmCmplYn>    <shpmWght>60678</shpmWght>    <dvdeWdrw>0</dvdeWdrw>    <expDclrNo>122***00340033</expDclrNo>    <csclWght>60678.0</csclWght>    <csclPckGcnt>61</csclPckGcnt>    </expDclrNoPrExpFfmnBrkdBlNoQryRsltVo>   </expDclrNoPrExpFfmnBrkdQryRtnVo>   
+
+
+===== PAGE 20 =====
+ OPEN API 연계 가이드  
+ -17-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.3  수출입요건 승인 내역 ① 서비스 개요 서비스 정보 서비스 ID API003 서비스명(국문) 수출입요건 승인 내역 서비스명(영문) retrieveXtrnUserReqApreBrkd 서비스 설명 수출입화물의 요건승인내역 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ xtrnUserReqApreBrkdQry 운영환경 https://unipass.customs.go.kr:38010/ext/rest/ xtrnUserReqApreBrkdQry 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 reqApreNo 요건승인번호 15 1  imexTpcd 수출입구분코드 1 1 I : 수입, E : 수출  ③ 응답메세지 상세(수입요건승인내역, imexTpcd = ‘I’ ) 항목명(영문) 항목명(국문) 항목크항목구분 항목설명 
+
+
+===== PAGE 21 =====
+ OPEN API 연계 가이드  
+ -18-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+기 apreCond 승인조건 750 1  issDt 발급일자 8 1  lprt 선적항 150 1  relaFrmlNm 관련서식명 300 1  valtPrid 유효기간 8 1  relaLwor 관련법령 300 1  dlcn 인도조건 3 1  reqApreNo 요건승인번호 15 1  hsSgn HS부호 10 1..n  prlstIdfySgn 품목식별부호 30 1..n  rsqtyWght 잔량중량 20 1..n  apreWght 승인중량 18 1..n  csclWght 통관중량 33 1..n  wghtUt 중량단위 2 1..n  qtyUt 수량단위 50 1..n  prlstCd 품목코드 20 1..n  blNo B/L번호 100 1..n  apreQty 승인수량 19 1..n  usgNm 용도명 75 1..n  rsqtyQty 잔량수량 33 1..n  prnmStsz 품명및규격 4000 1..n  csclQty 통관수량 33 1..n  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)   ③ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/xtrnUserReqApreBrkdQry/retrieveXtrnUserReqApreBrkd?crkyCn=[인증키]&imexTpcd=I&reqApreNo=2270020200564821 응답 메시지 
+
+
+===== PAGE 22 =====
+ OPEN API 연계 가이드  
+ -19-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+<?xml version="1.0" encoding="UTF-8" standalone="true"?> <xtrnUserReqApreBrkdQryRtnVo> <ntceInfo/> <xtrnUserImpReqApreBrkdQryRsltVo> <apreCond/> <issDt>20180115</issDt> <lprt>Pusan</lprt> <relaFrmlNm>식품등의수입신고확인증</relaFrmlNm> <dlcn/> <valtPrid>29991231</valtPrid> <reqApreNo>2BE2018100012679</reqApreNo> <relaLwor>식품의약품안전처 신항수입식품검사소</relaLwor> </xtrnUserImpReqApreBrkdQryRsltVo> <tCnt>3</tCnt> <xtrnUserImpReqApreDtlBrkdQryRsltVo> <hsSgn>0713319000</hsSgn> <prlstIdfySgn>DHK001</prlstIdfySgn> <rsqtyWght>72000</rsqtyWght> <prlstCd>O000079</prlstCd> <blNo/> <apreQty>72</apreQty> <usgNm>식용</usgNm> <qtyUt>PG</qtyUt> <apreWght>72000</apreWght> <rsqtyQty>72</rsqtyQty> <wghtUt>KG</wghtUt> <prnmStsz>녹두</prnmStsz> <csclQty>0</csclQty> <csclWght>0</csclWght> </xtrnUserImpReqApreDtlBrkdQryRsltVo>   ③ 응답메세지 상세(수출요건승인내역, imexTpcd = ‘E’) 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 ovcsConm 해외거래처상호 150 1  apreCond 승인조건 750 1  dstcy 목적국 75 1  issDt 발급일자 8 1  relaFrmlNm 관련서식명 300 1  valtPrid 유효기간 8 1  ovcsNm 해외거래처명 100 1  relaLwor 관련법령 300 1  hsSgn HS부호 10 1..n  prlstIdfySgn 품목식별부호 30 1..n  
+
+
+===== PAGE 23 =====
+ OPEN API 연계 가이드  
+ -20-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+ntwg 순중량 19 1..n  qtyUt 수량단위 3 1..n  usgNm 용도명 750 1..n  rsqtyQty 잔량수량 19 1..n  prnmStsz 품명및규격 750 1..n  csclQty 통관수량 19 1..n  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)    ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/xtrnUserReqApreBrkdQry/retrieveXtrnUserReqApreBrkd?crkyCn=[인증키]&imexTpcd=E&reqApreNo=1034381000008801 응답 메시지   <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  - <xtrnUserReqApreBrkdQryRtnVo>   <ntceInfo />    <tCnt>16</tCnt>  - <xtrnUserExpReqApreBrkdQryRsltVo>   <ovcsConm />    <apreCond>반출목적외 사용금지</apreCond>    <dstcy />    <issDt>20100706</issDt>    <relaFrmlNm>반출승인신청서</relaFrmlNm>    <valtPrid>20100906</valtPrid>    <ovcsNm />    <relaLwor>남북교류협력에관한법률</relaLwor>    </xtrnUserExpReqApreBrkdQryRsltVo> - <xtrnUserExpReqApreDtlBrkdQryRsltVo>   <hsSgn>4820900000</hsSgn>    <prlstIdfySgn />    <rsqtyWght>0</rsqtyWght>    <dlcn>관세미지급 인도조건</dlcn>    <rsqtyQtyUt>EA</rsqtyQtyUt>    <csclWghtUt />    <usgNm />    <rsqtyQty>5</rsqtyQty>    <prnmStsz>풀 풀</prnmStsz>    <csclQty>5</csclQty>    <csclWght>0</csclWght>    <rsqtyWghtUt />    <csclQtyUt>EA</csclQtyUt>  
+
+
+===== PAGE 24 =====
+ OPEN API 연계 가이드  
+ -21-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+  </xtrnUserExpReqApreDtlBrkdQryRsltVo> - <xtrnUserExpReqApreDtlBrkdQryRsltVo>   <hsSgn>4820900000</hsSgn>    <prlstIdfySgn />    <rsqtyWght>0</rsqtyWght>    <dlcn>관세미지급 인도조건</dlcn>    <rsqtyQtyUt>EA</rsqtyQtyUt>    <csclWghtUt />    <usgNm />    <rsqtyQty>30</rsqtyQty>    <prnmStsz>볼펜 볼펜</prnmStsz>    <csclQty>30</csclQty>    <csclWght>0</csclWght>    <rsqtyWghtUt />    <csclQtyUt>EA</csclQtyUt>    </xtrnUserExpReqApreDtlBrkdQryRsltVo> - <xtrnUserExpReqApreDtlBrkdQryRsltVo>   <hsSgn>9603500000</hsSgn>    <prlstIdfySgn />    <rsqtyWght>0</rsqtyWght>    <dlcn>관세미지급 인도조건</dlcn>    <rsqtyQtyUt>EA</rsqtyQtyUt>    <csclWghtUt />    <usgNm />    <rsqtyQty>50</rsqtyQty>    <prnmStsz>솔부러쉬 솔부러쉬</prnmStsz>    <csclQty>50</csclQty>    <csclWght>0</csclWght>    <rsqtyWghtUt />    <csclQtyUt>EA</csclQtyUt>    </xtrnUserExpReqApreDtlBrkdQryRsltVo>   </xtrnUserReqApreBrkdQryRtnVo>    
+
+
+===== PAGE 25 =====
+ OPEN API 연계 가이드  
+ -22-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.4  검사검역 내역 ① 서비스 개요 서비스 정보 서비스 ID API004 서비스명(국문) 검사검역 내역 서비스명(영문) retrieveXtrnUserInscQuanBrkd 서비스 설명 수입 화물의 검사/검역 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ xtrnUserInscQuanBrkdQry 운영환경 https://unipass.customs.go.kr:38010/ext/rest/ xtrnUserInscQuanBrkdQry 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 inscQuanItt 검사검역기관 3 1  ntfcNo 통지번호 30 1  dgcnt 차수 6 1   ③ 응답메세지 상세 
+
+
+===== PAGE 26 =====
+ OPEN API 연계 가이드  
+ -23-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 rqstDt 신청일자 8 1   ntfcNo 통지번호 30 1  inscQuanIttSgn 검사검역기관부호 3 1   aplcLcaSgn 신청인관세사부호 5 1  lprt 선적항 150 1  ittSgn 기관부호 3 1   inscQuanDtrmDt 검사/검역결정일자 8 1   dscdAtspYn 폐기입회여부 1 1  ntfcDttm 통지일시 14 1   shpmDt 선적일 8 1  prlstMatrQty 품목사항수량 10 1   ntfcDgcnt 통지차수 6 1   inscQuanPsxaYn 검사/검역합격여부 300 1   dsqfTkacBrkd 불합격조치내역 750 1  dsqfRsn 불합격사유 750 1  inscQuanIttNm 검사검역기관명 450 1   pckKnd 포장종류 2 1..n  prlstIdfySgn 품목식별부호 30 1..n  rsqtyWght 잔량중량 19 1..n  wght 중량 19 1..n  qty 수량 19 1..n  usgNm 용도명 75 1..n   qtyUt 수량단위 50 1..n  rsqtyQty 잔량수량 19 1..n  cargMtNo 화물관리번호 19 1..n  prnmStsz 품명규격 4000 1..n  pckGcnt 포장개수 10 1..n  csclQty 통관수량 33 1..n  hsK HS번호 10 1..n  rsqtyPckGcnt 잔량포장개수 10 1..n   csclWght 통관중량 19 1..n  usgCd 용도코드 2 1..n   csclPckGcnt 통관포장개수 10 1..n  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) 
+
+
+===== PAGE 27 =====
+ OPEN API 연계 가이드  
+ -24-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+https://unipass.customs.go.kr:38010/ext/rest/xtrnUserInscQuanBrkdQry/retrieveXtrnUserInscQuanBrkd?crkyCn=[인증키]&inscQuanItt=11&ntfcNo=2CD2015014272&dgcnt=1 응답 메시지    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  - <xtrnUserInscQuanBrkdQryRtnVo>   <ntceInfo />    <tCnt>1</tCnt>  - <xtrnUserInscQuanBrkdQryRsltVo>   <rqstDt>20150113</rqstDt>    <ntfcNo>2CD20***14272</ntfcNo>    <inscQuanIttSgn>11</inscQuanIttSgn>    <aplcLcaSgn />    <aplcBsnsNo />    <lprt />    <ittSgn>11</ittSgn>    <inscQuanDtrmDt>20150113</inscQuanDtrmDt>    <imppnBsnsNo>1138133785</imppnBsnsNo>    <dscdAtspYn />    <ntfcDttm>20150113182208</ntfcDttm>    <imppnConm>(주)***내셔날</imppnConm>    <aplcConm />    <shpmDt />    <prlstMatrQty>1</prlstMatrQty>    <ntfcDgcnt>1</ntfcDgcnt>    <inscQuanPsxaYn>합격</inscQuanPsxaYn>    <dsqfTkacBrkd />    <cnsgNm />    <dsqfRsn />    </xtrnUserInscQuanBrkdQryRsltVo> - <xtrnUserInscQuanDtlBrkdQryRsltVo>   <pckKnd>CT</pckKnd>    <prlstIdfySgn />    <rsqtyWght>0</rsqtyWght>    <wght>8820</wght>    <qty>980</qty>    <usgNm>판매용</usgNm>    <qtyUt>CT</qtyUt>    <rsqtyQty>980</rsqtyQty>    <cargMtNo>15OOLU00012</cargMtNo>    <prnmStsz>BELLECOURE</prnmStsz>    <pckGcnt>980</pckGcnt>    <csclQty>0</csclQty>    <hsK>2204211000</hsK>    <rsqtyPckGcnt>980</rsqtyPckGcnt>    <csclWght>8820</csclWght>    <usgCd>58</usgCd>    <csclPckGcnt>0</csclPckGcnt>    </xtrnUserInscQuanDtlBrkdQryRsltVo>   </xtrnUserInscQuanBrkdQryRtnVo> 
+
+
+===== PAGE 28 =====
+ OPEN API 연계 가이드  
+ -25-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.5  장치장 정보 ① 서비스 개요 서비스 정보 서비스 ID API005 서비스명(국문) 장치장 정보 서비스명(영문) retrieveShedInfo 서비스 설명 보세구역 부호 및 주소 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/shedInfoQry 운영환경 https://unipass.customs.go.kr:38010/ext/rest/shedInfoQry 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 jrsdCstmCd 관할세관코드 3 0  snarSgn 보세구역부호 8 0   ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 snarSgn 보세구역부호 8 1..n  snarNm 보세구역명 150 1..n  snarAddr 보세구역주소 500 0..n  
+
+
+===== PAGE 29 =====
+ OPEN API 연계 가이드  
+ -26-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+snartelno 보세구역전화번호  0..n  pnltLvyTrgtYn 과태료부과대상여부 1 1..n  adtxColtPridYn 가산세징수여부 1 1..n  ldunPlcSnarYn 하역장소보세구역여부 1 1..n  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/shedInfoQry/retrieveShedInfo?crkyCn=[인증키]&jrsdCstmCd=040&snarSgn=04011010 응답 메시지   <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  - <shedInfoQryRtnVo>   <ntceInfo />  - <shedInfoQryRsltVo>   <snarAddr />    <snarSgn>040010**</snarSgn>    <pnltLvyTrgtYn>N</pnltLvyTrgtYn>   <adtxColtPridYn>N</adtxColtPridYn>   <snarNm />    <snartelno/>   <LdunPlcSnarYn>N</ LdunPlcSnarYn>   </shedInfoQryRsltVo> - <shedInfoQryRsltVo>   <snarAddr />    <snarSgn>040015**</snarSgn>   <pnltLvyTrgtYn>N</pnltLvyTrgtYn>   <adtxColtPridYn>N</adtxColtPridYn>    <snarNm />    <snartelno/>    <LdunPlcSnarYn>N</ LdunPlcSnarYn>   </shedInfoQryRsltVo> - <shedInfoQryRsltVo>   <snarAddr />    <snarSgn>040020**</snarSgn>   <pnltLvyTrgtYn>N</pnltLvyTrgtYn>   <adtxColtPridYn>N</adtxColtPridYn>    <snarNm />    <snartelno/>    <LdunPlcSnarYn>N</ LdunPlcSnarYn>   </shedInfoQryRsltVo>    
+
+
+===== PAGE 30 =====
+ OPEN API 연계 가이드  
+ -27-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.6  화물운송주선업자 목록 ① 서비스 개요 서비스 정보 서비스 ID API006 서비스명(국문) 화물운송주선업자 목록 서비스명(영문) retrieveFrwrLst 서비스 설명 화물운송주선업자 부호 및 상호 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/frwrLstQry 운영환경 https://unipass.customs.go.kr:38010/ext/rest/frwrLstQry 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 frwrNm 화물운송주선업자명 150 1  intpTp 업종구분 1 0 1:개인, 2:개인사업자, 3:법인사업자, 9:기타  ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 frwrSgn 화물운송주선업자부호 4 0..n  
+
+
+===== PAGE 31 =====
+ OPEN API 연계 가이드  
+ -28-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+frwrKoreNm 화물운송주선업자한글명 150 0..n  frwrEnglNm 화물운송주선업자영문명 150 0..n  rppnNm 대표자명 110 0..n  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/frwrLstQry/retrieveFrwrLst?crkyCn=[인증키]&frwrNm=한국&intpTp=3 응답 메시지  <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  - <frwrLstQryRtnVo>   <ntceInfo/>    <tCnt>3</tCnt>  - <frwrLstQryRsltVo>   <frwrEnglNm>KOREA MARITIME CO., LTD</frwrEnglNm>   <frwrSgn>K**L</frwrSgn>   <frwrKoreNm>한국해운(주)</frwrKoreNm>   <rppnNm>김**</rppnNm>   </frwrLstQryRsltVo> - <frwrLstQryRsltVo>   <frwrEnglNm>KOREA EVERGREEN LOGISTICS CO., LTD</frwrEnglNm>   <frwrSgn>K**L</frwrSgn>   <frwrKoreNm>한국에버그린로지스틱스(주) </frwrKoreNm>   <rppnNm>임**</rppnNm>   </frwrLstQryRsltVo> - <frwrLstQryRsltVo>   <frwrEnglNm>KGR LOGISTICS & ENGINEERING</frwrEnglNm>   <frwrSgn>K**L</frwrSgn>   <frwrKoreNm>한국금륜주식회사</frwrKoreNm>   <rppnNm>송**</rppnNm>   </frwrLstQryRsltVo> </frwrLstQryRtnVo>   
+
+
+===== PAGE 32 =====
+ OPEN API 연계 가이드  
+ -29-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.7  화물운송주선업자 내역 ① 서비스 개요 서비스 정보 서비스 ID API007 서비스명(국문) 화물운송주선업자 내역 서비스명(영문) retrieveFrwrBrkd 서비스 설명 화물운송주선업자 주소, 전화번호 등 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/frwrBrkdQry 운영환경 https://unipass.customs.go.kr:38010/ext/rest/frwrBrkdQry 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 frwrSgn 화물운송주선업자부호 4 1   ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 brnchAddr 지점주소 500 1  brno 사업자등록번호 10 1  koreConmNm 한글상호명 150 1  rppnFnm 대표자성명 110 1  
+
+
+===== PAGE 33 =====
+ OPEN API 연계 가이드  
+ -30-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+englConmNm 영문상호명 150 1  cntyCd 국가코드 2 1  telNo 전화번호 60 1  faxNo 팩스번호 60 1  frwrSgn 화물운송주선업자부호 4 1  rgsrValtPridXpirDt 등록유효기간만료일자 8 1  hdofAddr 본사주소 500 1  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/frwrBrkdQry/retrieveFrwrBrkd?crkyCn=[인증키]&frwrSgn=**TT 응답 메시지   <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  - <frwrBrkdQryRtnVo>   <ntceInfo />  - <frwrBrkdQryRsltVo>   <brnchAddr />    <brno>109***8161</brno>    <koreConmNm>**상운</koreConmNm>    <rppnFnm>신**</rppnFnm>    <englConmNm>***** TRADE & TRANSP</englConmNm>    <cntyCd>KR</cntyCd>    <telno>02-825-****</telno>    <faxNo>02-825-****</faxNo>    <frwrSgn>**TT</frwrSgn>    <rgsrValtPridXpirDt>20241024</rgsrValtPridXpirDt>    <hdofAddr>서울 동작 상도1동 ***번지</hdofAddr>    </frwrBrkdQryRsltVo>   <tCnt>1</tCnt>    </frwrBrkdQryRtnVo>   
+
+
+===== PAGE 34 =====
+ OPEN API 연계 가이드  
+ -31-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.8  항공사 목록 ① 서비스 개요 서비스 정보 서비스 ID API008 서비스명(국문) 항공사 목록  서비스명(영문) retrieveFlcoLst 서비스 설명 항공사 부호 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ flcoLstQry 운영환경 https://unipass.customs.go.kr:38010/ext/rest/ flcoLstQry 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 flcoNm 항공사명 150 1   ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 
+
+
+===== PAGE 35 =====
+ OPEN API 연계 가이드  
+ -32-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+flcoEngNm 항공사영문명 150 0..n  flcoKoreNm 항공사한글명 150 1..n  flcoSgn 항공사부호 2 1..n  rppnNm 대표자명 110 0..n  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/flcoLstQry/retrieveFlcoLst?crkyCn=[인증키] &flcoNm=**항공 응답 메시지   <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  - <flcoLstQryRtnVo>   <ntceInfo />  - <flcoLstQryRsltVo>   <flcoEnglNm>I*** AIR</flcoEnglNm>    <flcoKoreNm>**항공</flcoKoreNm>    <flcoSgn>E*</flcoSgn>    <rppnNm>외 명</rppnNm>    </flcoLstQryRsltVo> - <flcoLstQryRsltVo>   <flcoEnglNm>*******TRANS AIRLINE LTD.</flcoEnglNm>    <flcoKoreNm>*******스항공</flcoKoreNm>    <flcoSgn>Z*</flcoSgn>    <rppnNm>박**</rppnNm>    </flcoLstQryRsltVo> - <flcoLstQryRsltVo>   <flcoEnglNm>H***** AIRLINES CO.LTD</flcoEnglNm>    <flcoKoreNm>**항공</flcoKoreNm>    <flcoSgn>H*</flcoSgn>    <rppnNm>외 명</rppnNm>    </flcoLstQryRsltVo> </flcoLstQryRtnVo>    
+
+
+===== PAGE 36 =====
+ OPEN API 연계 가이드  
+ -33-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.9  항공사 내역 ① 서비스 개요 서비스 정보 서비스 ID API009 서비스명(국문) 항공사 내역 서비스명(영문) retrieveFlcoBrkd 서비스 설명 항공사 부호, 상호, 주소 등 상세 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/flcoBrkdQry 운영환경 https://unipass.customs.go.kr:38010/ext/rest/flcoBrkdQry 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 flcoSgn 항공사부호 2 1   ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 brno 사업자등록번호 10 1  flcoEnglSgn 항공사영문부호 3 1  flcoKoreConm 항공사한글상호 150 1  flcoNat 항공사국적 2 0  
+
+
+===== PAGE 37 =====
+ OPEN API 연계 가이드  
+ -34-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+rppnFnm 대표자성명 110 0  cntyNm 국가명 75 0  telno 전화번호 60 0  faxNo 팩스번호 60 0  flcoEnglConm 항공사영문상호 150 0  flcoNumSgn 항공사숫자부호 3 1  hdofAddr 본사주소 500 0  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/flcoBrkdQry/retrieveFlcoBrkd?crkyCn=[인증키]&flcoSgn=KC 응답 메시지   <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  - <flcoBrkdQryRtnVo>   <ntceInfo />    <tCnt>1</tCnt>  - <flcoBrkdQryRsltVo>   <brno>104***2681</brno>    <flcoEnglSgn>K**</flcoEnglSgn>    <flcoKoreConm>에어 ****</flcoKoreConm>    <flcoNat>K*</flcoNat>    <rppnFnm>이**</rppnFnm>    <cntyNm>카*흐</cntyNm>    <telno>032-743-****</telno>    <faxNo>032-743-****</faxNo>    <flcoEnglConm>AIR A***A</flcoEnglConm>    <flcoNumSgn>46*</flcoNumSgn>    <hdofAddr />    </flcoBrkdQryRsltVo>   </flcoBrkdQryRtnVo>    
+
+
+===== PAGE 38 =====
+ OPEN API 연계 가이드  
+ -35-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.10  통관고유부호 ① 서비스 개요 서비스 정보 서비스 ID API010 서비스명(국문) 통관고유부호 서비스명(영문) retrieveEcm 서비스 설명 통관고유부호 및 상호 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ecmQry 운영환경 https://unipass.customs.go.kr:38010/ext/rest/ecmQry 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 ecm 통관고유부호 19 0 통관고유부호 brno 사업자등록번호 10 0 사업자등록번호 conmNm 상호명 150 0 상호명  ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 
+
+
+===== PAGE 39 =====
+ OPEN API 연계 가이드  
+ -36-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+useYn 사용여부 1 1 사용여부 ecm 통관고유부호 19 1 통관고유부호 conmNm 상호명 150 0 상호명 bsnsNo 사업자번호 10 0 사업자등록번호 rppnNm 대표자명 110 0 대표자 성명 bslcBscsAddr 주소 500 0 사업자등록증 주소 rprsTelno 전화번호 60 0 대표전화번호 ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/ecmQry/retrieveEcm?crkyCn=[인증키]&ecm=한국**1831016&brno=13******92&conmNm=***한국**** 응답 메시지   <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  - <ecmQryRtnVo>   <ntceInfo />  - <ecmQryRsltVo>   <useYn />    <ecm>한국**18******6</ecm>    <conmNm>***한국**** </ conmNm>    <bsnsNo>13******92</bsnsNo>    <rppnNm>박**</rppnNm> <bslcBscsAddr>서울*** *** **** **</bslcBscsAddr>   <rprsTelno>0**********</rprsTelno> </ecmQryRsltVo>   <tCnt>1</tCnt>    </ecmQryRtnVo>    
+
+
+===== PAGE 40 =====
+ OPEN API 연계 가이드  
+ -37-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.11  해외공급자부호 ① 서비스 개요 서비스 정보 서비스 ID API011 서비스명(국문) 해외공급자부호 서비스명(영문) retrieveOvrsSplrSgn 서비스 설명 해외공급자부호 및 상호 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ovrsSplrSgnQry 운영환경 https://unipass.customs.go.kr:38010/ext/rest/ovrsSplrSgnQry 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 cntySgn 국가부호 2 1 2자리 국가부호 conm 상호명 150 1 2자리 이상입력  ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 athzDt 부여일자 8 1..n 부호를 부여한 일자 
+
+
+===== PAGE 41 =====
+ OPEN API 연계 가이드  
+ -38-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+englCntyNm 영문국가명 75 1..n 영문국가명 ovrsSplrSgn 해외공급자부호 13 1..n 해외공급자 부호 useStopRsn 사용정지사유 750 1..n 부호 정지 사유 afarConmSplrConm 정리후상호공급자상호 150 1..n 상호 정리 후 공급자 상호 rprsSgn 대표부호 13 1..n 대표 부호 splrAddr1 공급자주소 250 1..n 공급자 주소 useStopStts 사용정지상태 300 1..n 사용정지 상태 splrConm 공급자상호 150 1..n 공급자 상호 splrCntyAbrt 공급자국가약어 75 1..n 공급자 국가 약어 ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/ovrsSplrSgnQry/retrieveOvrsSplrSgn?crkyCn=[인증키]&cntySgn=TD&conm=AA 응답 메시지   <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  - <ovrsSplrSgnQryRtnVo>   <ntceInfo />  - <ovrsSplrSgnQryRsltVo>   <athzDt />    <englCntyNm>Chad</englCntyNm>    <ovrsSplrSgn>TDU***AC0001U</ovrsSplrSgn>    <useStopRsn />    <afarConmSplrConm>UNFPACHAD</afarConmSplrConm>    <rprsSgn>TDU***AC0001U</rprsSgn>    <splrAddr1>OTIER RESIDENTIEI RUE 1007 PORTE 140 BP 906 N JAM</splrAddr1>    <useStopStts>사용</useStopStts>    <splrConm>UNFPA CHAD</splrConm>    <splrCntyAbrt>CHAD</splrCntyAbrt>    </ovrsSplrSgnQryRsltVo> - <ovrsSplrSgnQryRsltVo>   <athzDt />    <englCntyNm>Chad</englCntyNm>    <ovrsSplrSgn>TDELGHAR0001K</ovrsSplrSgn>    <useStopRsn />    <afarConmSplrConm>ELGHARBENGINEER</afarConmSplrConm>    <rprsSgn />    <splrAddr1>N'DJAMENA REPUBLIQUE DU TCHAD</splrAddr1>    <useStopStts>사용</useStopStts>    <splrConm>ELGHARB ENGINEERING CO LTD</splrConm>    <splrCntyAbrt>CHAD</splrCntyAbrt>    </ovrsSplrSgnQryRsltVo> 
+
+
+===== PAGE 42 =====
+ OPEN API 연계 가이드  
+ -39-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+</ovrsSplrSgnQryRtnVo> 3.2.12  관세환율 정보 ① 서비스 개요 서비스 정보 서비스 ID API012 서비스명(국문) 관세환율 정보 제공 서비스명(영문) retrieveTrifFxrtInfo 서비스 설명 관세환율 정보를 조회 함 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/trifFxrtInfoQry 운영환경 https://unipass.customs.go.kr:38010/ext/rest/trifFxrtInfoQry 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 qryYymmDd 조회년월일 8 1  imexTp 수출입구분 1 1 2:수입,1:수출  
+
+
+===== PAGE 43 =====
+ OPEN API 연계 가이드  
+ -40-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 cntySgn 국가부호 2 1..n  mtryUtlNm 화폐단위명 30 1..n  fxrt 환율 13 1..n  currSgn 통화부호 3 1..n  aplyBgnDt 적용개시일자 8 1..n  imexTp 수출입구분 1 1..n  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/trifFxrtInfoQry/retrieveTrifFxrtInfo?crkyCn=[인증키]&qryYymmDd=20150101&imexTp=2 응답 메시지   <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  - <trifFxrtInfoQryRtnVo>   <ntceInfo />    <tCnt>61</tCnt>  - <trifFxrtInfoQryRsltVo>   <cntySgn>VN</cntySgn>    <mtryUtNm>Dong</mtryUtNm>    <fxrt>0.0509</fxrt>    <currSgn>VND</currSgn>    <aplyBgnDt>20141228</aplyBgnDt>    <imexTp>1</imexTp>    </trifFxrtInfoQryRsltVo> - <trifFxrtInfoQryRsltVo>   <cntySgn />    <mtryUtNm>Won</mtryUtNm>    <fxrt>1</fxrt>    <currSgn>KRW</currSgn>    <aplyBgnDt>20141228</aplyBgnDt>    <imexTp>1</imexTp>    </trifFxrtInfoQryRsltVo> - <trifFxrtInfoQryRsltVo>   <cntySgn />    <mtryUtNm />    <fxrt>1395.12</fxrt>    <currSgn>ECU</currSgn>    <aplyBgnDt>19981227</aplyBgnDt>    <imexTp>1</imexTp>    </trifFxrtInfoQryRsltVo> 
+
+
+===== PAGE 44 =====
+ OPEN API 연계 가이드  
+ -41-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+  </trifFxrtInfoQryRtnVo> 
+  3.2.13  관세사 목록 ① 서비스 개요 서비스 정보 서비스 ID API013 서비스명(국문) 관세사 목록 서비스명(영문) retrieveLcaBrkd 서비스 설명 관세사 부호 및 상호 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/lcaLstInfoQry 운영환경 https://unipass.customs.go.kr:38010/ext/rest/lcaLstInfoQry 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 
+
+
+===== PAGE 45 =====
+ OPEN API 연계 가이드  
+ -42-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 lcaSgn 관세사부호 5 0  jrsdCstm 관할세관 3 1   ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 cstmSgn 세관부호 3 1..n 관할 세관 부호 lcaSgn 관세사부호 5 1..n 관세사 부호 cstmNm 세관명 75 1..n 관할 세관 명 lcaNm 관세사명 150 1..n 관세사 명 ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/lcaLstInfoQry/retrieveLcaBrkd?crkyCn=[인증키]&lcaSgn=73***&jrsdCstm=010 응답 메시지   <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  - <lcaLstInfoQryRtnVo>   <ntceInfo />    <tCnt>1</tCnt>  - <lcaLstInfoQryRsltVo>   <cstmSgn>010</cstmSgn>    <lcaSgn>73***</lcaSgn>    <cstmNm>서울세관</cstmNm>    <lcaNm>이**</lcaNm>    </lcaLstInfoQryRsltVo>   </lcaLstInfoQryRtnVo>    
+
+
+===== PAGE 46 =====
+ OPEN API 연계 가이드  
+ -43-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.14  관세사 내역 ① 서비스 개요 서비스 정보 서비스 ID API014 서비스명(국문) 관세사 내역 서비스명(영문) retrieveLcaBrkd 서비스 설명 관세사 부호 및 전화번호등 상세 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/lcaBrkdQry 운영환경 https://unipass.customs.go.kr:38010/ext/rest/lcaBrkdQry 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 lcaSgn 관세사부호 5 0  brno 사업자번호 10 0   ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 jrsdCstmNm 관할세관명 75 1 관할 세관명 dcerPcd 관세사구분코드 1 1 관세사 구분 코드 lcaSgn 관세사부호 5 1 관세사 부호 5자리 
+
+
+===== PAGE 47 =====
+ OPEN API 연계 가이드  
+ -44-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+lcaConm 관세사상호 150 1 관세사 상호명 telNo 전화번호 60 1 관세사 대표 전화 addr 주소 500 1 관세사 주소 rppnNm 대표자명 110 0 관세사 대표자명 ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/lcaBrkdQry/retrieveLcaBrkd?crkyCn=[인증키]&lcaSgn=3**42 응답 메시지   <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  - <lcaBrkdQryRtnVo> - <lcaBrkdQryRsltVo>   <jrsdCstmNm>인천공항세관</jrsdCstmNm>    <dcerPcd>4</dcerPcd >    <lcaSgn>3**42</lcaSgn>    <lcaConm>**물류(주)</lcaConm>    <telno>032)742-**20</telno>    <addr>인천 중구 운서 물류단지 AMB ***</addr>    <rppnNm />    </lcaBrkdQryRsltVo>   <ntceInfo />    <tCnt>1</tCnt>    </lcaBrkdQryRtnVo>    
+
+
+===== PAGE 48 =====
+ OPEN API 연계 가이드  
+ -45-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.15  간이정액 환급율표 ① 서비스 개요 서비스 정보 서비스 ID API015 서비스명(국문) 간이정액 환급율표 서비스명(영문) retrieveSimlXamrttXtrnUser 서비스 설명 간이정액환급율 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ simlXamrttXtrnUserQry 운영환경 https://unipass.customs.go.kr:38010/ext/rest/ simlXamrttXtrnUserQry 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 baseDt 기준일자 8 1  hsSgn HS부호 10 0   ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 
+
+
+===== PAGE 49 =====
+ OPEN API 연계 가이드  
+ -46-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+prutDrwbWncrAmt 단위당환급원화금액 22 1..n  stsz 규격 500 1..n  drwbAmtBaseTpcd 환급금액기준구분코드 1 1..n 1: 10$당 환급액 2: 1만원당 환급액 aplyDd 적용일자 8 1..n  ceseDt 중지일자 8 1..n  hs10 HS10단위 10 1..n  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/simlXamrttXtrnUserQry/retrieveSimlXamrttXtrnUser?crkyCn=[인증키]&baseDt=19930201 응답 메시지   <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  - <simlXamrttXtrnUserQryRtnVo>   <ntceInfo />    <tCnt>100</tCnt>  - <simlXamrttXtrnUserQryRsltVo>   <prutDrwbWncrAmt>250</prutDrwbWncrAmt>    <stsz>Feathers of a kind used for stuffing; down</stsz>    <drwbAmtBaseTpcd />    <aplyDd>19930201</aplyDd>    <ceseDt>19940131</ceseDt>    <hs10>0505100000</hs10>    </simlXamrttXtrnUserQryRsltVo> - <simlXamrttXtrnUserQryRsltVo>   <prutDrwbWncrAmt>20</prutDrwbWncrAmt>    <stsz>Strawberries</stsz>    <drwbAmtBaseTpcd />    <aplyDd>19930201</aplyDd>    <ceseDt>19940131</ceseDt>    <hs10>0811100000</hs10>    </simlXamrttXtrnUserQryRsltVo> - <simlXamrttXtrnUserQryRsltVo>   <prutDrwbWncrAmt>80</prutDrwbWncrAmt>    <stsz>Maize (corn) starch</stsz>    <drwbAmtBaseTpcd />    <aplyDd>19930201</aplyDd>    <ceseDt>19940131</ceseDt>    <hs10>1108120000</hs10>    </simlXamrttXtrnUserQryRsltVo>  
+
+
+===== PAGE 50 =====
+ OPEN API 연계 가이드  
+ -47-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+ 3.2.16  간이정액 적용/비적용 업체 ① 서비스 개요 서비스 정보 서비스 ID API016 서비스명(국문) 간이정액 적용/비적용 업체 조회 서비스명(영문) retrieveSimlFxamtAplyNnaplyEnts 서비스 설명 간이정액 환급 적용/비적용 업체 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ simlFxamtAplyNnaplyEntsQry 운영환경 https://unipass.customs.go.kr:38010/ext/rest/ simlFxamtAplyNnaplyEntsQry 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 ecm 통관고유부호 19 1   ③ 응답메세지 상세 
+
+
+===== PAGE 51 =====
+ OPEN API 연계 가이드  
+ -48-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 simlFxamtNnaplyApreDt 간이정액비적용승인일자 8 0  conm 상호 150 1   simlFxamtAplyApreDt 간이정액적용승인일자 8 1   simlFxamtNnaplyApntRsn 간이정액비적용지정사유 2 0   rgsrCstmNm 등록세관명 75 1   ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/simlFxamtAplyNnaplyEntsQry/retrieveSimlFxamtAplyNnaplyEnts?crkyCn=[인증키]&ecm=케**********15 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  - <simlFxamtAplyNnaplyEntsQryRtnVo>   <ntceInfo/>  - <simlFxamtAplyNnaplyEntsQryRsltVo>   <simlFxamtNnaplyApreDt/>    <conm>(주)**이</conm>    <simlFxamtAplyApreDt>20180709</simlFxamtAplyApreDt>    <simlFxamtNnaplyApntRsn>신청</simlFxamtNnaplyApntRsn>    <rgsrCstmNm>서울세관</rgsrCstmNm>    </simlFxamtAplyNnaplyEntsQryRsltVo>   <tCnt>1</tCnt>    </simlFxamtAplyNnaplyEntsQryRtnVo>    
+
+
+===== PAGE 52 =====
+ OPEN API 연계 가이드  
+ -49-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.17  수출이행기간 단축대상 품목 ① 서비스 개요 서비스 정보 서비스 ID API017 서비스명(국문) 수출이행기간 단축대상 품목 서비스명(영문) retrieveExpFfmnPridShrtTrgtPrlst 서비스 설명 수출이행기간 단축대상 품목 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ expFfmnPridShrtTrgtPrlstQry 운영환경 https://unipass.customs.go.kr:38010/ext/rest/ expFfmnPridShrtTrgtPrlstQry 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 hsSgn HS부호 10 1   ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 hsSgn HS부호 10 1..n   
+
+
+===== PAGE 53 =====
+ OPEN API 연계 가이드  
+ -50-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+ffmnTmlmDt 이행기한일자 8 1..n  trgtImpEndDt 대상수입종료일자 8 1..n  prnm 품명 300 1..n  stszNm 규격명 500 1..n  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/expFfmnPridShrtTrgtPrlstQry/retrieveExpFfmnPridShrtTrgtPrlst?crkyCn=[인증키]&hsSgn=7213100000 응답 메시지   <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  - <expFfmnPridShrtTrgtPrlstQryRtnVo>   <ntceInfo />    <tCnt>1</tCnt>  - <expFfmnPridShrtTrgtPrlstQryRsltVo>   <hsSgn>7213100000</hsSgn>    <ffmnTmlmDt>19980430</ffmnTmlmDt>    <trgtImpEndDt>19971231</trgtImpEndDt>    <prnm>Containing indentations,ribs,grooves or other defor압연공정에서 발생하는 톱니모양의 마디·리브·홈 또</prnm>    </expFfmnPridShrtTrgtPrlstQryRsltVo>   </expFfmnPridShrtTrgtPrlstQryRtnVo>     
+
+
+===== PAGE 54 =====
+ OPEN API 연계 가이드  
+ -51-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.18  HS부호 ① 서비스 개요 서비스 정보 서비스 ID API018 서비스명(국문) HS부호 서비스명(영문) searchHsSgn 서비스 설명 HS 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/hsSgnQry 운영환경 https://unipass.customs.go.kr:38010/ext/rest/hsSgnQry 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 hsSgn HS부호 10 0 HS부호 또는 물품명 중 하나 필수입력사항 prnm 물품명 1000 0 koenTp 한영구분 1 1 1:한글, 2:영문 ※ HS 부호(hsSgn) 검색 시. 찾으려는 HS부호와 완전 동일하게 입력해야 조회 가능. ※ 물품명(prnm) 한글(koenTp=1) 검색 시, 검색 단어가 일부 포함되면 조회 가능.  (단 1글자일 때는 동일한 단어만 조회가능. Ex. 배, 간) ※ 물품명(prnm) 영문(koenTp=2) 검색 시, 검색 단어가 독립적으로 포함된 물품만 조회가능     (ex. New 검색 시. New Zealand 처럼 단어 “New” 가 독립적으로 포함되면 조회 가능. 
+
+
+===== PAGE 55 =====
+ OPEN API 연계 가이드  
+ -52-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+Newspapers의 경우 “New” 단어가 독립적으로 존재하지 않아 조회 불가능) ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 qtyUt 수량단위 3 0..n 수량단위 부호 hsSgn HS부호 10 1..n HS 부호 wghtUt 중량단위 3 0..n 중량단위 부호 englPrnm 영문품명 1000 0..n HS의 영문품명 txrt 세율 13 0..n HS의 세율 korePrnm 한글품명 1000 1..n HS의 한글품명 txtpSgn 세종부호 6 0..n HS의 세종 부호 ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/hsSgnQry/searchHsSgn?crkyCn=[인증키]&hsSgn=0302440000&koenTp=1 https://unipass.customs.go.kr:38010/ext/rest/hsSgnQry/searchHsSgn?crkyCn=[인증키]&prnm=스콤버&koenTp=1 https://unipass.customs.go.kr:38010/ext/rest/hsSgnQry/searchHsSgn?crkyCn=[인증키]&prnm=scombrus&koenTp=2 응답 메시지   <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  - <hsSgnSrchRtnVo>   <ntceInfo />    <tCnt>50</tCnt>  - <hsSgnSrchRsltVo>   <qtyUt />    <hsSgn>0302440000</hsSgn>    <wghtUt>KG</wghtUt>    <englPrnm />    <txrt>20</txrt>   <korePrnm>고등어[스콤버 스콤브루스(Scomber scombrus)ㆍ스콤버 오스트랄라시쿠스(Scomber australasicus)ㆍ스콤버 자포니쿠스(Scomber japonicus)]</korePrnm>    <txtpSgn>A</txtpSgn>    </hsSgnSrchRsltVo> - <hsSgnSrchRsltVo>   <qtyUt />    <hsSgn>0302440000</hsSgn>    <wghtUt>KG</wghtUt>    <englPrnm />  
+
+
+===== PAGE 56 =====
+ OPEN API 연계 가이드  
+ -53-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+  <txrt>0</txrt>   <korePrnm>고등어[스콤버 스콤브루스(Scomber scombrus)ㆍ스콤버 오스트랄라시쿠스(Scomber australasicus)ㆍ스콤버 자포니쿠스(Scomber japonicus)]</korePrnm>    <txtpSgn>FAS1</txtpSgn>    </hsSgnSrchRsltVo> </hsSgnSrchRtnVo> 3.2.19  통계부호 ① 서비스 개요 서비스 정보 서비스 ID API019 서비스명(국문) 통계부호 서비스명(영문) retrieveStatsSgnBrkd 서비스 설명 내국세율,관세감면/분납부호 등 통계부호 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ statsSgnQry 운영환경 https://unipass.customs.go.kr:38010/ext/rest/ statsSgnQry 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 
+
+
+===== PAGE 57 =====
+ OPEN API 연계 가이드  
+ -54-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 
+statsSgnTp 통계부호구분 150 1 
+A01 : 내국세율 부호 A02 : 관세 감면 부호 A03 : 관세 분납 부호 A04 : 부가세감면율 부호 A05 : 특송업체 부호 A06 : 국가코드 부호 A07 : 내국세세종 부호 A09 : 세관부호 부호 A12 : 원산지증명발급구분코드 부호 A13 : 통화코드 부호 통계부호구분코드 : 통계부호 cdValtValNm 코드명 150  A08 : 보세구역 부호 A10 : 신고인 부호 A11 : 항구공항코드 부호 A08, A10, A11은 코드명 또는 코드값 필수입력 cdValtVal 코드값 150  ※ 통계부호구분코드는 My Customs에 접속하여, 통계부호 조회 화면에서 확인 가능 함  ③ 응답메세지 상세(각종 통계부호 조회) 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 statsSgn 통계부호 20 1..n My Customs에 등록된 통계부호 englAbrt 영문약어 75 0..n 통계부호의 영문약어 koreAbrt 한글약어 75 0..n 통계부호의 한글약어 koreBrkd 한글내역 750 1..n 통계부호의 한글내역 itxRt 내국세율 13 0..n 세율(A01~A02 만 해당 됨) ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/statsSgnQry/retrieveStatsSgnBrkd?crkyCn=[인증키]&statsSgnTp=A01 응답 메시지   <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  - <statsSgnQryRtnVo>   <ntceInfo />    <tCnt>77</tCnt>  - <statsSgnQryVo> 
+
+
+===== PAGE 58 =====
+ OPEN API 연계 가이드  
+ -55-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+  <englAbrt />    <statsSgn>A411000</statsSgn>    <koreAbrt />    <koreBrkd>보석(공업용다이아몬드와 가공하지 아니한 원석을 제</koreBrkd>    <itxRt>20.00</itxRt>    </statsSgnQryVo> - <statsSgnQryVo>   <englAbrt />    <statsSgn>A412000</statsSgn>    <koreAbrt />    <koreBrkd>귀금속 제품(기준가격 200만원 초과)</koreBrkd>    <itxRt>20.00</itxRt>    </statsSgnQryVo> - <statsSgnQryVo>   <englAbrt />    <statsSgn>A421001</statsSgn>    <koreAbrt />    <koreBrkd>고급사진기와 그 관련제품(기준가격 200만원 초과)</koreBrkd>    <itxRt>20.00</itxRt>    </statsSgnQryVo> - <statsSgnQryVo>   <englAbrt />    <statsSgn>A422000</statsSgn>    <koreAbrt />    <koreBrkd>고급시계( 1개 또는 1조당가격이 200만원이상의 것)</koreBrkd>    <itxRt>20.00</itxRt>    </statsSgnQryVo>   </statsSgnQryRtnVo>    
+
+
+===== PAGE 59 =====
+ OPEN API 연계 가이드  
+ -56-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.20  컨테이너내역 ① 서비스 개요 서비스 정보 서비스 ID API020 서비스명(국문) 컨테이너내역조회 서비스명(영문) retrieveCntrQryBrkd 서비스 설명 화물관리번호에 따른 컨테이너 내역 조회 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest / cntrQryBrkdQry 운영환경 https://unipass.customs.go.kr:38010/ext/rest / cntrQryBrkdQry 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 cargMtNo 화물관리번호 19 1 화물관리번호 15 ~ 19자리  ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 cntrNo 컨테이너번호 11 0..n  
+
+
+===== PAGE 60 =====
+ OPEN API 연계 가이드  
+ -57-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+cntrStszCd 컨테이너규격코드 4 0..n  cntrSelgNo1 컨테이너봉인번호1 60 0..n  cntrSelgNo2 컨테이너봉인번호2 60 0..n  cntrSelgNo3 컨테이너봉인번호3 60 0..n  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/cntrQryBrkdQry/retrieveCntrQryBrkd?crkyCn=[인증키]&cargMtNo=00ANLU083N59007001 응답 메시지   <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  - <cntrQryBrkdQryRtnVo>   <ntceInfo/>  - <cntrQryBrkdQryVo >   <cntrNo>GESU6710278</cntrNo>  <cntrStszCd>45GP</cntrStszCd> <cntrSelgNo1>103851</cntrSelgNo1>   <cntrSelgNo2/>  <cntrSelgNo3/>   </cntrQryBrkdQryVo>   <cntrQryBrkdQryVo>   <cntrNo>KMTU9245255</cntrNo>  <cntrStszCd>45GP</cntrStszCd> <cntrSelgNo1>103850</cntrSelgNo1>   <cntrSelgNo2/>  <cntrSelgNo3/>   </cntrQryBrkdQryVo>   <tCnt>2</tCnt>  - </cntrQryBrkdQryRtnVo>   
+
+
+===== PAGE 61 =====
+ OPEN API 연계 가이드  
+ -58-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.21  입항보고내역(해상) ① 서비스 개요 서비스 정보 서비스 ID API021 서비스명(국문) 입항보고내역조회(해상) 서비스명(영문) retrieveetprRprtQryBrkd 서비스 설명 입항제출번호에 따른 입항보고 내역 조회 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ etprRprtQryBrkdQry/retrieveetprRprtQryBrkd 운영환경 https://unipass.customs.go.kr:38010/ext/rest/ etprRprtQryBrkdQry/retrieveetprRprtQryBrkd 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 ioprSbmtNo 입출항제출번호 12 0 입출항제출번호 또는 선박호출부호 필수입력 shipCallSgn 선박호출부호 12 0 입출항제출번호 또는 선박호출부호 필수입력  ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구항목설명 
+
+
+===== PAGE 62 =====
+ OPEN API 연계 가이드  
+ -59-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+분 mrn 적하목록관리번호 11 1..n  shipFlgtNm 선박항공편명 75 1..n  shipCallImoNo 선박호출IMO번호 12 1..n  shipAirCntyCd 선박항공기국가코드 2 1..n  etprDttm 입항일시 14 1..n  shipLamrPlcNm 선박계선장소명 300 1..n  shipLamrPlcCd 선박계선장소코드 5 1..n  alCrmbPecnt 전체승무원인원수 10 1..n  alPsngPecnt 전체승객인원수 10 1..n  acptDttm 수리일시 14 1..n  cstmSgn 세관부호 3 1..n  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/ etprRprtQryBrkdQry/retrieveetprRprtQryBrkd?crkyCn=[인증키]& ioprSbmtNo=16SRDJA0023 &shipCallSgn=3FBO6 응답 메시지   <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  - <etprRprtQryBrkdQryRtnVo>   <ntceInfo/>  - <etprRprtQryBrkdQryVo> <cstmSgn>030</cstmSgn>  <mrn>16SRDJA0023</mrn>  <shipFlgtNm>SOLAR EMBER</shipFlgtNm> <shipCallImoNo>3FBO6</shipCallImoNo>   <shipAirCntyCd>PA</shipAirCntyCd > <etprDttm>201601061400</etprDttm>   <shipLamrPlcNm>송악부두 5번 선석</shipLamrPlcNm>  <shipLamrPlcCd>MBH05</shipLamrPlcCd> <alCrmbPecnt>0</alCrmbPecnt>   <alPsngPecnt>0</alPsngPecnt> <acptDttm>201601031403</acptDttm>   </cntrQryBrkdQryVo>   <tCnt>1</tCnt>  - </etprRprtQryBrkdQryRtnVo>   
+
+
+===== PAGE 63 =====
+ OPEN API 연계 가이드  
+ -60-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.22  수입신고필증검증 ① 서비스 개요 서비스 정보 서비스 ID API022 서비스명(국문) 수입신고필증검증 서비스명(영문) retrieveImpDclrCrfnVrfc 서비스 설명 수입신고필증검증 내역 조회 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest / impDclrCrfnVrfcQry 운영환경 https://unipass.customs.go.kr:38010/ext/rest / impDclrCrfnVrfcQry 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 impDclrCrfnPblsNo 발행번호 13 1..n 발행번호 필수입력 impDclrNo 신고번호 14 1..n 신고번호 필수입력 pltxIdfyNo 납세자 주민등록번호 10 또는 13 1..n 납세자 사업자번호 또는 주민등록번호 필수입력 (10자리 또는 13자리) 
+
+
+===== PAGE 64 =====
+ OPEN API 연계 가이드  
+ -61-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+또는 사업자번호 orcyCntyCd 원산지 코드 2 1..n 원산지 코드 필수입력 dclrPrnm 품명 40 1..n 품명 필수입력 dclrWght 순중량 19 1..n 순중량 필수입력 (숫자로 입력) dclrWghtUtCd 순중량 단위 2 1..n 순중량 단위 필수입력 txPrcWncrTamt 총 과세가격 20 0..n 총 과세가격 선택입력 impPayQxmt 총 세액합계 20 0..n 총 세액합계 선택입력  ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 tCnt 응답 결과 1 1 1:일치 0:불일치 -1:시스템장애  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/impDclrCrfnVrfcQry/ retrieveImpDclrCrfnVrfc?crkyCn=[인증키]&impDclrCrfnPblsNo=2011002153000&impDclrNo=1186111030000U&pltxIdfyNo=102811999&orcyCntyCd=JP&dclrPrnm=PRESSURE GAUGE&dclrWght=306&dclrWghtUtCd=KG&txPrcWncrTamt=17128822&impPayQxmt=1712880 응답 메시지   <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  - <impDclrCrfnVrfcQryRtnVo>   <ntceInfo />   <tCnt>1</tCnt>  - </impDclrCrfnVrfcQryRtnVo>             
+
+
+===== PAGE 65 =====
+ OPEN API 연계 가이드  
+ -62-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+   3.2.23  보세운송차량등록내역 ① 서비스 개요 서비스 정보 서비스 ID API023 서비스명(국문) 보세운송차량등록내역 서비스명(영문) retrieveImpDclrCrfnVrfc 서비스 설명 보세운송차량등록 내역 조회 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ btcoVhclQry 운영환경 https://unipass.customs.go.kr:38010/ext/rest/ btcoVhclQry 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 btcoSgn 보세운송업자부호 6 0 보세운송업자부호 또는 차량번호선기명 필수입력사항 vhclNoSanm 차량번호선기명 75 0  
+
+
+===== PAGE 66 =====
+ OPEN API 연계 가이드  
+ -63-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+ ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목 크기 항목 구분 항목설명 btcoSgn 보세운송업자부호 6 1  bnbnTrnpVhclRgsrDt 보세운송차량등록일자 8 1  bnbnTrnpEqipTpcd 보세운송장비구분코드 1 1  vhclInfoSrno 차량정보일련번호 22 1  vhclNoSanm 차량번호선기명 75 1  bnbnTrnpEqipTpcdNm 보세운송장비구분명 50 1  useYn 사용여부 1 1  rgsrDt 등록일자 8 1  delDt 삭제일자 8 1  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)   ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/btcoVhclQry/retrieveBtcoVhcl?crkyCn=[인증키]& btcoSgn=039094&vhclNoSanm=경북98아6257 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?> <btcoVhclQryRtnVo> <ntceInfo/> <tCnt>1</tCnt> <btcoVhclQryRsltVo> <btcoSgn>039094</btcoSgn> <bnbnTrnpVhclRgsrDt>20040528</bnbnTrnpVhclRgsrDt> <bnbnTrnpEqipTpcd>T</bnbnTrnpEqipTpcd> <vhclInfoSrno>70109</vhclInfoSrno> <vhclNoSanm>경북98아6257</vhclNoSanm> <bnbnTrnpEqipTpcdNm>특수자동차</bnbnTrnpEqipTpcdNm> <useYn>사용</useYn> <rgsrDt>20050829</rgsrDt> <delDt>20050329</delDt> </btcoVhclQryRsltVo> </btcoVhclQryRtnVo>  응답 메시지에 차량번호선기명[vhclNoSanm] 글자가 깨질경우 UTF-8로 변환하여 실행하십시오.    
+
+
+===== PAGE 67 =====
+ OPEN API 연계 가이드  
+ -64-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+     3.2.24  입출항보고내역 ① 서비스 개요 서비스 정보 서비스 ID API024 서비스명(국문) 입출항보고내역 서비스명(영문) retrieveIoprRprtBrkd 서비스 설명 입출항보고 내역 조회 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ ioprRprtQry 운영환경 https://unipass.customs.go.kr:38010/ext/rest/ ioprRprtQry 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 
+
+
+===== PAGE 68 =====
+ OPEN API 연계 가이드  
+ -65-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+shipCallImoNo 선박호출IMO번호 12 1  seaFlghIoprTpcd 해상항공입출항구분코드 2 1 10:입항 11:출항 cstmSgn 세관부호 3  1 출항의 경우 필수 입력   ③ 응답메세지 상세 (입항) 항목명(영문) 항목명(국문) 항목 크기 항목 구분 항목설명 cstmSgn 세관부호 3 1  dptrPortAirptNm 출발항구공항명 200 1  etprDttm 입항일 14 1  shipFlgtNm 선박항공편명 75 1  cstmNm 세관명 75 1  ioprSbmtNo 입출항제출번호 12 1  shipAirCntyNm 선박항공기국가명 75 1  shipAirCntyCd 선박항공기국가코드 22 1  alCrmbPecnt 전체승무원인원수 10 1  alPsngPecnt 전체승객인원수 10 1  shipLamrPlcCd 선박계선장소코드 25 1  shipLamrPlcNm 선박계선장소명 300 1  dptrPortAirptCd 출발항구공항코드 25 1   ④ 요청/응답 메시지 예제 (입항) REST(URI) https://unipass.customs.go.kr:38010/ext/rest/ioprRprtQry/retrieveIoprRprtBrkd?crkyCn= [인증키]&seaFlghIoprTpcd=10&shipCallImoNo=DSFS8 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="true"?> <ioprRprtBrkdQryRtnVo> <ntceInfo/> <tCnt>10</tCnt> <etprRprtQryBrkdQryVo> <cstmSgn>030</cstmSgn> <shipLamrPlcCd>MBF11</shipLamrPlcCd> <alPsngPecnt>447</alPsngPecnt> <dptrPortAirptCd>JPSHS</dptrPortAirptCd> <dptrPortAirptNm>Shimonoseki, Yamaguchi</dptrPortAirptNm> <alCrmbPecnt>31</alCrmbPecnt> <shipAirCntyCd>KR</shipAirCntyCd> <etprDttm>201802230700</etprDttm> 
+
+
+===== PAGE 69 =====
+ OPEN API 연계 가이드  
+ -66-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+<shipFlgtNm>SEONGHEE</shipFlgtNm> <shipLamrPlcNm>신국제여객터미널 11선석</shipLamrPlcNm> <cstmNm>부산세관</cstmNm> <shipAirCntyNm>한국</shipAirCntyNm> <ioprSbmtNo>18PKFC0222I</ioprSbmtNo> </etprRprtQryBrkdQryVo> ⑤ 응답메세지 상세 (출항) 항목명(영문) 항목명(국문) 항목 크기 항목 구분 항목설명 cstmSgn 세관부호 3 1  tkofDttm 출항일 14 1  shipFlgtNm 선박항공편명 75 1  cstmNm 세관명 75 1  arvlCntyPortAirptNm 도착국가항구공항명 200 1  ioprSbmtNo 입출항제출번호 12 1  shipAirCntyNm 선박항공기국가명 75 1  shipAirCntyCd 선박항공기국가코드 22 1  alCrmbPecnt 전체승무원인원수 10 1  alPsngPecnt 전체승객인원수 10 1  shipLamrPlcCd 선박계선장소코드 25 1  shipLamrPlcNm 선박계선장소명 300 1  arvlCntyPortAirptCd 도착국가항구공항코드 25 1   ⑥ 요청/응답 메시지 예제 (출항) REST(URI) https://unipass.customs.go.kr:38010/ext/rest/ioprRprtQry/retrieveIoprRprtBrkd?crkyCn= [인증키]&shipCallImoNo=DSFS8&seaFlghIoprTpcd=11&cstmSgn=030 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="true"?> <ioprRprtBrkdQryRtnVo> <ntceInfo/> <tCnt>10</tCnt> <etprRprtQryBrkdQryVo> <arvlCntyPortAirptCd>JPSHS</arvlCntyPortAirptCd> <cstmSgn>030</cstmSgn> <shipLamrPlcCd>MBF11</shipLamrPlcCd> <alPsngPecnt>480</alPsngPecnt> <alCrmbPecnt>32</alCrmbPecnt> <tkofDttm>201802222100</tkofDttm> <shipAirCntyCd>KR</shipAirCntyCd> <shipFlgtNm>SEONGHEE</shipFlgtNm> 
+
+
+===== PAGE 70 =====
+ OPEN API 연계 가이드  
+ -67-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+<shipLamrPlcNm>신국제여객터미널 11선석</shipLamrPlcNm> <cstmNm>부산세관</cstmNm> <arvlCntyPortAirptNm>Shimonoseki, Yamaguchi</arvlCntyPortAirptNm> <shipAirCntyNm>한국</shipAirCntyNm> <ioprSbmtNo>18PKFC0223E</ioprSbmtNo> </etprRprtQryBrkdQryVo> 3.2.25  통관단일창구 처리이력 ① 서비스 개요 서비스 정보 서비스 ID API025 서비스명(국문) 통관단일창구 처리이력 서비스명(영문) retrieveApfmPrcsStus 서비스 설명 통관단일창구 처리이력 조회 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/apfmPrcsStusQry/ 운영환경 https://unipass.customs.go.kr:38010/ext/rest/apfmPrcsStusQry/ 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 
+
+
+===== PAGE 71 =====
+ OPEN API 연계 가이드  
+ -68-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 reqRqstNo 신청번호 13 1       ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목 크기 항목 구분 항목설명 reqRqstNo 요건신청번호 13 1  reqRelaElctDocCd 요건관련전자문서코드 9 1  elctDocNm 전자문서명 300 1  reqIttRsltInfmNo 요건기관결과통보번호 35 1  reqRqstPrcsStcd 요건신청처리상태코드 3 1  reqRqstPrcsSttsNm 요건신청처리상태명 150 1  trsnTpcd 전송구분코드 2 1  trsnTpNm 전송구분명 150 1  rcpnDttm 수신일시 14 1  reqApfmCd 요건신청서코드 9 1  relaDocNm 관련문서명 300 1   ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/apfmPrcsStusQry/retrieveApfmPrcsStus?crkyCn= [인증키]&reqRqstNo=2284516001XZC 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="true"?> <apfmPrcsStusQryRtnVo> <ntceInfo/> <tCnt>4</tCnt> <apfmPrcsStusQryVo> <reqRqstPrcsSttsNm>요건확인서 세관 오류통보</reqRqstPrcsSttsNm> <reqRqstNo>2284516001XZC</reqRqstNo> <reqApfmCd>GOVCBRCD1</reqApfmCd> <trsnTpNm>(원본)</trsnTpNm> <reqRqstPrcsStcd>Z03</reqRqstPrcsStcd> <elctDocNm>요건확인서오류통보서</elctDocNm> 
+
+
+===== PAGE 72 =====
+ OPEN API 연계 가이드  
+ -69-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+<reqRelaElctDocCd>GOVCBRR25</reqRelaElctDocCd> <reqIttRsltInfmNo>2336051600000284</reqIttRsltInfmNo> <rcpnDttm>2016-03-24 10:20:03</rcpnDttm> <relaDocNm>전기용품 및 생활용품 면제확인신청서</relaDocNm> <trsnTpcd>9</trsnTpcd> </apfmPrcsStusQryVo> <apfmPrcsStusQryVo> … 응답 메시지에 글자가 깨질경우 UTF-8로 변환하여 실행하십시오. 3.2.26  선박회사 목록 ① 서비스 개요 서비스 정보 서비스 ID API026 서비스명(국문) 선박회사 목록  서비스명(영문) retrieveShipCoLst 서비스 설명 선박회사 부호 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/shipCoLstQry 운영환경 https://unipass.customs.go.kr:38010/ext/rest/shipCoLstQry 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 
+
+
+===== PAGE 73 =====
+ OPEN API 연계 가이드  
+ -70-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+shipCoNm 선박회사명 150 1   ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 shipCoEnglNm 선박회사영문명 150 0..n  shipCoKoreNm 선박회사한글명 150 1..n  shipCoSgn 선박회사부호 2 1..n  rppnNm 대표자명 110 0..n  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/shipCoLstQry/retrieveShipCoLst?crkyCn=[인증키] &shipCoNm=**해운 응답 메시지   <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  - <shipCoLstQryRtnVo> - <shipCoLstQryRsltVo>   <shipCoSgn>L**S</shipCoSgn>    <shipCoEnglNm>L***************, A/S</shipCoEnglNm>    <shipCoKoreNm>**해운</shipCoKoreNm>    <rppnNm>이*</rppnNm>  </shipCoLstQryRsltVo> - <shipCoLstQryRsltVo>   <shipCoSgn>M**G</shipCoSgn>    <shipCoEnglNm>MO**************</shipCoEnglNm>    <shipCoKoreNm>**해운</shipCoKoreNm>    <rppnNm>이*</rppnNm>  </shipCoLstQryRsltVo>   <ntceInfo />    <tCnt>2</tCnt>  </shipCoLstQryRtnVo>    
+
+
+===== PAGE 74 =====
+ OPEN API 연계 가이드  
+ -71-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.27  선박회사 내역 ① 서비스 개요 서비스 정보 서비스 ID API027 서비스명(국문) 선박회사 내역 서비스명(영문) retrieveShipCoBrkd 서비스 설명 선박회사 부호, 상호, 주소 등 상세 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/shipCoBrkdQry 운영환경 https://unipass.customs.go.kr:38010/ext/rest/shipCoBrkdQry 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 shipCoSgn 선박회사부호 4 1   ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 cntyNm 국가명 75 0  
+
+
+===== PAGE 75 =====
+ OPEN API 연계 가이드  
+ -72-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+shipAgncNm 선박대리점명 150 0  rppnNm 대표자성명 110 0  brno 사업자등록번호 10 1  shipCoNat 선박회사국적 2 0  hdofAddr 본사주소 500 0  agncAddr 대리점주소 500 0  telno 전화번호 60 0  faxNo 팩스번호 60 0  rgsrNo 등록번호 30 0  rgsrDt 등록일자 8 0  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/shipCoBrkdQry/retrieveShipCoBrkd?crkyCn=[인증키]&shipCoSgn=LR** 응답 메시지   <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  - <shipCoBrkdQryRtnVo>   <ntceInfo/>    <tCnt>1</tCnt> - <shipCoBrkdQryRsltVo>   <brno>6*********</brno>    <agncAddr/>    <shipAgncNm>**해운</shipAgncNm>    <rppnNm>이*</rppnNm>    <cntyNm>일*</cntyNm>    <rgsrDt/>    <telno>051)********</telno>    <faxNo>051)********</faxNo>    <shipCoNat>J*</shipCoNat>    <rgsrNo>K********</rgsrNo>    <hdofAddr>부산시*****************</hdofAddr>  </shipCoBrkdQryRsltVo> </shipCoBrkdQryRtnVo>   
+
+
+===== PAGE 76 =====
+ OPEN API 연계 가이드  
+ -73-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.28  개인통관고유부호 유효성검증 ① 서비스 개요 서비스 정보 서비스 ID API028 서비스명(국문) 수입신고 개인통관고유부호 검증 서비스명(영문) retrievePersEcms 서비스 설명 신고인이 수입신고서 전송 전에 수입신고서에 기재한 개인통관고유부호의 유효성을 사전에 검증할 수 있도록 서비스 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/persEcmQry/ retrievePersEcm 운영환경 https://unipass.customs.go.kr:38010/ext/rest/persEcmQry/ retrievePersEcm 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 persEcm 개인통관고유부호 13 1 개인통관고유부호 pltxNm 납세의무자명 100 1 납세의무자명 cralTelno 전화번호 11 1 납세의무자 전화번호 englFmnm (영문)성 60 0 납세의무자 영문 성 
+
+
+===== PAGE 77 =====
+ OPEN API 연계 가이드  
+ -74-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+englNm (영문)이름 60 0 납세의무자 영문 이름 custPsno 우편번호 5 0 우편주소(배송주소)   ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 ntceInfo 응답 메시지 내용 750 0 응답 메시지 내용 errMsgCn 오류 메시지 내용 750 0..n 검증 오류 내용 tCnt 응답 결과 1 1 1:일치, 0:불일치, -1:시스템장애 valtPridStrtDt 유효기간시작일자 8 0 부호 유효기간 시작일자 valtPridXpirDt 유효기간만료일자 8 0 부호 유효기간 만료일자 ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/persEcmQry/retrievePersEcm?crkyCn=[인증키] &persEcm=P160000000207&pltxNm=홍길동&cralTelno=01012341234&englFmnm=HONG&englNm=GILDONG&custPsno=12345 일치 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  <persEcmQryRtnVo>     <tCnt>1</tCnt>     <valtPridStrtDt>20160927</valtPridStrtDt>     <valtPridXpirDt>20260927</valtPridXpirDt> </persEcmQryRtnVo> 불일치 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  <persEcmQryRtnVo>   <ntceInfo>유효성 검증결과 불일치</ntceInfo>    <tCnt>0</tCnt> <persEcmQryRtnErrInfoVo> <errMsgCn>납세의무자 개인통관고유부호가 존재하지 않습니다.</errMsgCn> </persEcmQryRtnErrInfoVo> <persEcmQryRtnErrInfoVo> <errMsgCn>현재 사용중이 아닌 개인통관고유부호 입니다.</errMsgCn> </persEcmQryRtnErrInfoVo> <persEcmQryRtnErrInfoVo> <errMsgCn>입력하신 납세의무자명이 개인통관고유부호의 성명과 일치하지 않습니다. 납세의무자명 파라미터가 깨질경우 UTF-8로 변환하여 실행하십시오.</errMsgCn> </persEcmQryRtnErrInfoVo> <persEcmQryRtnErrInfoVo> <errMsgCn>개인통관고유부호 정보변경(휴대전화번호 인증)후 신고하시기 바랍니다.</errMsgCn> 
+
+
+===== PAGE 78 =====
+ OPEN API 연계 가이드  
+ -75-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+</persEcmQryRtnErrInfoVo> <persEcmQryRtnErrInfoVo> <errMsgCn>납세의무자 전화번호가 일치하지 않습니다.</errMsgCn> </persEcmQryRtnErrInfoVo> <persEcmQryRtnErrInfoVo> <errMsgCn>입력하신 우편번호가 개인통관고유부호 우편번호(배송주소)와 일치하지 않습니다.</errMsgCn> </persEcmQryRtnErrInfoVo> <persEcmQryRtnErrInfoVo> <errMsgCn>유효기간이 만료 된 개인통관고유부호입니다.</errMsgCn> </persEcmQryRtnErrInfoVo> <persEcmQryRtnErrInfoVo> <errMsgCn>입력하신 납세의무자(영문)명이 개인통관고유부호의 성명과 일치하지 않습니다.</errMsgCn> </persEcmQryRtnErrInfoVo> </persEcmQryRtnVo> 응답 메시지에 글자가 깨질경우 UTF-8로 변환하여 실행하십시오.   
+
+
+===== PAGE 79 =====
+ OPEN API 연계 가이드  
+ -76-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.29  세관장확인대상 물품 조회 ① 서비스 개요 서비스 정보 서비스 ID API029 서비스명(국문) 세관장확인대상 법령코드 조회 서비스명(영문) retrieveCcctLworCd 서비스 설명 HS부호별 세관장확인대상 법령코드 및 법령명, 해당 요건승인기관 정보를 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ccctLworCdQry/retrieveCcctLworCd 운영환경 https://unipass.customs.go.kr:38010/ext/rest/ccctLworCdQry/retrieveCcctLworCd 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 hsSgn HS부호 10 1 HS부호 imexTp 수출입구분코드 1 1 1: 수출, 2: 수입  ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목 항목 항목설명 
+
+
+===== PAGE 80 =====
+ OPEN API 연계 가이드  
+ -77-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+크기 구분 hsSgn HS부호 10 1 HS부호 imexTp 수출입구분코드 1 1 1: 수출, 2: 수입 hsSgn HS부호 10 0..n HS 10단위 부호 dcerCrmLworCd 신고인확인법령코드 2 0..n 법령코드 dcerCfrmLworNm 신고인확인법령명 300 0..n 법령명 reqApreIttCd 요건승인기관코드 3 0..n 요건승인기관코드 reqApreIttNm 요건승인기관명 300 0..n 요건승인기관명 aplyStrtDt 적용시작일자 8 0..n 확인대상 적용시작일자 aplyEndDt 적용종료일자 8 0..n 확인대상 적용종료일자 reqCfrmIstmNm 요건확인서류명 300 0..n 요건확인서류명 ntceInfo 응답 메시지 내용 750 0 응답 메시지 내용 errMsgCn 오류 메시지 내용 750 0 검증 오류 내용 ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/ccctLworCdQry/retrieveCcctLworCd?crkyCn= [인증키]&hsSgn=3307902000&imexTp=2 일치 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  <CcctLworCdQryRtnVo>  <ntceInfo/>  <tCnt>1</tCnt>  <CcctLworCdQryRsltVo>   <hsSgn>3307902000</hsSgn>   <reqApreIttCd>243</reqApreIttCd>   <aplyEndDt/>   <dcerCfrmLworNm>화장품법</dcerCfrmLworNm>   <reqCfrmIstmNm>표준통관예정보고서(화장품)</reqCfrmIstmNm>   <aplyStrtDt>20140101</aplyStrtDt>   <reqApreIttNm>한국의약품수출입협회</reqApreIttNm>   <dcerCrmLworCd/>  </CcctLworCdQryRsltVo> </CcctLworCdQryRtnVo> 불일치 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  <CcctLworCdQryRtnVo>   <ntceInfo>조회된 정보가 없습니다.</ntceInfo>   <tCnt>0</tCnt> </CcctLworCdQryRtnVo> 응답 메시지에 글자가 깨질경우 UTF-8로 변환하여 실행하십시오. 
+
+
+===== PAGE 81 =====
+ OPEN API 연계 가이드  
+ -78-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+  
+
+
+===== PAGE 82 =====
+ OPEN API 연계 가이드  
+ -79-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.30  관세율 기본 조회 ① 서비스 개요 서비스 정보 서비스 ID API030 서비스명(국문) 관세율 조회 서비스명(영문) retrieveTrrt 서비스 설명 HS 부호별 관세율 구분코드, 관세율, 단위당 세액, 기준가격 등 상세 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/trrtQry/retrieveTrrt 운영환경 https://unipass.customs.go.kr:38010/ext/rest/trrtQry/retrieveTrrt 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 hsSgn HS부호 10 1 HS부호 trrtTpcd 관세율구분코드 6 0 관세율구분코드  
+
+
+===== PAGE 83 =====
+ OPEN API 연계 가이드  
+ -80-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목 크기 항목 구분 항목설명 hsSgn HS부호 10 0..n HS 10단위 부호 trrtTpcd 관세율 구분코드 6 0..n 관세율 구분 코드 trrtTpNm 관세율 구분명 300 0..n 관세율 구분 명 trrt 관세율 12 0..n 관세율 prutXamt 단위당 세액 27 0..n 단위당 세액 basePrc 기준가격 22 0..n 기준가격 aplyStrtDt 적용시작일자 8 0..n 적용 시작 일자 aplyEndDt 적용종료일자 8 0..n 적용 종료 일자 ntceInfo 응답 메시지 내용 750 0 응답 메시지 내용 errMsgCn 오류 메시지 내용 750 0 검증 오류 내용 tCnt 응답 결과 1 1 1:일치,  0:불일치,   -1:시스템장애 ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/trrtQry/retrieveTrrt?crkyCn=[인증키]&hsSgn=0712391030&trrtTpcd=FEU1 일치 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>   <TrrtQryRtnVo>   <ntceInfo/>   <tCnt>1</tCnt>   <TrrtQryRsltVo>    <basePrc/>    <hsSgn>0712391030</hsSgn>    <prutXamt>153</prutXamt>    <trrtTpcd>FEU1</trrtTpcd>    <trrtTpNm>한ㆍEU FTA협정세율(선택1)</trrtTpNm>    <aplyEndDt>20191231</aplyEndDt>    <aplyStrtDt>20191001</aplyStrtDt>    <trrt>5.4</trrt>   </TrrtQryRsltVo>  </TrrtQryRtnVo> 불일치 응답 메시지 
+
+
+===== PAGE 84 =====
+ OPEN API 연계 가이드  
+ -81-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  <TrrtQryRtnVo>   <ntceInfo>조회된 관세율 정보가 없습니다.</ntceInfo>   <tCnt>0</tCnt> </TrrtQryRtnVo>   
+
+
+===== PAGE 85 =====
+ OPEN API 연계 가이드  
+ -82-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.31  우편번호별 관할세관 정보 ① 서비스 개요 서비스 정보 서비스 ID API031 서비스명(국문) 우편번호별 관할세관 정보조회 서비스명(영문) retrievePostNoPrCstmSgnQry 서비스 설명 전자상거래 수출신고 시 물품소재지에 따른 관할 세관부호 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/postNoPrCstmSgnQry/retrievePostNoPrCstmSgnQry 운영환경 https://unipass.customs.go.kr:38010/ext/rest/postNoPrCstmSgnQry/retrievePostNoPrCstmSgnQry 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 jrsdPsno 우편번호 6 1 우편번호  ③ 응답메세지 상세 
+
+
+===== PAGE 86 =====
+ OPEN API 연계 가이드  
+ -83-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 jrsdCstmSgn 관할세관부호 3 1..n 관할지역 세관부호 jrsdCstmSgnNm 관할세관부호명 75 1..n 관할지역 세관 한글명칭 ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/rest/postNoPrCstmSgnQry/retrievePostNoPrCstmSgnQry?crkyCn=[인증키]&jrsdPsno=31718 일치 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  <psnoPrJrsdCstmQryRtnVo> <ntceInfo/> <psnoPrJrsdCstmQryRsltVoList> <jrsdCstmSgnNm>대전세관 대산세관비즈니스센터</jrsdCstmSgnNm> <jrsdCstmSgn>154</jrsdCstmSgn> </psnoPrJrsdCstmQryRsltVoList> <psnoPrJrsdCstmQryRsltVoList> <jrsdCstmSgnNm>천안세관</jrsdCstmSgnNm> <jrsdCstmSgn>152</jrsdCstmSgn> </psnoPrJrsdCstmQryRsltVoList> <psnoPrJrsdCstmQryRsltVoList> <jrsdCstmSgnNm>평택세관</jrsdCstmSgnNm> <jrsdCstmSgn>016</jrsdCstmSgn> </psnoPrJrsdCstmQryRsltVoList> <tCnt>3</tCnt> </psnoPrJrsdCstmQryRtnVo>   
+
+
+===== PAGE 87 =====
+ OPEN API 연계 가이드  
+ -84-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.32  수출입신고 전자첨부서류 제출 완료 유무 ① 서비스 개요 서비스 정보 서비스 ID API032 서비스명(국문) 수출입신고 전자첨부서류 제출 완료 유무 서비스명(영문) expImpAffcSbmtInfoQry 서비스 설명 수출입신고번호에 대한 전자 첨부서류 제출 완료 확인 여부 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/expImpAffcSbmtInfoQry/retrieveExpImpAffcSbmtInfo 운영환경 https://unipass.customs.go.kr:38010/ext/rest/expImpAffcSbmtInfoQry/retrieveExpImpAffcSbmtInfo 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 dclrBsopDtlTpcd 업무구분 3 1 수입통관(IMP), 수출통관(EXP) dcshSbmtNo 제출번호 50 1 신고서 제출번호  
+
+
+===== PAGE 88 =====
+ OPEN API 연계 가이드  
+ -85-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+  ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 dclrBsopDtlTpcd 업무구분 3 1..n 수입통관(IMP), 수출통관(EXP) elctDocNm 서식명 300 1..n 신고서 서식 명칭 dcshSbmtNo 제출번호 50 1..n 신고서 제출번호 sbmtDttm 제출일자 8 1..n  attchSbmtYn 서류제출여부 1 1..n Y 또는 N ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/ rest/ expImpAffcSbmtInfoQry/retrieveExpImpAffcSbmtInfo?crkyCn=[인증키]& dclrBsopDtlTpcd=IMP&dcshSbmtNo=20**********PM 일치 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  <expImpAffcSbmtInfoQryRtnVo> <ntceInfo/> <tCnt>1</tCnt> <expImpAffcSbmtInfoQryRsltVoList> <dcshSbmtNo>20**********PM</dcshSbmtNo> <sbmtDttm>2016****</sbmtDttm> <attchSbmtYn>N</attchSbmtYn> <elctDocNm>수입신고서</elctDocNm> <dclrBsopDtlTpcd>IMP</dclrBsopDtlTpcd> </expImpAffcSbmtInfoQryRsltVoList> </expImpAffcSbmtInfoQryRtnVo>         
+
+
+===== PAGE 89 =====
+ OPEN API 연계 가이드  
+ -86-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+ 3.2.33  농림축산검역본부 동축산물 업체코드 조회 ① 서비스 개요 서비스 정보 서비스 ID API033 서비스명(국문) 농림축산검역본부 동축산물 업체코드 조회 서비스명(영문) alspEntsCdQry 서비스 설명 농림축산검역본부 동축산물 업체코드 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ alspEntsCdQry/retrieveAlspEntsCd 운영환경 https://unipass.customs.go.kr:38010/ext/rest/ alspEntsCdQry/retrieveAlspEntsCd 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 alspEntsCd 동축산물업체코드 5 1   
+
+
+===== PAGE 90 =====
+ OPEN API 연계 가이드  
+ -87-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 alspEntsCd 동축산물업체코드 5 1  entsConm 업체상호 100 1  entsBrno 업체사업자등록번호 10 0  reqIttSpptCd 요건기관지원코드 7 0  alspCoTpcd 동축산물회사구분코드 1 0  entsRppnNm 업체대표자명 50 0  entsTelno 업체전화번호 60 0  entsEml 업체이메일 50 0  entsEnglNm 업체영문명 100 0  entsEnglAddr 업체영문주소 150 0  useYn 사용여부 1 1 Y 또는 N ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/ rest/ alspEntsCdQry / retrieveAlspEntsCd?crkyCn=[인증키]&alspEntsCd=***** 일치 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  < alspEntsCdQryRtnVo> <ntceInfo/> <alspEntsCdQryVo>   <useYn>Y</useYn>   <entsRppnNm></entsRppnNm>   <alspEntsCd></alspEntsCd>   <entsEml></entsEml>   <entsTelno></entsTelno>   <entsConm></entsConm>   <entsBrno></entsBrno>   <entsEnglAddr></entsEnglAddr>   <entsEnglNm></entsEnglNm>   <reqIttSpptCd></reqIttSpptCd>   <alspCoTpcd></alspCoTpcd> </alspEntsCdQryVo> <tCnt>1</tCnt> </ alspEntsCdQryRtnVo>  
+
+
+===== PAGE 91 =====
+ OPEN API 연계 가이드  
+ -88-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+ 3.2.34  재수입조건부 수출 잔량 정보 ① 서비스 개요 서비스 정보 서비스 ID API034 서비스명(국문) 재수입조건부 수출 잔량  서비스명(영문) expCmdtRsqtyInfoQry 서비스 설명 재수입조건부 수출 잔량 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ expCmdtRsqtyInfoQry/retrieveExpCmdtRsqty 운영환경 https://unipass.customs.go.kr:38010/ext/rest/ expCmdtRsqtyInfoQry/retrieveExpCmdtRsqty 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 expDclrNo 수출신고번호 15 1  expDclrLnNo 란번호 3 1  
+
+
+===== PAGE 92 =====
+ OPEN API 연계 가이드  
+ -89-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+expDclrStszSrno 규격번호 5 0     ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 stsz 규격 5 1  ttwg 총수량 18 0  ttwgUt 총수량단위 3 0  useAqty 사용량 22 0  useAqtyUt 사용량단위 3 0  rsqty 잔량 22 0  rsqtyUt 잔량단위 33 0  drwbYn 환급사용 1 0 Y 또는 N ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/ rest/ expCmdtRsqtyInfoQry/retrieveExpCmdtRsqty?crkyCn =[인증키]&expDclrNo =20************M&expDclrLnNo=***&expDclrStszSrno=***** 일치 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  < expCmdtRsqtyInfoQryRtnVo> <ntceInfo/> <tCnt>1</tCnt>  <expCmdtRsqtyVoRsltVo>   <ttwgUt>PC</ttwgUt>   <rsqtyUt>PC</rsqtyUt>   <stsz>00101</stsz>   <rsqty>72</rsqty>   <drwbYn>N</drwbYn>   <ttwg>72</ttwg>   <useAqty>0</useAqty>   <useAqtyUt>PC</useAqtyUt> </ expCmdtRsqtyVoRsltVo> </ expCmdtRsqtyInfoQryRtnVo >  
+
+
+===== PAGE 93 =====
+ OPEN API 연계 가이드  
+ -90-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+   3.2.35  수출신고필증검증 ① 서비스 개요 서비스 정보 서비스 ID API035 서비스명(국문) 수출신고필증검증 서비스명(영문) expDclrCrfnVrfcInfoQry 서비스 설명 수출신고필증검증 내역 조회 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ expDclrCrfnVrfcInfoQry/retrieveExpDclrCrfnVrfc 운영환경 https://unipass.customs.go.kr:38010/ext/rest/ expDclrCrfnVrfcInfoQry/retrieveExpDclrCrfnVrfc 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 expDclrCrfnPblsNo 발행번호 13 1..n 발행번호 필수입력 
+
+
+===== PAGE 94 =====
+ OPEN API 연계 가이드  
+ -91-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+expDclrNo 신고번호 15 1..n 신고번호 필수입력 txprBrno 수출화주 사업자등록번호 10 1..n 수출화주 사업자등록번호 필수입력 orcyCntyCd 원산지 코드 2 1..n 원산지 코드 필수입력 prnm 품명 300 1..n 품명 필수입력 ntwg 순중량 18 1..n 순중량 필수입력 (숫자로 입력)  ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 tCnt 응답 결과 1 1 1:일치 0:불일치 -1:시스템장애 vrfcRsltCn 응답 결과 한글명 10 0 일치함, 일치하지않음  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/expDclrCrfnVrfcInfoQry/retrieveExpDclrCrfnVrfc?crkyCn=[인증키]&expDclrCrfnPblsNo=*************&expDclrNo=***************&txprBrno=**********&orcyCntyCd=**&prnm=SPARE PARTS FOR CONSTRUCTION MACHINERY***&ntwg=** 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>   <expDclrCrfnVrfcQryRsltVo>   <ntceInfo />   <tCnt>1</tCnt>   <vrfcRsltCn>일치함</vrfcRsltCn>   </expDclrCrfnVrfcQryRsltVo>    
+
+
+===== PAGE 95 =====
+ OPEN API 연계 가이드  
+ -92-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.36  수출이행내역(차대번호) ① 서비스 개요 서비스 정보 서비스 ID API036 서비스명(국문) 수출이행내역(차대번호) 서비스명(영문) expFfmnBrkdCbnoQry 서비스 설명 중고차에 대한 수출신고(수리)취하 여부 조회 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/expFfmnBrkdCbnoQry/retrieveExpFfmnBrkdCbnoQryRtnVo 운영환경 https://unipass.customs.go.kr:38010/ext/rest/expFfmnBrkdCbnoQry/retrieveExpFfmnBrkdCbnoQryRtnVo 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 dclrDttm 수출신고일자 8 0 당일 조회 시 사용 dclrStrDttm 조회기간 시작일자 8 0 기간 조회 시 사용(최대 1년) dclrEndDttm 조회기간 종료일자 8 0 cbno 차대번호 40 1  
+
+
+===== PAGE 96 =====
+ OPEN API 연계 가이드  
+ -93-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+※ 수출신고일자 또는 조회기간 시작일자+조회기간 종료일자 중 한가지만 입력  ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 dclrDttm 수출신고일자 8 1..n  cbno 차대번호 40 1..n  vhclPrgsStts 차량진행상태 150 1..n  expDclrNo 수출신고번호 15 1..n  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/expFfmnBrkdCbnoQry/retrieveExpFfmnBrkdCbnoQryRtnVo?crkyCn=[인증키]&dclrStrDttm=2020073* &&dclrEndDttm=2021063* &cbno=KNGGBK6V1******** 일치 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  <expFfmnBrkdCbnoQryRtnVo> <ntceInfo/> <expFfmnBrkdCbnoQryRsltVo> <dclrDttm >2020-07-**</dclrDttm> <cbno>KNGGBK6V1********</cbno > <vhclPrgsStts>해당 차대번호로 수출 신고된 건은 수리된 상태입니다.</vhclPrgsStts> <expDclrNo >42008201*****X</expDclrNo>  </expFfmnBrkdCbnoQryRsltVo> <tCnt>1</tCnt>  </expFfmnBrkdCbnoQryRtnVo>   
+
+
+===== PAGE 97 =====
+ OPEN API 연계 가이드  
+ -94-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.37  우편물통관 진행정보 ① 서비스 개요 서비스 정보 서비스 ID API037 서비스명(국문) 우편물통관 진행정보 서비스명(영문) psmtCsclPrgsInfoQry 서비스 설명 우편물통관 진행정보 조회 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/psmtCsclPrgsInfoQry/retrievePsmtCsclPrgsInfo 운영환경 https://unipass.customs.go.kr:38010/ext/rest/psmtCsclPrgsInfoQry/retrievePsmtCsclPrgsInfo 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 psmtKcd 우편물종류 2 1  psmtNo 우편물번호 13 1   ③ 응답메세지 상세 
+
+
+===== PAGE 98 =====
+ OPEN API 연계 가이드  
+ -95-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 psmtCsclMtNo 통관관리번호 14 0..n  psmtNo 우편물번호 13 0..n  psmtPrcsTpcd 처리구분 1 0..n  csclPsofCd 우체국명 1 0..n  psmtKcd 우편물종류 2 0..n  brngArvlDt 반입일자 8 0..n  sendCntyCdNm 발송국가 75 0..n  postCurrCd 우편통화코드 3 0..n  ttwg 총중량 18,4 0..n  ttwgUtCd 총중량단위 3 0..n  aprvDt 통관일자 8 0..n  tamt 세액(원) 22 0..n  alSum 합계(원) 10 0..n  psmtPrcsStcd 처리상태 2 0..n  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/psmtCsclPrgsInfoQry/retrievePsmtCsclPrgsInfo?crkyCn=[인증키]&psmtKcd =13&psmtNo=CH1034392**** 일치 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  <psmtCsclPrgsInfoQryRtnVo> <ntceInfo/> <tCnt>0</tCnt> <psmtCsclPrgsInfoQryRsltVo>   <psmtPrcsTpcd>D</psmtPrcsTpcd> <tamt>271680</tamt>   <csclPsofCd>1</csclPsofCd> <ttwgUtCd>g</ttwgUtCd> <psmtPrcsStcd>완료/배송준비중</psmtPrcsStcd> <psmtKcd>13</psmtKcd> <aprvDt>20200805</aprvDt> <postCurrCd>KRW</postCurrCd> <ttwg>2730</ttwg> <psmtNo>CH1034392****</psmtNo> <sendCntyCdNm>미국</sendCntyCdNm> <psmtCsclMtNo>01313201378141</psmtCsclMtNo> <brngArvlDt>20200804</brngArvlDt> <alSum>275680</alSum> 
+
+
+===== PAGE 99 =====
+ OPEN API 연계 가이드  
+ -96-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+</psmtCsclPrgsInfoQryRsltVo> </psmtCsclPrgsInfoQryRtnVo> 
+3.2.38  하선신고 목록조회 ① 서비스 개요 서비스 정보 서비스 ID API038 서비스명(국문) 하선신고 목록조회 서비스명(영문) seaUlvsDclrInfoQry 서비스 설명 하선신고 목록조회 정보제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/seaUlvsDclrInfoQry/retrieveSeaUlvsDclrInfo 운영환경 https://unipass.customs.go.kr:38010/ext/rest/seaUlvsDclrInfoQry/retrieveSeaUlvsDclrInfo 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 
+
+
+===== PAGE 100 =====
+ OPEN API 연계 가이드  
+ -97-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 etprDt 입항일자 8 1 입항일자 dclrCstmSgn 신고세관부호 3 1 하선신고 세관부호  ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 mrn MRN 11 1..n 적하목록 관리번호 shipNm 선박명 75 1..n 선박명칭 ulvsUnairPrcsNm 하선신고처리상태명 300 1..n 하선신고 처리상태 명칭 ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/seaUlvsDclrInfoQry/retrieveSeaUlvsDclrInfo? crkyCn=[인증키]&etprDt=20200812&dclrCstmSgn=030 일치 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  <seaUlvsDclrInfoQryRtnVo> <ntceInfo/> <seaUlvsDclrInfoQryRsltVo> <shipNm>SHUN CHANG NO.3</shipNm> <mrn>20FISCA037I</mrn> <ulvsUnairPrcsNm>신고수리통보</ulvsUnairPrcsNm> </seaUlvsDclrInfoQryRsltVo> <seaUlvsDclrInfoQryRsltVo> <shipNm>HYUNDAI JUPITER</shipNm> <mrn>20HDMUA940I</mrn> <ulvsUnairPrcsNm>신고수리통보</ulvsUnairPrcsNm> </seaUlvsDclrInfoQryRsltVo> <tCnt>2</tCnt> </seaUlvsDclrInfoQryRtnVo>   
+
+
+===== PAGE 101 =====
+ OPEN API 연계 가이드  
+ -98-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.39  출항허가(해상) ① 서비스 개요 서비스 정보 서비스 ID API039 서비스명(국문) 출항허가(해상) 서비스명(영문) tkofWrprQry 서비스 설명 해상 출항허가 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/tkofWrprQry/retrieveTkofWrpr 운영환경 https://unipass.customs.go.kr:38010/ext/rest/tkofWrprQry/retrieveTkofWrpr 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 ioprSbmtNo 제출번호 11 0 입출항 보고 제출번호 tkofPermNo 출항허가번호 15 0 출항허가번호 ※ 제출번호 또는 출항허가번호 중 한가지만 입력 
+
+
+===== PAGE 102 =====
+ OPEN API 연계 가이드  
+ -99-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+   ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 shipFlgtNm 선박명 75 1  shipAirCntyCd 선박국적 2 1 출항허가서의 국가코드 shipCallImoNo 선박호출부호 12 0  intnTtn 국제총톤수 16,3 1  tkofDttm 출항일시 14 0  shipKcd 선박종류 300 0  arvlCntyPortAirptCd 목적지 항구코드 5 0 목적지 항구공항코드 ioprCargCd 적재화물코드 2 0  ioprCargCdNm 적재화물코드명 300 0  loadWght 적재톤수 16,3 0  loadTtn 당항적재톤수 16,3 0  dnarWght 위험물톤수 16,3 0  nextPortAirptCd 차항지 5 0  alCrmbPecnt 승무원수 10 0  alPsngPecnt 승객인원수 10 0  sbmtDttm 보고일시 14 0  aprePermDttm 발행일시 14 0  masrPiltNm 선장/선박대리점명 100 0  audtEmpSgn 발행기관 담당자 300 0 세관명 + 과명 ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/tkofWrprQry/retrieveTkofWrpr?crkyCn=[인증키]&tkofPermNo=030362016000007 일치 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  <tkofWrprQryRsltVo> <arvlCntyPortAirptCd>KR-KAN 광양항</arvlCntyPortAirptCd> <ioprCargCdNm>잡품</ioprCargCdNm> <sbmtDttm>20151126000000</sbmtDttm> <nextPortAirptCd>KR-KAN 광양항</nextPortAirptCd> <alPsngPecnt>0</alPsngPecnt> 
+
+
+===== PAGE 103 =====
+ OPEN API 연계 가이드  
+ -100-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+<loadWght>100</loadWght> <aprePermDttm/> <shipCallImoNo>V7MM4</shipCallImoNo> <alCrmbPecnt>22</alCrmbPecnt> <masrPiltNm>Santini Serhii</masrPiltNm> <tkofDttm>201512030100</tkofDttm> <shipAirCntyCd>MH (마샬군도)</shipAirCntyCd> <loadTtn>100</loadTtn> <shipFlgtNm>HAYLING ISLAND</shipFlgtNm> <intnTtn>28927</intnTtn> <dnarWght>0</dnarWght> <shipKcd>41 (풀 컨테이너선)</shipKcd> <ioprCargCd>96</ioprCargCd> <audtEmpSgn>부산세관 BUSAN 감시2관실</audtEmpSgn> </tkofWrprQryRsltVo>   
+
+
+===== PAGE 104 =====
+ OPEN API 연계 가이드  
+ -101-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.40  출항허가(항공) ① 서비스 개요 서비스 정보 서비스 ID API040 서비스명(국문) 출항허가(항공) 서비스명(영문) tkofWrprQry 서비스 설명 항공 출항허가 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/tkofWrprQry/retrieveFlghTkofPerm 운영환경 https://unipass.customs.go.kr:38010/ext/rest/tkofWrprQry/retrieveFlghTkofPerm 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 ioprSbmtNo 제출번호 11 0 입출항 보고 제출번호 tkofDttm 출항일자 8 0  shipFlgtNm 항공편명 75 0  
+
+
+===== PAGE 105 =====
+ OPEN API 연계 가이드  
+ -102-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+※ 제출번호 또는 출항일자+항공편명 입력   ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 shipFlgtNm 항공편명 75 1  shipAirCntyCd 항공편국적 2 1 출항허가서의 국가코드 airRgsrNo 항공기등록번호 12 0  intnTtn 국제총톤수 16,3 1  tkofDttm 출항일시 14 0  airKcdNm 항공기종류 300 0  arvlCntyPortAirptCd 목적지 공항코드 5 0 목적지 항구공항코드 dptrPortAirptCd 출발지 공항코드 2 0  dptrPortAirptNatnNm 출발지 국가명 300 0  loadTtn 적재총톤수 16,3 0  bggeTtn 개인수하물 총톤수 16,3 0  psmtTtn 우편물 총톤수 16,3 0  arvlCntyPortAirptNatnNm 도착지 국가명 300 0  kornCrmbPecnt 승무원수 50 0 한국인,외국인 승무원 수 kornPsngPecnt 승객인원수 10 0 승객수(한국인,외국인,출국,통과) sbmtDttm 보고일시 14 0  prcsDttm 발행일시 14 0  masrPiltNm 기장/항공사 명 100 0  audtEmpSgn 발행기관 담당자 300 0 세관명 + 과명 ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/tkofWrprQry/retrieveFlghTkofPerm?crkyCn=[인증키]&tkofDttm=20200814&shipFlgtNm=AF267 일치 응답 메시지 
+
+
+===== PAGE 106 =====
+ OPEN API 연계 가이드  
+ -103-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  <tkofFlghIoprRsltVo> <prcsDttm>2020-08-24 13:56</prcsDttm> <arvlCntyPortAirptCd>CDG</arvlCntyPortAirptCd> <kornPsngPecnt>한국인:91, 외국인:53, 출국:0, 통과:2</kornPsngPecnt> <sbmtDttm>202008140004</sbmtDttm> <airRgsrNo>FGZNH</airRgsrNo> <arvlCntyPortAirptNatnNm>FRANCE</arvlCntyPortAirptNatnNm> <dptrPortAirptCd>ICN</dptrPortAirptCd> <bggeTtn>3606</bggeTtn> <masrPiltNm/> <tkofDttm>20200814005000</tkofDttm> <shipAirCntyCd>FR</shipAirCntyCd> <loadTtn>20390</loadTtn> <airKcdNm>여객기</airKcdNm> <shipFlgtNm>AF267</shipFlgtNm> <intnTtn>345</intnTtn> <psmtTtn>0</psmtTtn> <kornCrmbPecnt>한국인:0, 외국인:15</kornCrmbPecnt> <audtEmpSgn>인천세관 </audtEmpSgn> <dptrPortAirptNatnNm>R.KOREA</dptrPortAirptNatnNm> </tkofFlghIoprRsltVo>   
+
+
+===== PAGE 107 =====
+ OPEN API 연계 가이드  
+ -104-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.42  재수출면세 이행잔량 조회 ① 서비스 개요 서비스 정보 서비스 ID API042 서비스명(국문) 재수출면세 이행잔량 조회 서비스명(영문) reexpTxfrFfmnRsqtyQry 서비스 설명 재수출면세 이행잔량 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/reexpTxfrFfmnRsqtyQry/retrieveReexpTxfrFfmnRsqty 운영환경 https://unipass.customs.go.kr:38010/ext/rest/reexpTxfrFfmnRsqtyQry/retrieveReexpTxfrFfmnRsqty 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 impDclrNo 수입신고번호 15 1   ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크항목구분 항목설명 
+
+
+===== PAGE 108 =====
+ OPEN API 연계 가이드  
+ -105-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+기 impDclrNo 수입신고번호 15 1  lnNo 란번호 3 1  dclrQty 수입수량 32 1  dclrWght 수입중량 18 1  totReexpFfmnQty 수출수량 18 1  totReexpFfmnWght 수출중량 27 1  qtyRsqty 잔량수량 32 1  wghtRsqty 잔량중량 27 1  reexpFfmnLastEnfrDt 재수출이행일자 8 0  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/reexpTxfrFfmnRsqtyQry/retrieveReexpTxfrFfmnRsqty?crkyCn=[인증키]&impDclrNo=10***********M 일치 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  <reexpTxfrFfmnRsqtyQryRtnVo> <ntceInfo/> <tCnt>1</tCnt> <reexpTxfrFfmnRsqtyQryRsltVo> <wghtRsqty>54403.2</wghtRsqty> <totReexpFfmnWght>0</totReexpFfmnWght> <impDclrNo>10***********M </impDclrNo> <reexpFfmnLastEnfrDt>20150908</reexpFfmnLastEnfrDt> <dclrQty>0</dclrQty> <qtyRsqty>0</qtyRsqty> <totReexpFfmnQty>0</totReexpFfmnQty> <lnNo>009</lnNo> <dclrWght>54403.2</dclrWght> </reexpTxfrFfmnRsqtyQryRsltVo> </reexpTxfrFfmnRsqtyQryRtnVo>   
+
+
+===== PAGE 109 =====
+ OPEN API 연계 가이드  
+ -106-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.43  HS CODE 내비게이션 조회 ① 서비스 개요 서비스 정보 서비스 ID API043 서비스명(국문) HS CODE 내비게이션 조회 서비스명(영문) cmtrStatsQry 서비스 설명 무역통계의 HS10단위부호로 신고한 내역을 건수별로 순위를 집계한 정보를 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/cmtrStatsQry/retrieveCmtrStats 운영환경 https://unipass.customs.go.kr:38010/ext/rest/cmtrStatsQry/retrieveCmtrStats 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 hsSgn HS10단위부호 10 1   ③ 응답메세지 상세 
+
+
+===== PAGE 110 =====
+ OPEN API 연계 가이드  
+ -107-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 hs10Sgn HS10단위부호 10 1  acrsTcntRnk 실적총건수순위 10 1  prlstNm 품목명 300 0  prlstLnCnt 품목란건수 10 0  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/cmtrStatsQry/retrieveCmtrStats?crkyCn=[인증키]&hsSgn=01*******0 일치 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  <cmtrStatsQryRtnVo> <ntceInfo/> <cmtrStatsQryRsltVo> <hs10Sgn>01*******0</hs10Sgn> <prlstNm>WOMENS ACCESSORIES PARTS AND ACCESSORIESSHAWLS AN</prlstNm> <acrsTcntRnk>1</acrsTcntRnk> <prlstLnCnt>2</prlstLnCnt> </cmtrStatsQryRsltVo> <tCnt>1</tCnt> </cmtrStatsQryRtnVo>   
+
+
+===== PAGE 111 =====
+ OPEN API 연계 가이드  
+ -108-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.44  입항보고내역(항공) ① 서비스 개요 서비스 정보 서비스 ID API044 서비스명(국문) 입항보고내역조회(항공) 서비스명(영문) retrieveFlghEtprRprtBrkd 서비스 설명 입항제출번호에 따른 입항보고 내역 조회 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ etprRprtQryBrkdQry/retrieveFlghEtprRprtBrkd 운영환경 https://unipass.customs.go.kr:38010/ext/rest/ etprRprtQryBrkdQry/retrieveFlghEtprRprtBrkd 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 ioprSbmtNo 입출항제출번호 12 0 입출항제출번호 또는 항공기편명 필수입력 shipFlgtNm 선박항공편명 75 0 etprDt 입항일자 4 0    
+
+
+===== PAGE 112 =====
+ OPEN API 연계 가이드  
+ -109-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+ ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 ioprSbmtNo 입출항제출번호 11 1..n  shipFlgtNm 선박항공편명 75 1..n  shipAirCntyCd 선박항공기국가코드 2 1..n  etprDttm 입항일시 14 1..n  dptrPortAirptCd 출발항구공항코드 25 1..n  alCrmbPecnt 전체승무원인원수 10 1..n  alPsngPecnt 전체승객인원수 10 1..n  cstmSgn 세관부호 10 1..n  aprePermDttm 승인허가일시 14 1..n  arvlCntyPortAirptCd 도착국가항구공항코드 25 1..n  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/ etprRprtQryBrkdQry/retrieveFlghEtprRprtBrkd?crkyCn=[인증키]&ioprSbmtNo=23KJZ45741I& shipFlgtNm=KJ232&etprDt=20230720 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  <flghEtprRprtBrkdQryRtnVo> <tCnt>1</tCnt> <ntceInfo/> <flghEtprRprtBrkdQryVo> <arvlCntyPortAirptCd>ICN</arvlCntyPortAirptCd>  <cstmSgn>040</cstmSgn> <etprDttm>202307201528</etprDttm> <shipFlgtNm>KJ232</shipFlgtNm> <alPsngPecnt>0</alPsngPecnt> <aprePermDttm>202307201520</aprePermDttm> <dptrPortAirptCd>YNT</dptrPortAirptCd> <ioprSbmtNo>23KJZ45741I</ioprSbmtNo> <alCrmbPecnt>3</alCrmbPecnt> <shipAirCntyCd>KR</shipAirCntyCd> </flghEtprRprtBrkdQryVo> </flghEtprRprtBrkdQryRtnVo> 
+
+
+===== PAGE 113 =====
+ OPEN API 연계 가이드  
+ -110-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.45  재수출 조건부 수입의 수출이행 기한 정보제공 ① 서비스 개요 서비스 정보 서비스 ID API045 서비스명(국문) 재수출조건부수입의 수출이행기한 정보제공 서비스명(영문) retrieveReepCndtImpFfmnTmlmInfo 서비스 설명 재수출조건부 수입의 수출이행기한 정보제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ reepCndtImpFfmnTmlmInfoOfr/retrieveReepCndtImpFfmnTmlmInfo 운영환경 https://unipass.customs.go.kr:38010/ext/rest/ reepCndtImpFfmnTmlmInfoOfr/retrieveReepCndtImpFfmnTmlmInfo 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 impDclrNo 수입신고번호 15 1  lnNo 란번호 3 1    
+
+
+===== PAGE 114 =====
+ OPEN API 연계 가이드  
+ -111-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+ ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 xtnsDt 연장일자 8 1..n  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/reepCndtImpFfmnTmlmInfoOfr/retrieveReepCndtImpFfmnTmlmInfo?crkyCn=[인증키]& impDclrNo=1************9&lnNo=001 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  <reepCndtImpFfmnTmlmInfoQryRtnVo> <ntceInfo/> <tCnt>1</tCnt> <reepCndtImpFfmnTmlmInfoQryRsltVo> <xtnsDt>20001222</xtnsDt> </reepCndtImpFfmnTmlmInfoQryRsltVo> </reepCndtImpFfmnTmlmInfoQryRtnVo>     
+
+
+===== PAGE 115 =====
+ OPEN API 연계 가이드  
+ -112-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.46  재수출 이행 완료보고 처리정보 제공 ① 서비스 개요 서비스 정보 서비스 ID API046 서비스명(국문) 재수출 이행 완료보고 처리정보 제공 서비스명(영문) retrieveReexpFfmnCmplRprtPrcsInfo 서비스 설명 재수출 이행 완료보고 처리정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ reexpFfmnCmplRprtPrcsInfoQry/retrieveReexpFfmnCmplRprtPrcsInfo 운영환경 https://unipass.customs.go.kr:38010/ext/rest/ reexpFfmnCmplRprtPrcsInfoQry/retrieveReexpFfmnCmplRprtPrcsInfo 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 impDclrNo 수입신고번호 15 1  lnNo 란번호 3 1    
+
+
+===== PAGE 116 =====
+ OPEN API 연계 가이드  
+ -113-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+ ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 reexpFffmnPrcsStcd 재수출이행처리상태코드 1 1..n  reexpFfmnLastEnfrDt 재수출이행최종시행일자 8 1..n  lastReexpFfmnDtyConcRcd 최종수출이행의무종결사유코드 2 1..n  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/reexpFfmnCmplRprtPrcsInfoQry/retrieveReexpFfmnCmplRprtPrcsInfo?crkyCn=[인증키]& impDclrNo=1************9&lnNo=001 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  <reexpFfmnCmplRprtPrcsInfoQryRtnVo> <ntceInfo/> <reexpFfmnCmplRprtPrcsInfoQryRsltVo> <reexpFfmnPrcsStcd>E</reexpFfmnPrcsStcd> <reexpFfmnLastEnfrDt>20000701</reexpFfmnLastEnfrDt> <lastReexpFfmnDtyConcRcd>01</lastReexpFfmnDtyConcRcd> </reexpFfmnCmplRprtPrcsInfoQryRsltVo> <tCnt>1</tCnt> </reexpFfmnCmplRprtPrcsInfoQryRtnVo>   
+
+
+===== PAGE 117 =====
+ OPEN API 연계 가이드  
+ -114-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.47  보세구역별 외국물품 장치기간 정보 ① 서비스 개요 서비스 정보 서비스 ID API047 서비스명(국문) 보세구역별 외국물품 장치기간 정보 제공 서비스명(영문) retrievebdgdFccmShed 서비스 설명 보세구역별 외국물품 장치기간 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ bdgdFccmShedQry/retrievebdgdFccmShed 운영환경 https://unipass.customs.go.kr:38010/ext/rest/ bdgdFccmShedQry/retrievebdgdFccmShed 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 snarSgn 보세구역부호 8 0        
+
+
+===== PAGE 118 =====
+ OPEN API 연계 가이드  
+ -115-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 snarSgn 보세구역부호 8 1..n  dvcePridval 장치기간값 22 0..n  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/bdgdFccmShedQry/retrievebdgdFccmShed?crkyCn=[인증키]&&snarSgn=0601**** 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  <bdgdFccmShedQryRtnVo> <ntceInfo/> <bdgdFccmShedQryRsltVo> <dvcePridval>6M</dvcePridval> <snarSgn>0601****</snarSgn> </bdgdFccmShedQryRsltVo> <tCnt>1</tCnt> </bdgdFccmShedQryRtnVo>   
+
+
+===== PAGE 119 =====
+ OPEN API 연계 가이드  
+ -116-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.48  수입물품 보세구역 반출신고 정보 ① 서비스 개요 
+ ② 요청메세지 상세    
+서비스 정보 서비스 ID API048 서비스명(국문) 수입물품 보세구역 반출신고 정보 서비스명(영문) retrieveImpCmdtSnarRlseDclr 서비스 설명 수입물품의 보세구역 반출신고 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ impCmdtSnarRlseDclrQry/retrieveImpCmdtSnarRlseDclr 운영환경 https://unipass.customs.go.kr:38010/ext/rest/ impCmdtSnarRlseDclrQry/retrieveImpCmdtSnarRlseDclr 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 rlbrBssNo 반출입근거번호 30 0 수입신고번호 입력 
+
+
+===== PAGE 120 =====
+ OPEN API 연계 가이드  
+ -117-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+ ③ 응답메세지 상세 
+ ④ 요청/응답 메세지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/impCmdtSnarRlseDclrQry/retrieveImpCmdtSnarRlseDclr?crkyCn=[인증키]&rlbrBssNo=767**********X 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  <impCmdtSnarRlseDclrQryRtnVo> <ntceInfo/> <impCmdtSnarRlseDclrYnRsltVo> <rlbrDt>20150102</rlbrDt> <rlbrDYn>Y</rlbrYn> </impCmdtSnarRlseDclrYnRsltVo> <tCnt>1</tCnt> </impCmdtSnarRlseDclrQryRtnVo>   
+항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 rlbrDt 반출일자 8 1..n  rlbrYn 반출신고 여부 1 1..n  
+
+
+===== PAGE 121 =====
+ OPEN API 연계 가이드  
+ -118-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.49  수입 제세의 납부여부 및 납부일자 정보 ① 서비스 개요 
+ ② 요청메세지 상세 ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)    
+서비스 정보 서비스 ID API049 서비스명(국문) 수입 제세의 납부여부 및 납부일자 정보 서비스명(영문) retrieveTaxMgPayYnAndPayDt 서비스 설명 수입 제세의 납부여부 및 납부일자 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ taxMgPayYnAndPayDtInfoQry/retrieveTaxMgPayYnAndPayDt 운영환경 https://unipass.customs.go.kr:38010/ext/rest/ taxMgPayYnAndPayDtInfoQry/retrieveTaxMgPayYnAndPayDt 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 impDclrNo 수입신고번호 15 1 수입신고번호 입력 
+
+
+===== PAGE 122 =====
+ OPEN API 연계 가이드  
+ -119-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+ ③ 응답메세지 상세 
+ ④ 요청/응답 메세지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/taxMgPayYnAndPayDtInfoQry/retrieveTaxMgPayYnAndPayDt?crkyCn=[인증키]&impDclrNo=123**********X 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  <taxMgQryRtnVo> <ntceInfo>납부<ntceInfo/> <taxMgPayYnAndPayDtInfoQryRsltVo> <fpayDt>20231017</rlbrDt> <fpayYn>Y</rlbrYn> </taxMgPayYnAndPayDtInfoQryRsltVo> <tCnt>1</tCnt> </taxMgQryRtnVo>   
+항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 fpayDt 납부일자 8 0  fpayYn 납부여부 1 1  ntceInfo 응답 메시지 내용 750 0  
+
+
+===== PAGE 123 =====
+ OPEN API 연계 가이드  
+ -120-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.50  담보해제 신청 처리현황 정보 ① 서비스 개요 
+ ② 요청메세지 상세 ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)     
+서비스 정보 서비스 ID API050 서비스명(국문) 담보해제 신청 처리현황 정보 서비스명(영문) retrieveTaxMgReleRqstPrcsStus 서비스 설명 담보해제 신청 처리현황 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ taxMgReleRqstPrcsStusInfoQry/retrieveTaxMgReleRqstPrcsStus 운영환경 https://unipass.customs.go.kr:38010/ext/rest/ taxMgReleRqstPrcsStusInfoQry/retrieveTaxMgReleRqstPrcsStus 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 impDclrNo 수입신고번호 15 1 수입신고번호 입력 
+
+
+===== PAGE 124 =====
+ OPEN API 연계 가이드  
+ -121-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+③ 응답메세지 상세 
+ ④ 요청/응답 메세지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/taxMgReleRqstPrcsStusInfoQry/retrieveTaxMgReleRqstPrcsStus?crkyCn=[인증키]&impDclrNo=123**********X 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  <taxMgQryRtnVo> <ntceInfo/> <taxMgReleRqstPrcsStusInfoQryRsltVo> <mgPrcsStcdNm>해제(지급)완료</mgPrcsStcdNm> <mgAprvDt>20231017</mgAprvDt> <mgRqstDt>20231016</mgRqstDt> </taxMgReleRqstPrcsStusInfoQryRsltVo> <tCnt>1</tCnt> </taxMgQryRtnVo>   
+항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 mgPrcsStcdNm 처리상태명 12 1  mgAprvDt 승인일자 8 0  mgRqstDt 접수일자 8 1  
+
+
+===== PAGE 125 =====
+ OPEN API 연계 가이드  
+ -122-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.51  전자상거래수출 적재 이행 정보 ① 서비스 개요 서비스 정보 서비스 ID API051 서비스명(국문) 전자상거래수출 적재 이행 정보 서비스명(영문) retrieveElcmExpLoadInfo 서비스 설명 전자상거래수출의 적재 이행 정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ elcmExpLoadInfoQry/retrieveElcmExpLoadInfo 운영환경 https://unipass.customs.go.kr:38010/ext/rest/ elcmExpLoadInfoQry/retrieveElcmExpLoadInfo 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 elcmExpDclrNo 전자상거래수출신고번호 14 1   ③ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 loadCmplYn 적재완료여부 1 1  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n) 
+
+
+===== PAGE 126 =====
+ OPEN API 연계 가이드  
+ -123-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+ ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/ elcmExpLoadInfoQry/retrieveElcmExpLoadInfo?crkyCn=[인증키]& elcmExpDclrNo=4************* 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  <elcmExpLoadInfoQryRtnVo > <ntceInfo/> <elcmExpLoadInfoQryRsltVo > <loadCmplYn>N</loadCmplYn>  </elcmExpLoadInfoQryRsltVo > <tCnt>1</tCnt> </elcmExpLoadInfoQryRtnVo >   
+
+
+===== PAGE 127 =====
+ OPEN API 연계 가이드  
+ -124-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.52  수출입신고서 정정신청 처리상태 제공 ⑤ 서비스 개요 서비스 정보 서비스 ID API052 서비스명(국문) 수출입신고서 정정신청 처리상태 제공 서비스명(영문) retrieveMdfyPrcsSttsBrkd 서비스 설명 수출입신고서 정정신청 처리상태 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ mdfyPrcsSttsBrkdQry/retrieveMdfyPrcsSttsBrkd 운영환경 https://unipass.customs.go.kr:38010/ext/rest/mdfyPrcsSttsBrkdQry/ retrieveMdfyPrcsSttsBrkd 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ⑥ 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 dcshSbmtNo 제출번호 15 1 수입신고번호, 수출신고번호 imexTpcd 수출입구분코드 1 1 수입통관(I), 수출통관(E) mdfyRqstDgcnt 정정신청차수 1 1  mdfyRqstDt 정정신청일자 8 1 수입의 경우 필수, 수출의 경우 생략 
+
+
+===== PAGE 128 =====
+ OPEN API 연계 가이드  
+ -125-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+ ⑦ 응답메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 mdfyRqstPrcsStcd 정정신청처리상태코드 2 1..n  mdfyRqstPrcsStcdNm 정정신청처리상태명 300 1..n  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ⑧ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/mdfyPrcsSttsBrkdQry/retrieveMdfyPrcsSttsBrkd?crkyCn=[인증키]&dcshSbmtNo=1***********9M&imexTpcd=I&mdfyRqstDgcnt=1&mdfyRqstDt=20231026 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  <mdfyPrcsSttsBrkdQryRtnVo> <ntceInfo/> <mdfyPrcsSttsBrkdQryRsltVoLst> <mdfyRqstPrcsStcdNm>접수통보</mdfyRqstPrcsStcdNm> <mdfyRqstPrcsStcd>02</ mdfyRqstPrcsStcd> </mdfyPrcsSttsBrkdQryRsltVoLst> <tCnt>1</tCnt> </mdfyPrcsSttsBrkdQryRtnVo>  REST(URI) https://unipass.customs.go.kr:38010/ext/rest/mdfyPrcsSttsBrkdQry/retrieveMdfyPrcsSttsBrkd?crkyCn=[인증키]&dcshSbmtNo=1***********9X&imexTpcd=E&mdfyRqstDgcnt=1 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  <mdfyPrcsSttsBrkdQryRtnVo> <ntceInfo/> <tCnt>1</tCnt> <mdfyPrcsSttsBrkdQryRsltVo> <mdfyRqstPrcsStcdNm>승인통보</mdfyRqstPrcsStcdNm> <mdfyRqstPrcsStcd>06</mdfyRqstPrcsStcd> </mdfyPrcsSttsBrkdQryRsltVo> </mdfyPrcsSttsBrkdQryRtnVo>      
+
+
+===== PAGE 129 =====
+ OPEN API 연계 가이드  
+ -126-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+ 3.2.53  적재지 검사정보 제공 ⑨ 서비스 개요 서비스 정보 서비스 ID API053 서비스명(국문) 적재지 검사정보 제공 서비스명(영문) retrieveLdpInscInfo 서비스 설명 적재지 검사정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ expLdpInscInfoQry/retrieveLdpInscInfo 운영환경 https://unipass.customs.go.kr:38010/ext/rest/expLdpInscInfoQry/ retrieveLdpInscInfo 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ⑩ 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 expDclrNo 수출신고번호 15 1   ⑪ 응답메세지 상세 
+
+
+===== PAGE 130 =====
+ OPEN API 연계 가이드  
+ -127-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 expInscTrgtYn 검사대상여부 1 1..n  expInscCmplYn 검사완료여부 1 1..n  ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)  ⑫ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/expLdpInscInfoQry/retrieveLdpInscInfo?crkyCn=[인증키]&expDclrNo=1***********9X 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  <expLdpInscInfoQryRtnVo> <ntceInfo/> <tCnt>1</tCnt> <expLdpInscInfoQryRsltVo> <expInscTrgtYn>Y</expInscTrgtYn> <expInscCmplYn>N</expInscCmplYn> </expLdpInscInfoQryRsltVo> </expLdpInscInfoQryRtnVo>    
+
+
+===== PAGE 131 =====
+ OPEN API 연계 가이드  
+ -128-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.54  보세운송 운송차량정보 제공 ① 서비스개요 서비스 정보 서비스 ID API054 서비스명(국문) 보세운송 운송차량정보 제공 서비스명(영문) retrieveTrnpMethAlocPrng 서비스 설명 보세운송 운송차량정보 제공 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ trnpMethAlocPrngQry/retrieveTrnpMethAlocPrng 운영환경 https://unipass.customs.go.kr:38010/ext/rest/ trnpMethAlocPrngQry/retrieveTrnpMethAlocPrng 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 frarSnarSgn 출발지보세구역부호 8 1  arlcSnarSgn 도착지보세구역부호 8 1  qryStrtDt 운송기한시작일자 8 1  qryEndDt 운송기한종료일자 8 1  btcoSgn 보세운송업자부호 6 0  
+
+
+===== PAGE 132 =====
+ OPEN API 연계 가이드  
+ -129-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+ ③ 응답메시지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 alocPrngDclrNo 운송차량정보 16 1..n 운송차량 신고번호 bnbnTrnpDclrNo 근거번호 20 1..n 보세운송 신고번호 frarSnarSgnNm 발송지 보세구역 150 1..n 한글명 arlcSnarSgnNm 최종목적지 보세구역 150 1..n 한글명 bntpMethNo 차량번호 35 1..n  cntrNo 컨테이너번호 11 0..n   ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/trnpMethAlocPrngQry/retrieveTrnpMethAlocPrng?crkyCn=[인증키]&frarSnarSgn=04077007&arlcSnarSgn=04077012&qryStrtDt=20240117&qryEndDt=20251131&btcoSgn=010018 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>  <trnpMethAlocPrngApiInfoQryRtnVo>  <ntceInfo/>  <tCnt>28</tCnt>   <trnpMethAlocPrngApiInfoQryRsltVo>    <arlcSnarSgn>인천86자2794</arlcSnarSgn>    <alocPrngDclrNo>0400182400001289</alocPrngDclrNo>    <bnbnTrnpDclrNo>040D8040018024001301</bnbnTrnpDclrNo>    <frarSnarSgnNm>아시아나항공(주)인천화물서비스</frarSnarSgnNm>    <arlcSnarSgnNm>인천국제물류센터(주)</arlcSnarSgnNm>    <cntrNo/>   </trnpMethAlocPrngApiInfoQryRsltVo> </trnpMethAlocPrngApiInfoQryRtnVo>    
+
+
+===== PAGE 133 =====
+ OPEN API 연계 가이드  
+ -130-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+3.2.55  전자상거래업자부호 유효성 검증 ① 서비스개요 서비스 정보 서비스 ID API055 서비스명(국문) 전자상거래업자부호 유효성 검증 서비스명(영문) elcmEntsSgnVldyVrfcQry 서비스 설명 사업자번호로 전자상거래업자부호 정보 조회 서비스 보안 서비스 인증/권한 [O] 서비스 Key[ ] 인증서 (GPKI) [ ] Basic (ID/PW) [ ] 없음 [ ]WS-Security 메시지 레벨 암호화 [  ] 전자서명 [ ] 암호화 [O] 없음 전송 레벨 암호화 [ O ] SSL   [  ] 없음 적용 기술 수준 인터페이스 표준 [  ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [ O ] REST (GET, POST, PUT, DELETE) [ ] RSS 1.0 [ ] RSS 2.0 [ ] Atom 1.0 [ ] 기타 교환 데이터 표준 [ O ] XML [ ] JSON [ ] MIME [ ] MTOM 서비스 URL 개발환경 https://tunipass.customs.go.kr:38010/ext/rest/ elcmEntsSgnVldyVrfcQry/retrieveVldyVrfcInfo 운영환경 https://unipass.customs.go.kr:38010/ext/rest/ elcmEntsSgnVldyVrfcQry/retrieveVldyVrfcInfo 서비스 배포 정보 서비스 버전 1.0 유효일자 N/A 배포 일자 N/A 서비스 이력 N/A 사용 제약 사항 (비고) 1. Java 1.7이상, 암호화프로토콜(TLS 1.2) 이상 사용권고 2. IP로는 서비스 호출 불가 → 도메인명으로 호출  ② 요청메세지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 brno 사업자번호 100 1 사업자번호 cntyCd 국가코드 2 1 전자상거래업자 국가코드 ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n) ※ 사업자번호 : 사업장 소재 국가에서 발급한 사업자번호  
+
+
+===== PAGE 134 =====
+ OPEN API 연계 가이드  
+ -131-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+③ 응답메시지 상세 항목명(영문) 항목명(국문) 항목크기 항목구분 항목설명 elcmEntsSgn 전자상거래업자부호 9 1 전자상거래업자부호 entsKoreNm 전자상거래업자명 150 ０ 전자상거래업자 업체 한글명 entsEnglNm 전자상거래업자영문명 150 ０ 전자상거래업자 업체 영문명 rgsrValtPridStrtDt 유효시작일자 8 1 전자상거래업자부호 유효시작일자 rgsrValtPridXpirDt 유효종료일자 1 1 전자상거래업자부호 유효시작일자 clabAckwEntsYn 협력인정업체여부 1 1 전장상거래업자가 협력인정업체로 인정된 경우 ‘Y’ 아닐 경우 ‘N’ 으로 설정  ④ 요청/응답 메시지 예제 REST(URI) https://unipass.customs.go.kr:38010/ext/rest/elcmEntsSgnVldyVrfcQry/retrieveVldyVrfcInfo? crkyCn=[인증키]&brno=#################&cntyCd=KR 응답 메시지 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?> <elcmEntsSgnVldyVrfcQryRtnVo> <tCnt>1</tCnt> <ntceInfo>정상적으로 조회가 완료되었습니다.</ntceInfo> <elcmEntsSgnVldyVrfcQryRsltVo> <elcmEntsSgn>K25000001</elcmEntsSgn> <entsKoreNm>홍길동 주식회사</entsKoreNm> <entsEnglNm>HongKilDong Co.</entsEnglNm> <rgsrValtPridStrtDt>20260226</rgsrValtPridStrtDt> <rgsrValtPridXpirDt>20290225</rgsrValtPridXpirDt> <clabAckwEntsYn>N</ clabAckwEntsYn > </elcmEntsSgnVldyVrfcQryRsltVo> </elcmEntsSgnVldyVrfcQryRtnVo>   
+
+
+===== PAGE 135 =====
+ OPEN API 연계 가이드  
+ -132-  Copyright ⓒ CUSTOMS.All Rights Reserved    
+4. 오류 메시지 4.1  오류 메시지 구조 ① 오류메세지 정보(tag : <ntceInfo> )와 오류코드( tag : <tCnt> )로 구성 ② 모든 오류 코드는 ‘-1’ 이며, 오류메세지는 오류 발생 경우에 따라 한글로 표시된다.  4.2  오류 메시지 예시 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?> <cargCsclPrgsInfoQryRtnVo> <ntceInfo>존재하지 않는 인증키입니다.</ntceInfo> <tCnt>-1</tCnt> </cargCsclPrgsInfoQryRtnVo>
