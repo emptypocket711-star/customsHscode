@@ -3,7 +3,8 @@
 import { Calculator, Clipboard, Search } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useActionState, useMemo, useState } from "react";
+import type { FormEvent } from "react";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { calculateDutyEstimate, parseNumericInput, type DutyEstimateInternalTaxItem, type DutyEstimateTaxBaseType } from "@/features/duty-estimator/calculation";
@@ -31,20 +32,23 @@ function NumericField({
   value,
   onChange,
   suffix,
-  placeholder
+  placeholder,
+  disabled
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   suffix?: string;
   placeholder?: string;
+  disabled?: boolean;
 }) {
   return (
     <label className="grid gap-1 text-sm font-medium text-slate-700">
       {label}
       <div className="flex rounded-md border border-slate-300 bg-white focus-within:ring-2 focus-within:ring-blue-600">
         <input
-          className="min-w-0 flex-1 rounded-l-md px-3 py-2 outline-none"
+          className="min-w-0 flex-1 rounded-l-md px-3 py-2 text-slate-950 outline-none disabled:bg-slate-100 disabled:text-slate-500"
+          disabled={disabled}
           inputMode="decimal"
           onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder}
@@ -107,15 +111,10 @@ export function DutyEstimatorPanel() {
   const [otherInternalTaxRate, setOtherInternalTaxRate] = useState(searchParams.get("otherInternalTaxRate") ?? "0");
   const [vatRate, setVatRate] = useState(searchParams.get("vatRate") ?? "10");
   const [copied, setCopied] = useState(false);
+  const [exchangeRatePending, setExchangeRatePending] = useState(false);
+  const [exchangeRateState, setExchangeRateState] = useState<ExchangeRateLookupState>(initialExchangeRateState);
   const normalizedHskCode = normalizeDutyEstimatorHskCode(hskCode);
   const hskCodeError = dutyEstimatorHskCodeError(hskCode);
-  const [exchangeRateState, exchangeRateFormAction, exchangeRatePending] = useActionState(async (previousState: ExchangeRateLookupState, formData: FormData) => {
-    const nextState = await lookupExchangeRateAction(previousState, formData);
-    if (nextState.status === "success" && nextState.rate) {
-      setExchangeRate(nextState.rate);
-    }
-    return nextState;
-  }, initialExchangeRateState);
 
   const result = useMemo(() => calculateDutyEstimate({
     goodsAmount: currency === "KRW" ? parseNumericInput(goodsAmount) : parseNumericInput(goodsAmount),
@@ -161,6 +160,22 @@ export function DutyEstimatorPanel() {
     window.setTimeout(() => setCopied(false), 1500);
   }
 
+  async function handleExchangeRateSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setExchangeRatePending(true);
+
+    try {
+      const nextState = await lookupExchangeRateAction(exchangeRateState, new FormData(event.currentTarget));
+      setExchangeRateState(nextState);
+      if (nextState.status === "success" && nextState.rate) {
+        setExchangeRate(nextState.rate);
+      }
+    } finally {
+      setExchangeRatePending(false);
+      window.dispatchEvent(new CustomEvent("hsfinder:navigation-progress-done"));
+    }
+  }
+
   return (
     <div className="grid gap-5">
       <Card>
@@ -170,9 +185,10 @@ export function DutyEstimatorPanel() {
           action={<Badge tone="info">예상 계산</Badge>}
         />
         <CardBody>
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
-            <div className="grid gap-4">
-              <div className="grid gap-4 md:grid-cols-[1fr_140px]">
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px] xl:items-start">
+            <div className="grid min-w-0 gap-5">
+              <section className="grid gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_160px] lg:items-start">
                 <label className="grid gap-1 text-sm font-medium text-slate-700">
                   HS CODE
                   <input
@@ -201,19 +217,25 @@ export function DutyEstimatorPanel() {
                     HS 조회
                   </Link>
                 )}
-              </div>
+                </div>
 
-              <label className="grid max-w-xs gap-1 text-sm font-medium text-slate-700">
-                조회기준일
-                <input
-                  className="focus-ring rounded-md border border-slate-300 px-3 py-2"
-                  onChange={(event) => setBasisDate(event.target.value)}
-                  type="date"
-                  value={basisDate}
-                />
-              </label>
+                <label className="grid max-w-xs gap-1 text-sm font-medium text-slate-700">
+                  조회기준일
+                  <input
+                    className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-950"
+                    onChange={(event) => setBasisDate(event.target.value)}
+                    type="date"
+                    value={basisDate}
+                  />
+                </label>
+              </section>
 
-              <div className="grid gap-4 md:grid-cols-[1fr_1fr_1.2fr]">
+              <section className="grid gap-4 rounded-lg border border-slate-200 bg-white p-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-950">과세가격 입력</h3>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">외화 물품가격은 관세환율을 곱해 원화 과세가격에 반영합니다.</p>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[140px_minmax(0,1fr)]">
                 <label className="grid gap-1 text-sm font-medium text-slate-700">
                   통화
                   <select className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2" onChange={(event) => setCurrency(event.target.value as (typeof currencyOptions)[number])} value={currency}>
@@ -221,25 +243,29 @@ export function DutyEstimatorPanel() {
                   </select>
                 </label>
                 <NumericField label="물품가격" onChange={setGoodsAmount} suffix={currency} value={goodsAmount} />
-                <div className="grid gap-1">
-                  <NumericField label="관세환율" onChange={setExchangeRate} suffix="KRW" value={currency === "KRW" ? "1" : exchangeRate} />
-                  <form action={exchangeRateFormAction} className="flex flex-wrap items-center gap-2">
+                </div>
+
+                <div className="grid gap-3 rounded-md border border-slate-200 bg-slate-50 p-3">
+                  <div className="grid gap-3 lg:grid-cols-[minmax(180px,260px)_1fr] lg:items-end">
+                    <NumericField disabled={currency === "KRW"} label="관세환율" onChange={setExchangeRate} suffix="KRW" value={currency === "KRW" ? "1" : exchangeRate} />
+                    <form className="grid gap-2 sm:grid-cols-[auto_1fr] sm:items-center" onSubmit={handleExchangeRateSubmit}>
                     <input name="currencyCode" type="hidden" value={currency} />
                     <input name="applyStartDate" type="hidden" value={basisDate} />
                     <input name="direction" type="hidden" value="import" />
                     <button
-                      className="focus-ring rounded-md border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="focus-ring inline-flex h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                       disabled={exchangeRatePending}
                       type="submit"
                     >
-                      {exchangeRatePending ? "조회 중" : "관세환율 자동조회"}
+                      {exchangeRatePending ? "조회 중" : currency === "KRW" ? "원화 1 적용" : "관세환율 자동조회"}
                     </button>
                     {exchangeRateState.status !== "idle" ? (
-                      <span className={`text-xs ${exchangeRateState.status === "success" ? "text-blue-700" : "text-amber-700"}`}>
+                      <span className={`min-w-0 text-xs leading-5 ${exchangeRateState.status === "success" ? "text-blue-700" : "text-amber-700"}`}>
                         {exchangeRateState.message}
                       </span>
                     ) : null}
                   </form>
+                  </div>
                   {exchangeRateState.status === "success" && exchangeRateState.effectiveFrom ? (
                     <p className="text-xs text-slate-500">관세환율 적용일 {exchangeRateState.effectiveFrom}</p>
                   ) : null}
@@ -247,41 +273,47 @@ export function DutyEstimatorPanel() {
                     <p className="text-xs text-slate-500">스냅샷 {exchangeRateState.sourceSnapshotId}</p>
                   ) : null}
                 </div>
-              </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <NumericField label="운임" onChange={setFreightKrw} suffix="KRW" value={freightKrw} />
-                <NumericField label="보험료" onChange={setInsuranceKrw} suffix="KRW" value={insuranceKrw} />
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-4">
-                <NumericField label="기본 관세율" onChange={setDutyRate} suffix="%" value={dutyRate} />
-                <NumericField label="FTA/협정 관세율" onChange={setPreferentialRate} placeholder="선택" suffix="%" value={preferentialRate} />
-                <NumericField label="기타 내국세율 합계" onChange={setOtherInternalTaxRate} suffix="%" value={otherInternalTaxRate} />
-                <NumericField label="부가세율" onChange={setVatRate} suffix="%" value={vatRate} />
-              </div>
-
-              {initialInternalTaxItems.length ? (
-                <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
-                  <span className="font-semibold text-slate-700">세목별 초기값</span>
-                  <span className="ml-2">
-                    {initialInternalTaxItems.map((item) => `${item.name} ${item.rate}%${item.baseType ? ` (${taxBaseLabel(item.baseType)} 기준)` : ""}`).join(" / ")}
-                  </span>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <NumericField label="운임" onChange={setFreightKrw} suffix="KRW" value={freightKrw} />
+                  <NumericField label="보험료" onChange={setInsuranceKrw} suffix="KRW" value={insuranceKrw} />
                 </div>
-              ) : null}
+              </section>
 
-              <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
-                <input
-                  checked={usePreferentialRate}
-                  className="size-4 rounded border-slate-300"
-                  onChange={(event) => setUsePreferentialRate(event.target.checked)}
-                  type="checkbox"
-                />
-                FTA/협정 관세율 적용
-              </label>
+              <section className="grid gap-4 rounded-lg border border-slate-200 bg-white p-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-950">세율 입력</h3>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">HS 조회에서 넘어온 값이 있으면 초기값으로 사용하고, 실제 조건에 맞게 조정합니다.</p>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  <NumericField label="기본 관세율" onChange={setDutyRate} suffix="%" value={dutyRate} />
+                  <NumericField label="FTA/협정 관세율" onChange={setPreferentialRate} placeholder="선택" suffix="%" value={preferentialRate} />
+                  <NumericField label="기타 내국세율 합계" onChange={setOtherInternalTaxRate} suffix="%" value={otherInternalTaxRate} />
+                  <NumericField label="부가세율" onChange={setVatRate} suffix="%" value={vatRate} />
+                </div>
+
+                {initialInternalTaxItems.length ? (
+                  <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600">
+                    <span className="font-semibold text-slate-700">세목별 초기값</span>
+                    <span className="mt-1 block">
+                      {initialInternalTaxItems.map((item) => `${item.name} ${item.rate}%${item.baseType ? ` (${taxBaseLabel(item.baseType)} 기준)` : ""}`).join(" / ")}
+                    </span>
+                  </div>
+                ) : null}
+
+                <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                  <input
+                    checked={usePreferentialRate}
+                    className="size-4 rounded border-slate-300"
+                    onChange={(event) => setUsePreferentialRate(event.target.checked)}
+                    type="checkbox"
+                  />
+                  FTA/협정 관세율 적용
+                </label>
+              </section>
             </div>
 
-            <aside className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <aside className="rounded-lg border border-slate-200 bg-slate-50 p-4 xl:sticky xl:top-5">
               <div className="flex items-center gap-2">
                 <span className="grid size-9 place-items-center rounded-md bg-blue-700 text-white">
                   <Calculator aria-hidden="true" size={18} />
@@ -293,22 +325,22 @@ export function DutyEstimatorPanel() {
               </div>
 
               <dl className="mt-4 grid gap-2 text-sm">
-                <div className="flex justify-between gap-3"><dt className="text-slate-600">과세가격</dt><dd className="font-semibold text-slate-950">{formatMoney(result.taxableValueKrw)}</dd></div>
-                <div className="flex justify-between gap-3"><dt className="text-slate-600">적용 관세율</dt><dd className="font-semibold text-slate-950">{result.appliedDutyRate}%</dd></div>
-                <div className="flex justify-between gap-3"><dt className="text-slate-600">관세</dt><dd className="font-semibold text-slate-950">{formatMoney(result.customsDutyKrw)}</dd></div>
-                <div className="flex justify-between gap-3"><dt className="text-slate-600">기타 내국세</dt><dd className="font-semibold text-slate-950">{formatMoney(result.otherInternalTaxKrw)}</dd></div>
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3"><dt className="text-slate-600">과세가격</dt><dd className="text-right font-semibold text-slate-950">{formatMoney(result.taxableValueKrw)}</dd></div>
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3"><dt className="text-slate-600">적용 관세율</dt><dd className="text-right font-semibold text-slate-950">{result.appliedDutyRate}%</dd></div>
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3"><dt className="text-slate-600">관세</dt><dd className="text-right font-semibold text-slate-950">{formatMoney(result.customsDutyKrw)}</dd></div>
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3"><dt className="text-slate-600">기타 내국세</dt><dd className="text-right font-semibold text-slate-950">{formatMoney(result.otherInternalTaxKrw)}</dd></div>
                 {result.otherInternalTaxItems.map((item) => (
-                  <div className="flex justify-between gap-3 pl-3 text-xs" key={`${item.name}-${item.rate}`}>
-                    <dt className="text-slate-500">{item.name} {item.rate}% ({taxBaseLabel(item.baseType)})</dt>
-                    <dd className="font-semibold text-slate-700">{formatMoney(item.amountKrw)}</dd>
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 pl-3 text-xs" key={`${item.name}-${item.rate}`}>
+                    <dt className="min-w-0 text-slate-500">{item.name} {item.rate}% ({taxBaseLabel(item.baseType)})</dt>
+                    <dd className="text-right font-semibold text-slate-700">{formatMoney(item.amountKrw)}</dd>
                   </div>
                 ))}
-                <div className="flex justify-between gap-3"><dt className="text-slate-600">부가세 과세표준</dt><dd className="font-semibold text-slate-950">{formatMoney(result.vatBaseKrw)}</dd></div>
-                <div className="flex justify-between gap-3"><dt className="text-slate-600">부가세</dt><dd className="font-semibold text-slate-950">{formatMoney(result.vatKrw)}</dd></div>
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3"><dt className="text-slate-600">부가세 과세표준</dt><dd className="text-right font-semibold text-slate-950">{formatMoney(result.vatBaseKrw)}</dd></div>
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3"><dt className="text-slate-600">부가세</dt><dd className="text-right font-semibold text-slate-950">{formatMoney(result.vatKrw)}</dd></div>
                 <div className="mt-2 border-t border-slate-200 pt-3">
-                  <div className="flex justify-between gap-3">
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3">
                     <dt className="font-semibold text-slate-950">예상 납세액</dt>
-                    <dd className="text-lg font-semibold text-blue-700">{formatMoney(result.totalTaxKrw)}</dd>
+                    <dd className="text-right text-lg font-semibold text-blue-700">{formatMoney(result.totalTaxKrw)}</dd>
                   </div>
                 </div>
               </dl>

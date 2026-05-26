@@ -14,6 +14,7 @@ export type CustomsOpenApiSource =
 
 type CustomsApiConfig = {
   endpointEnvName: string;
+  defaultEndpointUrl?: string;
   serviceKeyEnvName?: string;
   serviceKeyParamName: "crkyCn" | "serviceKey";
   sourceName: string;
@@ -57,6 +58,7 @@ const configs: Record<CustomsOpenApiSource, CustomsApiConfig> = {
   },
   exchange_rate: {
     endpointEnvName: "CUSTOMS_API_EXCHANGE_RATE_URL",
+    defaultEndpointUrl: "https://unipass.customs.go.kr:38010/ext/rest/trifFxrtInfoQry/retrieveTrifFxrtInfo",
     serviceKeyEnvName: "CUSTOMS_API_EXCHANGE_RATE_SERVICE_KEY",
     serviceKeyParamName: "crkyCn",
     sourceName: "관세청 관세환율 정보",
@@ -72,7 +74,7 @@ const configs: Record<CustomsOpenApiSource, CustomsApiConfig> = {
 
 export function hasCustomsOpenApiEnv(source: CustomsOpenApiSource) {
   const config = configs[source];
-  const endpointUrl = process.env[config.endpointEnvName];
+  const endpointUrl = process.env[config.endpointEnvName] || config.defaultEndpointUrl;
   const serviceKey = (config.serviceKeyEnvName ? process.env[config.serviceKeyEnvName] : undefined) || process.env.CUSTOMS_API_SERVICE_KEY || process.env.PUBLIC_DATA_SERVICE_KEY;
 
   return Boolean(endpointUrl && serviceKey);
@@ -84,7 +86,7 @@ export async function fetchCustomsOpenApiSnapshot(
   options?: { timeoutMs?: number }
 ): Promise<PublicDataSnapshot> {
   const config = configs[source];
-  const endpointUrl = process.env[config.endpointEnvName];
+  const endpointUrl = process.env[config.endpointEnvName] || config.defaultEndpointUrl;
   const serviceKey = (config.serviceKeyEnvName ? process.env[config.serviceKeyEnvName] : undefined) || process.env.CUSTOMS_API_SERVICE_KEY || process.env.PUBLIC_DATA_SERVICE_KEY;
 
   if (!endpointUrl || !serviceKey) {

@@ -38,6 +38,15 @@ describe("customs api query helpers", () => {
     expect(hasCustomsOpenApiEnv("tariff_rate")).toBe(true);
   });
 
+  it("allows API012 exchange-rate lookup with the built-in endpoint and source-specific key", () => {
+    vi.stubEnv("CUSTOMS_API_EXCHANGE_RATE_URL", "");
+    vi.stubEnv("CUSTOMS_API_EXCHANGE_RATE_SERVICE_KEY", "exchange-specific-key");
+    vi.stubEnv("CUSTOMS_API_SERVICE_KEY", "");
+    vi.stubEnv("PUBLIC_DATA_SERVICE_KEY", "");
+
+    expect(hasCustomsOpenApiEnv("exchange_rate")).toBe(true);
+  });
+
   it("normalizes hsk and direction for customs confirmation lookup", () => {
     expect(buildCustomsConfirmationQuery({ hskCode: "3304.99-1000", direction: "import" })).toEqual({
       hsSgn: "3304991000",
