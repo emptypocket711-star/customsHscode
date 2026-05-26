@@ -32,9 +32,12 @@ export type CargoWatchActionState = {
 const cargoLookupSchema = z.object({
   cargoManagementNo: z.string().trim().max(80).optional(),
   masterBlNo: z.string().trim().max(80).optional(),
-  houseBlNo: z.string().trim().max(80).optional()
+  houseBlNo: z.string().trim().max(80).optional(),
+  blYear: z.string().trim().regex(/^\d{4}$/, "B/L 연도는 4자리로 입력해 주세요.").optional()
 }).refine((input) => Boolean(input.cargoManagementNo || input.masterBlNo || input.houseBlNo), {
   message: "화물관리번호, Master B/L, House B/L 중 하나 이상 입력해 주세요."
+}).refine((input) => Boolean(input.cargoManagementNo || input.blYear), {
+  message: "Master B/L 또는 House B/L로 조회할 때는 B/L 연도가 필요합니다."
 });
 
 const cargoWatchSchema = cargoLookupSchema.extend({
@@ -55,7 +58,8 @@ function readCargoInput(formData: FormData) {
   return {
     cargoManagementNo: stringValue(formData, "cargoManagementNo"),
     masterBlNo: stringValue(formData, "masterBlNo"),
-    houseBlNo: stringValue(formData, "houseBlNo")
+    houseBlNo: stringValue(formData, "houseBlNo"),
+    blYear: stringValue(formData, "blYear") || new Date().getFullYear().toString()
   };
 }
 
@@ -164,6 +168,7 @@ export async function createCargoWatchAction(
         cargo_management_no: parsed.data.cargoManagementNo || null,
         master_bl_no: parsed.data.masterBlNo || null,
         house_bl_no: parsed.data.houseBlNo || null,
+        bl_year: parsed.data.blYear || null,
         target_status: parsed.data.targetStatus,
         notify_email: parsed.data.notifyEmail,
         poll_interval_seconds: 60,

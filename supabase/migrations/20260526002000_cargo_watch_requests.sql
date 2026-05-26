@@ -5,6 +5,7 @@ create table if not exists public.cargo_watch_requests (
   cargo_management_no text,
   master_bl_no text,
   house_bl_no text,
+  bl_year text,
   target_status text not null,
   notify_email text not null,
   poll_interval_seconds integer not null default 60 check (poll_interval_seconds between 60 and 3600),

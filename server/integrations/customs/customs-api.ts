@@ -182,11 +182,13 @@ export function buildCustomsCargoProgressQuery(input: {
   cargoManagementNo?: string;
   masterBlNo?: string;
   houseBlNo?: string;
+  blYear?: string;
 }) {
   return {
     cargMtNo: input.cargoManagementNo?.trim(),
     mblNo: input.masterBlNo?.trim(),
-    hblNo: input.houseBlNo?.trim()
+    hblNo: input.houseBlNo?.trim(),
+    blYy: input.blYear?.trim()
   };
 }
 
@@ -384,12 +386,16 @@ export function parseCustomsCargoProgressXml(rawText: string): CustomsCargoProgr
   const summaryBlock =
     xmlBlocks(rawText, "cargCsclPrgsInfoQryRsltVo")[0]
     ?? xmlBlocks(rawText, "CargCsclPrgsInfoQryRsltVo")[0]
+    ?? xmlBlocks(rawText, "cargCsclPrgsInfoQryVo")[0]
+    ?? xmlBlocks(rawText, "CargCsclPrgsInfoQryVo")[0]
     ?? rawText;
 
   const detailBlocks = [
     ...xmlBlocks(rawText, "cargCsclPrgsInfoDtlQryRsltVo"),
     ...xmlBlocks(rawText, "CargCsclPrgsInfoDtlQryRsltVo"),
-    ...xmlBlocks(rawText, "cargCsclPrgsInfoQryDtlVo")
+    ...xmlBlocks(rawText, "cargCsclPrgsInfoQryDtlVo"),
+    ...xmlBlocks(rawText, "cargCsclPrgsInfoDtlQryVo"),
+    ...xmlBlocks(rawText, "CargCsclPrgsInfoDtlQryVo")
   ];
 
   const summary: CustomsCargoProgressSummary = {
@@ -413,7 +419,7 @@ export function parseCustomsCargoProgressXml(rawText: string): CustomsCargoProgr
     statusCode: firstXmlValue(block, ["cargTrcnRelaBsopTpcd", "prgsStCd", "csclPrgsSttsCd"]),
     location: firstXmlValue(block, ["shedNm", "prnm", "cstmNm", "whNm"]),
     agency: firstXmlValue(block, ["agncNm", "trnpAgntNm", "pckCmpyNm"]),
-    processingDetails: firstXmlValue(block, ["rlbrBssNo", "prcsDls", "rmrk", "dclrNo"])
+    processingDetails: firstXmlValue(block, ["rlbrCn", "rlbrBssNo", "bfhnGdncCn", "prcsDls", "rmrk", "dclrNo"])
   })).filter((item) => item.status || item.statusCode || item.eventTime);
 
   if (!summary.cargoManagementNo && !summary.masterBlNo && !summary.houseBlNo && !summary.progressStatus && events.length === 0) {

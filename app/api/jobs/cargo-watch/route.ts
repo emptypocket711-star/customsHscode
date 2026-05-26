@@ -16,6 +16,7 @@ type CargoWatchRow = {
   cargo_management_no: string | null;
   master_bl_no: string | null;
   house_bl_no: string | null;
+  bl_year: string | null;
   target_status: string;
   notify_email: string;
   poll_interval_seconds: number;
@@ -59,7 +60,7 @@ async function processCargoWatches(request: NextRequest) {
   const supabase = createSupabaseServiceRoleClient();
   const { data, error } = await supabase
     .from("cargo_watch_requests")
-    .select("id,cargo_management_no,master_bl_no,house_bl_no,target_status,notify_email,poll_interval_seconds")
+    .select("id,cargo_management_no,master_bl_no,house_bl_no,bl_year,target_status,notify_email,poll_interval_seconds")
     .eq("status", "active")
     .lte("next_check_at", new Date().toISOString())
     .order("next_check_at", { ascending: true })
@@ -85,7 +86,8 @@ async function processCargoWatches(request: NextRequest) {
         buildCustomsCargoProgressQuery({
           cargoManagementNo: row.cargo_management_no ?? undefined,
           masterBlNo: row.master_bl_no ?? undefined,
-          houseBlNo: row.house_bl_no ?? undefined
+          houseBlNo: row.house_bl_no ?? undefined,
+          blYear: row.bl_year ?? undefined
         }),
         { timeoutMs: 15000 }
       );

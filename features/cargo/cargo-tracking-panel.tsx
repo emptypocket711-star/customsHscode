@@ -22,6 +22,7 @@ export type CargoWatchListItem = {
   cargoManagementNo: string | null;
   masterBlNo: string | null;
   houseBlNo: string | null;
+  blYear: string | null;
   targetStatus: string;
   notifyEmail: string;
   status: string;
@@ -44,6 +45,7 @@ function ActiveWatchRows({ watches }: { watches: CargoWatchListItem[] }) {
               <div className="min-w-0">
                 <p className="truncate font-mono text-xs font-semibold text-slate-900">
                   {watch.cargoManagementNo || watch.houseBlNo || watch.masterBlNo || "-"}
+                  {watch.blYear ? <span className="ml-2 font-sans text-slate-500">{watch.blYear}</span> : null}
                 </p>
                 <p className="mt-1 text-xs text-slate-500">감시가 작동중입니다.</p>
               </div>
@@ -100,6 +102,7 @@ export function CargoTrackingPanel({ watches }: { watches: CargoWatchListItem[] 
   const [lookupClientError, setLookupClientError] = useState("");
   const [watchClientError, setWatchClientError] = useState("");
   const result = lookupState.result;
+  const currentYear = new Date().getFullYear().toString();
 
   useEffect(() => {
     if (lookupState.status !== "idle") {
@@ -158,6 +161,10 @@ export function CargoTrackingPanel({ watches }: { watches: CargoWatchListItem[] 
               <label className="grid gap-1 text-sm font-medium text-slate-700">
                 House B/L
                 <input className="focus-ring rounded-md border border-slate-300 px-3 py-2" disabled={lookupPending} name="houseBlNo" />
+              </label>
+              <label className="grid gap-1 text-sm font-medium text-slate-700">
+                B/L 연도
+                <input className="focus-ring rounded-md border border-slate-300 px-3 py-2" defaultValue={currentYear} disabled={lookupPending} inputMode="numeric" maxLength={4} name="blYear" />
               </label>
             </div>
             <div className="flex flex-wrap items-center gap-3">
@@ -271,7 +278,11 @@ export function CargoTrackingPanel({ watches }: { watches: CargoWatchListItem[] 
                   House B/L
                   <input className="focus-ring rounded-md border border-slate-300 px-3 py-2" disabled={watchPending} name="houseBlNo" />
                 </label>
-                <label className="grid gap-1 text-sm font-medium text-slate-700 md:col-span-2">
+                <label className="grid gap-1 text-sm font-medium text-slate-700">
+                  B/L 연도
+                  <input className="focus-ring rounded-md border border-slate-300 px-3 py-2" defaultValue={currentYear} disabled={watchPending} inputMode="numeric" maxLength={4} name="blYear" />
+                </label>
+                <label className="grid gap-1 text-sm font-medium text-slate-700">
                   알림 받을 상태
                   <select className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2" disabled={watchPending} name="targetStatus" defaultValue="반입">
                     {statusOptions.map((status) => <option key={status} value={status}>{status}</option>)}
@@ -310,6 +321,7 @@ export function CargoTrackingPanel({ watches }: { watches: CargoWatchListItem[] 
                     <tr key={watch.id}>
                       <td className="px-3 py-2 font-mono text-xs text-slate-700">
                         {watch.cargoManagementNo || watch.houseBlNo || watch.masterBlNo || "-"}
+                        {watch.blYear ? ` / ${watch.blYear}` : ""}
                       </td>
                       <td className="px-3 py-2 font-semibold text-slate-900">{watch.targetStatus}</td>
                       <td className="px-3 py-2 text-slate-700">{watch.lastStatus || "-"}</td>

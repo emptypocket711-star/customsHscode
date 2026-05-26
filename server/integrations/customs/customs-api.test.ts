@@ -146,10 +146,11 @@ describe("customs api query helpers", () => {
   });
 
   it("builds cargo progress query", () => {
-    expect(buildCustomsCargoProgressQuery({ cargoManagementNo: " CARGO1 ", masterBlNo: " MBL1 ", houseBlNo: "" })).toEqual({
+    expect(buildCustomsCargoProgressQuery({ cargoManagementNo: " CARGO1 ", masterBlNo: " MBL1 ", houseBlNo: "", blYear: " 2026 " })).toEqual({
       cargMtNo: "CARGO1",
       mblNo: "MBL1",
-      hblNo: ""
+      hblNo: "",
+      blYy: "2026"
     });
   });
 

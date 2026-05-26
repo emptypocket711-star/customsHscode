@@ -85,6 +85,7 @@ export function NavigationProgress() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const slowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stageTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const actionSettleTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const previousLocationRef = useRef(`${pathname}?${searchParams.toString()}`);
 
   useEffect(() => {
@@ -100,6 +101,10 @@ export function NavigationProgress() {
       if (stageTimerRef.current) {
         clearInterval(stageTimerRef.current);
         stageTimerRef.current = null;
+      }
+      if (actionSettleTimerRef.current) {
+        clearInterval(actionSettleTimerRef.current);
+        actionSettleTimerRef.current = null;
       }
     }
 
@@ -138,6 +143,16 @@ export function NavigationProgress() {
       timerRef.current = setTimeout(() => {
         setMessage("검색 결과 화면을 계속 생성하고 있습니다. 네트워크 상태를 확인하고 있습니다");
       }, 120000);
+
+      const startedAt = Date.now();
+      const locationAtSubmit = window.location.href;
+      actionSettleTimerRef.current = setInterval(() => {
+        if (window.location.href !== locationAtSubmit) return;
+        const disabled = submitter instanceof HTMLButtonElement || submitter instanceof HTMLInputElement ? submitter.disabled : false;
+        if (!disabled && Date.now() - startedAt > 1200) {
+          stopProgress();
+        }
+      }, 300);
     }
 
     function handleClick(event: MouseEvent) {

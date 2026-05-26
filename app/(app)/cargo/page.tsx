@@ -6,7 +6,7 @@ async function loadCargoWatches(): Promise<CargoWatchListItem[]> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("cargo_watch_requests")
-    .select("id,cargo_management_no,master_bl_no,house_bl_no,target_status,notify_email,status,last_status,last_checked_at,created_at")
+    .select("id,cargo_management_no,master_bl_no,house_bl_no,bl_year,target_status,notify_email,status,last_status,last_checked_at,created_at")
     .order("created_at", { ascending: false })
     .limit(20);
 
@@ -17,6 +17,7 @@ async function loadCargoWatches(): Promise<CargoWatchListItem[]> {
     cargoManagementNo: row.cargo_management_no,
     masterBlNo: row.master_bl_no,
     houseBlNo: row.house_bl_no,
+    blYear: row.bl_year,
     targetStatus: row.target_status,
     notifyEmail: row.notify_email,
     status: row.status,
