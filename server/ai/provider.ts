@@ -356,6 +356,8 @@ function aiProductSearchNormalizationInstructions() {
     "Do not final-confirm HS classification, tariff applicability, or legal requirements.",
     "Normalize product-name search input: interpret what product the user means, fix likely typos, expand synonyms, provide Korean and English search terms, product families, provisional HS lookup hints, and missing questions.",
     "The input may be Korean, Chinese, Japanese, English, or another language. Translate and interpret the product name before producing HS lookup hints.",
+    "For Korean, Chinese, Japanese, Cyrillic, or mixed-language product names, first infer the product family in Korean and English, then provide provisional HS4/HS6 lookup hints whenever the product family is recognizable.",
+    "Do not return an empty candidateHsCodes array only because the exact Korean HSK 10-digit suffix is unknown. Use HS4/HS6 as provisional lookup hints and put the exact 10-digit uncertainty in missingQuestions.",
     "If the input appears to be a brand name, trade name, product line, model name, SKU, catalog number, or non-descriptive short name, use web evidence when available to identify the underlying product type before choosing HS candidates.",
     "When the input contains a brand or product line plus a generic product phrase, treat the brand as secondary and classify lookup intent by the generic product phrase, principal function, use, and composition.",
     "Act as a classification interviewer first, not a candidate-list generator.",
@@ -374,7 +376,8 @@ function aiProductSearchNormalizationInstructions() {
     "Do not require an exact official HS description match before returning candidateHsCodes. The app will show GPT HS4/HS6 candidates even when national HS10 expansion needs separate review.",
     "Give higher priority to the product phrase and surrounding context than to isolated ambiguous words. For example, cream alone can be dairy or cosmetic, but hand/moisture/skin cream should produce skin-care cosmetic lookup hints unless food/dairy terms are explicit.",
     "If the input is ambiguous because it can mean different products, set classificationState=ambiguous_multiple_meanings, certainty=low, displayMode=multiple, return competing meanings plus missing questions.",
-    "If the input is incomplete because branch facts are missing, set classificationState=needs_clarification, certainty=low or medium, displayMode=needs_more_info, primaryCandidate=null, and ask branch questions before returning a code.",
+    "If the input is incomplete because branch facts are missing and those facts can change the HS4/HS6 boundary, set classificationState=needs_clarification, certainty=low or medium, displayMode=needs_more_info, primaryCandidate=null, and ask branch questions before returning a displayed code.",
+    "Do not use needs_clarification just because the exact national HS10 is uncertain. If HS4/HS6 is still reasonably inferable, use single_likely_candidate or ambiguous_multiple_meanings and provide HS4/HS6 candidateHsCodes.",
     "When the input includes typos, model numbers, abbreviations, or short trade names, infer likely product families and provide broad lookup hints that can surface candidates from official HS data.",
     "If web search is available and the input appears to be a model number, SKU, catalog number, or product code, use web search to identify the underlying product type before producing search terms.",
     "If web search is unavailable, inconclusive, or blocked, still use general product knowledge and the visible words to infer provisional HS4/HS6 lookup hints instead of returning an empty candidate list.",
@@ -389,6 +392,7 @@ function aiProductSearchNormalizationInstructions() {
     "Do not include candidate code boundaries that contradict the identified product family unless the input explicitly says the product may be that different article.",
     "Avoid highly specialized chemical, radioactive, military, or industrial headings unless the input explicitly indicates that specialization.",
     "Write Korean business SaaS copy for missingQuestions.",
+    "Accepted aliases are tolerated but prefer the exact JSON keys. Do not use markdown.",
     "JSON shape: {\"classificationState\":\"needs_clarification|single_likely_candidate|ambiguous_multiple_meanings\",\"certainty\":\"high|medium|low\",\"displayMode\":\"single|multiple|needs_more_info\",\"userMessage\":\"string|null\",\"correctedProductName\":\"string|null\",\"primaryCandidate\":{\"code\":\"string\",\"reason\":\"string\",\"requiredInfo\":[\"string\"]}|null,\"searchTerms\":[\"string\"],\"koreanTerms\":[\"string\"],\"englishTerms\":[\"string\"],\"productFamilies\":[\"string\"],\"candidateHsCodes\":[\"string\"],\"candidateHsCodeReasons\":[{\"code\":\"string\",\"reason\":\"string\",\"requiredInfo\":[\"string\"]}],\"webSources\":[{\"title\":\"string\",\"url\":\"string\"}],\"missingQuestions\":[\"string\"]}"
   ].join("\n");
 }
@@ -488,10 +492,30 @@ function hsCodeArray(value: unknown, limit: number) {
     .slice(0, limit);
 }
 
+function firstArray(...values: unknown[]) {
+  return values.find((value) => Array.isArray(value));
+}
+
+function stringValueFromObject(value: unknown, keys: string[]) {
+  if (!value || typeof value !== "object") return "";
+  const record = value as Record<string, unknown>;
+  return keys.map((key) => record[key]).find((field): field is string => typeof field === "string") ?? "";
+}
+
 function parseAiProductSearchNormalizationJson(text: string, fallback: AiProductSearchNormalizationResult): AiProductSearchNormalizationResult {
   try {
     const parsed = JSON.parse(text) as Partial<AiProductSearchNormalizationResult>;
-    const rawParsed = parsed as Partial<AiProductSearchNormalizationResult> & { normalizedProductName?: unknown };
+    const rawParsed = parsed as Partial<AiProductSearchNormalizationResult> & {
+      normalizedProductName?: unknown;
+      hsCodes?: unknown;
+      hsCodeCandidates?: unknown;
+      hsCandidates?: unknown;
+      candidates?: unknown;
+      suggestedHsCodes?: unknown;
+      candidateCodes?: unknown;
+      primaryHsCode?: unknown;
+      primaryHsCandidate?: unknown;
+    };
     const classificationState = parsed.classificationState === "needs_clarification"
       || parsed.classificationState === "single_likely_candidate"
       || parsed.classificationState === "ambiguous_multiple_meanings"
@@ -503,13 +527,14 @@ function parseAiProductSearchNormalizationJson(text: string, fallback: AiProduct
     const displayMode = parsed.displayMode === "single" || parsed.displayMode === "multiple" || parsed.displayMode === "needs_more_info"
       ? parsed.displayMode
       : fallback.displayMode;
-    const rawPrimaryCandidate = parsed.primaryCandidate && typeof parsed.primaryCandidate === "object"
-      ? parsed.primaryCandidate as { code?: unknown; hsCode?: unknown; hs_code?: unknown; hskCode?: unknown; hsk_code?: unknown; reason?: unknown; description?: unknown; requiredInfo?: unknown }
+    const rawPrimarySource = parsed.primaryCandidate ?? rawParsed.primaryHsCandidate ?? rawParsed.primaryHsCode;
+    const rawPrimaryCandidate = rawPrimarySource && typeof rawPrimarySource === "object"
+      ? rawPrimarySource as { code?: unknown; hsCode?: unknown; hs_code?: unknown; hskCode?: unknown; hsk_code?: unknown; hs?: unknown; hs6?: unknown; reason?: unknown; description?: unknown; requiredInfo?: unknown; missingInfo?: unknown }
       : null;
     const primaryCodeSource = rawPrimaryCandidate
-      ? [rawPrimaryCandidate.code, rawPrimaryCandidate.hsCode, rawPrimaryCandidate.hs_code, rawPrimaryCandidate.hskCode, rawPrimaryCandidate.hsk_code]
+      ? [rawPrimaryCandidate.code, rawPrimaryCandidate.hsCode, rawPrimaryCandidate.hs_code, rawPrimaryCandidate.hskCode, rawPrimaryCandidate.hsk_code, rawPrimaryCandidate.hs, rawPrimaryCandidate.hs6]
         .find((field): field is string => typeof field === "string") ?? ""
-      : "";
+      : typeof rawPrimarySource === "string" ? rawPrimarySource : "";
     const primaryCode = primaryCodeSource.replace(/[^0-9]/g, "");
     const primaryReason = rawPrimaryCandidate && typeof rawPrimaryCandidate.reason === "string" && rawPrimaryCandidate.reason.trim()
       ? rawPrimaryCandidate.reason.trim()
@@ -520,13 +545,23 @@ function parseAiProductSearchNormalizationJson(text: string, fallback: AiProduct
       ? {
         code: primaryCode,
         reason: primaryReason,
-        requiredInfo: stringArray(rawPrimaryCandidate?.requiredInfo, 5)
+        requiredInfo: stringArray(rawPrimaryCandidate?.requiredInfo ?? rawPrimaryCandidate?.missingInfo, 5)
       }
       : fallback.primaryCandidate ?? null;
+    const rawCandidateHsCodes = firstArray(
+      parsed.candidateHsCodes,
+      rawParsed.hsCodes,
+      rawParsed.hsCodeCandidates,
+      rawParsed.hsCandidates,
+      rawParsed.candidates,
+      rawParsed.suggestedHsCodes,
+      rawParsed.candidateCodes
+    );
     const candidateHsCodes = Array.from(new Set([
       ...(primaryCandidate ? [primaryCandidate.code] : []),
-      ...hsCodeArray(parsed.candidateHsCodes, 8)
+      ...hsCodeArray(rawCandidateHsCodes, 8)
     ])).slice(0, 8);
+    const rawCandidateReasons = firstArray(parsed.candidateHsCodeReasons, rawParsed.hsCodeCandidates, rawParsed.hsCandidates, rawParsed.candidates);
 
     return {
       provider: fallback.provider,
@@ -548,39 +583,36 @@ function parseAiProductSearchNormalizationJson(text: string, fallback: AiProduct
       englishTerms: stringArray(parsed.englishTerms, 8),
       productFamilies: stringArray(parsed.productFamilies, 6),
       candidateHsCodes,
-      candidateHsCodeReasons: Array.isArray(parsed.candidateHsCodeReasons)
-        ? parsed.candidateHsCodeReasons
+      candidateHsCodeReasons: Array.isArray(rawCandidateReasons)
+        ? rawCandidateReasons
           .map((item) => {
             if (!item || typeof item !== "object") return null;
-            const reason = item as { code?: unknown; reason?: unknown; requiredInfo?: unknown };
-            const code = typeof reason.code === "string" ? reason.code.replace(/[^0-9]/g, "") : "";
-            if (code.length < 4 || code.length > 10 || typeof reason.reason !== "string" || !reason.reason.trim()) return null;
+            const reason = item as { code?: unknown; hsCode?: unknown; hs_code?: unknown; hskCode?: unknown; hsk_code?: unknown; hs?: unknown; hs6?: unknown; reason?: unknown; description?: unknown; name?: unknown; product?: unknown; requiredInfo?: unknown; missingInfo?: unknown };
+            const code = stringValueFromObject(reason, ["code", "hsCode", "hs_code", "hskCode", "hsk_code", "hs", "hs6"]).replace(/[^0-9]/g, "");
+            const reasonText = stringValueFromObject(reason, ["reason", "description", "name", "product"]).trim();
+            if (code.length < 4 || code.length > 10 || !reasonText) return null;
             return {
               code,
-              reason: reason.reason.trim(),
-              requiredInfo: stringArray(reason.requiredInfo, 5)
+              reason: reasonText,
+              requiredInfo: stringArray(reason.requiredInfo ?? reason.missingInfo, 5)
             };
           })
           .filter((item): item is { code: string; reason: string; requiredInfo: string[] } => item !== null)
           .slice(0, 8)
-        : Array.isArray(parsed.candidateHsCodes)
-        ? parsed.candidateHsCodes
+        : Array.isArray(rawCandidateHsCodes)
+        ? rawCandidateHsCodes
           .map((item) => {
             if (!item || typeof item !== "object") return null;
-            const candidate = item as { code?: unknown; hsCode?: unknown; hs_code?: unknown; hskCode?: unknown; hsk_code?: unknown; description?: unknown; reason?: unknown; requiredInfo?: unknown };
-            const codeSource = [candidate.code, candidate.hsCode, candidate.hs_code, candidate.hskCode, candidate.hsk_code]
+            const candidate = item as { code?: unknown; hsCode?: unknown; hs_code?: unknown; hskCode?: unknown; hsk_code?: unknown; hs?: unknown; hs6?: unknown; description?: unknown; reason?: unknown; name?: unknown; product?: unknown; requiredInfo?: unknown; missingInfo?: unknown };
+            const codeSource = [candidate.code, candidate.hsCode, candidate.hs_code, candidate.hskCode, candidate.hsk_code, candidate.hs, candidate.hs6]
               .find((field): field is string => typeof field === "string") ?? "";
             const code = codeSource.replace(/[^0-9]/g, "");
-            const reason = typeof candidate.reason === "string" && candidate.reason.trim()
-              ? candidate.reason.trim()
-              : typeof candidate.description === "string" && candidate.description.trim()
-              ? candidate.description.trim()
-              : "";
+            const reason = stringValueFromObject(candidate, ["reason", "description", "name", "product"]).trim();
             if (code.length < 4 || code.length > 10 || !reason) return null;
             return {
               code,
               reason,
-              requiredInfo: stringArray(candidate.requiredInfo, 5)
+              requiredInfo: stringArray(candidate.requiredInfo ?? candidate.missingInfo, 5)
             };
           })
           .filter((item): item is { code: string; reason: string; requiredInfo: string[] } => item !== null)

@@ -98,7 +98,7 @@ describe("normalizeProductSearchInput", () => {
     });
 
     expect(key).toContain("ai-product-normalization");
-    expect(key).toContain("product-search-normalization-v12");
+    expect(key).toContain("product-search-normalization-v13");
     expect(key).toContain("901910");
     expect(key).not.toContain("secret");
     expect(key).not.toContain("ABC-123");
@@ -210,6 +210,8 @@ describe("normalizeProductSearchInput", () => {
     const instructions = aiProviderInternals.aiProductSearchNormalizationInstructions();
 
     expect(instructions).toContain("Korean, Chinese, Japanese, English, or another language");
+    expect(instructions).toContain("For Korean, Chinese, Japanese, Cyrillic, or mixed-language product names");
+    expect(instructions).toContain("Do not return an empty candidateHsCodes array only because the exact Korean HSK 10-digit suffix is unknown");
     expect(instructions).toContain("brand name, trade name, product line, model name, SKU, catalog number");
     expect(instructions).toContain("brand or product line plus a generic product phrase");
     expect(instructions).toContain("If web search is unavailable, inconclusive, or blocked");
@@ -220,6 +222,7 @@ describe("normalizeProductSearchInput", () => {
     expect(instructions).toContain("Prefer HS6 prefixes");
     expect(instructions).toContain("Return useful HS4/HS6 candidates even when the exact national HS10 may need later official-data expansion");
     expect(instructions).toContain("Do not require an exact official HS description match before returning candidateHsCodes");
+    expect(instructions).toContain("Do not use needs_clarification just because the exact national HS10 is uncertain");
     expect(instructions).toContain("do not prioritize accumulator/battery headings only because the article contains an internal battery");
     expect(instructions).toContain("classify lookup intent by the traded finished article first");
     expect(instructions).toContain("If web search identifies a product but the visible words can reasonably indicate another product family");
@@ -382,6 +385,55 @@ describe("normalizeProductSearchInput", () => {
     expect(parsed.candidateHsCodes).toEqual(["220299", "2009"]);
     expect(parsed.koreanTerms).toContain("매실음료");
     expect(parsed.candidateHsCodeReasons[0]?.reason).toContain("매실");
+  });
+
+  it("accepts common GPT alias fields for Chinese and Korean HS candidates", () => {
+    const fallback = {
+      provider: "openai" as const,
+      model: "test",
+      correctedProductName: null,
+      searchTerms: [],
+      koreanTerms: [],
+      englishTerms: [],
+      productFamilies: [],
+      candidateHsCodes: [],
+      candidateHsCodeReasons: [],
+      webSources: [],
+      missingQuestions: []
+    };
+    const parsed = aiProviderInternals.parseAiProductSearchNormalizationJson(JSON.stringify({
+      normalizedProductName: "无线键盘",
+      primaryHsCandidate: {
+        hs6: "847160",
+        description: "중국어 품명은 무선 키보드로 해석되며 컴퓨터 입력장치 계열 가능성이 높음",
+        missingInfo: ["완제품 여부", "블루투스/2.4G 여부"]
+      },
+      hsCandidates: [
+        {
+          hsCode: "8471.60",
+          name: "키보드 등 입력장치",
+          missingInfo: ["컴퓨터용 입력장치인지"]
+        },
+        {
+          hsCode: "8536.50",
+          description: "스위치 부품만 거래되는 경우 조건부 검토",
+          requiredInfo: ["스위치 단품인지"]
+        }
+      ],
+      searchTerms: ["wireless keyboard", "无线键盘"],
+      koreanTerms: ["무선 키보드"],
+      englishTerms: ["wireless keyboard"]
+    }), fallback);
+
+    expect(parsed.correctedProductName).toBe("无线键盘");
+    expect(parsed.primaryCandidate?.code).toBe("847160");
+    expect(parsed.candidateHsCodes).toEqual(["847160", "853650"]);
+    expect(parsed.candidateHsCodeReasons[0]).toEqual({
+      code: "847160",
+      reason: "키보드 등 입력장치",
+      requiredInfo: ["컴퓨터용 입력장치인지"]
+    });
+    expect(parsed.koreanTerms).toContain("무선 키보드");
   });
 });
 
