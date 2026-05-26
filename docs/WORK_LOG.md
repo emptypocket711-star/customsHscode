@@ -123,6 +123,7 @@
 - 대시보드 공지사항은 `app_notices` 테이블에서 published 항목만 표시한다.
 - 작성, 수정, 삭제는 `emptypocket711@gmail.com` 개발자 계정과 `developer` 프로필 역할이 모두 맞을 때만 허용한다.
 - 공지 변경은 `app_notice_create`, `app_notice_update`, `app_notice_delete` 감사 로그로 기록한다.
+- `popup_enabled` 공지는 대시보드 접속 시 자동으로 열 수 있고, 사용자가 선택하면 브라우저 기준 1일 동안 숨긴다.
 
 ### 국내 수입 10자리 조회 스냅샷
 

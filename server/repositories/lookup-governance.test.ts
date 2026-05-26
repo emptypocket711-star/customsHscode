@@ -71,7 +71,8 @@ describe("lookup governance guards", () => {
       "supabase/migrations/20260525007500_account_access_events.sql",
       "supabase/migrations/20260525007600_active_user_sessions.sql",
       "supabase/migrations/20260525007700_hs_lookup_history.sql",
-      "supabase/migrations/20260526001000_app_notices.sql"
+      "supabase/migrations/20260526001000_app_notices.sql",
+      "supabase/migrations/20260526001100_app_notice_popup_enabled.sql"
     ].map(read).join("\n");
 
     for (const tableName of [
@@ -149,6 +150,8 @@ describe("lookup governance guards", () => {
     expect(noticeActions).toContain("app_notice_delete");
     expect(dashboardPage).toContain("listPublishedAppNotices");
     expect(noticePanel).toContain("공지사항 작성");
+    expect(noticePanel).toContain("popupEnabled");
+    expect(read("features/dashboard/dashboard-notice-card.tsx")).toContain("1일 동안 보지 않기");
   });
 
   it("keeps developer test login links gated and audited", () => {

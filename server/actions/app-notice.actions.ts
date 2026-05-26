@@ -22,7 +22,8 @@ const noticeUpsertSchema = z.object({
   body: z.string().trim().min(1, "내용을 입력해 주세요.").max(4000, "내용은 4000자 이하로 입력해 주세요."),
   category: noticeCategorySchema,
   isPublished: z.boolean(),
-  pinned: z.boolean()
+  pinned: z.boolean(),
+  popupEnabled: z.boolean()
 });
 
 const noticeDeleteSchema = z.object({
@@ -81,7 +82,8 @@ export async function upsertAppNoticeAction(
       body: stringValue(formData, "body"),
       category: stringValue(formData, "category"),
       isPublished: checkboxValue(formData, "isPublished"),
-      pinned: checkboxValue(formData, "pinned")
+      pinned: checkboxValue(formData, "pinned"),
+      popupEnabled: checkboxValue(formData, "popupEnabled")
     });
 
     if (!parsed.success) {
@@ -97,7 +99,7 @@ export async function upsertAppNoticeAction(
     if (input.id) {
       const { data: beforeNotice } = await admin
         .from("app_notices")
-        .select("id,title,body,category,is_published,pinned,published_at")
+        .select("id,title,body,category,is_published,pinned,popup_enabled,published_at")
         .eq("id", input.id)
         .maybeSingle();
       const { error } = await admin
@@ -108,6 +110,7 @@ export async function upsertAppNoticeAction(
           category: input.category,
           is_published: input.isPublished,
           pinned: input.pinned,
+          popup_enabled: input.popupEnabled,
           updated_by: actor.id,
           published_at: input.isPublished ? new Date().toISOString() : beforeNotice?.published_at ?? new Date().toISOString()
         })
@@ -136,6 +139,7 @@ export async function upsertAppNoticeAction(
         category: input.category,
         is_published: input.isPublished,
         pinned: input.pinned,
+        popup_enabled: input.popupEnabled,
         created_by: actor.id,
         updated_by: actor.id,
         published_at: new Date().toISOString()
@@ -194,7 +198,7 @@ export async function deleteAppNoticeAction(
     const admin = createSupabaseServiceRoleClient();
     const { data: beforeNotice } = await admin
       .from("app_notices")
-      .select("id,title,body,category,is_published,pinned,published_at")
+      .select("id,title,body,category,is_published,pinned,popup_enabled,published_at")
       .eq("id", input.id)
       .maybeSingle();
     const { error } = await admin

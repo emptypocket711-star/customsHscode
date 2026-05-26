@@ -9,6 +9,7 @@ export type AppNotice = {
   category: AppNoticeCategory;
   isPublished: boolean;
   pinned: boolean;
+  popupEnabled: boolean;
   publishedAt: string;
   createdAt: string;
   updatedAt: string;
@@ -21,6 +22,7 @@ type AppNoticeRow = {
   category: AppNoticeCategory;
   is_published: boolean;
   pinned: boolean;
+  popup_enabled: boolean;
   published_at: string;
   created_at: string;
   updated_at: string;
@@ -34,13 +36,14 @@ function mapNotice(row: AppNoticeRow): AppNotice {
     category: row.category,
     isPublished: row.is_published,
     pinned: row.pinned,
+    popupEnabled: row.popup_enabled,
     publishedAt: row.published_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };
 }
 
-const noticeSelect = "id,title,body,category,is_published,pinned,published_at,created_at,updated_at";
+const noticeSelect = "id,title,body,category,is_published,pinned,popup_enabled,published_at,created_at,updated_at";
 
 export async function listPublishedAppNotices(supabase: SupabaseClient, limit = 5): Promise<AppNotice[]> {
   const { data, error } = await supabase

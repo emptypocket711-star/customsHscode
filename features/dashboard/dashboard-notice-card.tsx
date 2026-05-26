@@ -1,7 +1,7 @@
 "use client";
 
 import { Megaphone, X } from "lucide-react";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import type { AppNotice } from "@/server/repositories/app-notice.repository";
 
@@ -34,8 +34,47 @@ function formatFullDate(value: string) {
   }).format(new Date(value));
 }
 
-function NoticeDialog({ notice }: { notice: AppNotice }) {
+const oneDayMs = 24 * 60 * 60 * 1000;
+
+function dismissedStorageKey(noticeId: string) {
+  return `hsfinder.notice.dismissed_until.${noticeId}`;
+}
+
+function isDismissedForToday(noticeId: string) {
+  const value = window.localStorage.getItem(dismissedStorageKey(noticeId));
+  if (!value) return false;
+
+  const dismissedUntil = Number(value);
+  if (!Number.isFinite(dismissedUntil) || dismissedUntil <= Date.now()) {
+    window.localStorage.removeItem(dismissedStorageKey(noticeId));
+    return false;
+  }
+
+  return true;
+}
+
+function NoticeDialog({ autoOpen, notice }: { autoOpen?: boolean; notice: AppNotice }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const [hideForToday, setHideForToday] = useState(false);
+
+  useEffect(() => {
+    if (!autoOpen || isDismissedForToday(notice.id)) return;
+
+    const timer = window.setTimeout(() => {
+      if (!dialogRef.current?.open) {
+        dialogRef.current?.showModal();
+      }
+    }, 300);
+
+    return () => window.clearTimeout(timer);
+  }, [autoOpen, notice.id]);
+
+  function closeDialog() {
+    if (hideForToday) {
+      window.localStorage.setItem(dismissedStorageKey(notice.id), String(Date.now() + oneDayMs));
+    }
+    dialogRef.current?.close();
+  }
 
   return (
     <>
@@ -51,9 +90,6 @@ function NoticeDialog({ notice }: { notice: AppNotice }) {
           <span className="ml-auto text-xs font-semibold text-blue-700">열기</span>
         </span>
         <span className="mt-2 block px-1 text-sm font-semibold text-[var(--text-primary)]">{notice.title}</span>
-        <span className="mt-1 line-clamp-2 block whitespace-pre-line px-1 text-xs leading-5 text-[var(--text-secondary)]">
-          {notice.body}
-        </span>
       </button>
 
       <dialog className="w-[min(720px,calc(100vw-32px))] rounded-lg border border-slate-200 p-0 shadow-2xl backdrop:bg-slate-950/45" ref={dialogRef}>
@@ -69,7 +105,7 @@ function NoticeDialog({ notice }: { notice: AppNotice }) {
           <button
             aria-label="닫기"
             className="focus-ring ml-3 grid size-8 shrink-0 place-items-center rounded-md text-slate-700 hover:bg-slate-100"
-            onClick={() => dialogRef.current?.close()}
+            onClick={closeDialog}
             type="button"
           >
             <X aria-hidden="true" size={18} />
@@ -78,12 +114,32 @@ function NoticeDialog({ notice }: { notice: AppNotice }) {
         <div className="max-h-[72vh] overflow-auto p-5">
           <p className="whitespace-pre-wrap text-sm leading-7 text-slate-800">{notice.body}</p>
         </div>
+        <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
+            <input
+              checked={hideForToday}
+              className="size-4 rounded border-slate-300"
+              onChange={(event) => setHideForToday(event.target.checked)}
+              type="checkbox"
+            />
+            1일 동안 보지 않기
+          </label>
+          <button
+            className="focus-ring inline-flex h-9 items-center justify-center rounded-md bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800"
+            onClick={closeDialog}
+            type="button"
+          >
+            닫기
+          </button>
+        </div>
       </dialog>
     </>
   );
 }
 
 export function DashboardNoticeCard({ notices }: { notices: AppNotice[] }) {
+  const autoPopupNoticeId = notices.find((notice) => notice.popupEnabled)?.id;
+
   return (
     <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface)] shadow-[var(--shadow-panel)]">
       <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-5 py-4">
@@ -93,7 +149,9 @@ export function DashboardNoticeCard({ notices }: { notices: AppNotice[] }) {
         </div>
       </div>
       <div className="divide-y divide-[var(--border-subtle)] px-4">
-        {notices.length ? notices.map((notice) => <NoticeDialog key={notice.id} notice={notice} />) : (
+        {notices.length ? notices.map((notice) => (
+          <NoticeDialog autoOpen={notice.id === autoPopupNoticeId} key={notice.id} notice={notice} />
+        )) : (
           <div className="py-6 text-sm text-[var(--text-secondary)]">등록된 공지사항이 없습니다.</div>
         )}
       </div>

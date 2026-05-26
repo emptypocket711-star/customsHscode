@@ -90,6 +90,10 @@ function NoticeFields({ notice }: { notice?: AppNotice }) {
           <input className="size-4 rounded border-slate-300" defaultChecked={notice?.pinned ?? false} name="pinned" type="checkbox" />
           상단 고정
         </label>
+        <label className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700">
+          <input className="size-4 rounded border-slate-300" defaultChecked={notice?.popupEnabled ?? false} name="popupEnabled" type="checkbox" />
+          접속 시 팝업
+        </label>
       </div>
     </>
   );
@@ -151,6 +155,7 @@ export function NoticeManagementPanel({ notices }: { notices: AppNotice[] }) {
                     <h2 className="text-base font-semibold text-slate-950">{notice.title}</h2>
                     <Badge tone={notice.isPublished ? "success" : "neutral"}>{notice.isPublished ? "노출" : "숨김"}</Badge>
                     {notice.pinned ? <Badge tone="info">상단 고정</Badge> : null}
+                    {notice.popupEnabled ? <Badge tone="warning">자동 팝업</Badge> : null}
                     <Badge tone="neutral">{categoryLabels[notice.category]}</Badge>
                   </div>
                   <p className="mt-1 text-xs text-slate-500">게시 {formatDate(notice.publishedAt)} / 수정 {formatDate(notice.updatedAt)}</p>
