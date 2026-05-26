@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useActionState, useEffect, useMemo, useState } from "react";
-import { Activity, ExternalLink, Filter, KeyRound, Network, Save, Search, Trash2 } from "lucide-react";
+import { Activity, ChevronDown, ExternalLink, Filter, KeyRound, Network, Save, Search, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import {
@@ -83,6 +83,7 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
   const [accountTypeFilter, setAccountTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [roleFilter, setRoleFilter] = useState("all");
+  const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
 
   useEffect(() => {
     if (updateState.status === "idle" && deleteState.status === "idle" && testLoginState.status === "idle") return;
@@ -190,27 +191,69 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
           </Card>
         ) : null}
 
+        {filteredUsers.length > 0 ? (
+          <div className="hidden rounded-md border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-500 lg:grid lg:grid-cols-[minmax(260px,1.4fr)_140px_140px_160px_160px_36px] lg:items-center">
+            <span>사용자</span>
+            <span>회원 유형</span>
+            <span>권한</span>
+            <span>회사/공간</span>
+            <span>마지막 로그인</span>
+            <span />
+          </div>
+        ) : null}
+
         {filteredUsers.map((user) => (
-          <Card key={user.id}>
-            <CardBody className="grid gap-4">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-base font-semibold text-slate-950">{user.email}</p>
-                    <Badge tone={user.onboardingCompletedAt ? "success" : "warning"}>
-                      {user.onboardingCompletedAt ? "가입 완료" : "추가정보 미완료"}
-                    </Badge>
-                    <Badge tone={user.accountType === "company" ? "info" : "neutral"}>
-                      {user.accountType === "company" ? "기업회원" : "개인회원"}
-                    </Badge>
+          <Card className="overflow-hidden" key={user.id}>
+            <button
+              aria-expanded={expandedUserId === user.id}
+              className="focus-ring grid w-full gap-3 px-4 py-3 text-left transition hover:bg-blue-50/60 lg:grid-cols-[minmax(260px,1.4fr)_140px_140px_160px_160px_36px] lg:items-center"
+              onClick={() => setExpandedUserId((current) => current === user.id ? null : user.id)}
+              type="button"
+            >
+              <span className="min-w-0">
+                <span className="flex flex-wrap items-center gap-2">
+                  <span className="truncate text-sm font-semibold text-slate-950">{user.email}</span>
+                  <Badge tone={user.onboardingCompletedAt ? "success" : "warning"}>
+                    {user.onboardingCompletedAt ? "가입 완료" : "추가정보 미완료"}
+                  </Badge>
+                </span>
+                <span className="mt-1 block truncate text-xs text-slate-500">{user.fullName || "이름 미입력"} · {user.id}</span>
+              </span>
+              <span className="flex items-center gap-2 lg:block">
+                <span className="text-xs font-semibold text-slate-500 lg:hidden">회원 유형</span>
+                <Badge tone={user.accountType === "company" ? "info" : "neutral"}>
+                  {user.accountType === "company" ? "기업회원" : "개인회원"}
+                </Badge>
+              </span>
+              <span className="flex items-center gap-2 text-sm font-medium text-slate-700 lg:block">
+                <span className="text-xs font-semibold text-slate-500 lg:hidden">권한</span>
+                {user.role}
+              </span>
+              <span className="flex min-w-0 items-center gap-2 text-sm text-slate-700 lg:block">
+                <span className="shrink-0 text-xs font-semibold text-slate-500 lg:hidden">회사/공간</span>
+                <span className="truncate">{user.companyName || "-"}</span>
+              </span>
+              <span className="flex items-center gap-2 text-sm text-slate-600 lg:block">
+                <span className="text-xs font-semibold text-slate-500 lg:hidden">마지막 로그인</span>
+                {formatDate(user.lastSignInAt)}
+              </span>
+              <span className="flex justify-end">
+                <ChevronDown
+                  aria-hidden="true"
+                  className={expandedUserId === user.id ? "text-blue-700 transition-transform rotate-180" : "text-slate-500 transition-transform"}
+                  size={18}
+                />
+              </span>
+            </button>
+
+            <div className={expandedUserId === user.id ? "grid grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-out" : "grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 ease-out"}>
+              <div className="overflow-hidden">
+                <CardBody className="grid gap-4 border-t border-slate-200 bg-white">
+                  <div className="grid gap-2 rounded-md bg-slate-50 p-3 text-xs text-slate-600 md:grid-cols-3">
+                    <span>사용자 ID: {user.id}</span>
+                    <span>가입: {formatDate(user.authCreatedAt)}</span>
+                    <span>마지막 로그인: {formatDate(user.lastSignInAt)}</span>
                   </div>
-                  <p className="mt-1 text-xs text-slate-500">사용자 ID {user.id}</p>
-                </div>
-                <div className="grid gap-1 text-sm text-slate-600 lg:text-right">
-                  <span>가입 {formatDate(user.authCreatedAt)}</span>
-                  <span>마지막 로그인 {formatDate(user.lastSignInAt)}</span>
-                </div>
-              </div>
 
               <form action={updateAction} className="grid gap-4">
                 <input name="userId" type="hidden" value={user.id} />
@@ -428,7 +471,9 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
                 </div>
                 <p className="text-xs text-red-800">Auth 사용자 삭제 후 연결된 프로필은 자동 삭제됩니다. 남은 사용자가 없는 회사 공간은 함께 정리됩니다.</p>
               </form>
-            </CardBody>
+                </CardBody>
+              </div>
+            </div>
           </Card>
         ))}
       </div>
