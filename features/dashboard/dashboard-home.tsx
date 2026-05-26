@@ -86,10 +86,10 @@ export function DashboardHome({
                 <span className="text-xs font-medium text-[var(--text-muted)]">조회 기준일 {basisDate}</span>
               </div>
               <h1 className="mt-4 text-2xl font-semibold tracking-normal text-[var(--text-primary)] sm:text-3xl">
-                오늘도 너무 급하지 않게, 차분히 시작해봐요.
+                대시보드
               </h1>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
-                자주 쓰는 메뉴와 최근 기록만 간단히 정리했습니다.
+                자주 쓰는 메뉴, 공지사항, 즐겨찾기와 최근 검색 기록을 한 곳에서 확인합니다.
               </p>
             </div>
             <div className="rounded-md border border-[var(--border-subtle)] bg-white px-4 py-3 text-sm font-semibold text-[var(--text-primary)] shadow-sm">
