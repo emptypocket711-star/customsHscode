@@ -8,6 +8,7 @@ import {
   FileSearch,
   Globe2,
   LayoutDashboard,
+  Megaphone,
   Menu,
   Search,
   ShieldCheck,
@@ -28,6 +29,7 @@ const userNavItems = [
 
 const operationNavItems = [
   { href: "/operations/users", label: "사용자 관리", icon: Users },
+  { href: "/operations/notices", label: "공지사항", icon: Megaphone },
   { href: "/operations/health", label: "운영 점검", icon: ShieldCheck },
   { href: "/legal-updates", label: "자료 관리", icon: Database },
   { href: "/staff/review", label: "검토 큐", icon: FileSearch }

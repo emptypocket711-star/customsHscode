@@ -70,7 +70,8 @@ describe("lookup governance guards", () => {
       "supabase/migrations/20260525003000_hs_favorites.sql",
       "supabase/migrations/20260525007500_account_access_events.sql",
       "supabase/migrations/20260525007600_active_user_sessions.sql",
-      "supabase/migrations/20260525007700_hs_lookup_history.sql"
+      "supabase/migrations/20260525007700_hs_lookup_history.sql",
+      "supabase/migrations/20260526001000_app_notices.sql"
     ].map(read).join("\n");
 
     for (const tableName of [
@@ -92,6 +93,7 @@ describe("lookup governance guards", () => {
       "background_jobs",
       "hs_favorites",
       "hs_lookup_history",
+      "app_notices",
       "account_access_events",
       "active_user_sessions"
     ]) {
@@ -112,6 +114,7 @@ describe("lookup governance guards", () => {
   it("keeps operations pages and navigation restricted to the developer account", () => {
     const appLayout = read("app/(app)/layout.tsx");
     const usersPage = read("app/(app)/operations/users/page.tsx");
+    const noticesPage = read("app/(app)/operations/notices/page.tsx");
     const healthPage = read("app/(app)/operations/health/page.tsx");
     const documentUploadPage = read("app/(app)/documents/upload/page.tsx");
     const overseasPage = read("app/(app)/hs/overseas/page.tsx");
@@ -120,12 +123,32 @@ describe("lookup governance guards", () => {
     expect(appLayout).toContain("isDeveloperEmail(user.email)");
     expect(appLayout).toContain("showOperations={isDeveloperEmail(user.email)}");
     expect(usersPage).toContain("requireDeveloperRole()");
+    expect(noticesPage).toContain("requireDeveloperRole()");
     expect(healthPage).toContain("requireDeveloperRole()");
     expect(documentUploadPage).toContain("requireDeveloperRole()");
     expect(documentUploadPage).toContain("문서 업로드 준비 중");
     expect(overseasPage).toContain("recordHsLookupHistory");
     expect(overseasPage).toContain('direction: "export"');
     expect(sideNav).toContain("showOperations ? <NavGroup");
+    expect(sideNav).toContain("/operations/notices");
+  });
+
+  it("keeps dashboard notices developer-managed and audited", () => {
+    const noticesMigration = read("supabase/migrations/20260526001000_app_notices.sql");
+    const noticeActions = read("server/actions/app-notice.actions.ts");
+    const dashboardPage = read("app/(app)/dashboard/page.tsx");
+    const noticePanel = read("features/operations/notice-management-panel.tsx");
+
+    expect(noticesMigration).toContain("developer manages notices");
+    expect(noticesMigration).toContain("public.current_user_role() = 'developer'::public.user_role");
+    expect(noticesMigration).toContain("auth.jwt() ->> 'email' = 'emptypocket711@gmail.com'");
+    expect(noticeActions).toContain("requireCurrentDeveloper()");
+    expect(noticeActions).toContain("isDeveloperEmail(user.email)");
+    expect(noticeActions).toContain("app_notice_create");
+    expect(noticeActions).toContain("app_notice_update");
+    expect(noticeActions).toContain("app_notice_delete");
+    expect(dashboardPage).toContain("listPublishedAppNotices");
+    expect(noticePanel).toContain("공지사항 작성");
   });
 
   it("keeps developer test login links gated and audited", () => {

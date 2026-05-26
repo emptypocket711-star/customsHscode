@@ -118,6 +118,12 @@
 
 ## Verification Baseline
 
+### 운영 공지사항
+
+- 대시보드 공지사항은 `app_notices` 테이블에서 published 항목만 표시한다.
+- 작성, 수정, 삭제는 `emptypocket711@gmail.com` 개발자 계정과 `developer` 프로필 역할이 모두 맞을 때만 허용한다.
+- 공지 변경은 `app_notice_create`, `app_notice_update`, `app_notice_delete` 감사 로그로 기록한다.
+
 ### 국내 수입 10자리 조회 스냅샷
 
 - 운영 Supabase에 관세청 품목번호별 관세율표 20260211 데이터를 중복 제거 후 380,229개 published row로 적재했다.
