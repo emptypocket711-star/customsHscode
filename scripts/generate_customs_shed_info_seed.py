@@ -83,21 +83,27 @@ def fetch_customs_office_codes(args: argparse.Namespace) -> list[str]:
     return codes
 
 
-def infer_facility_type(name: str, address: str) -> str:
+def infer_facility_type(name: str, address: str, unloading_place_bonded_area_yn: str) -> tuple[str, str]:
+    flag = unloading_place_bonded_area_yn.upper()
+    if flag == "Y":
+        return "cy", "unloading_place_flag"
+    if flag == "N":
+        return "cfs", "unloading_place_flag"
+
     text = f"{name} {address}".upper()
     if "CFS" in text:
-        return "cfs"
+        return "cfs", "auto_name_rule"
     if "CY" in text:
-        return "cy"
+        return "cy", "auto_name_rule"
     if "터미널" in text or "TERMINAL" in text:
-        return "terminal"
+        return "terminal", "auto_name_rule"
     if "공항" in text or "AIRPORT" in text:
-        return "airport"
+        return "airport", "auto_name_rule"
     if "보세창고" in text or "창고" in text or "WAREHOUSE" in text:
-        return "bonded_warehouse"
+        return "bonded_warehouse", "auto_name_rule"
     if name or address:
-        return "other"
-    return "unknown"
+        return "other", "auto_name_rule"
+    return "unknown", "unclassified"
 
 
 def parse_shed_rows(raw_text: str, customs_office_code: str, source_url: str, retrieved_at: str) -> list[list[object]]:
@@ -112,9 +118,11 @@ def parse_shed_rows(raw_text: str, customs_office_code: str, source_url: str, re
         shed_code = child_text(element, "snarSgn")
         shed_name = child_text(element, "snarNm")
         shed_address = child_text(element, "snarAddr")
+        unloading_place_bonded_area_yn = child_text(element, "ldunPlcSnarYn")
         raw_xml = ET.tostring(element, encoding="unicode")
         if not shed_code:
             continue
+        facility_type, facility_type_source = infer_facility_type(shed_name, shed_address, unloading_place_bonded_area_yn)
 
         rows.append([
             shed_code,
@@ -124,9 +132,9 @@ def parse_shed_rows(raw_text: str, customs_office_code: str, source_url: str, re
             child_text(element, "snartelno") or None,
             child_text(element, "pnltLvyTrgtYn") or None,
             child_text(element, "adtxColtPridYn") or None,
-            child_text(element, "ldunPlcSnarYn") or None,
-            infer_facility_type(shed_name, shed_address),
-            "auto_name_rule",
+            unloading_place_bonded_area_yn or None,
+            facility_type,
+            facility_type_source,
             raw_xml,
             SOURCE_NAME,
             source_url,

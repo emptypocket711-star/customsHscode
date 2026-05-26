@@ -9,7 +9,7 @@ create table if not exists public.customs_shed_info (
   additional_tax_collection_period_yn text,
   unloading_place_bonded_area_yn text,
   facility_type text not null default 'unknown' check (facility_type in ('cy', 'cfs', 'terminal', 'bonded_warehouse', 'airport', 'other', 'unknown')),
-  facility_type_source text not null default 'auto_name_rule' check (facility_type_source in ('auto_name_rule', 'manual', 'unclassified')),
+  facility_type_source text not null default 'auto_name_rule' check (facility_type_source in ('unloading_place_flag', 'auto_name_rule', 'manual', 'unclassified')),
   raw_xml text not null,
   source_name text not null,
   source_url text not null,
