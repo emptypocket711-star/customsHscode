@@ -72,6 +72,15 @@ function ActiveWatchRows({ watches }: { watches: CargoWatchListItem[] }) {
   );
 }
 
+function cargoWatchStatusLabel(status: string) {
+  if (status === "active") return "감시중";
+  if (status === "matched") return "메일 발송 완료";
+  if (status === "cancelled") return "감시 해제";
+  if (status === "paused") return "일시중지";
+  if (status === "error") return "오류";
+  return status;
+}
+
 function StatusMessage({
   diagnostic,
   status,
@@ -363,7 +372,7 @@ export function CargoTrackingPanel({
                       </td>
                       <td className="px-3 py-2 font-semibold text-slate-900">{watch.targetStatus}</td>
                       <td className="px-3 py-2 text-slate-700">{watch.lastStatus || "-"}</td>
-                      <td className="px-3 py-2"><Badge tone={watch.status === "matched" ? "success" : watch.status === "active" ? "info" : "warning"}>{watch.status}</Badge></td>
+                      <td className="px-3 py-2"><Badge tone={watch.status === "matched" ? "success" : watch.status === "active" ? "info" : "warning"}>{cargoWatchStatusLabel(watch.status)}</Badge></td>
                       <td className="px-3 py-2 text-slate-500">{watch.lastCheckedAt ? new Date(watch.lastCheckedAt).toLocaleString("ko-KR") : "-"}</td>
                     </tr>
                   )) : (

@@ -37,6 +37,15 @@ function lookupHistoryHref(item: HsLookupHistoryItem) {
   return `${path}?${params.toString()}`;
 }
 
+function cargoWatchStatusLabel(status: string) {
+  if (status === "active") return "감시중";
+  if (status === "matched") return "메일 발송 완료";
+  if (status === "cancelled") return "감시 해제";
+  if (status === "paused") return "일시중지";
+  if (status === "error") return "오류";
+  return status;
+}
+
 export function DashboardHome({
   basisDate,
   cargoWatches,
@@ -148,7 +157,7 @@ export function DashboardHome({
             href: "/cargo",
             title: watch.houseBlNo || watch.masterBlNo || watch.cargoManagementNo || "-",
             subtitle: `${watch.targetStatus} 도달 알림 · 현재 ${watch.lastStatus || "확인 전"}`,
-            meta: watch.status === "active" ? "감시중" : watch.status
+            meta: cargoWatchStatusLabel(watch.status)
           }))}
           title="적하목록 알림 감시"
         />

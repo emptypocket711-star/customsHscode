@@ -130,17 +130,22 @@ async function processCargoWatches(request: NextRequest) {
         ].join("\n")
       });
 
-      if (mailResult.sent) notified += 1;
+      if (mailResult.sent) {
+        notified += 1;
+      } else {
+        failed += 1;
+      }
 
       await supabase
         .from("cargo_watch_requests")
         .update({
-          status: "matched",
+          status: mailResult.sent ? "matched" : "active",
           last_status: statusCandidates.displayCurrentStatus || statusCandidates.currentStatus || row.target_status,
           last_checked_at: new Date().toISOString(),
-          matched_at: new Date().toISOString(),
+          matched_at: mailResult.sent ? new Date().toISOString() : null,
           notified_at: mailResult.sent ? new Date().toISOString() : null,
-          last_error: mailResult.sent ? null : mailResult.message,
+          next_check_at: mailResult.sent ? null : nextCheckAt,
+          last_error: mailResult.sent ? null : `목표 상태 도달 확인, 메일 발송 실패: ${mailResult.message}`,
           source_name: snapshot.sourceName,
           source_url: snapshot.sourceUrl,
           source_version: snapshot.sourceVersion,
