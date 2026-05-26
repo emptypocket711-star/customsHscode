@@ -26,7 +26,7 @@ async function getProfileAccessState(userId: string) {
   const supabase = await createSupabaseServerClient();
   const { data: profile } = await supabase
     .from("profiles")
-    .select("account_type,onboarding_completed_at")
+    .select("account_type,full_name,onboarding_completed_at")
     .eq("id", userId)
     .maybeSingle();
 
@@ -55,7 +55,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen">
-      <AppHeader email={user.email ?? null} />
+      <AppHeader email={user.email ?? null} fullName={profile.full_name ?? null} />
       <div className="mx-auto flex w-full max-w-[1680px] flex-col gap-5 px-4 py-5 sm:px-6 lg:flex-row lg:gap-5 lg:px-8">
         <AppSideNav showOperations={isDeveloperEmail(user.email)} />
         <main className="min-w-0 flex-1">{children}</main>

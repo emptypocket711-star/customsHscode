@@ -95,10 +95,10 @@ export function DashboardHome({
                 <span className="text-xs font-medium text-[var(--text-muted)]">기준일 {basisDate}</span>
               </div>
               <h1 className="mt-4 text-2xl font-semibold tracking-normal text-[var(--text-primary)] sm:text-3xl">
-                안녕하세요, HS FINDER입니다.
+                오늘도 너무 급하지 않게, 차분히 시작해봐요.
               </h1>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
-                HS CODE, 품명, 국가 정보를 기준으로 관세율과 수출입요건을 빠르게 조회하고 비교합니다.
+                필요한 순간에 바로 이어갈 수 있도록 자주 쓰는 메뉴와 최근 흐름을 정리해두었습니다.
               </p>
             </div>
             <div className="rounded-md border border-[var(--border-subtle)] bg-white px-4 py-3 text-sm font-semibold text-[var(--text-primary)] shadow-sm">
