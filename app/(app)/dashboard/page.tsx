@@ -4,12 +4,10 @@ import { getSeoulDateString } from "@/lib/utils";
 import { listPublishedAppNotices } from "@/server/repositories/app-notice.repository";
 import { listUserHsFavorites } from "@/server/repositories/hs-favorite.repository";
 import { listUserHsLookupHistory } from "@/server/repositories/hs-lookup-history.repository";
-import { loadDashboardStats } from "@/server/rules/dashboard-metrics.service";
 
 export default async function DashboardPage() {
   const basisDate = getSeoulDateString();
-  const [stats, favorites, lookupHistory, notices] = await Promise.all([
-    loadDashboardStats(basisDate),
+  const [favorites, lookupHistory, notices] = await Promise.all([
     hasSupabaseEnv()
       ? createSupabaseServerClient().then((supabase) => listUserHsFavorites(supabase, 5)).catch(() => [])
       : Promise.resolve([]),
@@ -21,5 +19,5 @@ export default async function DashboardPage() {
       : Promise.resolve([])
   ]);
 
-  return <DashboardHome basisDate={basisDate} favorites={favorites} lookupHistory={lookupHistory} notices={notices} stats={stats} />;
+  return <DashboardHome basisDate={basisDate} favorites={favorites} lookupHistory={lookupHistory} notices={notices} />;
 }

@@ -1,18 +1,5 @@
 import Link from "next/link";
-import {
-  ArrowRight,
-  Bookmark,
-  Calculator,
-  ClipboardList,
-  Clock3,
-  FileSearch,
-  Globe2,
-  Layers3,
-  Search,
-  ShieldCheck,
-  Star,
-  type LucideIcon
-} from "lucide-react";
+import { ArrowRight, Calculator, ClipboardList, Clock3, FileSearch, Globe2, Layers3, Search, ShieldCheck, Star, type LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { SourceFooter } from "@/components/ui/source-footer";
 import { DashboardNoticeCard } from "@/features/dashboard/dashboard-notice-card";
@@ -21,12 +8,6 @@ import { formatHsCode } from "@/lib/hs-code";
 import type { AppNotice } from "@/server/repositories/app-notice.repository";
 import type { HsFavoriteItem } from "@/server/repositories/hs-favorite.repository";
 import type { HsLookupHistoryItem } from "@/server/repositories/hs-lookup-history.repository";
-
-type DashboardStat = {
-  label: string;
-  value: string;
-  note: string;
-};
 
 const workflowLinks = [
   {
@@ -51,8 +32,6 @@ const workflowLinks = [
     tone: "slate"
   }
 ];
-
-const statIcons = [Search, Bookmark, FileSearch, Calculator];
 
 const quickExamples = [
   { label: "3401.30-0000", href: "/hs/direct?query=3401.30-0000&direction=import&destinationCountry=ALL" },
@@ -98,14 +77,12 @@ export function DashboardHome({
   basisDate,
   favorites,
   lookupHistory,
-  notices,
-  stats
+  notices
 }: {
   basisDate: string;
   favorites: HsFavoriteItem[];
   lookupHistory: HsLookupHistoryItem[];
   notices: AppNotice[];
-  stats: DashboardStat[];
 }) {
   return (
     <div className="grid gap-4">
@@ -137,26 +114,6 @@ export function DashboardHome({
         </div>
 
         <div className="grid gap-4 p-4 sm:p-6">
-          <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            {stats.slice(0, 4).map((stat, index) => {
-              const Icon = statIcons[index] ?? FileSearch;
-              return (
-                <div className="rounded-lg border border-[var(--border-subtle)] bg-white p-4 shadow-sm" key={stat.label}>
-                  <div className="flex items-center gap-3">
-                    <span className={`grid size-11 place-items-center rounded-lg ring-1 ${index === 0 ? "bg-violet-50 text-violet-700 ring-violet-100" : index === 1 ? "bg-blue-50 text-blue-700 ring-blue-100" : index === 2 ? "bg-emerald-50 text-emerald-700 ring-emerald-100" : "bg-orange-50 text-orange-700 ring-orange-100"}`}>
-                      <Icon aria-hidden="true" size={21} />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold text-[var(--text-muted)]">{stat.label}</p>
-                      <p className="mt-1 text-2xl font-semibold text-[var(--text-primary)]">{stat.value}</p>
-                    </div>
-                  </div>
-                  <p className="mt-3 text-xs leading-5 text-[var(--text-secondary)]">{stat.note}</p>
-                </div>
-              );
-            })}
-          </section>
-
           <form action="/hs/direct" className="rounded-lg border border-[var(--border-subtle)] bg-white p-4 shadow-sm" method="get">
             <input defaultValue={basisDate} name="basisDate" type="hidden" />
             <div className="flex gap-6 border-b border-[var(--border-subtle)] text-sm font-semibold text-[var(--text-secondary)]">
