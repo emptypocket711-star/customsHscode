@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServiceRoleClient, hasSupabaseServiceRoleEnv } from "@/lib/supabase/service-role";
 import {
   buildCustomsCargoProgressQuery,
-  fetchCustomsOpenApiSnapshot,
+  fetchCustomsCargoProgressSnapshot,
   hasCustomsOpenApiEnv,
   parseCustomsCargoProgressXml
 } from "@/server/integrations/customs/customs-api";
@@ -81,8 +81,7 @@ async function processCargoWatches(request: NextRequest) {
     const nextCheckAt = new Date(Date.now() + Math.max(row.poll_interval_seconds || 60, 60) * 1000).toISOString();
 
     try {
-      const snapshot = await fetchCustomsOpenApiSnapshot(
-        "cargo_progress",
+      const snapshot = await fetchCustomsCargoProgressSnapshot(
         buildCustomsCargoProgressQuery({
           cargoManagementNo: row.cargo_management_no ?? undefined,
           masterBlNo: row.master_bl_no ?? undefined,

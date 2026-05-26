@@ -6,7 +6,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { PublicDataFetchError } from "@/server/integrations/public-data/client";
 import {
   buildCustomsCargoProgressQuery,
-  fetchCustomsOpenApiSnapshot,
+  fetchCustomsCargoProgressSnapshot,
   hasCustomsOpenApiEnv,
   parseCustomsCargoProgressXml,
   type CustomsCargoProgressResult
@@ -123,7 +123,7 @@ export async function lookupCargoProgressAction(
   }
 
   try {
-    const snapshot = await fetchCustomsOpenApiSnapshot("cargo_progress", buildCustomsCargoProgressQuery(parsed.data), {
+    const snapshot = await fetchCustomsCargoProgressSnapshot(buildCustomsCargoProgressQuery(parsed.data), {
       timeoutMs: 15000
     });
     const result = parseCustomsCargoProgressXml(snapshot.rawText);
@@ -170,7 +170,7 @@ export async function lookupCargoProgressAction(
     return {
       status: "error",
       message: message === "fetch failed"
-        ? "관세청 API001 호출에 실패했습니다. 잠시 후 다시 조회하거나 B/L 연도를 확인해 주세요."
+        ? "관세청 API001 연결에 실패했습니다. 잠시 후 다시 조회해 주세요."
         : message
     };
   }

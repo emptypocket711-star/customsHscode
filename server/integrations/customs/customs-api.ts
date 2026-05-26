@@ -1,4 +1,5 @@
 import {
+  checksumText,
   fetchPublicDataSnapshot,
   type PublicDataSnapshot
 } from "@/server/integrations/public-data/client";
@@ -97,6 +98,10 @@ function resolveEndpointUrl(config: CustomsApiConfig) {
 }
 
 export function hasCustomsOpenApiEnv(source: CustomsOpenApiSource) {
+  if (source === "cargo_progress" && process.env.CUSTOMS_API_CARGO_PROGRESS_RELAY_URL?.trim()) {
+    return true;
+  }
+
   const config = configs[source];
   const endpointUrl = resolveEndpointUrl(config);
   const serviceKey = (config.serviceKeyEnvName ? process.env[config.serviceKeyEnvName] : undefined) || process.env.CUSTOMS_API_SERVICE_KEY || process.env.PUBLIC_DATA_SERVICE_KEY;
@@ -126,6 +131,63 @@ export async function fetchCustomsOpenApiSnapshot(
     sourceVersion: config.sourceVersion,
     timeoutMs: options?.timeoutMs
   });
+}
+
+export async function fetchCustomsCargoProgressSnapshot(
+  params: Record<string, string | number | null | undefined>,
+  options?: { timeoutMs?: number }
+): Promise<PublicDataSnapshot> {
+  const relayUrl = process.env.CUSTOMS_API_CARGO_PROGRESS_RELAY_URL?.trim();
+
+  if (!relayUrl) {
+    return fetchCustomsOpenApiSnapshot("cargo_progress", params, options);
+  }
+
+  const timeoutMs = options?.timeoutMs ?? Number(process.env.PUBLIC_DATA_REQUEST_TIMEOUT_MS || 10000);
+  const response = await fetch(relayUrl, {
+    method: "POST",
+    headers: {
+      Accept: "application/json, application/xml, text/xml;q=0.9, */*;q=0.8",
+      "Content-Type": "application/json",
+      ...(process.env.CUSTOMS_API_CARGO_PROGRESS_RELAY_TOKEN
+        ? { Authorization: `Bearer ${process.env.CUSTOMS_API_CARGO_PROGRESS_RELAY_TOKEN}` }
+        : {})
+    },
+    body: JSON.stringify({ params }),
+    cache: "no-store",
+    signal: AbortSignal.timeout(timeoutMs)
+  });
+  const contentType = response.headers.get("content-type");
+  const bodyText = await response.text();
+
+  if (!response.ok) {
+    throw new Error(`API001 relay 호출 실패: ${response.status} ${response.statusText} ${bodyText.slice(0, 200)}`.trim());
+  }
+
+  let rawText = bodyText;
+  let sourceUrl = relayUrl;
+  let retrievedAt = new Date().toISOString();
+
+  if (contentType?.includes("application/json")) {
+    const payload = JSON.parse(bodyText) as {
+      rawText?: string;
+      sourceUrl?: string;
+      retrievedAt?: string;
+    };
+    rawText = payload.rawText ?? "";
+    sourceUrl = payload.sourceUrl ?? relayUrl;
+    retrievedAt = payload.retrievedAt ?? retrievedAt;
+  }
+
+  return {
+    sourceName: configs.cargo_progress.sourceName,
+    sourceUrl,
+    sourceVersion: `${configs.cargo_progress.sourceVersion}+relay`,
+    retrievedAt,
+    checksum: checksumText(rawText),
+    contentType,
+    rawText
+  };
 }
 
 export function buildCustomsConfirmationQuery(input: {

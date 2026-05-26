@@ -33,6 +33,26 @@
 3. 같은 요청을 로컬에서 재현해 API key와 입력값 문제를 배제
 4. Vercel outbound가 계속 실패하면 API001 호출만 별도 relay로 분리
 
+## Relay 설정
+
+repo에는 Node 기본 모듈만 쓰는 API001 relay가 포함되어 있다.
+
+```bash
+CUSTOMS_API_CARGO_PROGRESS_SERVICE_KEY=관세청_API001_키 \
+CUSTOMS_API_CARGO_PROGRESS_RELAY_TOKEN=긴_임의_문자열 \
+PORT=8787 \
+node relays/cargo-progress-relay/server.mjs
+```
+
+relay를 `https://api.hsfinder.co.kr/cargo-progress` 같은 HTTPS 주소로 공개한 뒤, Vercel에는 아래 환경변수를 추가한다.
+
+```text
+CUSTOMS_API_CARGO_PROGRESS_RELAY_URL=https://api.hsfinder.co.kr/cargo-progress
+CUSTOMS_API_CARGO_PROGRESS_RELAY_TOKEN=relay와_동일한_긴_임의_문자열
+```
+
+`CUSTOMS_API_CARGO_PROGRESS_RELAY_URL`이 있으면 HS Finder는 관세청 `38010` 포트를 직접 호출하지 않고 relay를 호출한다. 이때 `CUSTOMS_API_CARGO_PROGRESS_SERVICE_KEY`는 relay 서버에만 있어도 된다.
+
 ## 대체 구조 후보
 
 - Cloudflare Worker relay

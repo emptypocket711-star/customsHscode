@@ -15,6 +15,7 @@ import {
   parseCustomsConfirmationRequirementsXml,
   parseCustomsCargoProgressXml,
   hasCustomsOpenApiEnv,
+  fetchCustomsCargoProgressSnapshot,
   fetchCustomsOpenApiSnapshot
 } from "@/server/integrations/customs/customs-api";
 
@@ -60,6 +61,16 @@ describe("customs api query helpers", () => {
     expect(hasCustomsOpenApiEnv("cargo_progress")).toBe(true);
   });
 
+  it("allows API001 cargo progress lookup with only a relay URL", () => {
+    vi.stubEnv("CUSTOMS_API_CARGO_PROGRESS_URL", "");
+    vi.stubEnv("CUSTOMS_API_CARGO_PROGRESS_SERVICE_KEY", "");
+    vi.stubEnv("CUSTOMS_API_CARGO_PROGRESS_RELAY_URL", "https://api.example.test/cargo-progress");
+    vi.stubEnv("CUSTOMS_API_SERVICE_KEY", "");
+    vi.stubEnv("PUBLIC_DATA_SERVICE_KEY", "");
+
+    expect(hasCustomsOpenApiEnv("cargo_progress")).toBe(true);
+  });
+
   it("normalizes API012 UNIPASS endpoint to the required 38010 port", async () => {
     const fetchMock = vi.fn(async () => new Response("<root />"));
     vi.stubGlobal("fetch", fetchMock);
@@ -91,6 +102,36 @@ describe("customs api query helpers", () => {
 
     const [[calledUrl]] = fetchMock.mock.calls as unknown as [[URL]];
     expect(calledUrl.origin).toBe("https://unipass.customs.go.kr:38010");
+  });
+
+  it("uses the API001 relay when configured", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      rawText: "<root><cargMtNo>CARGO1</cargMtNo></root>",
+      sourceUrl: "https://unipass.customs.go.kr:38010/ext/rest/cargCsclPrgsInfoQry/retrieveCargCsclPrgsInfo?crkyCn=[redacted]",
+      retrievedAt: "2026-05-26T00:00:00.000Z"
+    }), {
+      headers: { "content-type": "application/json" }
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("CUSTOMS_API_CARGO_PROGRESS_RELAY_URL", "https://api.example.test/cargo-progress");
+    vi.stubEnv("CUSTOMS_API_CARGO_PROGRESS_RELAY_TOKEN", "relay-token");
+    vi.stubEnv("CUSTOMS_API_CARGO_PROGRESS_SERVICE_KEY", "");
+    vi.stubEnv("CUSTOMS_API_SERVICE_KEY", "");
+    vi.stubEnv("PUBLIC_DATA_SERVICE_KEY", "");
+
+    const snapshot = await fetchCustomsCargoProgressSnapshot(buildCustomsCargoProgressQuery({
+      houseBlNo: "HBL123",
+      blYear: "2026"
+    }));
+
+    expect(snapshot.rawText).toContain("CARGO1");
+    expect(snapshot.sourceVersion).toContain("+relay");
+    expect(fetchMock).toHaveBeenCalledWith("https://api.example.test/cargo-progress", expect.objectContaining({
+      method: "POST",
+      headers: expect.objectContaining({
+        Authorization: "Bearer relay-token"
+      })
+    }));
   });
 
   it("normalizes hsk and direction for customs confirmation lookup", () => {
