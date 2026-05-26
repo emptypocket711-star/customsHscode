@@ -66,16 +66,21 @@ const configs: Record<CustomsOpenApiSource, CustomsApiConfig> = {
   },
   cargo_progress: {
     endpointEnvName: "CUSTOMS_API_CARGO_PROGRESS_URL",
+    defaultEndpointUrl: "https://unipass.customs.go.kr:38010/ext/rest/cargCsclPrgsInfoQry/retrieveCargCsclPrgsInfo",
+    serviceKeyEnvName: "CUSTOMS_API_CARGO_PROGRESS_SERVICE_KEY",
     serviceKeyParamName: "crkyCn",
     sourceName: "관세청_화물통관진행정보",
-    sourceVersion: "data-go-kr-15126268"
+    sourceVersion: "myc-openapi-api001-v1.0"
   }
 };
 
 function resolveEndpointUrl(config: CustomsApiConfig) {
   const configuredUrl = process.env[config.endpointEnvName]?.trim();
 
-  if (configuredUrl && config.endpointEnvName === "CUSTOMS_API_EXCHANGE_RATE_URL") {
+  if (
+    configuredUrl
+    && (config.endpointEnvName === "CUSTOMS_API_EXCHANGE_RATE_URL" || config.endpointEnvName === "CUSTOMS_API_CARGO_PROGRESS_URL")
+  ) {
     try {
       const url = new URL(configuredUrl);
       if (url.hostname === "unipass.customs.go.kr" && !url.port) {
@@ -173,9 +178,30 @@ export function buildCustomsExchangeRateQuery(input: {
   };
 }
 
+export function buildCustomsCargoProgressQuery(input: {
+  cargoManagementNo?: string;
+  masterBlNo?: string;
+  houseBlNo?: string;
+}) {
+  return {
+    cargMtNo: input.cargoManagementNo?.trim(),
+    mblNo: input.masterBlNo?.trim(),
+    hblNo: input.houseBlNo?.trim()
+  };
+}
+
 function xmlValue(source: string, tagName: string) {
   const match = source.match(new RegExp(`<${tagName}>([\\s\\S]*?)</${tagName}>`, "i"));
   return match?.[1]?.trim() ?? "";
+}
+
+function firstXmlValue(source: string, tagNames: string[]) {
+  for (const tagName of tagNames) {
+    const value = xmlValue(source, tagName);
+    if (value) return value;
+  }
+
+  return "";
 }
 
 function xmlBlocks(source: string, tagName: string) {
@@ -239,6 +265,35 @@ export type CustomsExchangeRateItem = {
   rate: string;
   effectiveFrom: string | null;
   direction: "import" | "export";
+};
+
+export type CustomsCargoProgressSummary = {
+  cargoManagementNo: string;
+  masterBlNo: string;
+  houseBlNo: string;
+  progressStatus: string;
+  progressStatusCode: string;
+  declarationNo: string;
+  vesselName: string;
+  packageCount: string;
+  grossWeight: string;
+  weightUnit: string;
+  portName: string;
+  arrivalDate: string | null;
+};
+
+export type CustomsCargoProgressEvent = {
+  eventTime: string | null;
+  status: string;
+  statusCode: string;
+  location: string;
+  agency: string;
+  processingDetails: string;
+};
+
+export type CustomsCargoProgressResult = {
+  summary: CustomsCargoProgressSummary;
+  events: CustomsCargoProgressEvent[];
 };
 
 function yyyymmddToDate(value: string) {
@@ -310,6 +365,62 @@ export function parseCustomsExchangeRatesXml(rawText: string): CustomsExchangeRa
       direction
     };
   }).filter((item) => item.currencyCode || item.rate);
+}
+
+function normalizeDateTime(value: string) {
+  const digits = value.replace(/[^0-9]/g, "");
+  if (digits.length >= 12) {
+    return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)} ${digits.slice(8, 10)}:${digits.slice(10, 12)}`;
+  }
+
+  if (digits.length >= 8) {
+    return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}`;
+  }
+
+  return value || null;
+}
+
+export function parseCustomsCargoProgressXml(rawText: string): CustomsCargoProgressResult | null {
+  const summaryBlock =
+    xmlBlocks(rawText, "cargCsclPrgsInfoQryRsltVo")[0]
+    ?? xmlBlocks(rawText, "CargCsclPrgsInfoQryRsltVo")[0]
+    ?? rawText;
+
+  const detailBlocks = [
+    ...xmlBlocks(rawText, "cargCsclPrgsInfoDtlQryRsltVo"),
+    ...xmlBlocks(rawText, "CargCsclPrgsInfoDtlQryRsltVo"),
+    ...xmlBlocks(rawText, "cargCsclPrgsInfoQryDtlVo")
+  ];
+
+  const summary: CustomsCargoProgressSummary = {
+    cargoManagementNo: firstXmlValue(summaryBlock, ["cargMtNo", "cargMngNo", "cargNo"]),
+    masterBlNo: firstXmlValue(summaryBlock, ["mblNo", "blNo"]),
+    houseBlNo: firstXmlValue(summaryBlock, ["hblNo"]),
+    progressStatus: firstXmlValue(summaryBlock, ["prgsStts", "csclPrgsStts", "cargPrgsStts", "prgsSttsNm"]),
+    progressStatusCode: firstXmlValue(summaryBlock, ["prgsStCd", "csclPrgsSttsCd", "cargPrgsSttsCd"]),
+    declarationNo: firstXmlValue(summaryBlock, ["dclrNo", "csmhDclrNo", "imptDclrNo"]),
+    vesselName: firstXmlValue(summaryBlock, ["shipNm", "vydf"]),
+    packageCount: firstXmlValue(summaryBlock, ["pckGcnt", "pckQty", "pkgCnt"]),
+    grossWeight: firstXmlValue(summaryBlock, ["ttwg", "totWght", "grsWght"]),
+    weightUnit: firstXmlValue(summaryBlock, ["wghtUt", "ttwgUt"]),
+    portName: firstXmlValue(summaryBlock, ["prnm", "ldprNm", "dsprNm", "cstmNm"]),
+    arrivalDate: yyyymmddToDate(firstXmlValue(summaryBlock, ["etprDt", "etprCstmDt", "arrvDt"]))
+  };
+
+  const events = detailBlocks.map((block) => ({
+    eventTime: normalizeDateTime(firstXmlValue(block, ["prcsDttm", "rlbrDttm", "prcsDt", "sttsDttm"])),
+    status: firstXmlValue(block, ["cargTrcnRelaBsopTpcdNm", "prgsStts", "csclPrgsStts", "sttsNm"]),
+    statusCode: firstXmlValue(block, ["cargTrcnRelaBsopTpcd", "prgsStCd", "csclPrgsSttsCd"]),
+    location: firstXmlValue(block, ["shedNm", "prnm", "cstmNm", "whNm"]),
+    agency: firstXmlValue(block, ["agncNm", "trnpAgntNm", "pckCmpyNm"]),
+    processingDetails: firstXmlValue(block, ["rlbrBssNo", "prcsDls", "rmrk", "dclrNo"])
+  })).filter((item) => item.status || item.statusCode || item.eventTime);
+
+  if (!summary.cargoManagementNo && !summary.masterBlNo && !summary.houseBlNo && !summary.progressStatus && events.length === 0) {
+    return null;
+  }
+
+  return { summary, events };
 }
 
 export function buildCustomsStatisticalCodeQuery(input: {

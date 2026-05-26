@@ -6,6 +6,7 @@ import {
 } from "@/features/legal-updates/customs-api-schemas";
 import {
   buildCustomsConfirmationQuery,
+  buildCustomsCargoProgressQuery,
   buildCustomsExchangeRateQuery,
   buildCustomsHsCodeNavigationQuery,
   buildCustomsHsCodeQuery,
@@ -71,11 +72,11 @@ function buildProbeParams(input: {
     });
   }
 
-  return {
-    cargMtNo: input.cargoManagementNo,
-    mblNo: input.masterBlNo,
-    hblNo: input.houseBlNo
-  };
+  return buildCustomsCargoProgressQuery({
+    cargoManagementNo: input.cargoManagementNo,
+    masterBlNo: input.masterBlNo,
+    houseBlNo: input.houseBlNo
+  });
 }
 
 export async function probeCustomsApiAction(

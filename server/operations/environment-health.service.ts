@@ -140,6 +140,30 @@ export function getEnvironmentHealthGroups(): EnvironmentHealthGroup[] {
           label: "API019 통계부호 key",
           description: "통계부호 자료 수집에 사용합니다.",
           required: false
+        }),
+        envItem({
+          key: "CUSTOMS_API_CARGO_PROGRESS_SERVICE_KEY",
+          label: "API001 화물통관진행 key",
+          description: "적하목록 조회와 상태 알림 감시에 사용합니다.",
+          required: false
+        })
+      ]
+    },
+    {
+      title: "알림 메일",
+      description: "적하목록 상태 도달 안내 등 사용자 지정 알림을 발송하는 설정입니다.",
+      items: [
+        envItem({
+          key: "RESEND_API_KEY",
+          label: "Resend API key",
+          description: "서버에서 알림 메일을 발송할 때 사용하는 비공개 키입니다.",
+          required: false
+        }),
+        envItem({
+          key: "NOTIFICATION_FROM_EMAIL",
+          label: "발신 이메일",
+          description: "알림 메일 발신자로 표시될 주소입니다.",
+          required: false
         })
       ]
     },

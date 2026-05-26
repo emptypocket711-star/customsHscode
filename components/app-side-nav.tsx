@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   Megaphone,
   Menu,
+  PackageSearch,
   Search,
   ShieldCheck,
   Users,
@@ -24,6 +25,7 @@ const userNavItems = [
   { href: "/dashboard", label: "대시보드", icon: LayoutDashboard },
   { href: "/hs/direct", label: "통합 조회", icon: Search },
   { href: "/hs/overseas", label: "해외 HS CODE조회", icon: Globe2 },
+  { href: "/cargo", label: "적하목록 조회", icon: PackageSearch },
   { href: "/duty-estimator", label: "납세액 계산", icon: Calculator }
 ];
 

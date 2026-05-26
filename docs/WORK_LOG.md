@@ -118,6 +118,24 @@
 
 ## Verification Baseline
 
+### 적하목록 조회·상태 알림
+
+- API001 화물통관진행정보 조회 화면을 추가했다.
+  - `/cargo`에서 화물관리번호, Master B/L, House B/L 중 하나로 조회한다.
+  - 조회 결과는 현재 상태와 진행 이력으로 분리해 표시한다.
+- 사용자가 여러 건의 적하목록 감시를 등록할 수 있게 했다.
+  - 활성 감시는 화면 상단에 로우 데이터 형태로 노출한다.
+  - 각 감시 행에서 `감시 해제하기`로 즉시 중지할 수 있다.
+- 1분 단위 감시용 `/api/jobs/cargo-watch` 라우트를 추가했다.
+  - Vercel Cron이 매분 호출할 수 있도록 `vercel.json`에 등록했다.
+  - 목표 상태에 도달하면 Resend 기반 이메일 알림을 발송한다.
+  - 메일 환경변수가 없으면 감시 결과에는 오류 메시지를 남긴다.
+- 필요한 운영 환경변수:
+  - `CUSTOMS_API_CARGO_PROGRESS_SERVICE_KEY`
+  - `RESEND_API_KEY`
+  - `NOTIFICATION_FROM_EMAIL`
+  - `JOB_WORKER_SECRET` 또는 `CRON_SECRET`
+
 ### 운영 공지사항
 
 - 대시보드 공지사항은 `app_notices` 테이블에서 published 항목만 표시한다.
