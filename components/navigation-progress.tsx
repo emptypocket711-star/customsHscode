@@ -83,6 +83,7 @@ export function NavigationProgress() {
   const [stageIndex, setStageIndex] = useState(0);
   const stageIndexRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const forceStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const slowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stageTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const actionSettleTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -93,6 +94,10 @@ export function NavigationProgress() {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
         timerRef.current = null;
+      }
+      if (forceStopTimerRef.current) {
+        clearTimeout(forceStopTimerRef.current);
+        forceStopTimerRef.current = null;
       }
       if (slowTimerRef.current) {
         clearTimeout(slowTimerRef.current);
@@ -143,6 +148,9 @@ export function NavigationProgress() {
       timerRef.current = setTimeout(() => {
         setMessage("검색 결과 화면을 계속 생성하고 있습니다. 네트워크 상태를 확인하고 있습니다");
       }, 120000);
+      forceStopTimerRef.current = setTimeout(() => {
+        stopProgress();
+      }, 20000);
 
       const startedAt = Date.now();
       const locationAtSubmit = window.location.href;
@@ -185,6 +193,9 @@ export function NavigationProgress() {
       timerRef.current = setTimeout(() => {
         setMessage("검색 결과 화면을 계속 생성하고 있습니다. 네트워크 상태를 확인하고 있습니다");
       }, 120000);
+      forceStopTimerRef.current = setTimeout(() => {
+        stopProgress();
+      }, 30000);
     }
 
     document.addEventListener("submit", handleSubmit, { capture: true });

@@ -116,6 +116,18 @@ export function CargoTrackingPanel({ watches }: { watches: CargoWatchListItem[] 
     }
   }, [watchState]);
 
+  useEffect(() => {
+    if (!lookupPending) {
+      window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
+    }
+  }, [lookupPending]);
+
+  useEffect(() => {
+    if (!watchPending) {
+      window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
+    }
+  }, [watchPending]);
+
   function hasCargoLookupValue(form: HTMLFormElement) {
     const formData = new FormData(form);
     return ["cargoManagementNo", "masterBlNo", "houseBlNo"].some((key) => {
@@ -152,7 +164,7 @@ export function CargoTrackingPanel({ watches }: { watches: CargoWatchListItem[] 
             <div className="grid gap-4 md:grid-cols-3">
               <label className="grid gap-1 text-sm font-medium text-slate-700">
                 화물관리번호
-                <input className="focus-ring rounded-md border border-slate-300 px-3 py-2" disabled={lookupPending} name="cargoManagementNo" placeholder="예: 24ABC..." />
+                <input className="focus-ring rounded-md border border-slate-300 px-3 py-2" disabled={lookupPending} name="cargoManagementNo" placeholder="화물관리번호 또는 B/L 번호" />
               </label>
               <label className="grid gap-1 text-sm font-medium text-slate-700">
                 Master B/L

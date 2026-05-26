@@ -55,10 +55,15 @@ function stringValue(formData: FormData, key: string) {
 }
 
 function readCargoInput(formData: FormData) {
+  const cargoManagementNo = stringValue(formData, "cargoManagementNo")?.trim();
+  const masterBlNo = stringValue(formData, "masterBlNo")?.trim();
+  const houseBlNo = stringValue(formData, "houseBlNo")?.trim();
+  const cargoInputLooksLikeBl = Boolean(cargoManagementNo && cargoManagementNo.length < 15 && !masterBlNo && !houseBlNo);
+
   return {
-    cargoManagementNo: stringValue(formData, "cargoManagementNo"),
-    masterBlNo: stringValue(formData, "masterBlNo"),
-    houseBlNo: stringValue(formData, "houseBlNo"),
+    cargoManagementNo: cargoInputLooksLikeBl ? undefined : cargoManagementNo,
+    masterBlNo,
+    houseBlNo: cargoInputLooksLikeBl ? cargoManagementNo : houseBlNo,
     blYear: stringValue(formData, "blYear") || new Date().getFullYear().toString()
   };
 }
@@ -116,9 +121,12 @@ export async function lookupCargoProgressAction(
       }
     };
   } catch (error) {
+    const message = error instanceof Error ? error.message : "화물통관진행정보 조회 중 오류가 발생했습니다.";
     return {
       status: "error",
-      message: error instanceof Error ? error.message : "화물통관진행정보 조회 중 오류가 발생했습니다."
+      message: message === "fetch failed"
+        ? "관세청 API001 호출에 실패했습니다. 잠시 후 다시 조회하거나 B/L 연도를 확인해 주세요."
+        : message
     };
   }
 }
