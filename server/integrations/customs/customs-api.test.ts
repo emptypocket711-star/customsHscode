@@ -12,12 +12,14 @@ import {
   parseCustomsStatisticalCodesXml,
   parseCustomsTariffRatesXml,
   parseCustomsConfirmationRequirementsXml,
-  hasCustomsOpenApiEnv
+  hasCustomsOpenApiEnv,
+  fetchCustomsOpenApiSnapshot
 } from "@/server/integrations/customs/customs-api";
 
 describe("customs api query helpers", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
   });
 
   it("detects source-specific service key environment variables", () => {
@@ -45,6 +47,23 @@ describe("customs api query helpers", () => {
     vi.stubEnv("PUBLIC_DATA_SERVICE_KEY", "");
 
     expect(hasCustomsOpenApiEnv("exchange_rate")).toBe(true);
+  });
+
+  it("normalizes API012 UNIPASS endpoint to the required 38010 port", async () => {
+    const fetchMock = vi.fn(async () => new Response("<root />"));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("CUSTOMS_API_EXCHANGE_RATE_URL", "https://unipass.customs.go.kr/ext/rest/trifFxrtInfoQry/retrieveTrifFxrtInfo");
+    vi.stubEnv("CUSTOMS_API_EXCHANGE_RATE_SERVICE_KEY", "exchange-specific-key");
+    vi.stubEnv("CUSTOMS_API_SERVICE_KEY", "");
+    vi.stubEnv("PUBLIC_DATA_SERVICE_KEY", "");
+
+    await fetchCustomsOpenApiSnapshot("exchange_rate", buildCustomsExchangeRateQuery({
+      applyStartDate: "2026-05-26",
+      direction: "import"
+    }));
+
+    const [[calledUrl]] = fetchMock.mock.calls as unknown as [[URL]];
+    expect(calledUrl.origin).toBe("https://unipass.customs.go.kr:38010");
   });
 
   it("normalizes hsk and direction for customs confirmation lookup", () => {

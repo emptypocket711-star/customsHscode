@@ -72,9 +72,28 @@ const configs: Record<CustomsOpenApiSource, CustomsApiConfig> = {
   }
 };
 
+function resolveEndpointUrl(config: CustomsApiConfig) {
+  const configuredUrl = process.env[config.endpointEnvName]?.trim();
+
+  if (configuredUrl && config.endpointEnvName === "CUSTOMS_API_EXCHANGE_RATE_URL") {
+    try {
+      const url = new URL(configuredUrl);
+      if (url.hostname === "unipass.customs.go.kr" && !url.port) {
+        url.port = "38010";
+      }
+
+      return url.toString();
+    } catch {
+      return configuredUrl;
+    }
+  }
+
+  return configuredUrl || config.defaultEndpointUrl;
+}
+
 export function hasCustomsOpenApiEnv(source: CustomsOpenApiSource) {
   const config = configs[source];
-  const endpointUrl = process.env[config.endpointEnvName] || config.defaultEndpointUrl;
+  const endpointUrl = resolveEndpointUrl(config);
   const serviceKey = (config.serviceKeyEnvName ? process.env[config.serviceKeyEnvName] : undefined) || process.env.CUSTOMS_API_SERVICE_KEY || process.env.PUBLIC_DATA_SERVICE_KEY;
 
   return Boolean(endpointUrl && serviceKey);
@@ -86,7 +105,7 @@ export async function fetchCustomsOpenApiSnapshot(
   options?: { timeoutMs?: number }
 ): Promise<PublicDataSnapshot> {
   const config = configs[source];
-  const endpointUrl = process.env[config.endpointEnvName] || config.defaultEndpointUrl;
+  const endpointUrl = resolveEndpointUrl(config);
   const serviceKey = (config.serviceKeyEnvName ? process.env[config.serviceKeyEnvName] : undefined) || process.env.CUSTOMS_API_SERVICE_KEY || process.env.PUBLIC_DATA_SERVICE_KEY;
 
   if (!endpointUrl || !serviceKey) {

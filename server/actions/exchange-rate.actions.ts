@@ -63,6 +63,13 @@ export async function lookupExchangeRateAction(
     const rows = parseCustomsExchangeRatesXml(snapshot.rawText);
     const matched = rows.find((row) => row.currencyCode.toUpperCase() === currencyCode);
 
+    if (!rows.length) {
+      return {
+        status: "error",
+        message: "관세환율 API012 응답에 환율 목록이 없습니다. API012 URL은 포트 38010을 포함한 UNIPASS 관세환율 endpoint로 설정해 주세요."
+      };
+    }
+
     if (!matched) {
       return {
         status: "error",
