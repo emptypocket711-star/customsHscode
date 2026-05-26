@@ -8,7 +8,6 @@ import {
   FileSearch,
   Globe2,
   Layers3,
-  Megaphone,
   Search,
   ShieldCheck,
   Star,
@@ -16,6 +15,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { SourceFooter } from "@/components/ui/source-footer";
+import { DashboardNoticeCard } from "@/features/dashboard/dashboard-notice-card";
 import { destinationCountryOptions } from "@/features/export-diagnosis/country-options";
 import { formatHsCode } from "@/lib/hs-code";
 import type { AppNotice } from "@/server/repositories/app-notice.repository";
@@ -66,13 +66,6 @@ const comparisonSteps = [
   { title: "요건 확인", body: "세관장확인, 수출요건, 기관별 요건을 품목번호 기준으로 연결합니다." }
 ];
 
-const noticeCategoryLabels: Record<AppNotice["category"], string> = {
-  notice: "공지",
-  maintenance: "점검",
-  data_update: "자료 업데이트",
-  release: "기능 배포"
-};
-
 function toneClass(tone: string) {
   if (tone === "emerald") return "bg-emerald-50 text-emerald-700 ring-emerald-100";
   if (tone === "blue") return "bg-blue-50 text-blue-700 ring-blue-100";
@@ -99,14 +92,6 @@ function lookupHistoryHref(item: HsLookupHistoryItem) {
 
   const path = item.direction === "export" && item.destinationCountry !== "ALL" ? "/hs/overseas" : "/hs/direct";
   return `${path}?${params.toString()}`;
-}
-
-function formatNoticeDate(value: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
-    month: "2-digit",
-    day: "2-digit",
-    timeZone: "Asia/Seoul"
-  }).format(new Date(value));
 }
 
 export function DashboardHome({
@@ -313,36 +298,6 @@ export function DashboardHome({
           title="최근 검색"
         />
       </section>
-    </div>
-  );
-}
-
-function DashboardNoticeCard({ notices }: { notices: AppNotice[] }) {
-  return (
-    <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface)] shadow-[var(--shadow-panel)]">
-      <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-5 py-4">
-        <div className="flex items-center gap-2">
-          <Megaphone aria-hidden="true" className="text-blue-700" size={18} />
-          <h2 className="text-base font-semibold text-[var(--text-primary)]">공지사항</h2>
-        </div>
-      </div>
-      <div className="divide-y divide-[var(--border-subtle)] px-4">
-        {notices.length ? notices.map((notice) => (
-          <article className="py-3" key={notice.id}>
-            <div className="flex flex-wrap items-center gap-2">
-              {notice.pinned ? <Badge tone="info">상단</Badge> : null}
-              <Badge tone={notice.category === "maintenance" ? "warning" : notice.category === "release" ? "success" : "neutral"}>
-                {noticeCategoryLabels[notice.category]}
-              </Badge>
-              <span className="text-xs font-medium text-[var(--text-muted)]">{formatNoticeDate(notice.publishedAt)}</span>
-            </div>
-            <h3 className="mt-2 text-sm font-semibold text-[var(--text-primary)]">{notice.title}</h3>
-            <p className="mt-1 line-clamp-2 whitespace-pre-line text-xs leading-5 text-[var(--text-secondary)]">{notice.body}</p>
-          </article>
-        )) : (
-          <div className="py-6 text-sm text-[var(--text-secondary)]">등록된 공지사항이 없습니다.</div>
-        )}
-      </div>
     </div>
   );
 }
