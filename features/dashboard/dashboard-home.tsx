@@ -1,47 +1,19 @@
 import Link from "next/link";
-import { ArrowRight, Calculator, Clock3, FileSearch, Globe2, Layers3, Search, Star, type LucideIcon } from "lucide-react";
+import { Bell, Clock3, Search, Star, type LucideIcon } from "lucide-react";
 import { DashboardNoticeCard } from "@/features/dashboard/dashboard-notice-card";
+import { DashboardWorkflowLinks } from "@/features/dashboard/dashboard-workflow-links";
 import { destinationCountryOptions } from "@/features/export-diagnosis/country-options";
 import { formatHsCode } from "@/lib/hs-code";
+import type { CargoWatchListItem } from "@/features/cargo/cargo-tracking-panel";
 import type { AppNotice } from "@/server/repositories/app-notice.repository";
 import type { HsFavoriteItem } from "@/server/repositories/hs-favorite.repository";
 import type { HsLookupHistoryItem } from "@/server/repositories/hs-lookup-history.repository";
-
-const workflowLinks = [
-  {
-    href: "/hs/direct",
-    title: "통합 조회",
-    description: "코드 또는 품명으로 조회",
-    icon: FileSearch,
-    tone: "blue"
-  },
-  {
-    href: "/hs/overseas",
-    title: "해외 HS CODE조회",
-    description: "목적국 기준으로 조회",
-    icon: Globe2,
-    tone: "emerald"
-  },
-  {
-    href: "/duty-estimator",
-    title: "예상 납세액 계산",
-    description: "금액 입력 후 계산",
-    icon: Calculator,
-    tone: "slate"
-  }
-];
 
 const quickExamples = [
   { label: "3401.30-0000", href: "/hs/direct?query=3401.30-0000&direction=import&destinationCountry=ALL" },
   { label: "작업용 조끼", href: "/hs/direct?query=%EC%9E%91%EC%97%85%EC%9A%A9%20%EC%A1%B0%EB%81%BC&direction=import&destinationCountry=ALL" },
   { label: "graceday hand cream", href: "/hs/direct?query=graceday%20hand%20cream&direction=import&destinationCountry=ALL" }
 ];
-
-function toneClass(tone: string) {
-  if (tone === "emerald") return "bg-emerald-50 text-emerald-700 ring-emerald-100";
-  if (tone === "blue") return "bg-blue-50 text-blue-700 ring-blue-100";
-  return "bg-slate-100 text-slate-700 ring-slate-200";
-}
 
 function displayLookupTitle(query: string) {
   const digits = query.replace(/\D/g, "");
@@ -67,11 +39,13 @@ function lookupHistoryHref(item: HsLookupHistoryItem) {
 
 export function DashboardHome({
   basisDate,
+  cargoWatches,
   favorites,
   lookupHistory,
   notices
 }: {
   basisDate: string;
+  cargoWatches: CargoWatchListItem[];
   favorites: HsFavoriteItem[];
   lookupHistory: HsLookupHistoryItem[];
   notices: AppNotice[];
@@ -163,37 +137,21 @@ export function DashboardHome({
         </div>
       </section>
 
-      <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface)] shadow-[var(--shadow-panel)]">
-        <div className="border-b border-[var(--border-subtle)] px-5 py-4">
-          <div className="flex items-center gap-2">
-            <Layers3 aria-hidden="true" className="text-blue-700" size={18} />
-            <h2 className="text-base font-semibold text-[var(--text-primary)]">바로가기</h2>
-          </div>
-        </div>
-        <div className="grid gap-3 p-4 lg:grid-cols-3">
-          {workflowLinks.map((workflow) => {
-            const Icon = workflow.icon;
-            return (
-              <Link className="focus-ring group grid min-h-[132px] gap-3 rounded-lg border border-[var(--border-subtle)] bg-white p-4 transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md" href={workflow.href} key={workflow.href}>
-                <span className={`grid size-10 place-items-center rounded-md ring-1 ${toneClass(workflow.tone)}`}>
-                  <Icon aria-hidden="true" size={19} />
-                </span>
-                <span>
-                  <span className="block font-semibold text-[var(--text-primary)]">{workflow.title}</span>
-                  <span className="mt-1 block text-sm leading-5 text-[var(--text-secondary)]">{workflow.description}</span>
-                </span>
-                <span className="mt-auto inline-flex items-center gap-1 text-xs font-semibold text-blue-700">
-                  열기
-                  <ArrowRight aria-hidden="true" className="transition group-hover:translate-x-0.5" size={14} />
-                </span>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
+      <DashboardWorkflowLinks />
 
       <section className="grid gap-5 lg:grid-cols-3">
         <DashboardNoticeCard notices={notices} />
+        <DashboardListCard
+          emptyText="작동 중인 적하목록 감시가 없습니다."
+          icon={Bell}
+          items={cargoWatches.map((watch) => ({
+            href: "/cargo",
+            title: watch.houseBlNo || watch.masterBlNo || watch.cargoManagementNo || "-",
+            subtitle: `${watch.targetStatus} 도달 알림 · 현재 ${watch.lastStatus || "확인 전"}`,
+            meta: watch.status === "active" ? "감시중" : watch.status
+          }))}
+          title="적하목록 알림 감시"
+        />
         <DashboardListCard
           emptyText="아직 즐겨찾기한 HS CODE가 없습니다."
           icon={Star}

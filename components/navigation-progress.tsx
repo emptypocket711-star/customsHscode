@@ -87,6 +87,7 @@ export function NavigationProgress() {
   const slowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stageTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const actionSettleTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const completeObserverRef = useRef<MutationObserver | null>(null);
   const previousLocationRef = useRef(`${pathname}?${searchParams.toString()}`);
 
   useEffect(() => {
@@ -111,11 +112,34 @@ export function NavigationProgress() {
         clearInterval(actionSettleTimerRef.current);
         actionSettleTimerRef.current = null;
       }
+      if (completeObserverRef.current) {
+        completeObserverRef.current.disconnect();
+        completeObserverRef.current = null;
+      }
     }
 
     function stopProgress() {
       clearTimer();
       setActive(false);
+    }
+
+    function watchProgressCompleteMarker() {
+      if (document.querySelector("[data-progress-complete='true']")) {
+        stopProgress();
+        return;
+      }
+
+      completeObserverRef.current = new MutationObserver(() => {
+        if (document.querySelector("[data-progress-complete='true']")) {
+          stopProgress();
+        }
+      });
+      completeObserverRef.current.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["data-progress-complete"]
+      });
     }
 
     function handleSubmit(event: SubmitEvent) {
@@ -136,6 +160,7 @@ export function NavigationProgress() {
       setStages(nextStages);
       setMessage(nextStages[0] ?? `${label} 중입니다`);
       setActive(true);
+      watchProgressCompleteMarker();
       stageTimerRef.current = setInterval(() => {
         stageIndexRef.current =
           stageIndexRef.current < nextStages.length - 1 ? stageIndexRef.current + 1 : nextStages.length - 1;

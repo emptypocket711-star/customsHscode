@@ -28,7 +28,16 @@ async function loadCargoWatches(): Promise<CargoWatchListItem[]> {
 }
 
 export default async function CargoPage() {
-  const watches = await loadCargoWatches();
+  const supabase = await createSupabaseServerClient();
+  const [
+    {
+      data: { user }
+    },
+    watches
+  ] = await Promise.all([
+    supabase.auth.getUser(),
+    loadCargoWatches()
+  ]);
 
   return (
     <>
@@ -36,7 +45,7 @@ export default async function CargoPage() {
         title="적하목록 조회"
         description="화물통관진행정보를 조회하고 원하는 상태가 확인되면 이메일 알림을 받을 수 있습니다."
       />
-      <CargoTrackingPanel watches={watches} />
+      <CargoTrackingPanel defaultNotifyEmail={user?.email ?? null} watches={watches} />
     </>
   );
 }

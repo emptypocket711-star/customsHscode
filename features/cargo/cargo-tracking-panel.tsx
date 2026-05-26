@@ -71,18 +71,37 @@ function ActiveWatchRows({ watches }: { watches: CargoWatchListItem[] }) {
   );
 }
 
-function StatusMessage({ status, message }: { status: "success" | "error" | "idle"; message?: string }) {
+function StatusMessage({
+  diagnostic,
+  status,
+  message
+}: {
+  diagnostic?: CargoTrackingActionState["diagnostic"];
+  status: "success" | "error" | "idle";
+  message?: string;
+}) {
   if (!message) return null;
 
   return (
     <div
+      data-progress-complete="true"
       className={
         status === "success"
           ? "rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800"
           : "rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
       }
     >
-      {message}
+      <p>{message}</p>
+      {diagnostic ? (
+        <dl className="mt-2 grid gap-1 rounded border border-amber-200 bg-white/60 p-2 text-xs text-amber-950 sm:grid-cols-[6rem_1fr]">
+          <dt className="font-semibold">진단</dt>
+          <dd>{diagnostic.category}</dd>
+          <dt className="font-semibold">endpoint</dt>
+          <dd>{diagnostic.endpoint}</dd>
+          <dt className="font-semibold">detail</dt>
+          <dd className="break-all">{diagnostic.detail}</dd>
+        </dl>
+      ) : null}
     </div>
   );
 }
@@ -96,7 +115,13 @@ function SummaryRow({ label, value }: { label: string; value?: string | null }) 
   );
 }
 
-export function CargoTrackingPanel({ watches }: { watches: CargoWatchListItem[] }) {
+export function CargoTrackingPanel({
+  defaultNotifyEmail,
+  watches
+}: {
+  defaultNotifyEmail?: string | null;
+  watches: CargoWatchListItem[];
+}) {
   const [lookupState, lookupAction, lookupPending] = useActionState(lookupCargoProgressAction, lookupInitialState);
   const [watchState, watchAction, watchPending] = useActionState(createCargoWatchAction, watchInitialState);
   const [lookupClientError, setLookupClientError] = useState("");
@@ -195,7 +220,7 @@ export function CargoTrackingPanel({ watches }: { watches: CargoWatchListItem[] 
                 관세청 화물통관진행정보를 조회하고 있습니다.
               </div>
             ) : null}
-            <StatusMessage message={lookupClientError || lookupState.message} status={lookupClientError ? "error" : lookupState.status} />
+            <StatusMessage diagnostic={lookupState.diagnostic} message={lookupClientError || lookupState.message} status={lookupClientError ? "error" : lookupState.status} />
           </form>
         </CardBody>
       </Card>
@@ -276,7 +301,7 @@ export function CargoTrackingPanel({ watches }: { watches: CargoWatchListItem[] 
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="grid gap-1 text-sm font-medium text-slate-700">
                   알림 받을 이메일
-                  <input className="focus-ring rounded-md border border-slate-300 px-3 py-2" disabled={watchPending} name="notifyEmail" type="email" />
+                  <input className="focus-ring rounded-md border border-slate-300 px-3 py-2" defaultValue={defaultNotifyEmail ?? ""} disabled={watchPending} name="notifyEmail" type="email" />
                 </label>
                 <label className="grid gap-1 text-sm font-medium text-slate-700">
                   House B/L

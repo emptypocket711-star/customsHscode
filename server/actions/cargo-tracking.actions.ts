@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { PublicDataFetchError } from "@/server/integrations/public-data/client";
 import {
   buildCustomsCargoProgressQuery,
   fetchCustomsOpenApiSnapshot,
@@ -14,6 +15,11 @@ import {
 export type CargoTrackingActionState = {
   status: "idle" | "success" | "error";
   message?: string;
+  diagnostic?: {
+    category: string;
+    endpoint: string;
+    detail: string;
+  };
   result?: CustomsCargoProgressResult;
   snapshot?: {
     sourceName: string;
@@ -65,6 +71,34 @@ function readCargoInput(formData: FormData) {
     masterBlNo,
     houseBlNo: cargoInputLooksLikeBl ? cargoManagementNo : houseBlNo,
     blYear: stringValue(formData, "blYear") || new Date().getFullYear().toString()
+  };
+}
+
+function cargoNetworkFailureMessage(error: PublicDataFetchError) {
+  if (error.category === "timeout") {
+    return "관세청 API001 응답 시간이 초과되었습니다. 잠시 후 다시 조회해 주세요.";
+  }
+  if (error.category === "dns") {
+    return "관세청 API001 서버 주소를 확인하지 못했습니다. 네트워크 또는 DNS 상태를 확인해야 합니다.";
+  }
+  if (error.category === "tls") {
+    return "관세청 API001 보안 연결에 실패했습니다. 서버 인증서 또는 TLS 연결 상태를 확인해야 합니다.";
+  }
+  if (error.category === "outbound_port") {
+    return "관세청 API001 전용 포트 연결에 실패했습니다. 운영 서버에서 UNIPASS 38010 포트 호출이 가능한지 확인해야 합니다.";
+  }
+  if (error.category === "network") {
+    return "관세청 API001 서버 연결에 실패했습니다. 운영 서버의 외부 네트워크 호출 상태를 확인해야 합니다.";
+  }
+  return "관세청 API001 호출 중 알 수 없는 네트워크 오류가 발생했습니다.";
+}
+
+function cargoNetworkDiagnostic(error: PublicDataFetchError) {
+  const endpoint = `${error.endpointHost}:${error.endpointPort}`;
+  return {
+    category: error.category,
+    endpoint,
+    detail: [error.causeCode, error.causeMessage].filter(Boolean).join(" / ") || "세부 원인 없음"
   };
 }
 
@@ -121,6 +155,17 @@ export async function lookupCargoProgressAction(
       }
     };
   } catch (error) {
+    if (error instanceof PublicDataFetchError) {
+      const diagnostic = cargoNetworkDiagnostic(error);
+      console.error("[cargo_progress_api_failure]", diagnostic);
+
+      return {
+        status: "error",
+        message: cargoNetworkFailureMessage(error),
+        diagnostic
+      };
+    }
+
     const message = error instanceof Error ? error.message : "화물통관진행정보 조회 중 오류가 발생했습니다.";
     return {
       status: "error",
