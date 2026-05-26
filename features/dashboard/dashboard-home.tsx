@@ -1,7 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Calculator, ClipboardList, Clock3, FileSearch, Globe2, Layers3, Search, ShieldCheck, Star, type LucideIcon } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { SourceFooter } from "@/components/ui/source-footer";
+import { ArrowRight, Calculator, Clock3, FileSearch, Globe2, Layers3, Search, Star, type LucideIcon } from "lucide-react";
 import { DashboardNoticeCard } from "@/features/dashboard/dashboard-notice-card";
 import { destinationCountryOptions } from "@/features/export-diagnosis/country-options";
 import { formatHsCode } from "@/lib/hs-code";
@@ -13,21 +11,21 @@ const workflowLinks = [
   {
     href: "/hs/direct",
     title: "통합 조회",
-    description: "HS CODE, 품명, 관세율, 수출입요건을 한 화면에서 비교",
+    description: "코드 또는 품명으로 조회",
     icon: FileSearch,
     tone: "blue"
   },
   {
     href: "/hs/overseas",
     title: "해외 HS CODE조회",
-    description: "목적국 기준 품목번호, 관세율, 내국세, 수입요건 확인",
+    description: "목적국 기준으로 조회",
     icon: Globe2,
     tone: "emerald"
   },
   {
     href: "/duty-estimator",
     title: "예상 납세액 계산",
-    description: "HS CODE 10자리 기준 관세·부가세 계산 흐름",
+    description: "금액 입력 후 계산",
     icon: Calculator,
     tone: "slate"
   }
@@ -37,12 +35,6 @@ const quickExamples = [
   { label: "3401.30-0000", href: "/hs/direct?query=3401.30-0000&direction=import&destinationCountry=ALL" },
   { label: "작업용 조끼", href: "/hs/direct?query=%EC%9E%91%EC%97%85%EC%9A%A9%20%EC%A1%B0%EB%81%BC&direction=import&destinationCountry=ALL" },
   { label: "graceday hand cream", href: "/hs/direct?query=graceday%20hand%20cream&direction=import&destinationCountry=ALL" }
-];
-
-const comparisonSteps = [
-  { title: "후보 정리", body: "품명·모델명·오타·HS 힌트를 AI가 4자리/6자리 후보로 정규화합니다." },
-  { title: "세율 비교", body: "기본·WTO·FTA·목적국 세율을 국가 선택 기준으로 좁혀 보여줍니다." },
-  { title: "요건 확인", body: "세관장확인, 수출요건, 기관별 요건을 품목번호 기준으로 연결합니다." }
 ];
 
 function toneClass(tone: string) {
@@ -91,14 +83,13 @@ export function DashboardHome({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge tone="info">2026년형 전문 관세 SaaS</Badge>
-                <span className="text-xs font-medium text-[var(--text-muted)]">기준일 {basisDate}</span>
+                <span className="text-xs font-medium text-[var(--text-muted)]">조회 기준일 {basisDate}</span>
               </div>
               <h1 className="mt-4 text-2xl font-semibold tracking-normal text-[var(--text-primary)] sm:text-3xl">
                 오늘도 너무 급하지 않게, 차분히 시작해봐요.
               </h1>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
-                필요한 순간에 바로 이어갈 수 있도록 자주 쓰는 메뉴와 최근 흐름을 정리해두었습니다.
+                자주 쓰는 메뉴와 최근 기록만 간단히 정리했습니다.
               </p>
             </div>
             <div className="rounded-md border border-[var(--border-subtle)] bg-white px-4 py-3 text-sm font-semibold text-[var(--text-primary)] shadow-sm">
@@ -172,61 +163,32 @@ export function DashboardHome({
         </div>
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
-        <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface)] shadow-[var(--shadow-panel)]">
-          <div className="border-b border-[var(--border-subtle)] px-5 py-4">
-            <div className="flex items-center gap-2">
-              <Layers3 aria-hidden="true" className="text-blue-700" size={18} />
-              <h2 className="text-base font-semibold text-[var(--text-primary)]">업무 진입</h2>
-            </div>
-          </div>
-          <div className="grid gap-3 p-4 lg:grid-cols-3">
-            {workflowLinks.map((workflow) => {
-              const Icon = workflow.icon;
-              return (
-                <Link className="focus-ring group grid min-h-[148px] gap-3 rounded-lg border border-[var(--border-subtle)] bg-white p-4 transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md" href={workflow.href} key={workflow.href}>
-                  <span className={`grid size-10 place-items-center rounded-md ring-1 ${toneClass(workflow.tone)}`}>
-                    <Icon aria-hidden="true" size={19} />
-                  </span>
-                  <span>
-                    <span className="block font-semibold text-[var(--text-primary)]">{workflow.title}</span>
-                    <span className="mt-1 block text-sm leading-5 text-[var(--text-secondary)]">{workflow.description}</span>
-                  </span>
-                  <span className="mt-auto inline-flex items-center gap-1 text-xs font-semibold text-blue-700">
-                    열기
-                    <ArrowRight aria-hidden="true" className="transition group-hover:translate-x-0.5" size={14} />
-                  </span>
-                </Link>
-              );
-            })}
+      <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface)] shadow-[var(--shadow-panel)]">
+        <div className="border-b border-[var(--border-subtle)] px-5 py-4">
+          <div className="flex items-center gap-2">
+            <Layers3 aria-hidden="true" className="text-blue-700" size={18} />
+            <h2 className="text-base font-semibold text-[var(--text-primary)]">바로가기</h2>
           </div>
         </div>
-
-        <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface)] shadow-[var(--shadow-panel)]">
-          <div className="border-b border-[var(--border-subtle)] px-5 py-4">
-            <div className="flex items-center gap-2">
-              <ClipboardList aria-hidden="true" className="text-blue-700" size={18} />
-              <h2 className="text-base font-semibold text-[var(--text-primary)]">결과 비교 흐름</h2>
-            </div>
-          </div>
-          <div className="grid gap-3 p-4">
-            {comparisonSteps.map((step, index) => (
-              <div className="grid grid-cols-[32px_1fr] gap-3" key={step.title}>
-                <span className="grid size-8 place-items-center rounded-md bg-[var(--surface-muted)] text-xs font-bold text-blue-700">{index + 1}</span>
-                <div>
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">{step.title}</p>
-                  <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">{step.body}</p>
-                </div>
-              </div>
-            ))}
-            <div className="mt-2 rounded-md border border-blue-100 bg-blue-50 p-3">
-              <div className="flex items-start gap-2">
-                <ShieldCheck aria-hidden="true" className="mt-0.5 shrink-0 text-blue-700" size={16} />
-                <p className="text-xs leading-5 text-blue-900">사용자 화면은 조회 정보를 중심으로 표시하고, 판단이 필요한 경우에는 보완 질문과 후보 비교를 제공합니다.</p>
-              </div>
-            </div>
-            <SourceFooter />
-          </div>
+        <div className="grid gap-3 p-4 lg:grid-cols-3">
+          {workflowLinks.map((workflow) => {
+            const Icon = workflow.icon;
+            return (
+              <Link className="focus-ring group grid min-h-[132px] gap-3 rounded-lg border border-[var(--border-subtle)] bg-white p-4 transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md" href={workflow.href} key={workflow.href}>
+                <span className={`grid size-10 place-items-center rounded-md ring-1 ${toneClass(workflow.tone)}`}>
+                  <Icon aria-hidden="true" size={19} />
+                </span>
+                <span>
+                  <span className="block font-semibold text-[var(--text-primary)]">{workflow.title}</span>
+                  <span className="mt-1 block text-sm leading-5 text-[var(--text-secondary)]">{workflow.description}</span>
+                </span>
+                <span className="mt-auto inline-flex items-center gap-1 text-xs font-semibold text-blue-700">
+                  열기
+                  <ArrowRight aria-hidden="true" className="transition group-hover:translate-x-0.5" size={14} />
+                </span>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
