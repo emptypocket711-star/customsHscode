@@ -35,9 +35,9 @@ const cargoLookupSchema = z.object({
   houseBlNo: z.string().trim().max(80).optional(),
   blYear: z.string().trim().regex(/^\d{4}$/, "B/L 연도는 4자리로 입력해 주세요.").optional()
 }).refine((input) => Boolean(input.cargoManagementNo || input.masterBlNo || input.houseBlNo), {
-  message: "화물관리번호, Master B/L, House B/L 중 하나 이상 입력해 주세요."
+  message: "House B/L, Master B/L, 화물관리번호 중 하나 이상 입력해 주세요."
 }).refine((input) => Boolean(input.cargoManagementNo || input.blYear), {
-  message: "Master B/L 또는 House B/L로 조회할 때는 B/L 연도가 필요합니다."
+  message: "House B/L 또는 Master B/L로 조회할 때는 B/L 연도가 필요합니다."
 });
 
 const cargoWatchSchema = cargoLookupSchema.extend({

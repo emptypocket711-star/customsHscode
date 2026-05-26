@@ -143,7 +143,7 @@ export function CargoTrackingPanel({ watches }: { watches: CargoWatchListItem[] 
       <Card>
         <CardHeader
           title="화물통관진행정보 조회"
-          description="화물관리번호 또는 B/L 번호로 현재 진행 상태와 처리 이력을 조회합니다."
+          description="House B/L, Master B/L, 화물관리번호 순서로 현재 진행 상태와 처리 이력을 조회합니다."
           action={<Badge tone="info">API001</Badge>}
         />
         <CardBody>
@@ -157,22 +157,22 @@ export function CargoTrackingPanel({ watches }: { watches: CargoWatchListItem[] 
               }
 
               event.preventDefault();
-              setLookupClientError("화물관리번호, Master B/L, House B/L 중 하나 이상 입력해 주세요.");
+              setLookupClientError("House B/L, Master B/L, 화물관리번호 중 하나 이상 입력해 주세요.");
               window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
             }}
           >
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-4">
               <label className="grid gap-1 text-sm font-medium text-slate-700">
-                화물관리번호
-                <input className="focus-ring rounded-md border border-slate-300 px-3 py-2" disabled={lookupPending} name="cargoManagementNo" placeholder="화물관리번호 또는 B/L 번호" />
+                House B/L
+                <input autoFocus className="focus-ring rounded-md border border-slate-300 px-3 py-2" disabled={lookupPending} name="houseBlNo" placeholder="예: PSSE26050670" />
               </label>
               <label className="grid gap-1 text-sm font-medium text-slate-700">
                 Master B/L
                 <input className="focus-ring rounded-md border border-slate-300 px-3 py-2" disabled={lookupPending} name="masterBlNo" />
               </label>
               <label className="grid gap-1 text-sm font-medium text-slate-700">
-                House B/L
-                <input className="focus-ring rounded-md border border-slate-300 px-3 py-2" disabled={lookupPending} name="houseBlNo" />
+                화물관리번호
+                <input className="focus-ring rounded-md border border-slate-300 px-3 py-2" disabled={lookupPending} name="cargoManagementNo" />
               </label>
               <label className="grid gap-1 text-sm font-medium text-slate-700">
                 B/L 연도
@@ -188,7 +188,7 @@ export function CargoTrackingPanel({ watches }: { watches: CargoWatchListItem[] 
                 {lookupPending ? <Loader2 aria-hidden="true" className="animate-spin" size={18} /> : <Search aria-hidden="true" size={18} />}
                 {lookupPending ? "조회 중" : "조회"}
               </button>
-              <p className="text-xs text-slate-500">조회가 되지 않으면 적하목록 생성 전이거나 B/L 번호가 다를 수 있습니다.</p>
+              <p className="text-xs text-slate-500">실무 조회는 House B/L을 우선 입력하세요. B/L 조회에는 연도가 함께 필요합니다.</p>
             </div>
             {lookupPending ? (
               <div className="rounded-md border border-blue-100 bg-blue-50 p-3 text-sm text-blue-800">
@@ -269,26 +269,26 @@ export function CargoTrackingPanel({ watches }: { watches: CargoWatchListItem[] 
                 }
 
                 event.preventDefault();
-                setWatchClientError("감시할 화물관리번호, Master B/L, House B/L 중 하나 이상 입력해 주세요.");
+                setWatchClientError("감시할 House B/L, Master B/L, 화물관리번호 중 하나 이상 입력해 주세요.");
                 window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
               }}
             >
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="grid gap-1 text-sm font-medium text-slate-700">
-                  화물관리번호
-                  <input className="focus-ring rounded-md border border-slate-300 px-3 py-2" disabled={watchPending} name="cargoManagementNo" />
-                </label>
-                <label className="grid gap-1 text-sm font-medium text-slate-700">
                   알림 받을 이메일
                   <input className="focus-ring rounded-md border border-slate-300 px-3 py-2" disabled={watchPending} name="notifyEmail" type="email" />
+                </label>
+                <label className="grid gap-1 text-sm font-medium text-slate-700">
+                  House B/L
+                  <input className="focus-ring rounded-md border border-slate-300 px-3 py-2" disabled={watchPending} name="houseBlNo" />
                 </label>
                 <label className="grid gap-1 text-sm font-medium text-slate-700">
                   Master B/L
                   <input className="focus-ring rounded-md border border-slate-300 px-3 py-2" disabled={watchPending} name="masterBlNo" />
                 </label>
                 <label className="grid gap-1 text-sm font-medium text-slate-700">
-                  House B/L
-                  <input className="focus-ring rounded-md border border-slate-300 px-3 py-2" disabled={watchPending} name="houseBlNo" />
+                  화물관리번호
+                  <input className="focus-ring rounded-md border border-slate-300 px-3 py-2" disabled={watchPending} name="cargoManagementNo" />
                 </label>
                 <label className="grid gap-1 text-sm font-medium text-slate-700">
                   B/L 연도
