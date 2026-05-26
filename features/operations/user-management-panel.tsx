@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
 import { Activity, ExternalLink, Filter, KeyRound, Network, Save, Search, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -83,6 +83,11 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
   const [accountTypeFilter, setAccountTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [roleFilter, setRoleFilter] = useState("all");
+
+  useEffect(() => {
+    if (updateState.status === "idle" && deleteState.status === "idle" && testLoginState.status === "idle") return;
+    window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
+  }, [deleteState.status, testLoginState.status, updateState.status]);
 
   const filteredUsers = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();

@@ -103,6 +103,11 @@ export function NavigationProgress() {
       }
     }
 
+    function stopProgress() {
+      clearTimer();
+      setActive(false);
+    }
+
     function handleSubmit(event: SubmitEvent) {
       const form = event.target instanceof HTMLFormElement ? event.target : null;
       if (!form) return;
@@ -169,10 +174,12 @@ export function NavigationProgress() {
 
     document.addEventListener("submit", handleSubmit, { capture: true });
     document.addEventListener("click", handleClick, { capture: true });
+    window.addEventListener("hsfinder:navigation-progress-done", stopProgress);
 
     return () => {
       document.removeEventListener("submit", handleSubmit, { capture: true });
       document.removeEventListener("click", handleClick, { capture: true });
+      window.removeEventListener("hsfinder:navigation-progress-done", stopProgress);
       clearTimer();
     };
   }, []);
