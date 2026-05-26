@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { Bell, Loader2, Search, Ship } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -97,7 +97,29 @@ function SummaryRow({ label, value }: { label: string; value?: string | null }) 
 export function CargoTrackingPanel({ watches }: { watches: CargoWatchListItem[] }) {
   const [lookupState, lookupAction, lookupPending] = useActionState(lookupCargoProgressAction, lookupInitialState);
   const [watchState, watchAction, watchPending] = useActionState(createCargoWatchAction, watchInitialState);
+  const [lookupClientError, setLookupClientError] = useState("");
+  const [watchClientError, setWatchClientError] = useState("");
   const result = lookupState.result;
+
+  useEffect(() => {
+    if (lookupState.status !== "idle") {
+      window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
+    }
+  }, [lookupState]);
+
+  useEffect(() => {
+    if (watchState.status !== "idle") {
+      window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
+    }
+  }, [watchState]);
+
+  function hasCargoLookupValue(form: HTMLFormElement) {
+    const formData = new FormData(form);
+    return ["cargoManagementNo", "masterBlNo", "houseBlNo"].some((key) => {
+      const value = formData.get(key);
+      return typeof value === "string" && value.trim().length > 0;
+    });
+  }
 
   return (
     <div className="grid gap-5">
@@ -110,7 +132,20 @@ export function CargoTrackingPanel({ watches }: { watches: CargoWatchListItem[] 
           action={<Badge tone="info">API001</Badge>}
         />
         <CardBody>
-          <form action={lookupAction} className="grid gap-4">
+          <form
+            action={lookupAction}
+            className="grid gap-4"
+            onSubmit={(event) => {
+              if (hasCargoLookupValue(event.currentTarget)) {
+                setLookupClientError("");
+                return;
+              }
+
+              event.preventDefault();
+              setLookupClientError("화물관리번호, Master B/L, House B/L 중 하나 이상 입력해 주세요.");
+              window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
+            }}
+          >
             <div className="grid gap-4 md:grid-cols-3">
               <label className="grid gap-1 text-sm font-medium text-slate-700">
                 화물관리번호
@@ -141,7 +176,7 @@ export function CargoTrackingPanel({ watches }: { watches: CargoWatchListItem[] 
                 관세청 화물통관진행정보를 조회하고 있습니다.
               </div>
             ) : null}
-            <StatusMessage message={lookupState.message} status={lookupState.status} />
+            <StatusMessage message={lookupClientError || lookupState.message} status={lookupClientError ? "error" : lookupState.status} />
           </form>
         </CardBody>
       </Card>
@@ -205,7 +240,20 @@ export function CargoTrackingPanel({ watches }: { watches: CargoWatchListItem[] 
         <Card>
           <CardHeader title="상태 알림 등록" description="원하는 진행 상태가 확인되면 지정한 이메일로 알림을 보냅니다." action={<Badge tone="warning">1분 감시</Badge>} />
           <CardBody>
-            <form action={watchAction} className="grid gap-4">
+            <form
+              action={watchAction}
+              className="grid gap-4"
+              onSubmit={(event) => {
+                if (hasCargoLookupValue(event.currentTarget)) {
+                  setWatchClientError("");
+                  return;
+                }
+
+                event.preventDefault();
+                setWatchClientError("감시할 화물관리번호, Master B/L, House B/L 중 하나 이상 입력해 주세요.");
+                window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
+              }}
+            >
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="grid gap-1 text-sm font-medium text-slate-700">
                   화물관리번호
@@ -238,7 +286,7 @@ export function CargoTrackingPanel({ watches }: { watches: CargoWatchListItem[] 
                 {watchPending ? <Loader2 aria-hidden="true" className="animate-spin" size={18} /> : <Bell aria-hidden="true" size={18} />}
                 {watchPending ? "등록 중" : "알림 등록"}
               </button>
-              <StatusMessage message={watchState.message} status={watchState.status} />
+              <StatusMessage message={watchClientError || watchState.message} status={watchClientError ? "error" : watchState.status} />
             </form>
           </CardBody>
         </Card>
