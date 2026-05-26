@@ -11,11 +11,12 @@ import {
   type CargoTrackingActionState,
   type CargoWatchActionState
 } from "@/server/actions/cargo-tracking.actions";
+import { cargoWatchStatusOptions } from "@/lib/cargo-watch-status";
 
 const lookupInitialState: CargoTrackingActionState = { status: "idle" };
 const watchInitialState: CargoWatchActionState = { status: "idle" };
 
-const statusOptions = ["적하목록 제출", "입항보고", "하선신고 수리", "반입", "수입신고", "수입신고수리", "반출"];
+const statusOptions = [...cargoWatchStatusOptions];
 
 export type CargoWatchListItem = {
   id: string;
@@ -189,7 +190,7 @@ export function CargoTrackingPanel({
             <div className="grid gap-4 md:grid-cols-4">
               <label className="grid gap-1 text-sm font-medium text-slate-700">
                 House B/L
-                <input autoFocus className="focus-ring rounded-md border border-slate-300 px-3 py-2" disabled={lookupPending} name="houseBlNo" placeholder="예: PSSE26050670" />
+                <input autoFocus className="focus-ring rounded-md border border-slate-300 px-3 py-2" disabled={lookupPending} name="houseBlNo" />
               </label>
               <label className="grid gap-1 text-sm font-medium text-slate-700">
                 Master B/L
@@ -321,7 +322,7 @@ export function CargoTrackingPanel({
                 </label>
                 <label className="grid gap-1 text-sm font-medium text-slate-700">
                   알림 받을 상태
-                  <select className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2" disabled={watchPending} name="targetStatus" defaultValue="반입">
+                  <select className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2" disabled={watchPending} name="targetStatus" defaultValue="CY 반입">
                     {statusOptions.map((status) => <option key={status} value={status}>{status}</option>)}
                   </select>
                 </label>

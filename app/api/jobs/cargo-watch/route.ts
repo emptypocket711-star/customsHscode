@@ -7,6 +7,11 @@ import {
   parseCustomsCargoProgressXml
 } from "@/server/integrations/customs/customs-api";
 import { sendTransactionalEmail } from "@/server/notifications/email";
+import {
+  buildCargoStatusCandidates,
+  loadCargoShedInfoByCode,
+  statusMatched
+} from "@/server/services/cargo-status-classifier";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,17 +36,6 @@ function isAuthorized(request: NextRequest) {
   const querySecret = request.nextUrl.searchParams.get("secret");
 
   return authorization === `Bearer ${secret}` || workerSecret === secret || querySecret === secret;
-}
-
-function statusMatched(input: { targetStatus: string; currentStatus: string; eventStatuses: string[] }) {
-  const target = input.targetStatus.trim();
-  if (!target) return false;
-
-  const candidates = [input.currentStatus, ...input.eventStatuses]
-    .map((value) => value.trim())
-    .filter(Boolean);
-
-  return candidates.some((value) => value === target || value.includes(target));
 }
 
 async function processCargoWatches(request: NextRequest) {
@@ -91,19 +85,21 @@ async function processCargoWatches(request: NextRequest) {
         { timeoutMs: 15000 }
       );
       const result = parseCustomsCargoProgressXml(snapshot.rawText);
-      const currentStatus = result?.summary.progressStatus || result?.events[0]?.status || "";
-      const eventStatuses = result?.events.map((event) => event.status).filter(Boolean) ?? [];
+      const shedInfoByCode = result ? await loadCargoShedInfoByCode(supabase, result.events) : new Map();
+      const statusCandidates = result
+        ? buildCargoStatusCandidates(result, shedInfoByCode)
+        : { currentStatus: "", displayCurrentStatus: "", eventStatuses: [] };
       const isMatched = statusMatched({
         targetStatus: row.target_status,
-        currentStatus,
-        eventStatuses
+        currentStatus: statusCandidates.currentStatus,
+        eventStatuses: statusCandidates.eventStatuses
       });
 
       if (!isMatched) {
         await supabase
           .from("cargo_watch_requests")
           .update({
-            last_status: currentStatus || null,
+            last_status: statusCandidates.displayCurrentStatus || statusCandidates.currentStatus || null,
             last_checked_at: new Date().toISOString(),
             next_check_at: nextCheckAt,
             last_error: null,
@@ -128,7 +124,7 @@ async function processCargoWatches(request: NextRequest) {
           "",
           `조회값: ${lookupValue}`,
           `목표 상태: ${row.target_status}`,
-          `현재 상태: ${currentStatus || row.target_status}`,
+          `현재 상태: ${statusCandidates.displayCurrentStatus || statusCandidates.currentStatus || row.target_status}`,
           "",
           "통관 준비가 필요한 건인지 확인해 주세요."
         ].join("\n")
@@ -140,7 +136,7 @@ async function processCargoWatches(request: NextRequest) {
         .from("cargo_watch_requests")
         .update({
           status: "matched",
-          last_status: currentStatus || row.target_status,
+          last_status: statusCandidates.displayCurrentStatus || statusCandidates.currentStatus || row.target_status,
           last_checked_at: new Date().toISOString(),
           matched_at: new Date().toISOString(),
           notified_at: mailResult.sent ? new Date().toISOString() : null,

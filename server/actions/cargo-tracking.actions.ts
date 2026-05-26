@@ -11,6 +11,13 @@ import {
   parseCustomsCargoProgressXml,
   type CustomsCargoProgressResult
 } from "@/server/integrations/customs/customs-api";
+import { sendTransactionalEmail } from "@/server/notifications/email";
+import {
+  buildCargoStatusCandidates,
+  enrichCargoProgressResultWithShedInfo,
+  loadCargoShedInfoByCode,
+  statusMatched
+} from "@/server/services/cargo-status-classifier";
 
 export type CargoTrackingActionState = {
   status: "idle" | "success" | "error";
@@ -142,10 +149,14 @@ export async function lookupCargoProgressAction(
       };
     }
 
+    const supabase = await createSupabaseServerClient();
+    const shedInfoByCode = await loadCargoShedInfoByCode(supabase, result.events);
+    const enrichedResult = enrichCargoProgressResultWithShedInfo(result, shedInfoByCode);
+
     return {
       status: "success",
       message: "화물통관진행정보를 조회했습니다.",
-      result,
+      result: enrichedResult,
       snapshot: {
         sourceName: snapshot.sourceName,
         sourceUrl: snapshot.sourceUrl,
@@ -213,6 +224,82 @@ export async function createCargoWatchAction(
       return { status: "error", message: "사용자 회사 정보를 확인할 수 없습니다." };
     }
 
+    const now = new Date().toISOString();
+    let immediateMatch:
+      | {
+        matched: true;
+        lastStatus: string;
+        snapshot: {
+          sourceName: string;
+          sourceUrl: string;
+          sourceVersion: string;
+          retrievedAt: string;
+          checksum: string;
+        };
+        mailSent: boolean;
+        mailError: string | null;
+      }
+      | { matched: false; lastStatus: string | null; snapshot?: undefined; mailSent?: undefined; mailError?: undefined } = { matched: false, lastStatus: null };
+
+    if (hasCustomsOpenApiEnv("cargo_progress")) {
+      try {
+        const snapshot = await fetchCustomsCargoProgressSnapshot(buildCustomsCargoProgressQuery(parsed.data), {
+          timeoutMs: 15000
+        });
+        const result = parseCustomsCargoProgressXml(snapshot.rawText);
+        if (result) {
+          const shedInfoByCode = await loadCargoShedInfoByCode(supabase, result.events);
+          const statusCandidates = buildCargoStatusCandidates(result, shedInfoByCode);
+          const matched = statusMatched({
+            targetStatus: parsed.data.targetStatus,
+            currentStatus: statusCandidates.currentStatus,
+            eventStatuses: statusCandidates.eventStatuses
+          });
+
+          if (matched) {
+            const lookupValue = parsed.data.cargoManagementNo || parsed.data.houseBlNo || parsed.data.masterBlNo || "등록 화물";
+            const lastStatus = statusCandidates.displayCurrentStatus || statusCandidates.currentStatus || parsed.data.targetStatus;
+            const mailResult = await sendTransactionalEmail({
+              to: parsed.data.notifyEmail,
+              subject: `[HS Finder] ${lookupValue} ${parsed.data.targetStatus} 상태 알림`,
+              text: [
+                "등록하신 적하목록 감시 대상이 이미 지정한 상태에 도달했습니다.",
+                "",
+                `조회값: ${lookupValue}`,
+                `목표 상태: ${parsed.data.targetStatus}`,
+                `현재 상태: ${lastStatus}`,
+                "",
+                "통관 준비가 필요한 건인지 확인해 주세요."
+              ].join("\n")
+            });
+
+            immediateMatch = {
+              matched: true,
+              lastStatus,
+              snapshot: {
+                sourceName: snapshot.sourceName,
+                sourceUrl: snapshot.sourceUrl,
+                sourceVersion: snapshot.sourceVersion,
+                retrievedAt: snapshot.retrievedAt,
+                checksum: snapshot.checksum
+              },
+              mailSent: mailResult.sent,
+              mailError: mailResult.sent ? null : mailResult.message
+            };
+          } else {
+            immediateMatch = {
+              matched: false,
+              lastStatus: statusCandidates.displayCurrentStatus || statusCandidates.currentStatus || null
+            };
+          }
+        }
+      } catch (error) {
+        console.error("[cargo_watch_immediate_check_failure]", {
+          message: error instanceof Error ? error.message : "unknown"
+        });
+      }
+    }
+
     const { error } = await supabase
       .from("cargo_watch_requests")
       .insert({
@@ -225,12 +312,33 @@ export async function createCargoWatchAction(
         target_status: parsed.data.targetStatus,
         notify_email: parsed.data.notifyEmail,
         poll_interval_seconds: 60,
-        status: "active"
+        status: immediateMatch.matched ? "matched" : "active",
+        last_status: immediateMatch.lastStatus,
+        last_checked_at: immediateMatch.lastStatus ? now : null,
+        next_check_at: immediateMatch.matched ? now : now,
+        matched_at: immediateMatch.matched ? now : null,
+        notified_at: immediateMatch.matched && immediateMatch.mailSent ? now : null,
+        last_error: immediateMatch.matched ? immediateMatch.mailError : null,
+        source_name: immediateMatch.snapshot?.sourceName ?? null,
+        source_url: immediateMatch.snapshot?.sourceUrl ?? null,
+        source_version: immediateMatch.snapshot?.sourceVersion ?? null,
+        retrieved_at: immediateMatch.snapshot?.retrievedAt ?? null,
+        checksum: immediateMatch.snapshot?.checksum ?? null,
+        updated_at: now
       });
 
     if (error) throw error;
 
     revalidatePath("/cargo");
+    if (immediateMatch.matched) {
+      return {
+        status: immediateMatch.mailSent ? "success" : "error",
+        message: immediateMatch.mailSent
+          ? "이미 목표 상태가 지나간 건으로 확인되어 즉시 알림 메일을 보냈습니다."
+          : `이미 목표 상태가 지나간 건으로 확인했지만 메일 발송에 실패했습니다. ${immediateMatch.mailError ?? ""}`.trim()
+      };
+    }
+
     return { status: "success", message: "1분 간격 알림 감시를 등록했습니다." };
   } catch (error) {
     return {
