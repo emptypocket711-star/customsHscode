@@ -59,6 +59,16 @@ DATABASE_URL='postgresql://postgres:...@...:5432/postgres' npm run db:refresh-da
 - `RESEND_API_KEY`
 - `NOTIFICATION_FROM_EMAIL`
 
+무역 뉴스 KOTRA OpenAPI를 켤 때 추가:
+
+- `KOTRA_OPENAPI_SERVICE_KEY`
+- `KOTRA_OVERSEAS_MARKET_NEWS_URL=https://apis.data.go.kr/B410001/kotra_overseasMarketNews/ovseaMrktNews/ovseaMrktNews`
+- `KOTRA_USA_GLOBAL_ISSUE_URL=https://apis.data.go.kr/B410001/usaGlobalIssueMonitoring/getUsaGlobalIssueMonitoring`
+- `KOTRA_TRADE_FRAUD_CASE_URL=https://apis.data.go.kr/B410001/cmmrcFraudCase/cmmrcFraudCase`
+
+KOTRA 뉴스 API는 공공누리 제4유형(출처표시, 상업적 이용금지, 변경금지) 조건이므로 원문 링크와 출처 표시를 유지한다.
+해외시장뉴스 API는 본문을 함께 받기 위해 `search8=Y`를 사용한다.
+
 API001은 Vercel에서 관세청 `38010` 포트 직접 호출이 실패할 수 있어 현재 Vultr relay를 사용한다. 상세 운영 절차, relay 서버 정보, CY/CFS 판정 기준은 `docs/CARGO_API001_RUNBOOK.md`를 따른다.
 
 ## 3. 접근 제어

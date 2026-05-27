@@ -4,7 +4,7 @@ export type TradeNewsItem = {
   id: string;
   category: TradeNewsCategory;
   source: string;
-  sourceType: "rss" | "official-page" | "api-required" | "paid-api";
+  sourceType: "rss" | "official-page" | "openapi" | "api-required" | "paid-api";
   title: string;
   summary: string;
   url: string;
@@ -52,10 +52,28 @@ export const tradeNewsSources: TradeNewsSource[] = [
     category: "market",
     name: "KOTRA 해외시장뉴스",
     description: "단신속보뉴스 API / 해외시장뉴스",
-    url: "https://dream.kotra.or.kr/kotranews/cms/com/index.do?MENU_ID=720",
+    url: "https://apis.data.go.kr/B410001/kotra_overseasMarketNews/ovseaMrktNews/ovseaMrktNews",
     reliability: "매우 높음",
-    status: "planned",
-    note: "공공데이터포털 OpenAPI 키 연동 후 자동 수집합니다."
+    status: "live",
+    note: "공공데이터포털 OpenAPI 키가 설정되면 자동 수집합니다."
+  },
+  {
+    category: "market",
+    name: "KOTRA 미국 글로벌 이슈 모니터링",
+    description: "미국 글로벌 이슈 모니터링 API",
+    url: "https://apis.data.go.kr/B410001/usaGlobalIssueMonitoring/getUsaGlobalIssueMonitoring",
+    reliability: "매우 높음",
+    status: "live",
+    note: "미국 통상·정책 이슈를 KOTRA API로 수집합니다."
+  },
+  {
+    category: "market",
+    name: "KOTRA 무역사기사례",
+    description: "무역사기사례 정보조회 API",
+    url: "https://apis.data.go.kr/B410001/cmmrcFraudCase/cmmrcFraudCase",
+    reliability: "매우 높음",
+    status: "live",
+    note: "국가, 게시일, 제목, 사례 본문을 KOTRA API로 수집합니다."
   },
   {
     category: "government",
@@ -129,6 +147,15 @@ function truncate(value: string, maxLength = 220) {
   return clean.length > maxLength ? `${clean.slice(0, maxLength).trim()}...` : clean;
 }
 
+function envValue(...names: string[]) {
+  for (const name of names) {
+    const value = process.env[name]?.trim();
+    if (value) return value;
+  }
+
+  return "";
+}
+
 function extractTag(source: string, tagName: string) {
   const match = source.match(new RegExp(`<${tagName}[^>]*>([\\s\\S]*?)<\\/${tagName}>`, "i"));
   return match ? decodeXml(match[1]) : "";
@@ -183,6 +210,17 @@ async function fetchText(url: string) {
   }
 }
 
+async function fetchJson(url: string) {
+  const text = await fetchText(url);
+  if (!text) return null;
+
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return null;
+  }
+}
+
 function isTradeRelated(item: TradeNewsItem) {
   const text = `${item.title} ${item.summary}`.toLowerCase();
   return [
@@ -195,6 +233,154 @@ async function loadCustomsNews() {
   const xml = await fetchText("http://www.customs.go.kr/kcs/selectBoardRss.do?mi=2891&bbsId=1362");
   if (!xml) return [];
   return parseRssItems(xml, { category: "customs", source: "관세청", reliability: "매우 높음", limit: 12 });
+}
+
+function collectArrayValues(value: unknown): unknown[][] {
+  if (Array.isArray(value)) return [value];
+  if (!value || typeof value !== "object") return [];
+
+  return Object.values(value).flatMap((entry) => collectArrayValues(entry));
+}
+
+function firstString(row: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = row[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+    if (typeof value === "number") return String(value);
+  }
+
+  return "";
+}
+
+function normalizeJsonRows(payload: unknown) {
+  return collectArrayValues(payload)
+    .sort((a, b) => b.length - a.length)[0]
+    ?.filter((row): row is Record<string, unknown> => Boolean(row) && typeof row === "object" && !Array.isArray(row))
+    ?? [];
+}
+
+function buildPublicDataApiUrl(baseUrl: string, serviceKey: string, params: Record<string, string>) {
+  const url = new URL(baseUrl);
+  url.searchParams.set("serviceKey", serviceKey);
+  url.searchParams.set("pageNo", params.pageNo ?? "1");
+  url.searchParams.set("numOfRows", params.numOfRows ?? "10");
+  url.searchParams.set("resultType", "json");
+  url.searchParams.set("_type", "json");
+  Object.entries(params).forEach(([key, value]) => {
+    if (!["pageNo", "numOfRows"].includes(key)) url.searchParams.set(key, value);
+  });
+
+  return url.toString();
+}
+
+function kotraServiceKey() {
+  return envValue(
+    "KOTRA_OPENAPI_SERVICE_KEY",
+    "KOTRA_OVERSEAS_MARKET_NEWS_SERVICE_KEY",
+    "KOTRA_USA_GLOBAL_ISSUE_SERVICE_KEY",
+    "KOTRA_TRADE_FRAUD_CASE_SERVICE_KEY"
+  );
+}
+
+function kotraApiItem(row: Record<string, unknown>, options: {
+  category: TradeNewsCategory;
+  source: string;
+  fallbackUrl: string;
+}): TradeNewsItem | null {
+  const title = firstString(row, [
+    "newsTitl", "newsTitle", "title", "titl", "newsSj", "sj", "cntntSj", "bbsSj", "subject"
+  ]);
+  if (!title) return null;
+
+  const body = firstString(row, [
+    "newsBdt", "bdtCntnt", "newsBody", "newsCn", "newsCnHtml", "content", "contents", "cntnt", "cn", "body", "summary"
+  ]);
+  const country = firstString(row, ["natn", "cntntNatnNm", "natnNm", "countryNm", "nationNm", "country", "cntyNm"]);
+  const office = firstString(row, ["newsWrterNm", "ovseaBizplcNm", "tradeOffice", "officeNm", "wrtOfficeNm", "kotraNewsWrt", "writer", "author"]);
+  const industry = firstString(row, ["industClNm", "industryNm", "industry", "indstCl", "goodsCl"]);
+  const publishedAt = firstString(row, [
+    "othbcDt", "newsWrtDt", "newsDt", "pstgDtm", "regDt", "registDt", "createdAt", "date", "wrtDt"
+  ]) || null;
+  const url = firstString(row, ["kotraNewsUrl", "newsUrl", "url", "link", "fileDownLink", "atchFileUrl"]) || options.fallbackUrl;
+  const meta = [country, office, industry].filter(Boolean).join(" / ");
+
+  const item: TradeNewsItem = {
+    id: `${options.source}-${title}-${publishedAt ?? ""}`,
+    category: options.category,
+    source: options.source,
+    sourceType: "openapi",
+    title: decodeXml(stripHtml(title)),
+    summary: truncate([meta, body].filter(Boolean).join(" - ") || title),
+    url,
+    publishedAt,
+    reliability: "매우 높음",
+    status: "live"
+  };
+
+  return item;
+}
+
+async function loadKotraOverseasMarketNews() {
+  const serviceKey = kotraServiceKey();
+  if (!serviceKey) return [];
+
+  const endpoint = envValue(
+    "KOTRA_OVERSEAS_MARKET_NEWS_URL",
+    "KOTRA_OVERSEAS_MARKET_NEWS_ENDPOINT"
+  ) || "https://apis.data.go.kr/B410001/kotra_overseasMarketNews/ovseaMrktNews/ovseaMrktNews";
+  const payload = await fetchJson(buildPublicDataApiUrl(endpoint, serviceKey, { pageNo: "1", numOfRows: "12", search8: "Y" }));
+  if (!payload) return [];
+
+  return normalizeJsonRows(payload)
+    .map((row) => kotraApiItem(row, {
+      category: "market",
+      source: "KOTRA 해외시장뉴스",
+      fallbackUrl: "https://dream.kotra.or.kr/kotranews/cms/com/index.do?MENU_ID=70"
+    }))
+    .filter((item): item is TradeNewsItem => Boolean(item))
+    .slice(0, 12);
+}
+
+async function loadKotraTradeFraudCases() {
+  const serviceKey = kotraServiceKey();
+  if (!serviceKey) return [];
+
+  const endpoint = envValue(
+    "KOTRA_TRADE_FRAUD_CASE_URL",
+    "KOTRA_TRADE_FRAUD_CASE_ENDPOINT"
+  ) || "https://apis.data.go.kr/B410001/cmmrcFraudCase/cmmrcFraudCase";
+  const payload = await fetchJson(buildPublicDataApiUrl(endpoint, serviceKey, { pageNo: "1", numOfRows: "8" }));
+  if (!payload) return [];
+
+  return normalizeJsonRows(payload)
+    .map((row) => kotraApiItem(row, {
+      category: "market",
+      source: "KOTRA 무역사기사례",
+      fallbackUrl: "https://dream.kotra.or.kr/kotranews/cms/com/index.do?MENU_ID=70"
+    }))
+    .filter((item): item is TradeNewsItem => Boolean(item))
+    .slice(0, 8);
+}
+
+async function loadKotraUsaGlobalIssueNews() {
+  const serviceKey = kotraServiceKey();
+  if (!serviceKey) return [];
+
+  const endpoint = envValue(
+    "KOTRA_USA_GLOBAL_ISSUE_URL",
+    "KOTRA_USA_GLOBAL_ISSUE_ENDPOINT"
+  ) || "https://apis.data.go.kr/B410001/usaGlobalIssueMonitoring/getUsaGlobalIssueMonitoring";
+  const payload = await fetchJson(buildPublicDataApiUrl(endpoint, serviceKey, { pageNo: "1", numOfRows: "10" }));
+  if (!payload) return [];
+
+  return normalizeJsonRows(payload)
+    .map((row) => kotraApiItem(row, {
+      category: "market",
+      source: "KOTRA 미국 글로벌 이슈",
+      fallbackUrl: "https://dream.kotra.or.kr/kotranews/cms/com/index.do?MENU_ID=1580"
+    }))
+    .filter((item): item is TradeNewsItem => Boolean(item))
+    .slice(0, 10);
 }
 
 async function loadPolicyBriefingNews() {
@@ -259,15 +445,18 @@ function plannedItem(source: TradeNewsSource): TradeNewsItem {
 }
 
 export async function loadTradeNewsItems() {
-  const [customs, policy, motir, wto] = await Promise.all([
+  const [customs, kotraMarket, kotraUsaIssues, kotraFraudCases, policy, motir, wto] = await Promise.all([
     loadCustomsNews(),
+    loadKotraOverseasMarketNews(),
+    loadKotraUsaGlobalIssueNews(),
+    loadKotraTradeFraudCases(),
     loadPolicyBriefingNews(),
     loadMotirNews(),
     loadWtoNews()
   ]);
 
   const planned = tradeNewsSources.filter((source) => source.status === "planned").map(plannedItem);
-  const items = [...customs, ...policy, ...motir, ...wto, ...planned];
+  const items = [...customs, ...kotraMarket, ...kotraUsaIssues, ...kotraFraudCases, ...policy, ...motir, ...wto, ...planned];
 
   return items.sort((a, b) => {
     if (a.status !== b.status) return a.status === "live" ? -1 : 1;

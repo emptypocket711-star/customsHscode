@@ -22,6 +22,7 @@ function categoryItems(items: TradeNewsItem[], category: TradeNewsCategory) {
 function sourceTypeLabel(type: TradeNewsItem["sourceType"]) {
   if (type === "rss") return "RSS";
   if (type === "official-page") return "공식 페이지";
+  if (type === "openapi") return "공공데이터 API";
   if (type === "paid-api") return "유료 API";
   return "API 필요";
 }
