@@ -7,11 +7,13 @@ import { SourceFooter } from "@/components/ui/source-footer";
 import { buildDutyEstimatorHref } from "@/features/duty-estimator/url-params";
 import { countryCodeAliases, destinationCountryOptions, exportCountryLabel, exportCountryOptions } from "@/features/export-diagnosis/country-options";
 import { mockExportDestinationTariffRates } from "@/features/export-diagnosis/mock-export-data";
+import { CountryComboboxField } from "@/features/hs/country-combobox-field";
 import { DestinationCountryPicker } from "@/features/hs/destination-country-picker";
 import { HsCopySummaryButton } from "@/features/hs/hs-copy-summary-button";
 import { destinationAgreementRateDisplayItems, destinationDisplayAgreementRates, destinationDisplayBaseRate } from "@/features/hs/export-destination-tariff-display";
 import { DestinationAgreementRateDialog } from "@/features/hs/destination-agreement-rate-dialog";
 import { displayImportTariffLabel, filterImportTariffsForCountry, importTariffApplicationPriority, isCommonImportTariff } from "@/features/hs/import-tariff-display";
+import { ImportTariffCountryFilter } from "@/features/hs/import-tariff-country-filter";
 import { DestinationAdditionalTariffDialog } from "@/features/hs/destination-additional-tariff-dialog";
 import { DestinationImportRequirementDialog } from "@/features/hs/destination-import-requirement-dialog";
 import { DestinationInternalTaxDialog, destinationInternalTaxText } from "@/features/hs/destination-internal-tax-dialog";
@@ -25,8 +27,6 @@ import {
   isWeakProductName,
   type HsSupplementGuidance
 } from "@/features/hs/hs-supplement-guidance";
-import { TariffRateDetailDialog } from "@/features/hs/tariff-rate-detail-dialog";
-import { TariffPriorityGuideDialog } from "@/features/hs/tariff-priority-guide-dialog";
 import { formatHsCode, normalizeHsCode } from "@/lib/hs-code";
 import { buildHsHierarchyPath, type HsHierarchyNode } from "@/lib/hs-hierarchy";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
@@ -129,16 +129,7 @@ function DirectionHiddenField({ value }: { value: "import" | "export" }) {
 
 function DestinationCountrySelect({ defaultValue, direction }: { defaultValue: string; direction: "import" | "export" }) {
   return (
-    <label className="grid min-w-0 gap-1 text-sm font-medium text-slate-700">
-      {direction === "import" ? "수입국가" : "목적국"}
-      <select className="focus-ring w-full min-w-0 rounded-md border border-slate-300 px-3 py-2" defaultValue={defaultValue} name="destinationCountry">
-        {destinationCountryOptions.map((country) => (
-          <option key={country.code} value={country.code}>
-            {country.label}
-          </option>
-        ))}
-      </select>
-    </label>
+    <CountryComboboxField defaultValue={defaultValue} direction={direction} />
   );
 }
 
@@ -3257,15 +3248,11 @@ export async function HsDirectLookupPanel({
                     </div>
                     <dl className="grid text-sm sm:grid-cols-[140px_1fr]">
                       <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">품목번호</dt>
-                      <dd className="border-b border-slate-200 px-3 py-2 font-mono font-semibold">
-                        <Link className="text-blue-700 underline-offset-2 hover:underline" href={hsLookupHref({
-                          hskCode: result.hskCode,
-                          direction: lookupDirection,
-                          destinationCountry: selectedDestinationCountry,
-                          basisDate: result.basisDate
-                        })}>
+                      <dd
+                        className="select-all border-b border-slate-200 px-3 py-2 font-mono font-semibold text-slate-950"
+                        title="더블클릭하거나 드래그해서 복사할 수 있습니다."
+                      >
                           {formatHsCode(result.hskCode)}
-                        </Link>
                       </dd>
                       <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">국문</dt>
                       <dd className="border-b border-slate-200 px-3 py-2">{result.koreanName}</dd>
@@ -3281,53 +3268,10 @@ export async function HsDirectLookupPanel({
                       <dd className="px-3 py-2">조회기준일 {result.basisDate}</dd>
                     </dl>
 
-                    {(() => {
-                      const displayTariffs = filterImportTariffsForCountry(result.tariffPreviews, selectedDestinationCountry);
-
-                      return displayTariffs.length ? (
-                        <div className="border-t border-slate-200">
-                          <div className="flex justify-end bg-slate-50 px-3 py-2">
-                            <TariffPriorityGuideDialog />
-                          </div>
-                          <table className="w-full text-left text-sm">
-                            <thead className="bg-slate-50 text-xs font-semibold text-slate-500">
-                              <tr>
-                                <th className="px-3 py-2">관세율구분</th>
-                                <th className="px-3 py-2">세율</th>
-                                <th className="px-3 py-2">적용 순위</th>
-                                <th className="px-3 py-2">상세</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-200">
-                              {displayTariffs.map((tariff) => (
-                                <tr key={`${tariff.rateType}-${tariff.rateText}-${tariff.sourceVersion}`}>
-                                  <td className="px-3 py-2 font-medium text-slate-900">
-                                    {displayImportTariffLabel(tariff, selectedDestinationCountry)}
-                                  </td>
-                                  <td className="px-3 py-2 text-orange-600">{tariff.rateText}</td>
-                                  <td className="px-3 py-2 text-slate-600">{importTariffApplicationPriority(tariff)}</td>
-                                  <td className="px-3 py-2">
-                                    <TariffRateDetailDialog
-                                      countryGroup={tariff.countryGroup}
-                                      label={displayImportTariffLabel(tariff, selectedDestinationCountry)}
-                                      priority={importTariffApplicationPriority(tariff)}
-                                      rateText={tariff.rateText}
-                                      rateType={tariff.rateType}
-                                      usageRateType={tariff.usageRateType}
-                                      countryCode={selectedDestinationCountry}
-                                    />
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      ) : (
-                        <div className="border-t border-slate-200">
-                          <EmptySectionState>표시할 관세율 데이터가 없습니다.</EmptySectionState>
-                        </div>
-                      );
-                    })()}
+                    <ImportTariffCountryFilter
+                      initialCountryCode={selectedDestinationCountry}
+                      tariffs={result.tariffPreviews}
+                    />
                   </section>
 
                 <InternalTaxSection rows={internalTaxCodesByHsk.get(result.hskCode) ?? []} />
