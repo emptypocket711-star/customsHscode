@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { cargoWatchStatusDisplay } from "@/lib/cargo-watch-status";
+import { buildCargoWatchEmailText, cargoWatchStatusDisplay } from "@/lib/cargo-watch-status";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { PublicDataFetchError } from "@/server/integrations/public-data/client";
 import {
@@ -315,15 +315,12 @@ export async function createCargoWatchAction(
             const mailResult = await sendTransactionalEmail({
               to: parsed.data.notifyEmail,
               subject: `[HS Finder] ${lookupValue} ${targetStatusLabel} 상태 알림`,
-              text: [
-                "등록하신 적하목록 감시 대상이 이미 지정한 상태에 도달했습니다.",
-                "",
-                `조회값: ${lookupValue}`,
-                `목표 상태: ${targetStatusLabel}`,
-                `현재 상태: ${lastStatus}`,
-                "",
-                "통관 준비가 필요한 건인지 확인해 주세요."
-              ].join("\n")
+              text: buildCargoWatchEmailText({
+                lookupValue,
+                targetStatus: parsed.data.targetStatus,
+                currentStatus: lastStatus,
+                alreadyReached: true
+              })
             });
 
             immediateMatch = {

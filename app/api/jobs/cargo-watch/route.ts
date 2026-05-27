@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { cargoWatchStatusDisplay } from "@/lib/cargo-watch-status";
+import { buildCargoWatchEmailText, cargoWatchStatusDisplay } from "@/lib/cargo-watch-status";
 import { createSupabaseServiceRoleClient, hasSupabaseServiceRoleEnv } from "@/lib/supabase/service-role";
 import {
   buildCustomsCargoProgressQuery,
@@ -167,15 +167,11 @@ async function processCargoWatches(request: NextRequest) {
       const mailResult = await sendTransactionalEmail({
         to: row.notify_email,
         subject: `[HS Finder] ${lookupValue} ${targetStatusLabel} 상태 알림`,
-        text: [
-          "등록하신 적하목록 감시 대상이 지정한 상태에 도달했습니다.",
-          "",
-          `조회값: ${lookupValue}`,
-          `목표 상태: ${targetStatusLabel}`,
-          `현재 상태: ${statusCandidates.displayCurrentStatus || statusCandidates.currentStatus || row.target_status}`,
-          "",
-          "통관 준비가 필요한 건인지 확인해 주세요."
-        ].join("\n")
+        text: buildCargoWatchEmailText({
+          lookupValue,
+          targetStatus: row.target_status,
+          currentStatus: statusCandidates.displayCurrentStatus || statusCandidates.currentStatus || row.target_status
+        })
       });
 
       if (mailResult.sent) {
