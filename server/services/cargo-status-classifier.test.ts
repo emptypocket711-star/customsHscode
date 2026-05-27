@@ -87,6 +87,56 @@ describe("cargo status classifier", () => {
     })).toBe(true);
   });
 
+  it("uses the latest event by event time as the current display status", () => {
+    const result: CustomsCargoProgressResult = {
+      summary: {
+        cargoManagementNo: "26TEST",
+        masterBlNo: "",
+        houseBlNo: "HBL1",
+        progressStatus: "수입신고전",
+        progressStatusCode: "",
+        declarationNo: "",
+        vesselName: "",
+        packageCount: "",
+        grossWeight: "",
+        weightUnit: "",
+        portName: "",
+        arrivalDate: ""
+      },
+      events: [
+        {
+          eventTime: "2026-05-27 09:00",
+          status: "반입신고",
+          statusCode: "",
+          location: "테스트 CFS",
+          shedCode: "03077002",
+          shedName: "테스트 CFS",
+          agency: "",
+          processingDetails: ""
+        },
+        {
+          eventTime: "2026-05-27 13:30",
+          status: "반출신고",
+          statusCode: "",
+          location: "테스트 CFS",
+          shedCode: "03077002",
+          shedName: "테스트 CFS",
+          agency: "",
+          processingDetails: ""
+        }
+      ]
+    };
+
+    const candidates = buildCargoStatusCandidates(result, new Map([["03077002", cfsShed]]));
+    expect(candidates.currentStatus).toBe("반출신고");
+    expect(candidates.displayCurrentStatus).toBe("반출신고");
+    expect(statusMatched({
+      targetStatus: "cfs_inbound",
+      currentStatus: candidates.currentStatus,
+      eventStatuses: candidates.eventStatuses
+    })).toBe(true);
+  });
+
   it("does not match broader display text unless the actual status candidate is allowed", () => {
     expect(statusMatched({
       targetStatus: "수입신고",

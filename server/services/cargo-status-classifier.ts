@@ -110,11 +110,31 @@ export function classifyCargoEventStatus(
   };
 }
 
+function eventTimeMs(event: Pick<CustomsCargoProgressEvent, "eventTime">) {
+  const normalized = (event.eventTime ?? "")
+    .replace(/\./g, "-")
+    .replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3")
+    .trim();
+  const time = Date.parse(normalized);
+  return Number.isNaN(time) ? 0 : time;
+}
+
+function latestCargoEvent(events: CustomsCargoProgressEvent[]) {
+  return events.reduce<CustomsCargoProgressEvent | null>((latest, event) => {
+    if (!latest) return event;
+    return eventTimeMs(event) >= eventTimeMs(latest) ? event : latest;
+  }, null);
+}
+
 export function buildCargoStatusCandidates(
   result: CustomsCargoProgressResult,
   shedInfoByCode: Map<string, CargoShedInfo>
 ) {
-  const currentStatus = result.summary.progressStatus || result.events[0]?.status || "";
+  const latestEvent = latestCargoEvent(result.events);
+  const latestClassified = latestEvent
+    ? classifyCargoEventStatus(latestEvent, shedInfoByCode.get(latestEvent.shedCode))
+    : null;
+  const currentStatus = latestClassified?.displayStatus || result.summary.progressStatus || latestEvent?.status || "";
   const eventStatuses = result.events.flatMap((event) => {
     const classified = classifyCargoEventStatus(event, shedInfoByCode.get(event.shedCode));
     return classified.candidates;
@@ -123,13 +143,13 @@ export function buildCargoStatusCandidates(
   return {
     currentStatus,
     eventStatuses,
-    displayCurrentStatus: classifyCargoEventStatus(result.events[0] ?? {
+    displayCurrentStatus: latestClassified?.displayStatus || classifyCargoEventStatus(latestEvent ?? {
       status: currentStatus,
       statusCode: "",
       shedCode: "",
       shedName: "",
       location: ""
-    }, result.events[0] ? shedInfoByCode.get(result.events[0].shedCode) : undefined).displayStatus || currentStatus
+    }, latestEvent ? shedInfoByCode.get(latestEvent.shedCode) : undefined).displayStatus || currentStatus
   };
 }
 
