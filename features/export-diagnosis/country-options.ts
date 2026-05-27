@@ -30,6 +30,29 @@ const euMemberCountryOptions = [
 
 const euMemberCountryCodes: Set<string> = new Set(euMemberCountryOptions.flatMap((country) => [country.code, country.alias]));
 
+const nonAgreementCountryOptions = [
+  { code: "HKG", alias: "HK", label: "홍콩 (HKG)" },
+  { code: "MAC", alias: "MO", label: "마카오 (MAC)" },
+  { code: "ARG", alias: "AR", label: "아르헨티나 (ARG)" },
+  { code: "BHR", alias: "BH", label: "바레인 (BHR)" },
+  { code: "BOL", alias: "BO", label: "볼리비아 (BOL)" },
+  { code: "DOM", alias: "DO", label: "도미니카공화국 (DOM)" },
+  { code: "ECU", alias: "EC", label: "에콰도르 (ECU)" },
+  { code: "EGY", alias: "EG", label: "이집트 (EGY)" },
+  { code: "GHA", alias: "GH", label: "가나 (GHA)" },
+  { code: "JOR", alias: "JO", label: "요르단 (JOR)" },
+  { code: "KEN", alias: "KE", label: "케냐 (KEN)" },
+  { code: "KWT", alias: "KW", label: "쿠웨이트 (KWT)" },
+  { code: "MAR", alias: "MA", label: "모로코 (MAR)" },
+  { code: "NGA", alias: "NG", label: "나이지리아 (NGA)" },
+  { code: "OMN", alias: "OM", label: "오만 (OMN)" },
+  { code: "PAK", alias: "PK", label: "파키스탄 (PAK)" },
+  { code: "PRK", alias: "KP", label: "북한 (PRK)" },
+  { code: "QAT", alias: "QA", label: "카타르 (QAT)" },
+  { code: "UKR", alias: "UA", label: "우크라이나 (UKR)" },
+  { code: "URY", alias: "UY", label: "우루과이 (URY)" }
+] as const;
+
 export const exportCountryOptions = [
   { code: "ALL", alias: "ALL", label: "모든국가" },
   { code: "KOR", alias: "KR", label: "한국 (KOR)" },
@@ -55,6 +78,7 @@ export const exportCountryOptions = [
   { code: "BRU", alias: "BN", label: "브루나이 (BRU)" },
   { code: "NZL", alias: "NZ", label: "뉴질랜드 (NZL)" },
   { code: "TWN", alias: "TW", label: "대만 (TWN)" },
+  ...nonAgreementCountryOptions,
   { code: "TUR", alias: "TR", label: "튀르키예 (TUR)" },
   { code: "SAU", alias: "SA", label: "사우디아라비아 (SAU)" },
   { code: "MEX", alias: "MX", label: "멕시코 (MEX)" },
