@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { cargoWatchStatusDisplay } from "@/lib/cargo-watch-status";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { PublicDataFetchError } from "@/server/integrations/public-data/client";
 import {
@@ -107,6 +108,28 @@ function cargoNetworkDiagnostic(error: PublicDataFetchError) {
     endpoint,
     detail: [error.causeCode, error.causeMessage].filter(Boolean).join(" / ") || "세부 원인 없음"
   };
+}
+
+function normalizeCargoWatchValue(value: string | null | undefined) {
+  return (value ?? "").trim().toUpperCase();
+}
+
+function cargoWatchIdentity(input: {
+  cargoManagementNo?: string | null;
+  masterBlNo?: string | null;
+  houseBlNo?: string | null;
+  blYear?: string | null;
+  targetStatus?: string | null;
+  notifyEmail?: string | null;
+}) {
+  return [
+    normalizeCargoWatchValue(input.cargoManagementNo),
+    normalizeCargoWatchValue(input.masterBlNo),
+    normalizeCargoWatchValue(input.houseBlNo),
+    normalizeCargoWatchValue(input.blYear),
+    normalizeCargoWatchValue(input.targetStatus),
+    normalizeCargoWatchValue(input.notifyEmail).toLowerCase()
+  ].join("|");
 }
 
 export async function lookupCargoProgressAction(
@@ -225,6 +248,35 @@ export async function createCargoWatchAction(
     }
 
     const now = new Date().toISOString();
+    const watchKey = cargoWatchIdentity({
+      ...parsed.data,
+      notifyEmail: parsed.data.notifyEmail
+    });
+    const { data: activeWatches, error: duplicateLookupError } = await supabase
+      .from("cargo_watch_requests")
+      .select("id,cargo_management_no,master_bl_no,house_bl_no,bl_year,target_status,notify_email")
+      .eq("company_id", profile.company_id)
+      .eq("created_by", user.id)
+      .eq("status", "active");
+
+    if (duplicateLookupError) throw duplicateLookupError;
+
+    const duplicateWatch = (activeWatches ?? []).find((watch) => cargoWatchIdentity({
+      cargoManagementNo: watch.cargo_management_no,
+      masterBlNo: watch.master_bl_no,
+      houseBlNo: watch.house_bl_no,
+      blYear: watch.bl_year,
+      targetStatus: watch.target_status,
+      notifyEmail: watch.notify_email
+    }) === watchKey);
+
+    if (duplicateWatch) {
+      return {
+        status: "success",
+        message: "동일한 조회값, 목표 상태, 알림 이메일의 감시가 이미 작동 중입니다."
+      };
+    }
+
     let immediateMatch:
       | {
         matched: true;
@@ -259,14 +311,15 @@ export async function createCargoWatchAction(
           if (matched) {
             const lookupValue = parsed.data.cargoManagementNo || parsed.data.houseBlNo || parsed.data.masterBlNo || "등록 화물";
             const lastStatus = statusCandidates.displayCurrentStatus || statusCandidates.currentStatus || parsed.data.targetStatus;
+            const targetStatusLabel = cargoWatchStatusDisplay(parsed.data.targetStatus);
             const mailResult = await sendTransactionalEmail({
               to: parsed.data.notifyEmail,
-              subject: `[HS Finder] ${lookupValue} ${parsed.data.targetStatus} 상태 알림`,
+              subject: `[HS Finder] ${lookupValue} ${targetStatusLabel} 상태 알림`,
               text: [
                 "등록하신 적하목록 감시 대상이 이미 지정한 상태에 도달했습니다.",
                 "",
                 `조회값: ${lookupValue}`,
-                `목표 상태: ${parsed.data.targetStatus}`,
+                `목표 상태: ${targetStatusLabel}`,
                 `현재 상태: ${lastStatus}`,
                 "",
                 "통관 준비가 필요한 건인지 확인해 주세요."

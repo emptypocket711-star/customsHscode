@@ -11,7 +11,7 @@ import {
   type CargoTrackingActionState,
   type CargoWatchActionState
 } from "@/server/actions/cargo-tracking.actions";
-import { cargoWatchStatusOptions } from "@/lib/cargo-watch-status";
+import { cargoWatchStatusDisplay, cargoWatchStatusOptions } from "@/lib/cargo-watch-status";
 
 const lookupInitialState: CargoTrackingActionState = { status: "idle" };
 const watchInitialState: CargoWatchActionState = { status: "idle" };
@@ -52,7 +52,7 @@ function ActiveWatchRows({ watches }: { watches: CargoWatchListItem[] }) {
               </div>
               <div className="text-slate-700">
                 <span className="text-slate-500">목표 상태 </span>
-                <span className="font-semibold text-slate-950">{watch.targetStatus}</span>
+                <span className="font-semibold text-slate-950">{cargoWatchStatusDisplay(watch.targetStatus)}</span>
               </div>
               <div className="text-slate-700">
                 <span className="text-slate-500">최근 상태 </span>
@@ -272,7 +272,7 @@ export function CargoTrackingPanel({
                     {result.events.length ? result.events.map((event, index) => (
                       <tr key={`${event.eventTime}-${event.status}-${index}`}>
                         <td className="whitespace-nowrap px-3 py-2 text-slate-700">{event.eventTime || "-"}</td>
-                        <td className="px-3 py-2 font-semibold text-slate-950">{event.status || event.statusCode || "-"}</td>
+                        <td className="px-3 py-2 font-semibold text-slate-950">{event.displayStatus || event.status || event.statusCode || "-"}</td>
                         <td className="px-3 py-2 text-slate-700">{event.location || "-"}</td>
                         <td className="px-3 py-2 text-slate-700">{event.agency || "-"}</td>
                         <td className="px-3 py-2 text-slate-600">{event.processingDetails || "-"}</td>
@@ -331,8 +331,8 @@ export function CargoTrackingPanel({
                 </label>
                 <label className="grid gap-1 text-sm font-medium text-slate-700">
                   알림 받을 상태
-                  <select className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2" disabled={watchPending} name="targetStatus" defaultValue="CY 반입">
-                    {statusOptions.map((status) => <option key={status} value={status}>{status}</option>)}
+                  <select className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2" disabled={watchPending} name="targetStatus" defaultValue="cy_inbound">
+                    {statusOptions.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
                   </select>
                 </label>
               </div>
@@ -370,7 +370,7 @@ export function CargoTrackingPanel({
                         {watch.cargoManagementNo || watch.houseBlNo || watch.masterBlNo || "-"}
                         {watch.blYear ? ` / ${watch.blYear}` : ""}
                       </td>
-                      <td className="px-3 py-2 font-semibold text-slate-900">{watch.targetStatus}</td>
+                      <td className="px-3 py-2 font-semibold text-slate-900">{cargoWatchStatusDisplay(watch.targetStatus)}</td>
                       <td className="px-3 py-2 text-slate-700">{watch.lastStatus || "-"}</td>
                       <td className="px-3 py-2"><Badge tone={watch.status === "matched" ? "success" : watch.status === "active" ? "info" : "warning"}>{cargoWatchStatusLabel(watch.status)}</Badge></td>
                       <td className="px-3 py-2 text-slate-500">{watch.lastCheckedAt ? new Date(watch.lastCheckedAt).toLocaleString("ko-KR") : "-"}</td>

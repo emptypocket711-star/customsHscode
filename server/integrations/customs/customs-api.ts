@@ -372,6 +372,7 @@ export type CustomsCargoProgressSummary = {
 export type CustomsCargoProgressEvent = {
   eventTime: string | null;
   status: string;
+  displayStatus?: string;
   statusCode: string;
   location: string;
   shedCode: string;
@@ -500,16 +501,37 @@ export function parseCustomsCargoProgressXml(rawText: string): CustomsCargoProgr
     arrivalDate: yyyymmddToDate(firstXmlValue(summaryBlock, ["etprDt", "etprCstmDt", "arrvDt"]))
   };
 
-  const events = detailBlocks.map((block) => ({
-    eventTime: normalizeDateTime(firstXmlValue(block, ["prcsDttm", "rlbrDttm", "prcsDt", "sttsDttm"])),
-    status: firstXmlValue(block, ["cargTrcnRelaBsopTpcdNm", "prgsStts", "csclPrgsStts", "sttsNm"]),
-    statusCode: firstXmlValue(block, ["cargTrcnRelaBsopTpcd", "prgsStCd", "csclPrgsSttsCd"]),
-    location: firstXmlValue(block, ["shedNm", "prnm", "cstmNm", "whNm"]),
-    shedCode: firstXmlValue(block, ["shedSgn"]),
-    shedName: firstXmlValue(block, ["shedNm"]),
-    agency: firstXmlValue(block, ["agncNm", "trnpAgntNm", "pckCmpyNm"]),
-    processingDetails: firstXmlValue(block, ["rlbrCn", "rlbrBssNo", "bfhnGdncCn", "prcsDls", "rmrk", "dclrNo"])
-  })).filter((item) => item.status || item.statusCode || item.eventTime);
+  const parsedEvents = detailBlocks.map((block) => {
+    const statusName = firstXmlValue(block, ["cargTrcnRelaBsopTpcdNm", "prgsStts", "csclPrgsStts", "sttsNm"]);
+    const statusCode = firstXmlValue(block, ["cargTrcnRelaBsopTpcd", "prgsStCd", "csclPrgsSttsCd"]);
+    const statusCodeLooksLikeName = /[가-힣]/.test(statusCode);
+
+    return {
+      eventTime: normalizeDateTime(firstXmlValue(block, ["prcsDttm", "rlbrDttm", "prcsDt", "sttsDttm"])),
+      status: statusName || (statusCodeLooksLikeName ? statusCode : ""),
+      statusCode: statusCodeLooksLikeName ? "" : statusCode,
+      location: firstXmlValue(block, ["shedNm", "prnm", "cstmNm", "whNm"]),
+      shedCode: firstXmlValue(block, ["shedSgn"]).split("/")[0]?.trim() ?? "",
+      shedName: firstXmlValue(block, ["shedNm"]),
+      agency: firstXmlValue(block, ["agncNm", "trnpAgntNm", "pckCmpyNm"]),
+      processingDetails: firstXmlValue(block, ["rlbrCn", "rlbrBssNo", "bfhnGdncCn", "prcsDls", "rmrk", "dclrNo"])
+    };
+  }).filter((item) => item.status || item.statusCode || item.eventTime);
+  const seenEventKeys = new Set<string>();
+  const events = parsedEvents.filter((event) => {
+    const key = [
+      event.eventTime,
+      event.status,
+      event.statusCode,
+      event.shedCode,
+      event.shedName,
+      event.processingDetails
+    ].map((value) => value || "").join("|");
+
+    if (seenEventKeys.has(key)) return false;
+    seenEventKeys.add(key);
+    return true;
+  });
 
   if (!summary.cargoManagementNo && !summary.masterBlNo && !summary.houseBlNo && !summary.progressStatus && events.length === 0) {
     return null;

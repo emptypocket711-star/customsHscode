@@ -3,6 +3,7 @@ import { Bell, Clock3, Search, Star, type LucideIcon } from "lucide-react";
 import { DashboardNoticeCard } from "@/features/dashboard/dashboard-notice-card";
 import { DashboardWorkflowLinks } from "@/features/dashboard/dashboard-workflow-links";
 import { destinationCountryOptions } from "@/features/export-diagnosis/country-options";
+import { cargoWatchStatusDisplay } from "@/lib/cargo-watch-status";
 import { formatHsCode } from "@/lib/hs-code";
 import type { CargoWatchListItem } from "@/features/cargo/cargo-tracking-panel";
 import type { AppNotice } from "@/server/repositories/app-notice.repository";
@@ -156,7 +157,7 @@ export function DashboardHome({
           items={cargoWatches.map((watch) => ({
             href: "/cargo",
             title: watch.houseBlNo || watch.masterBlNo || watch.cargoManagementNo || "-",
-            subtitle: `${watch.targetStatus} 도달 알림 · 현재 ${watch.lastStatus || "확인 전"}`,
+            subtitle: `${cargoWatchStatusDisplay(watch.targetStatus)} 도달 알림 · 현재 ${watch.lastStatus || "확인 전"}`,
             meta: cargoWatchStatusLabel(watch.status)
           }))}
           title="적하목록 알림 감시"

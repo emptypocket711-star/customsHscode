@@ -8,6 +8,38 @@ export type CargoShedInfo = {
   shedName: string | null;
 };
 
+const targetStatusAliases: Record<string, string[]> = {
+  manifest_submitted: ["적하목록제출", "적하목록 제출"],
+  "적하목록 제출": ["적하목록제출", "적하목록 제출"],
+  arrival_report: ["입항보고", "입항보고 수리", "입항보고수리"],
+  "입항보고": ["입항보고", "입항보고 수리", "입항보고수리"],
+  unloading_accepted: ["하선신고 수리", "하선신고수리"],
+  "하선신고 수리": ["하선신고 수리", "하선신고수리"],
+  cy_inbound: ["CY 반입신고", "CY 반입완료"],
+  "CY 반입": ["CY 반입신고", "CY 반입완료"],
+  "CY 반입신고": ["CY 반입신고"],
+  "CY 반입완료": ["CY 반입완료"],
+  cfs_inbound: ["CFS 반입신고", "CFS 반입완료"],
+  "CFS 반입": ["CFS 반입신고", "CFS 반입완료"],
+  "CFS 반입신고": ["CFS 반입신고"],
+  "CFS 반입완료": ["CFS 반입완료"],
+  inbound: ["반입신고", "반입완료"],
+  "반입": ["반입신고", "반입완료"],
+  "반입신고": ["반입신고"],
+  "반입완료": ["반입완료"],
+  import_declaration: ["수입신고"],
+  "수입신고": ["수입신고"],
+  import_accepted: ["수입신고수리", "수입신고 수리"],
+  "수입신고수리": ["수입신고수리", "수입신고 수리"],
+  released: ["반출완료", "반출신고"],
+  "반출": ["반출완료", "반출신고"],
+  "반출완료": ["반출완료", "반출신고"]
+};
+
+function normalizeStatusText(value: string) {
+  return value.replace(/\s+/g, "").trim();
+}
+
 function seoulDateString(date = new Date()) {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Seoul",
@@ -74,7 +106,7 @@ export function classifyCargoEventStatus(
   const displayStatus = rawStatus.startsWith(`${label} `) ? rawStatus : `${label} ${rawStatus}`;
   return {
     displayStatus,
-    candidates: Array.from(new Set([displayStatus, `${label} 반입`, rawStatus].filter(Boolean)))
+    candidates: Array.from(new Set([displayStatus, rawStatus].filter(Boolean)))
   };
 }
 
@@ -109,7 +141,7 @@ export function enrichCargoProgressResultWithShedInfo(
     ...result,
     events: result.events.map((event) => ({
       ...event,
-      status: classifyCargoEventStatus(event, shedInfoByCode.get(event.shedCode)).displayStatus || event.status
+      displayStatus: classifyCargoEventStatus(event, shedInfoByCode.get(event.shedCode)).displayStatus || event.status
     }))
   };
 }
@@ -118,9 +150,13 @@ export function statusMatched(input: { targetStatus: string; currentStatus: stri
   const target = input.targetStatus.trim();
   if (!target) return false;
 
+  const targetAliases = targetStatusAliases[target] ?? [target];
+  const normalizedTargets = targetAliases
+    .map(normalizeStatusText)
+    .filter(Boolean);
   const candidates = [input.currentStatus, ...input.eventStatuses]
-    .map((value) => value.trim())
+    .map(normalizeStatusText)
     .filter(Boolean);
 
-  return candidates.some((value) => value === target || value.includes(target));
+  return candidates.some((value) => normalizedTargets.includes(value));
 }

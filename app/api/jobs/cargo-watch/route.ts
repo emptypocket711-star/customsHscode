@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { cargoWatchStatusDisplay } from "@/lib/cargo-watch-status";
 import { createSupabaseServiceRoleClient, hasSupabaseServiceRoleEnv } from "@/lib/supabase/service-role";
 import {
   buildCustomsCargoProgressQuery,
@@ -26,6 +27,28 @@ type CargoWatchRow = {
   notify_email: string;
   poll_interval_seconds: number;
 };
+
+function normalizeCargoWatchValue(value: string | null | undefined) {
+  return (value ?? "").trim().toUpperCase();
+}
+
+function cargoWatchIdentity(row: {
+  cargo_management_no?: string | null;
+  master_bl_no?: string | null;
+  house_bl_no?: string | null;
+  bl_year?: string | null;
+  target_status?: string | null;
+  notify_email?: string | null;
+}) {
+  return [
+    normalizeCargoWatchValue(row.cargo_management_no),
+    normalizeCargoWatchValue(row.master_bl_no),
+    normalizeCargoWatchValue(row.house_bl_no),
+    normalizeCargoWatchValue(row.bl_year),
+    normalizeCargoWatchValue(row.target_status),
+    normalizeCargoWatchValue(row.notify_email).toLowerCase()
+  ].join("|");
+}
 
 function isAuthorized(request: NextRequest) {
   const secret = process.env.JOB_WORKER_SECRET || process.env.CRON_SECRET;
@@ -69,6 +92,7 @@ async function processCargoWatches(request: NextRequest) {
   let matched = 0;
   let notified = 0;
   let failed = 0;
+  const notifiedKeys = new Set<string>();
 
   for (const row of rows) {
     checked += 1;
@@ -115,15 +139,39 @@ async function processCargoWatches(request: NextRequest) {
       }
 
       matched += 1;
+      const rowWatchKey = cargoWatchIdentity(row);
+      if (notifiedKeys.has(rowWatchKey)) {
+        await supabase
+          .from("cargo_watch_requests")
+          .update({
+            status: "matched",
+            last_status: statusCandidates.displayCurrentStatus || statusCandidates.currentStatus || row.target_status,
+            last_checked_at: new Date().toISOString(),
+            matched_at: new Date().toISOString(),
+            notified_at: new Date().toISOString(),
+            next_check_at: null,
+            last_error: "동일 감시 조건의 중복 등록 건으로 메일 발송을 생략했습니다.",
+            source_name: snapshot.sourceName,
+            source_url: snapshot.sourceUrl,
+            source_version: snapshot.sourceVersion,
+            retrieved_at: snapshot.retrievedAt,
+            checksum: snapshot.checksum,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", row.id);
+        continue;
+      }
+
       const lookupValue = row.cargo_management_no || row.house_bl_no || row.master_bl_no || "등록 화물";
+      const targetStatusLabel = cargoWatchStatusDisplay(row.target_status);
       const mailResult = await sendTransactionalEmail({
         to: row.notify_email,
-        subject: `[HS Finder] ${lookupValue} ${row.target_status} 상태 알림`,
+        subject: `[HS Finder] ${lookupValue} ${targetStatusLabel} 상태 알림`,
         text: [
           "등록하신 적하목록 감시 대상이 지정한 상태에 도달했습니다.",
           "",
           `조회값: ${lookupValue}`,
-          `목표 상태: ${row.target_status}`,
+          `목표 상태: ${targetStatusLabel}`,
           `현재 상태: ${statusCandidates.displayCurrentStatus || statusCandidates.currentStatus || row.target_status}`,
           "",
           "통관 준비가 필요한 건인지 확인해 주세요."
@@ -132,6 +180,7 @@ async function processCargoWatches(request: NextRequest) {
 
       if (mailResult.sent) {
         notified += 1;
+        notifiedKeys.add(rowWatchKey);
       } else {
         failed += 1;
       }

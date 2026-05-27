@@ -24,27 +24,27 @@ const cfsShed: CargoShedInfo = {
 describe("cargo status classifier", () => {
   it("classifies unloading place Y as CY inbound", () => {
     expect(classifyCargoEventStatus({
-      status: "반입완료",
+      status: "반입신고",
       statusCode: "",
       shedCode: "03077001",
       shedName: "테스트 CY",
       location: "테스트 CY"
     }, cyShed)).toEqual({
-      displayStatus: "CY 반입완료",
-      candidates: ["CY 반입완료", "CY 반입", "반입완료"]
+      displayStatus: "CY 반입신고",
+      candidates: ["CY 반입신고", "반입신고"]
     });
   });
 
   it("classifies unloading place N as CFS inbound", () => {
     expect(classifyCargoEventStatus({
-      status: "반입완료",
+      status: "반입신고",
       statusCode: "",
       shedCode: "03077002",
       shedName: "테스트 CFS",
       location: "테스트 CFS"
     }, cfsShed)).toEqual({
-      displayStatus: "CFS 반입완료",
-      candidates: ["CFS 반입완료", "CFS 반입", "반입완료"]
+      displayStatus: "CFS 반입신고",
+      candidates: ["CFS 반입신고", "반입신고"]
     });
   });
 
@@ -67,7 +67,7 @@ describe("cargo status classifier", () => {
       events: [
         {
           eventTime: "2026-05-27 09:00",
-          status: "반입완료",
+          status: "반입신고",
           statusCode: "",
           location: "테스트 CFS",
           shedCode: "03077002",
@@ -79,11 +79,24 @@ describe("cargo status classifier", () => {
     };
 
     const candidates = buildCargoStatusCandidates(result, new Map([["03077002", cfsShed]]));
-    expect(candidates.displayCurrentStatus).toBe("CFS 반입완료");
+    expect(candidates.displayCurrentStatus).toBe("CFS 반입신고");
     expect(statusMatched({
-      targetStatus: "CFS 반입",
+      targetStatus: "cfs_inbound",
       currentStatus: candidates.currentStatus,
       eventStatuses: candidates.eventStatuses
+    })).toBe(true);
+  });
+
+  it("does not match broader display text unless the actual status candidate is allowed", () => {
+    expect(statusMatched({
+      targetStatus: "수입신고",
+      currentStatus: "수입신고수리",
+      eventStatuses: ["수입신고수리"]
+    })).toBe(false);
+    expect(statusMatched({
+      targetStatus: "수입신고수리",
+      currentStatus: "수입신고수리",
+      eventStatuses: []
     })).toBe(true);
   });
 });

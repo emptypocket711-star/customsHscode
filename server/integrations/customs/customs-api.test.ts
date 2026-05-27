@@ -412,4 +412,32 @@ describe("customs api query helpers", () => {
       location: "테스트 장치장"
     });
   });
+
+  it("deduplicates repeated customs cargo progress events", () => {
+    const item = parseCustomsCargoProgressXml(`
+      <cargCsclPrgsInfoQryRtnVo>
+        <cargCsclPrgsInfoQryRsltVo>
+          <cargMtNo>26ABC123</cargMtNo>
+          <hblNo>TWSAWSEL26050492026</hblNo>
+          <prgsStts>반입완료</prgsStts>
+        </cargCsclPrgsInfoQryRsltVo>
+        <cargCsclPrgsInfoDtlQryRsltVo>
+          <prcsDttm>20260527090000</prcsDttm>
+          <cargTrcnRelaBsopTpcdNm>반입완료</cargTrcnRelaBsopTpcdNm>
+          <shedSgn>03077001</shedSgn>
+          <shedNm>테스트 CY</shedNm>
+          <rlbrCn>반입</rlbrCn>
+        </cargCsclPrgsInfoDtlQryRsltVo>
+        <cargCsclPrgsInfoDtlQryRsltVo>
+          <prcsDttm>20260527090000</prcsDttm>
+          <cargTrcnRelaBsopTpcdNm>반입완료</cargTrcnRelaBsopTpcdNm>
+          <shedSgn>03077001</shedSgn>
+          <shedNm>테스트 CY</shedNm>
+          <rlbrCn>반입</rlbrCn>
+        </cargCsclPrgsInfoDtlQryRsltVo>
+      </cargCsclPrgsInfoQryRtnVo>
+    `);
+
+    expect(item?.events).toHaveLength(1);
+  });
 });
