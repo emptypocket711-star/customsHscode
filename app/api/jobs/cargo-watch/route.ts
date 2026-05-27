@@ -68,6 +68,49 @@ function cargoInspectionIdentity(row: {
   ].join("|");
 }
 
+async function alreadySentManagementInspectionNotice(
+  supabase: ReturnType<typeof createSupabaseServiceRoleClient>,
+  notificationKey: string
+) {
+  const { data, error } = await supabase
+    .from("cargo_management_inspection_notifications")
+    .select("id")
+    .eq("notification_key", notificationKey)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return Boolean(data?.id);
+}
+
+async function recordManagementInspectionNotice(
+  supabase: ReturnType<typeof createSupabaseServiceRoleClient>,
+  input: {
+    notificationKey: string;
+    notifyEmail: string;
+    lookupValue: string;
+    managementInspectionValue: string;
+    sourceWatchId: string;
+  }
+) {
+  const { error } = await supabase
+    .from("cargo_management_inspection_notifications")
+    .upsert({
+      notification_key: input.notificationKey,
+      notify_email: input.notifyEmail,
+      lookup_value: input.lookupValue,
+      management_inspection_value: input.managementInspectionValue,
+      source_watch_id: input.sourceWatchId,
+      notified_at: new Date().toISOString()
+    }, { onConflict: "notification_key" });
+
+  if (error) {
+    throw error;
+  }
+}
+
 function isAuthorized(request: NextRequest) {
   const secret = process.env.JOB_WORKER_SECRET || process.env.CRON_SECRET;
   if (!secret) return process.env.NODE_ENV !== "production";
@@ -137,9 +180,13 @@ async function processCargoWatches(request: NextRequest) {
       let managementInspectionMailSent = false;
       let managementInspectionError: string | null = null;
       const rowInspectionKey = cargoInspectionIdentity(row);
+      const alreadyNotifiedByOtherWatch = managementInspection.isTarget
+        ? await alreadySentManagementInspectionNotice(supabase, rowInspectionKey)
+        : false;
       const shouldSendManagementInspectionMail =
         managementInspection.isTarget
         && !row.management_inspection_notified_at
+        && !alreadyNotifiedByOtherWatch
         && !managementInspectionNotifiedKeys.has(rowInspectionKey);
 
       if (shouldSendManagementInspectionMail) {
@@ -158,6 +205,13 @@ async function processCargoWatches(request: NextRequest) {
           managementInspectionMailSent = true;
           managementInspectionNotified += 1;
           managementInspectionNotifiedKeys.add(rowInspectionKey);
+          await recordManagementInspectionNotice(supabase, {
+            notificationKey: rowInspectionKey,
+            notifyEmail: row.notify_email,
+            lookupValue,
+            managementInspectionValue: managementInspection.value || "Y",
+            sourceWatchId: row.id
+          });
         } else {
           managementInspectionError = inspectionMailResult.message;
           failed += 1;
