@@ -127,7 +127,7 @@ describe("lookupExchangeRateAction", () => {
 
     expect(result).toEqual({
       status: "error",
-      message: "관세환율 API012 URL 또는 키가 설정되지 않았습니다."
+      message: "관세환율 API012 키가 설정되지 않았습니다. Vercel 환경변수에 CUSTOMS_API_EXCHANGE_RATE_SERVICE_KEY 값을 등록해 주세요. URL은 미입력 시 기본 UNIPASS API012 endpoint를 사용합니다."
     });
   });
 });

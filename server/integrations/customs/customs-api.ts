@@ -18,6 +18,7 @@ type CustomsApiConfig = {
   endpointEnvName: string;
   defaultEndpointUrl?: string;
   serviceKeyEnvName?: string;
+  serviceKeyAliasEnvNames?: string[];
   serviceKeyParamName: "crkyCn" | "serviceKey";
   sourceName: string;
   sourceVersion: string;
@@ -62,6 +63,12 @@ const configs: Record<CustomsOpenApiSource, CustomsApiConfig> = {
     endpointEnvName: "CUSTOMS_API_EXCHANGE_RATE_URL",
     defaultEndpointUrl: "https://unipass.customs.go.kr:38010/ext/rest/trifFxrtInfoQry/retrieveTrifFxrtInfo",
     serviceKeyEnvName: "CUSTOMS_API_EXCHANGE_RATE_SERVICE_KEY",
+    serviceKeyAliasEnvNames: [
+      "CUSTOMS_API_EXCHANGE_RATE_KEY",
+      "CUSTOMS_API_API012_SERVICE_KEY",
+      "CUSTOMS_API012_SERVICE_KEY",
+      "CUSTOMS_API012_KEY"
+    ],
     serviceKeyParamName: "crkyCn",
     sourceName: "관세청 관세환율 정보",
     sourceVersion: "myc-openapi-api012-v1.0"
@@ -110,6 +117,22 @@ function resolveEndpointUrl(config: CustomsApiConfig) {
   return configuredUrl || config.defaultEndpointUrl;
 }
 
+function resolveServiceKey(config: CustomsApiConfig) {
+  const envNames = [
+    config.serviceKeyEnvName,
+    ...(config.serviceKeyAliasEnvNames ?? []),
+    "CUSTOMS_API_SERVICE_KEY",
+    "PUBLIC_DATA_SERVICE_KEY"
+  ].filter(Boolean) as string[];
+
+  for (const envName of envNames) {
+    const value = process.env[envName]?.trim();
+    if (value) return value;
+  }
+
+  return "";
+}
+
 export function hasCustomsOpenApiEnv(source: CustomsOpenApiSource) {
   if (source === "cargo_progress" && process.env.CUSTOMS_API_CARGO_PROGRESS_RELAY_URL?.trim()) {
     return true;
@@ -117,7 +140,7 @@ export function hasCustomsOpenApiEnv(source: CustomsOpenApiSource) {
 
   const config = configs[source];
   const endpointUrl = resolveEndpointUrl(config);
-  const serviceKey = (config.serviceKeyEnvName ? process.env[config.serviceKeyEnvName] : undefined) || process.env.CUSTOMS_API_SERVICE_KEY || process.env.PUBLIC_DATA_SERVICE_KEY;
+  const serviceKey = resolveServiceKey(config);
 
   return Boolean(endpointUrl && serviceKey);
 }
@@ -129,7 +152,7 @@ export async function fetchCustomsOpenApiSnapshot(
 ): Promise<PublicDataSnapshot> {
   const config = configs[source];
   const endpointUrl = resolveEndpointUrl(config);
-  const serviceKey = (config.serviceKeyEnvName ? process.env[config.serviceKeyEnvName] : undefined) || process.env.CUSTOMS_API_SERVICE_KEY || process.env.PUBLIC_DATA_SERVICE_KEY;
+  const serviceKey = resolveServiceKey(config);
 
   if (!endpointUrl || !serviceKey) {
     throw new Error(`${config.endpointEnvName} 또는 ${config.serviceKeyEnvName ?? "CUSTOMS_API_SERVICE_KEY"}가 설정되지 않았습니다.`);
