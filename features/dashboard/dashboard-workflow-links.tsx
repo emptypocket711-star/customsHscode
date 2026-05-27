@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Bell, Calculator, FileSearch, Globe2, Settings2, type LucideIcon } from "lucide-react";
+import { ArrowRight, Bell, Calculator, Car, FileSearch, Globe2, Settings2, type LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 type WorkflowLink = {
@@ -40,6 +40,13 @@ const workflowLinks: WorkflowLink[] = [
     title: "예상 납세액 계산",
     description: "금액 입력 후 계산",
     tone: "slate"
+  },
+  {
+    href: "/vehicle-spec",
+    id: "vehicle-spec",
+    title: "자동차 제원 조회",
+    description: "제원관리번호 기준 조회",
+    tone: "blue"
   }
 ];
 
@@ -47,7 +54,8 @@ const iconById: Record<string, LucideIcon> = {
   direct: FileSearch,
   overseas: Globe2,
   cargo: Bell,
-  duty: Calculator
+  duty: Calculator,
+  "vehicle-spec": Car
 };
 
 const storageKey = "hsfinder-dashboard-workflow-links";
@@ -115,7 +123,7 @@ export function DashboardWorkflowLinks() {
       </div>
 
       {editing ? (
-        <div className="grid gap-2 border-b border-[var(--border-subtle)] bg-slate-50 px-5 py-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-2 border-b border-[var(--border-subtle)] bg-slate-50 px-5 py-3 sm:grid-cols-2 lg:grid-cols-5">
           {workflowLinks.map((link) => (
             <label className="flex items-center gap-2 text-sm font-medium text-slate-700" key={link.id}>
               <input
@@ -130,7 +138,7 @@ export function DashboardWorkflowLinks() {
         </div>
       ) : null}
 
-      <div className="grid gap-3 p-4 lg:grid-cols-4">
+      <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-5">
         {selectedLinks.map((workflow) => {
           const Icon = iconById[workflow.id] ?? FileSearch;
           return (

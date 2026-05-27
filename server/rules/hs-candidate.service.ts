@@ -904,7 +904,9 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
   const startedAt = Date.now();
   const { input: augmentedInput, normalization } = await normalizedProductSearch(input);
   const isAmbiguousAcronym = Boolean(ambiguousRuleForProductName(input.productName));
-  const shouldKeepAiAlternatives = isAmbiguousAcronym || normalizeAiHsCodeHints(normalization).length > 1;
+  const shouldKeepAiAlternatives = isAmbiguousAcronym
+    || normalization?.classificationState === "ambiguous_multiple_meanings"
+    || normalization?.displayMode === "multiple";
 
   if (!hasSupabaseEnv()) {
     const baseCandidates = [

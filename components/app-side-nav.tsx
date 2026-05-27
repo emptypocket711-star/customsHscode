@@ -2,6 +2,7 @@
 
 import {
   Calculator,
+  Car,
   ChevronLeft,
   ChevronRight,
   Database,
@@ -28,6 +29,7 @@ const userNavItems = [
   { href: "/hs/overseas", label: "해외 HS CODE조회", icon: Globe2 },
   { href: "/cargo", label: "적하목록 조회", icon: PackageSearch },
   { href: "/trade-news", label: "무역 뉴스", icon: Newspaper },
+  { href: "/vehicle-spec", label: "자동차 제원 조회", icon: Car },
   { href: "/duty-estimator", label: "납세액 계산", icon: Calculator }
 ];
 

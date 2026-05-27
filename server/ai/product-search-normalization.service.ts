@@ -5,7 +5,7 @@ import { redactSensitiveText } from "@/server/ai/redaction";
 import { cachedLookup, lookupCacheKey } from "@/server/cache/lookup-cache";
 import { logLookupTelemetry, productInputShape } from "@/server/observability/lookup-telemetry";
 
-const productSearchNormalizationVersion = "product-search-normalization-v13";
+const productSearchNormalizationVersion = "product-search-normalization-v14";
 
 function productInputText(input: ProductHsRecommendationInput) {
   const hsCodeHints = extractHsCodeHintsFromProductInput(input);
@@ -320,7 +320,10 @@ export async function normalizeProductSearchInput(input: ProductHsRecommendation
       })
     });
     const needsClarificationFirst = normalization.classificationState === "needs_clarification" || normalization.displayMode === "needs_more_info";
-    const contextHints = needsClarificationFirst ? [] : productContextLookupHints(input, normalization);
+    const strictClarificationWithoutHsBoundary = needsClarificationFirst
+      && !normalization.candidateHsCodes.length
+      && !normalization.primaryCandidate;
+    const contextHints = strictClarificationWithoutHsBoundary ? [] : productContextLookupHints(input, normalization);
 
     const primaryCandidateReason = normalization.primaryCandidate
       ? [{
@@ -336,7 +339,7 @@ export async function normalizeProductSearchInput(input: ProductHsRecommendation
           requiredInfo: ["국내 HSK인지 해외 수입국 세번인지 확인", "품명·용도·재질과 해당 코드 설명의 일치 여부 확인"]
         })),
         ...primaryCandidateReason,
-        ...(needsClarificationFirst ? [] : normalization.candidateHsCodeReasons),
+        ...(strictClarificationWithoutHsBoundary ? [] : normalization.candidateHsCodeReasons),
         ...(needsClarificationFirst ? [] : acronymHints),
         ...contextHints
       ].filter((item, index, items) => items.findIndex((candidate) => candidate.code === item.code) === index).slice(0, 10);
@@ -346,14 +349,14 @@ export async function normalizeProductSearchInput(input: ProductHsRecommendation
       userProvidedHsCodes,
       candidateHsCodes: [
         ...userProvidedHsCodes,
-        ...(needsClarificationFirst ? [] : normalization.candidateHsCodes),
+        ...(strictClarificationWithoutHsBoundary ? [] : normalization.candidateHsCodes),
         ...(needsClarificationFirst ? [] : acronymHints.map((hint) => hint.code)),
         ...contextHints.map((hint) => hint.code)
       ],
       candidateHsCodeReasons
     });
     const candidateHsCodes = (needsClarificationFirst
-      ? userProvidedHsCodes
+      ? (prioritizedHsCodes.length ? prioritizedHsCodes.slice(0, 3) : userProvidedHsCodes)
       : focusedDisplayHsHints(normalization, prioritizedHsCodes)
     ).slice(0, 10);
     const result = {

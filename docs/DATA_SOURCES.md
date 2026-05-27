@@ -218,6 +218,30 @@ Use for:
 - direct transport guidance
 - preferential tariff references
 
+### 한국교통안전공단 사이버검사소
+
+Use for:
+- automobile specification lookup by 제원관리번호
+- maker, model, type, vehicle class, weight, fuel, displacement, and related vehicle-spec fields
+
+Current connector:
+
+- Page: `https://www.cyberts.kr/ts/tis/ism/readTsTisSpecSvcMainView.do`
+- Server action: `lookupVehicleSpecAction`
+- Service wrapper: `server/services/cyberts-vehicle-spec.service.ts`
+- UI page: `/vehicle-spec`
+
+Notes:
+
+- This is a screen-backed CyberTS lookup, not a separately contracted public API.
+- The user-facing input is 제원관리번호. Do not represent it as an arbitrary vehicle-name search.
+- The server wrapper fetches the CyberTS page session/CSRF token and submits the automobile (`specType=CAR`) lookup request.
+- CyberTS security policy, IP blocking, or page structure changes can break this connector. Keep a direct source link on the result screen and treat this feature as a supplementary lookup.
+- The lookup is protected with app rate limiting and a cache. Optional tuning variables:
+  - `VEHICLE_SPEC_RATE_LIMIT_PER_MINUTE`
+  - `CYBERTS_REQUEST_TIMEOUT_MS`
+  - `CYBERTS_VEHICLE_SPEC_CACHE_TTL_MS`
+
 ### 전략물자관리시스템
 
 Use for:

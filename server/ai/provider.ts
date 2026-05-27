@@ -363,6 +363,7 @@ function aiProductSearchNormalizationInstructions() {
     "Act as a classification interviewer first, not a candidate-list generator.",
     "First decide classificationState, certainty, and displayMode.",
     "Use classificationState=needs_clarification when the product family may be known but missing branch facts can change the HS heading/subheading. In that case, ask only the minimum questions needed and do not show multiple HS candidates unless a user-provided HS hint exists.",
+    "When branch facts are missing but a broad HS4/HS6 boundary is still useful to guide the user, include that boundary as a provisional candidateHsCodes item and make missingQuestions explicit. Example: a smart watch may need cellular/Bluetooth facts but can still include HS 8517.62 as a provisional direction.",
     "Use classificationState=single_likely_candidate when one product interpretation and one HS4/HS6 boundary is clearly more likely. In that case, provide one primaryCandidate and a concise userMessage.",
     "Use classificationState=ambiguous_multiple_meanings only when the same input can mean materially different products, such as an acronym, generic word, or product code with competing meanings.",
     "Use displayMode=single only when one product interpretation and one HS4/HS6 boundary is clearly more likely than alternatives. Use displayMode=multiple for truly ambiguous meanings. Use displayMode=needs_more_info when branch questions must come first.",
@@ -376,7 +377,7 @@ function aiProductSearchNormalizationInstructions() {
     "Do not require an exact official HS description match before returning candidateHsCodes. The app will show GPT HS4/HS6 candidates even when national HS10 expansion needs separate review.",
     "Give higher priority to the product phrase and surrounding context than to isolated ambiguous words. For example, cream alone can be dairy or cosmetic, but hand/moisture/skin cream should produce skin-care cosmetic lookup hints unless food/dairy terms are explicit.",
     "If the input is ambiguous because it can mean different products, set classificationState=ambiguous_multiple_meanings, certainty=low, displayMode=multiple, return competing meanings plus missing questions.",
-    "If the input is incomplete because branch facts are missing and those facts can change the HS4/HS6 boundary, set classificationState=needs_clarification, certainty=low or medium, displayMode=needs_more_info, primaryCandidate=null, and ask branch questions before returning a displayed code.",
+    "If the input is incomplete because branch facts are missing and those facts can change the HS4/HS6 boundary, set classificationState=needs_clarification, certainty=low or medium, displayMode=needs_more_info, and ask branch questions. If one broad HS4/HS6 direction remains useful, include it as provisional candidateHsCodes; if the branch can change the chapter or heading completely, leave primaryCandidate null and candidateHsCodes empty.",
     "Do not use needs_clarification just because the exact national HS10 is uncertain. If HS4/HS6 is still reasonably inferable, use single_likely_candidate or ambiguous_multiple_meanings and provide HS4/HS6 candidateHsCodes.",
     "When the input includes typos, model numbers, abbreviations, or short trade names, infer likely product families and provide broad lookup hints that can surface candidates from official HS data.",
     "If web search is available and the input appears to be a model number, SKU, catalog number, or product code, use web search to identify the underlying product type before producing search terms.",
@@ -804,9 +805,12 @@ export class OpenAiProvider implements AiProvider {
     }
     const parsed = parseAiProductSearchNormalizationJson(outputText, fallback);
     const responseWebSources = webSourcesFromOpenAiResponse(payload);
-    const parsedWithRetry = parsed.candidateHsCodes.length || !useWebSearch
+    const parsedWithWebFallback = parsed.candidateHsCodes.length || !useWebSearch
       ? parsed
       : await this.retryProductSearchWithoutWeb(prompt, fallback);
+    const parsedWithRetry = parsedWithWebFallback.candidateHsCodes.length
+      ? parsedWithWebFallback
+      : await this.retryProductSearchAsSimpleInterviewer(prompt, fallback);
 
     return {
       ...parsedWithRetry,
@@ -830,6 +834,34 @@ export class OpenAiProvider implements AiProvider {
           ...prompt,
           webSearchFallback: true,
           fallbackInstruction: "The previous normalization produced no HS candidates. Use general product knowledge and visible product words to return 3 to 8 provisional HS4/HS6 lookup hints, missing questions, and Korean/English search terms. Do not final-confirm classification."
+        },
+        aiProductSearchNormalizationInstructions(),
+        2600,
+        { webSearch: false }
+      ),
+      this.productSearchTimeoutMs
+    );
+
+    if (!response) return fallback;
+    const payload = await response.json() as unknown;
+    return parseAiProductSearchNormalizationJson(outputTextFromOpenAiResponse(payload), fallback);
+  }
+
+  private async retryProductSearchAsSimpleInterviewer(
+    prompt: AiProductSearchNormalizationPrompt,
+    fallback: AiProductSearchNormalizationResult
+  ) {
+    const response = await this.requestResponsesApi(
+      this.responseBody(
+        {
+          ...prompt,
+          fallbackInstruction: [
+            "Answer the practical question: 이 품명 HS CODE가 뭘까?",
+            "Use general product knowledge if web search or exact product identification is unavailable.",
+            "If one broad HS4/HS6 is clearly useful, return it as the first candidateHsCodes item.",
+            "If exact classification needs facts, keep the code provisional and put the facts in missingQuestions.",
+            "Do not return an empty candidateHsCodes array for a recognizable product family."
+          ].join(" ")
         },
         aiProductSearchNormalizationInstructions(),
         2600,

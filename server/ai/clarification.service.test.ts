@@ -98,7 +98,7 @@ describe("normalizeProductSearchInput", () => {
     });
 
     expect(key).toContain("ai-product-normalization");
-    expect(key).toContain("product-search-normalization-v13");
+    expect(key).toContain("product-search-normalization-v14");
     expect(key).toContain("901910");
     expect(key).not.toContain("secret");
     expect(key).not.toContain("ABC-123");
@@ -142,6 +142,42 @@ describe("normalizeProductSearchInput", () => {
     expect(normalization.displayMode).toBe("needs_more_info");
     expect(normalization.candidateHsCodes).toEqual([]);
     expect(normalization.missingQuestions.join(" ")).toContain("편직물");
+  });
+
+  it("keeps provisional HS6 hints when clarification is needed but the broad boundary is useful", () => {
+    const fallback = {
+      provider: "openai" as const,
+      model: "test",
+      correctedProductName: null,
+      searchTerms: [],
+      koreanTerms: [],
+      englishTerms: [],
+      productFamilies: [],
+      candidateHsCodes: [],
+      candidateHsCodeReasons: [],
+      webSources: [],
+      missingQuestions: []
+    };
+    const parsed = aiProviderInternals.parseAiProductSearchNormalizationJson(JSON.stringify({
+      classificationState: "needs_clarification",
+      displayMode: "needs_more_info",
+      certainty: "medium",
+      correctedProductName: "Apple Watch",
+      primaryCandidate: {
+        code: "8517.62",
+        reason: "일반적인 스마트워치는 무선 데이터 송수신용 웨어러블 기기 계열 검토가 필요합니다.",
+        requiredInfo: ["셀룰러 통신 기능 포함 여부", "블루투스 단독 모델인지"]
+      },
+      candidateHsCodes: ["8517.62"],
+      candidateHsCodeReasons: [
+        { code: "851762", reason: "무선통신 기능이 있는 스마트워치 가능성", requiredInfo: ["LTE 기능 여부"] }
+      ],
+      missingQuestions: ["셀룰러 기능 포함 여부"]
+    }), fallback);
+
+    expect(parsed.classificationState).toBe("needs_clarification");
+    expect(parsed.candidateHsCodes).toEqual(["851762"]);
+    expect(parsed.primaryCandidate?.requiredInfo).toContain("셀룰러 통신 기능 포함 여부");
   });
 
   it("can return HS prefixes only as official lookup hints", () => {
@@ -297,6 +333,47 @@ describe("normalizeProductSearchInput", () => {
     expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string).tools).toBeUndefined();
     expect(result.candidateHsCodes).toEqual(["851762", "910212", "852589"]);
     expect(result.searchTerms).toEqual(expect.arrayContaining(["smart watch", "스마트워치"]));
+  });
+
+  it("runs a simple interviewer retry when a successful response still has no HS candidates", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        output_text: JSON.stringify({
+          correctedProductName: "unknown product",
+          searchTerms: ["unknown product"],
+          candidateHsCodes: [],
+          missingQuestions: ["제품 용도 확인"]
+        })
+      }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        output_text: JSON.stringify({
+          classificationState: "needs_clarification",
+          displayMode: "needs_more_info",
+          correctedProductName: "smart watch",
+          primaryCandidate: {
+            code: "8517.62",
+            reason: "스마트워치로 보이며 무선 데이터 송수신 기기 계열 검토가 필요합니다.",
+            requiredInfo: ["셀룰러 기능 여부"]
+          },
+          candidateHsCodes: ["851762"],
+          candidateHsCodeReasons: [
+            { code: "851762", reason: "스마트워치 가능성", requiredInfo: ["셀룰러 기능 여부"] }
+          ],
+          missingQuestions: ["셀룰러 기능 여부"]
+        })
+      }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const provider = new OpenAiProvider("test-key");
+    const result = await provider.normalizeProductSearch({
+      task: "product_search_normalization",
+      basisDate: "2026-05-24",
+      redactedInput: "품명: 애플워치"
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(result.candidateHsCodes).toEqual(["851762"]);
+    expect(result.missingQuestions).toContain("셀룰러 기능 여부");
   });
 
   it("keeps finished-article AI hints ahead of component or material hints generically", () => {
