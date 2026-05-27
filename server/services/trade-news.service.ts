@@ -9,6 +9,7 @@ export type TradeNewsItem = {
   summary: string;
   url: string;
   publishedAt: string | null;
+  countryName?: string | null;
   reliability: "매우 높음" | "높음" | "보조용";
   status: "live" | "planned";
 };
@@ -184,6 +185,7 @@ function parseRssItems(xml: string, options: {
       summary: truncate(description || title),
       url,
       publishedAt,
+      countryName: null,
       reliability: options.reliability,
       status: "live"
     };
@@ -313,6 +315,7 @@ function kotraApiItem(row: Record<string, unknown>, options: {
     summary: truncate([meta, body].filter(Boolean).join(" - ") || title),
     url,
     publishedAt,
+    countryName: country || null,
     reliability: "매우 높음",
     status: "live"
   };
@@ -411,6 +414,7 @@ function parseMotirRows(html: string) {
       summary: department ? `담당부서: ${decodeXml(stripHtml(department))}` : "산업통상부 보도·참고자료입니다.",
       url: `https://www.motir.go.kr/kor/article/ATCL3f49a5a8c/${id}/view`,
       publishedAt: date,
+      countryName: null,
       reliability: "높음",
       status: "live"
     };
@@ -439,6 +443,7 @@ function plannedItem(source: TradeNewsSource): TradeNewsItem {
     summary: source.note,
     url: source.url,
     publishedAt: null,
+    countryName: null,
     reliability: source.reliability,
     status: "planned"
   };
