@@ -1,3 +1,6 @@
+import { createSupabaseServiceRoleClient, hasSupabaseServiceRoleEnv } from "@/lib/supabase/service-role";
+import { listStoredTradeNewsItems } from "@/server/repositories/trade-news.repository";
+
 export type TradeNewsCategory = "customs" | "market" | "government" | "industry" | "global" | "auxiliary";
 
 export type TradeNewsItem = {
@@ -449,7 +452,7 @@ function plannedItem(source: TradeNewsSource): TradeNewsItem {
   };
 }
 
-export async function loadTradeNewsItems() {
+export async function loadLiveTradeNewsItems() {
   const [customs, kotraMarket, kotraUsaIssues, kotraFraudCases, policy, motir, wto] = await Promise.all([
     loadCustomsNews(),
     loadKotraOverseasMarketNews(),
@@ -469,4 +472,19 @@ export async function loadTradeNewsItems() {
     const bTime = b.publishedAt ? Date.parse(b.publishedAt) : 0;
     return bTime - aTime;
   });
+}
+
+export async function loadTradeNewsItems() {
+  if (hasSupabaseServiceRoleEnv()) {
+    try {
+      const storedItems = await listStoredTradeNewsItems(createSupabaseServiceRoleClient());
+      if (storedItems.length) return storedItems;
+    } catch (error) {
+      console.error("[trade_news_cache_read_failure]", {
+        message: error instanceof Error ? error.message : "unknown"
+      });
+    }
+  }
+
+  return loadLiveTradeNewsItems();
 }

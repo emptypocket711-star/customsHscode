@@ -397,7 +397,7 @@ export async function createCargoWatchAction(
         bl_year: parsed.data.blYear || null,
         target_status: parsed.data.targetStatus,
         notify_email: parsed.data.notifyEmail,
-        poll_interval_seconds: 60,
+        poll_interval_seconds: 300,
         status: immediateMatch.matched && immediateMatch.mailSent ? "matched" : "active",
         last_status: immediateMatch.lastStatus,
         last_checked_at: immediateMatch.lastStatus ? now : null,
@@ -437,8 +437,8 @@ export async function createCargoWatchAction(
     return {
       status: "success",
       message: immediateMatch.managementInspectionMailSent
-        ? "1분 간격 알림 감시를 등록했고, 관리대상검사 안내 메일을 보냈습니다."
-        : "1분 간격 알림 감시를 등록했습니다."
+        ? "5분 간격 알림 감시를 등록했고, 관리대상검사 안내 메일을 보냈습니다."
+        : "5분 간격 알림 감시를 등록했습니다."
     };
   } catch (error) {
     return {

@@ -159,7 +159,7 @@ async function processCargoWatches(request: NextRequest) {
 
   for (const row of rows) {
     checked += 1;
-    const nextCheckAt = new Date(Date.now() + Math.max(row.poll_interval_seconds || 60, 60) * 1000).toISOString();
+    const nextCheckAt = new Date(Date.now() + Math.max(row.poll_interval_seconds || 300, 300) * 1000).toISOString();
 
     try {
       const snapshot = await fetchCustomsCargoProgressSnapshot(

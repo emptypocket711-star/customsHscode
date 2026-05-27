@@ -2,11 +2,15 @@
   "crons": [
     {
       "path": "/api/jobs/cargo-watch",
-      "schedule": "* * * * *"
+      "schedule": "*/5 * * * *"
     },
     {
       "path": "/api/jobs/exchange-rates",
       "schedule": "0 6 * * 5"
+    },
+    {
+      "path": "/api/jobs/trade-news",
+      "schedule": "15 */6 * * *"
     }
   ]
 }
