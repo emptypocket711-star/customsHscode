@@ -1,9 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { buildCargoWatchEmailText, cargoWatchStatusDisplay } from "@/lib/cargo-watch-status";
+import { buildCargoManagementInspectionEmailText, buildCargoWatchEmailText, cargoWatchStatusDisplay } from "@/lib/cargo-watch-status";
 import { createSupabaseServiceRoleClient, hasSupabaseServiceRoleEnv } from "@/lib/supabase/service-role";
 import {
   buildCustomsCargoProgressQuery,
   fetchCustomsCargoProgressSnapshot,
+  getCargoManagementInspectionInfo,
   hasCustomsOpenApiEnv,
   parseCustomsCargoProgressXml
 } from "@/server/integrations/customs/customs-api";
@@ -26,6 +27,7 @@ type CargoWatchRow = {
   target_status: string;
   notify_email: string;
   poll_interval_seconds: number;
+  management_inspection_notified_at: string | null;
 };
 
 function normalizeCargoWatchValue(value: string | null | undefined) {
@@ -46,6 +48,22 @@ function cargoWatchIdentity(row: {
     normalizeCargoWatchValue(row.house_bl_no),
     normalizeCargoWatchValue(row.bl_year),
     normalizeCargoWatchValue(row.target_status),
+    normalizeCargoWatchValue(row.notify_email).toLowerCase()
+  ].join("|");
+}
+
+function cargoInspectionIdentity(row: {
+  cargo_management_no?: string | null;
+  master_bl_no?: string | null;
+  house_bl_no?: string | null;
+  bl_year?: string | null;
+  notify_email?: string | null;
+}) {
+  return [
+    normalizeCargoWatchValue(row.cargo_management_no),
+    normalizeCargoWatchValue(row.master_bl_no),
+    normalizeCargoWatchValue(row.house_bl_no),
+    normalizeCargoWatchValue(row.bl_year),
     normalizeCargoWatchValue(row.notify_email).toLowerCase()
   ].join("|");
 }
@@ -77,7 +95,7 @@ async function processCargoWatches(request: NextRequest) {
   const supabase = createSupabaseServiceRoleClient();
   const { data, error } = await supabase
     .from("cargo_watch_requests")
-    .select("id,cargo_management_no,master_bl_no,house_bl_no,bl_year,target_status,notify_email,poll_interval_seconds")
+    .select("id,cargo_management_no,master_bl_no,house_bl_no,bl_year,target_status,notify_email,poll_interval_seconds,management_inspection_notified_at")
     .eq("status", "active")
     .lte("next_check_at", new Date().toISOString())
     .order("next_check_at", { ascending: true })
@@ -91,8 +109,10 @@ async function processCargoWatches(request: NextRequest) {
   let checked = 0;
   let matched = 0;
   let notified = 0;
+  let managementInspectionNotified = 0;
   let failed = 0;
   const notifiedKeys = new Set<string>();
+  const managementInspectionNotifiedKeys = new Set<string>();
 
   for (const row of rows) {
     checked += 1;
@@ -113,6 +133,43 @@ async function processCargoWatches(request: NextRequest) {
       const statusCandidates = result
         ? buildCargoStatusCandidates(result, shedInfoByCode)
         : { currentStatus: "", displayCurrentStatus: "", eventStatuses: [] };
+      const managementInspection = getCargoManagementInspectionInfo(result);
+      let managementInspectionMailSent = false;
+      let managementInspectionError: string | null = null;
+      const rowInspectionKey = cargoInspectionIdentity(row);
+      const shouldSendManagementInspectionMail =
+        managementInspection.isTarget
+        && !row.management_inspection_notified_at
+        && !managementInspectionNotifiedKeys.has(rowInspectionKey);
+
+      if (shouldSendManagementInspectionMail) {
+        const lookupValue = row.cargo_management_no || row.house_bl_no || row.master_bl_no || "등록 화물";
+        const inspectionMailResult = await sendTransactionalEmail({
+          to: row.notify_email,
+          subject: `[HS Finder] ${lookupValue} 관리대상검사 안내`,
+          text: buildCargoManagementInspectionEmailText({
+            lookupValue,
+            currentStatus: statusCandidates.displayCurrentStatus || statusCandidates.currentStatus || result?.summary.progressStatus || "",
+            managementInspectionYn: managementInspection.value || "Y"
+          })
+        });
+
+        if (inspectionMailResult.sent) {
+          managementInspectionMailSent = true;
+          managementInspectionNotified += 1;
+          managementInspectionNotifiedKeys.add(rowInspectionKey);
+        } else {
+          managementInspectionError = inspectionMailResult.message;
+          failed += 1;
+        }
+      }
+
+      const managementInspectionUpdate = managementInspectionMailSent
+        ? {
+          management_inspection_notified_at: new Date().toISOString(),
+          management_inspection_value: managementInspection.value || "Y"
+        }
+        : {};
       const isMatched = statusMatched({
         targetStatus: row.target_status,
         currentStatus: statusCandidates.currentStatus,
@@ -126,13 +183,14 @@ async function processCargoWatches(request: NextRequest) {
             last_status: statusCandidates.displayCurrentStatus || statusCandidates.currentStatus || null,
             last_checked_at: new Date().toISOString(),
             next_check_at: nextCheckAt,
-            last_error: null,
+            last_error: managementInspectionError ? `관리대상검사 안내 메일 발송 실패: ${managementInspectionError}` : null,
             source_name: snapshot.sourceName,
             source_url: snapshot.sourceUrl,
             source_version: snapshot.sourceVersion,
             retrieved_at: snapshot.retrievedAt,
             checksum: snapshot.checksum,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
+            ...managementInspectionUpdate
           })
           .eq("id", row.id);
         continue;
@@ -156,7 +214,8 @@ async function processCargoWatches(request: NextRequest) {
             source_version: snapshot.sourceVersion,
             retrieved_at: snapshot.retrievedAt,
             checksum: snapshot.checksum,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
+            ...managementInspectionUpdate
           })
           .eq("id", row.id);
         continue;
@@ -190,13 +249,16 @@ async function processCargoWatches(request: NextRequest) {
           matched_at: mailResult.sent ? new Date().toISOString() : null,
           notified_at: mailResult.sent ? new Date().toISOString() : null,
           next_check_at: mailResult.sent ? null : nextCheckAt,
-          last_error: mailResult.sent ? null : `목표 상태 도달 확인, 메일 발송 실패: ${mailResult.message}`,
+          last_error: mailResult.sent
+            ? (managementInspectionError ? `관리대상검사 안내 메일 발송 실패: ${managementInspectionError}` : null)
+            : `목표 상태 도달 확인, 메일 발송 실패: ${mailResult.message}`,
           source_name: snapshot.sourceName,
           source_url: snapshot.sourceUrl,
           source_version: snapshot.sourceVersion,
           retrieved_at: snapshot.retrievedAt,
           checksum: snapshot.checksum,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          ...managementInspectionUpdate
         })
         .eq("id", row.id);
     } catch (error) {
@@ -213,7 +275,7 @@ async function processCargoWatches(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ checked, matched, notified, failed });
+  return NextResponse.json({ checked, matched, notified, managementInspectionNotified, failed });
 }
 
 export async function GET(request: NextRequest) {

@@ -245,6 +245,7 @@ export function CargoTrackingPanel({
                 <SummaryRow label="Master B/L" value={result.summary.masterBlNo} />
                 <SummaryRow label="House B/L" value={result.summary.houseBlNo} />
                 <SummaryRow label="신고번호" value={result.summary.declarationNo} />
+                <SummaryRow label="관리대상검사여부" value={result.summary.managementInspectionYn} />
                 <SummaryRow label="선명" value={result.summary.vesselName} />
                 <SummaryRow label="포장수량" value={result.summary.packageCount} />
                 <SummaryRow label="중량" value={[result.summary.grossWeight, result.summary.weightUnit].filter(Boolean).join(" ")} />

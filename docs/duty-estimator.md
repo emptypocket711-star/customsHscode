@@ -62,13 +62,17 @@ HS 조회 화면의 `납세액 계산` 버튼은 다음 값을 넘긴다.
 
 ## API012 관세환율
 
-`server/actions/exchange-rate.actions.ts`가 관세청 API012 관세환율정보조회를 호출한다.
+`server/actions/exchange-rate.actions.ts`는 먼저 `customs_exchange_rates` 캐시를 조회한다. 관세환율 캐시는 금요일 15:00 KST에 `/api/jobs/exchange-rates`가 API012를 호출해 갱신한다.
 
 - `currencyCode=KRW`는 API 호출 없이 환율 `1`을 적용한다.
 - 수입은 `imexTp=2`, 수출은 `imexTp=1`로 조회한다.
+- 일반 `저장 환율 적용`은 조회기준일 이하의 가장 최근 적용개시일 환율을 사용한다.
+- `차주 환율 적용`은 조회기준일보다 큰 가장 가까운 적용개시일 환율을 사용한다. 없으면 “차주 환율을 가져오지 못했습니다.”를 표시한다.
+- 캐시에 값이 없을 때만 API012 직접 호출을 fallback으로 시도한다.
 - `CUSTOMS_API_EXCHANGE_RATE_URL`이 없으면 관세청 API012 기본 엔드포인트를 사용하고, `CUSTOMS_API_EXCHANGE_RATE_SERVICE_KEY` 또는 공통 관세청 키를 사용한다.
+- Vercel에서 `38010` 포트 호출이 실패하면 `CUSTOMS_API_EXCHANGE_RATE_RELAY_URL`로 relay를 사용한다.
 - 조회 성공 시 환율, 통화, 적용일, source version을 반환한다.
-- Supabase가 연결되어 있으면 API012 응답 metadata를 `legal_source_snapshots`에 `exchange_rate` source snapshot으로 저장하고 snapshot id를 계산기 화면과 복사 텍스트에 표시한다.
+- API012 수집 성공 시 응답 metadata를 `legal_source_snapshots`에 `exchange_rate` source snapshot으로 저장하고 snapshot id를 계산기 화면과 복사 텍스트에 표시한다.
 - 저장되는 값은 source name, redacted source URL, source version, effective date, retrieved timestamp, checksum이다. API 키, 물품가격, 운임, 보험료 등 사용자 계산 입력값은 저장하지 않는다.
 
 ## 남은 작업

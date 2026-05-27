@@ -70,6 +70,10 @@ KOTRA 뉴스 API는 공공누리 제4유형(출처표시, 상업적 이용금지
 해외시장뉴스 API는 본문을 함께 받기 위해 `search8=Y`를 사용한다.
 
 API001은 Vercel에서 관세청 `38010` 포트 직접 호출이 실패할 수 있어 현재 Vultr relay를 사용한다. 상세 운영 절차, relay 서버 정보, CY/CFS 판정 기준은 `docs/CARGO_API001_RUNBOOK.md`를 따른다.
+API012 관세환율도 같은 `38010` 포트를 사용하므로 운영에서는 직접 호출보다 DB 캐시를 사용한다. 금요일 15:00 KST에 `/api/jobs/exchange-rates`가 실행되어 `customs_exchange_rates`에 수입/수출 관세환율을 저장한다. Vercel에서 직접 호출이 실패하면 Vultr relay의 `/exchange-rate`를 사용하도록 아래 값을 추가한다.
+
+- `CUSTOMS_API_EXCHANGE_RATE_RELAY_URL`
+- `CUSTOMS_API_EXCHANGE_RATE_RELAY_TOKEN`
 
 ## 3. 접근 제어
 

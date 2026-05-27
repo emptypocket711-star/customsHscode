@@ -3,6 +3,10 @@
     {
       "path": "/api/jobs/cargo-watch",
       "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/jobs/exchange-rates",
+      "schedule": "0 6 * * 5"
     }
   ]
 }

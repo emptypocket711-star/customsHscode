@@ -7,6 +7,8 @@ import {
   parseCustomsExchangeRatesXml
 } from "@/server/integrations/customs/customs-api";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
+import { createSupabaseServiceRoleClient, hasSupabaseServiceRoleEnv } from "@/lib/supabase/service-role";
+import { findCachedExchangeRate } from "@/server/repositories/exchange-rate-cache.repository";
 import { recordExchangeRateSourceSnapshot } from "@/server/repositories/exchange-rate-snapshot.repository";
 
 export type ExchangeRateLookupState = {
@@ -31,6 +33,7 @@ export async function lookupExchangeRateAction(
   const currencyCode = stringValue(formData, "currencyCode").toUpperCase();
   const applyStartDate = stringValue(formData, "applyStartDate");
   const direction = stringValue(formData, "direction") === "export" ? "export" : "import";
+  const mode = stringValue(formData, "rateMode") === "next" ? "next" : "current";
 
   if (!currencyCode) {
     return { status: "error", message: "통화를 선택해 주세요." };
@@ -49,6 +52,41 @@ export async function lookupExchangeRateAction(
 
   if (!applyStartDate) {
     return { status: "error", message: "조회기준일을 입력해 주세요." };
+  }
+
+  if (hasSupabaseServiceRoleEnv()) {
+    try {
+      const supabase = createSupabaseServiceRoleClient();
+      const cached = await findCachedExchangeRate(supabase, {
+        currencyCode,
+        direction,
+        basisDate: applyStartDate,
+        mode
+      });
+
+      if (cached) {
+        return {
+          status: "success",
+          message: mode === "next"
+            ? `${currencyCode} 차주 관세환율을 적용했습니다.`
+            : `${currencyCode} 저장 관세환율을 적용했습니다.`,
+          rate: cached.rate,
+          currencyCode: cached.currencyCode,
+          effectiveFrom: cached.effectiveFrom,
+          sourceVersion: cached.sourceVersion,
+          sourceSnapshotId: cached.sourceSnapshotId
+        };
+      }
+    } catch {
+      // Cache misses should not block the explicit fallback below.
+    }
+  }
+
+  if (mode === "next") {
+    return {
+      status: "error",
+      message: "차주 환율을 가져오지 못했습니다."
+    };
   }
 
   if (!hasCustomsOpenApiEnv("exchange_rate")) {

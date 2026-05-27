@@ -4,8 +4,12 @@ import { createServer } from "node:http";
 const PORT = Number(process.env.PORT || 8787);
 const API001_ENDPOINT = process.env.CUSTOMS_API_CARGO_PROGRESS_URL
   || "https://unipass.customs.go.kr:38010/ext/rest/cargCsclPrgsInfoQry/retrieveCargCsclPrgsInfo";
+const API012_ENDPOINT = process.env.CUSTOMS_API_EXCHANGE_RATE_URL
+  || "https://unipass.customs.go.kr:38010/ext/rest/trifFxrtInfoQry/retrieveTrifFxrtInfo";
 const API001_KEY = process.env.CUSTOMS_API_CARGO_PROGRESS_SERVICE_KEY;
-const RELAY_TOKEN = process.env.CUSTOMS_API_CARGO_PROGRESS_RELAY_TOKEN;
+const API012_KEY = process.env.CUSTOMS_API_EXCHANGE_RATE_SERVICE_KEY || process.env.CUSTOMS_API_SERVICE_KEY;
+const CARGO_RELAY_TOKEN = process.env.CUSTOMS_API_CARGO_PROGRESS_RELAY_TOKEN;
+const EXCHANGE_RELAY_TOKEN = process.env.CUSTOMS_API_EXCHANGE_RATE_RELAY_TOKEN || CARGO_RELAY_TOKEN;
 const TIMEOUT_MS = Number(process.env.PUBLIC_DATA_REQUEST_TIMEOUT_MS || 15000);
 
 function jsonResponse(response, status, payload) {
@@ -43,14 +47,27 @@ function readJsonBody(request) {
   });
 }
 
-function isAuthorized(request) {
-  if (!RELAY_TOKEN) return process.env.NODE_ENV !== "production";
-  return request.headers.authorization === `Bearer ${RELAY_TOKEN}`;
+function isAuthorized(request, token) {
+  if (!token) return process.env.NODE_ENV !== "production";
+  return request.headers.authorization === `Bearer ${token}`;
 }
 
 function buildApi001Url(params) {
   const url = new URL(API001_ENDPOINT);
   url.searchParams.set("crkyCn", API001_KEY);
+
+  for (const [key, value] of Object.entries(params ?? {})) {
+    if (value !== null && value !== undefined && value !== "") {
+      url.searchParams.set(key, String(value));
+    }
+  }
+
+  return url;
+}
+
+function buildApi012Url(params) {
+  const url = new URL(API012_ENDPOINT);
+  url.searchParams.set("crkyCn", API012_KEY);
 
   for (const [key, value] of Object.entries(params ?? {})) {
     if (value !== null && value !== undefined && value !== "") {
@@ -80,7 +97,7 @@ function normalizeError(error) {
 }
 
 async function handleCargoProgress(request, response) {
-  if (!isAuthorized(request)) {
+  if (!isAuthorized(request, CARGO_RELAY_TOKEN)) {
     jsonResponse(response, 401, { error: "unauthorized" });
     return;
   }
@@ -130,6 +147,57 @@ async function handleCargoProgress(request, response) {
   });
 }
 
+async function handleExchangeRate(request, response) {
+  if (!isAuthorized(request, EXCHANGE_RELAY_TOKEN)) {
+    jsonResponse(response, 401, { error: "unauthorized" });
+    return;
+  }
+
+  if (!API012_KEY) {
+    jsonResponse(response, 500, { error: "CUSTOMS_API_EXCHANGE_RATE_SERVICE_KEY is not configured." });
+    return;
+  }
+
+  const payload = await readJsonBody(request);
+  const apiUrl = buildApi012Url(payload.params ?? payload);
+
+  let apiResponse;
+  try {
+    apiResponse = await fetch(apiUrl, {
+      headers: {
+        accept: "application/xml, text/xml;q=0.9, */*;q=0.8"
+      },
+      signal: AbortSignal.timeout(TIMEOUT_MS)
+    });
+  } catch (error) {
+    jsonResponse(response, 502, {
+      error: "api012_fetch_failed",
+      detail: normalizeError(error),
+      endpoint: `${apiUrl.hostname}:${apiUrl.port || "443"}`
+    });
+    return;
+  }
+
+  const rawText = await apiResponse.text();
+  if (!apiResponse.ok) {
+    jsonResponse(response, 502, {
+      error: "api012_bad_response",
+      status: apiResponse.status,
+      statusText: apiResponse.statusText,
+      rawText: rawText.slice(0, 1000),
+      sourceUrl: redactApiKey(apiUrl)
+    });
+    return;
+  }
+
+  jsonResponse(response, 200, {
+    rawText,
+    sourceUrl: redactApiKey(apiUrl),
+    retrievedAt: new Date().toISOString(),
+    checksum: checksumText(rawText)
+  });
+}
+
 const server = createServer(async (request, response) => {
   try {
     if (request.method === "GET" && request.url === "/health") {
@@ -139,6 +207,11 @@ const server = createServer(async (request, response) => {
 
     if (request.method === "POST" && new URL(request.url ?? "/", "http://localhost").pathname === "/cargo-progress") {
       await handleCargoProgress(request, response);
+      return;
+    }
+
+    if (request.method === "POST" && new URL(request.url ?? "/", "http://localhost").pathname === "/exchange-rate") {
+      await handleExchangeRate(request, response);
       return;
     }
 

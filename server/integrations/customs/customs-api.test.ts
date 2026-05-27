@@ -81,6 +81,16 @@ describe("customs api query helpers", () => {
     expect(hasCustomsOpenApiEnv("cargo_progress")).toBe(true);
   });
 
+  it("allows API012 exchange-rate lookup with only a relay URL", () => {
+    vi.stubEnv("CUSTOMS_API_EXCHANGE_RATE_URL", "");
+    vi.stubEnv("CUSTOMS_API_EXCHANGE_RATE_SERVICE_KEY", "");
+    vi.stubEnv("CUSTOMS_API_EXCHANGE_RATE_RELAY_URL", "https://api.example.test/exchange-rate");
+    vi.stubEnv("CUSTOMS_API_SERVICE_KEY", "");
+    vi.stubEnv("PUBLIC_DATA_SERVICE_KEY", "");
+
+    expect(hasCustomsOpenApiEnv("exchange_rate")).toBe(true);
+  });
+
   it("normalizes API012 UNIPASS endpoint to the required 38010 port", async () => {
     const fetchMock = vi.fn(async () => new Response("<root />"));
     vi.stubGlobal("fetch", fetchMock);
@@ -140,6 +150,36 @@ describe("customs api query helpers", () => {
       method: "POST",
       headers: expect.objectContaining({
         Authorization: "Bearer relay-token"
+      })
+    }));
+  });
+
+  it("uses the API012 relay when configured", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      rawText: "<root><currSgn>USD</currSgn><fxrt>1350.10</fxrt></root>",
+      sourceUrl: "https://unipass.customs.go.kr:38010/ext/rest/trifFxrtInfoQry/retrieveTrifFxrtInfo?crkyCn=[redacted]",
+      retrievedAt: "2026-05-26T00:00:00.000Z"
+    }), {
+      headers: { "content-type": "application/json" }
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("CUSTOMS_API_EXCHANGE_RATE_RELAY_URL", "https://api.example.test/exchange-rate");
+    vi.stubEnv("CUSTOMS_API_EXCHANGE_RATE_RELAY_TOKEN", "exchange-relay-token");
+    vi.stubEnv("CUSTOMS_API_EXCHANGE_RATE_SERVICE_KEY", "");
+    vi.stubEnv("CUSTOMS_API_SERVICE_KEY", "");
+    vi.stubEnv("PUBLIC_DATA_SERVICE_KEY", "");
+
+    const snapshot = await fetchCustomsOpenApiSnapshot("exchange_rate", buildCustomsExchangeRateQuery({
+      applyStartDate: "2026-05-26",
+      direction: "import"
+    }));
+
+    expect(snapshot.rawText).toContain("USD");
+    expect(snapshot.sourceVersion).toContain("+relay");
+    expect(fetchMock).toHaveBeenCalledWith("https://api.example.test/exchange-rate", expect.objectContaining({
+      method: "POST",
+      headers: expect.objectContaining({
+        Authorization: "Bearer exchange-relay-token"
       })
     }));
   });
@@ -391,6 +431,7 @@ describe("customs api query helpers", () => {
           <hblNo>HBL123</hblNo>
           <prgsStts>반입</prgsStts>
           <prgsStCd>B01</prgsStCd>
+          <mtTrgtCargYnNm>Y</mtTrgtCargYnNm>
           <dclrNo>12345</dclrNo>
           <shipNm>TEST VESSEL</shipNm>
           <pckGcnt>10</pckGcnt>
@@ -414,6 +455,7 @@ describe("customs api query helpers", () => {
       masterBlNo: "MBL123",
       houseBlNo: "HBL123",
       progressStatus: "반입",
+      managementInspectionYn: "Y",
       arrivalDate: "2026-05-26"
     });
     expect(item?.events[0]).toMatchObject({

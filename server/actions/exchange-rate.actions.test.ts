@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { lookupExchangeRateAction } from "@/server/actions/exchange-rate.actions";
 import { fetchCustomsOpenApiSnapshot, hasCustomsOpenApiEnv } from "@/server/integrations/customs/customs-api";
 import { hasSupabaseEnv, createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServiceRoleClient, hasSupabaseServiceRoleEnv } from "@/lib/supabase/service-role";
+import { findCachedExchangeRate } from "@/server/repositories/exchange-rate-cache.repository";
 import { recordExchangeRateSourceSnapshot } from "@/server/repositories/exchange-rate-snapshot.repository";
 
 vi.mock("@/server/integrations/customs/customs-api", async (importOriginal) => {
@@ -19,6 +21,15 @@ vi.mock("@/lib/supabase/server", () => ({
   hasSupabaseEnv: vi.fn()
 }));
 
+vi.mock("@/lib/supabase/service-role", () => ({
+  createSupabaseServiceRoleClient: vi.fn(),
+  hasSupabaseServiceRoleEnv: vi.fn()
+}));
+
+vi.mock("@/server/repositories/exchange-rate-cache.repository", () => ({
+  findCachedExchangeRate: vi.fn()
+}));
+
 vi.mock("@/server/repositories/exchange-rate-snapshot.repository", () => ({
   recordExchangeRateSourceSnapshot: vi.fn()
 }));
@@ -27,6 +38,9 @@ const mockedFetchCustomsOpenApiSnapshot = vi.mocked(fetchCustomsOpenApiSnapshot)
 const mockedHasCustomsOpenApiEnv = vi.mocked(hasCustomsOpenApiEnv);
 const mockedHasSupabaseEnv = vi.mocked(hasSupabaseEnv);
 const mockedCreateSupabaseServerClient = vi.mocked(createSupabaseServerClient);
+const mockedHasSupabaseServiceRoleEnv = vi.mocked(hasSupabaseServiceRoleEnv);
+const mockedCreateSupabaseServiceRoleClient = vi.mocked(createSupabaseServiceRoleClient);
+const mockedFindCachedExchangeRate = vi.mocked(findCachedExchangeRate);
 const mockedRecordExchangeRateSourceSnapshot = vi.mocked(recordExchangeRateSourceSnapshot);
 
 function formData(values: Record<string, string>) {
@@ -42,6 +56,55 @@ function formData(values: Record<string, string>) {
 describe("lookupExchangeRateAction", () => {
   afterEach(() => {
     vi.clearAllMocks();
+  });
+
+  it("uses cached exchange rates before calling API012", async () => {
+    mockedHasSupabaseServiceRoleEnv.mockReturnValue(true);
+    mockedCreateSupabaseServiceRoleClient.mockReturnValue({} as ReturnType<typeof createSupabaseServiceRoleClient>);
+    mockedFindCachedExchangeRate.mockResolvedValue({
+      currencyCode: "USD",
+      rate: "1360.10",
+      effectiveFrom: "2026-05-24",
+      direction: "import",
+      sourceVersion: "myc-openapi-api012-v1.0",
+      sourceSnapshotId: "00000000-0000-0000-0000-000000000099"
+    });
+
+    const result = await lookupExchangeRateAction({ status: "idle" }, formData({
+      currencyCode: "usd",
+      applyStartDate: "2026-05-27",
+      direction: "import"
+    }));
+
+    expect(result).toEqual({
+      status: "success",
+      message: "USD 저장 관세환율을 적용했습니다.",
+      rate: "1360.10",
+      currencyCode: "USD",
+      effectiveFrom: "2026-05-24",
+      sourceVersion: "myc-openapi-api012-v1.0",
+      sourceSnapshotId: "00000000-0000-0000-0000-000000000099"
+    });
+    expect(mockedFetchCustomsOpenApiSnapshot).not.toHaveBeenCalled();
+  });
+
+  it("returns clear next-week error when cache does not have a future rate", async () => {
+    mockedHasSupabaseServiceRoleEnv.mockReturnValue(true);
+    mockedCreateSupabaseServiceRoleClient.mockReturnValue({} as ReturnType<typeof createSupabaseServiceRoleClient>);
+    mockedFindCachedExchangeRate.mockResolvedValue(null);
+
+    const result = await lookupExchangeRateAction({ status: "idle" }, formData({
+      currencyCode: "USD",
+      applyStartDate: "2026-05-27",
+      direction: "import",
+      rateMode: "next"
+    }));
+
+    expect(result).toEqual({
+      status: "error",
+      message: "차주 환율을 가져오지 못했습니다."
+    });
+    expect(mockedFetchCustomsOpenApiSnapshot).not.toHaveBeenCalled();
   });
 
   it("returns local KRW rate without calling customs API", async () => {

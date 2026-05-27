@@ -137,6 +137,9 @@ export function hasCustomsOpenApiEnv(source: CustomsOpenApiSource) {
   if (source === "cargo_progress" && process.env.CUSTOMS_API_CARGO_PROGRESS_RELAY_URL?.trim()) {
     return true;
   }
+  if (source === "exchange_rate" && process.env.CUSTOMS_API_EXCHANGE_RATE_RELAY_URL?.trim()) {
+    return true;
+  }
 
   const config = configs[source];
   const endpointUrl = resolveEndpointUrl(config);
@@ -150,6 +153,18 @@ export async function fetchCustomsOpenApiSnapshot(
   params: Record<string, string | number | null | undefined>,
   options?: { timeoutMs?: number }
 ): Promise<PublicDataSnapshot> {
+  if (source === "exchange_rate" && process.env.CUSTOMS_API_EXCHANGE_RATE_RELAY_URL?.trim()) {
+    return fetchCustomsRelaySnapshot({
+      relayUrl: process.env.CUSTOMS_API_EXCHANGE_RATE_RELAY_URL.trim(),
+      relayToken: process.env.CUSTOMS_API_EXCHANGE_RATE_RELAY_TOKEN || process.env.CUSTOMS_API_CARGO_PROGRESS_RELAY_TOKEN,
+      params,
+      timeoutMs: options?.timeoutMs,
+      sourceName: configs.exchange_rate.sourceName,
+      sourceVersion: `${configs.exchange_rate.sourceVersion}+relay`,
+      failureLabel: "API012"
+    });
+  }
+
   const config = configs[source];
   const endpointUrl = resolveEndpointUrl(config);
   const serviceKey = resolveServiceKey(config);
@@ -169,6 +184,60 @@ export async function fetchCustomsOpenApiSnapshot(
   });
 }
 
+async function fetchCustomsRelaySnapshot(input: {
+  relayUrl: string;
+  relayToken?: string;
+  params: Record<string, string | number | null | undefined>;
+  timeoutMs?: number;
+  sourceName: string;
+  sourceVersion: string;
+  failureLabel: string;
+}): Promise<PublicDataSnapshot> {
+  const timeoutMs = input.timeoutMs ?? Number(process.env.PUBLIC_DATA_REQUEST_TIMEOUT_MS || 10000);
+  const response = await fetch(input.relayUrl, {
+    method: "POST",
+    headers: {
+      Accept: "application/json, application/xml, text/xml;q=0.9, */*;q=0.8",
+      "Content-Type": "application/json",
+      ...(input.relayToken ? { Authorization: `Bearer ${input.relayToken}` } : {})
+    },
+    body: JSON.stringify({ params: input.params }),
+    cache: "no-store",
+    signal: AbortSignal.timeout(timeoutMs)
+  });
+  const contentType = response.headers.get("content-type");
+  const bodyText = await response.text();
+
+  if (!response.ok) {
+    throw new Error(`${input.failureLabel} relay 호출 실패: ${response.status} ${response.statusText} ${bodyText.slice(0, 200)}`.trim());
+  }
+
+  let rawText = bodyText;
+  let sourceUrl = input.relayUrl;
+  let retrievedAt = new Date().toISOString();
+
+  if (contentType?.includes("application/json")) {
+    const payload = JSON.parse(bodyText) as {
+      rawText?: string;
+      sourceUrl?: string;
+      retrievedAt?: string;
+    };
+    rawText = payload.rawText ?? "";
+    sourceUrl = payload.sourceUrl ?? input.relayUrl;
+    retrievedAt = payload.retrievedAt ?? retrievedAt;
+  }
+
+  return {
+    sourceName: input.sourceName,
+    sourceUrl,
+    sourceVersion: input.sourceVersion,
+    retrievedAt,
+    checksum: checksumText(rawText),
+    contentType,
+    rawText
+  };
+}
+
 export async function fetchCustomsCargoProgressSnapshot(
   params: Record<string, string | number | null | undefined>,
   options?: { timeoutMs?: number }
@@ -179,51 +248,15 @@ export async function fetchCustomsCargoProgressSnapshot(
     return fetchCustomsOpenApiSnapshot("cargo_progress", params, options);
   }
 
-  const timeoutMs = options?.timeoutMs ?? Number(process.env.PUBLIC_DATA_REQUEST_TIMEOUT_MS || 10000);
-  const response = await fetch(relayUrl, {
-    method: "POST",
-    headers: {
-      Accept: "application/json, application/xml, text/xml;q=0.9, */*;q=0.8",
-      "Content-Type": "application/json",
-      ...(process.env.CUSTOMS_API_CARGO_PROGRESS_RELAY_TOKEN
-        ? { Authorization: `Bearer ${process.env.CUSTOMS_API_CARGO_PROGRESS_RELAY_TOKEN}` }
-        : {})
-    },
-    body: JSON.stringify({ params }),
-    cache: "no-store",
-    signal: AbortSignal.timeout(timeoutMs)
-  });
-  const contentType = response.headers.get("content-type");
-  const bodyText = await response.text();
-
-  if (!response.ok) {
-    throw new Error(`API001 relay 호출 실패: ${response.status} ${response.statusText} ${bodyText.slice(0, 200)}`.trim());
-  }
-
-  let rawText = bodyText;
-  let sourceUrl = relayUrl;
-  let retrievedAt = new Date().toISOString();
-
-  if (contentType?.includes("application/json")) {
-    const payload = JSON.parse(bodyText) as {
-      rawText?: string;
-      sourceUrl?: string;
-      retrievedAt?: string;
-    };
-    rawText = payload.rawText ?? "";
-    sourceUrl = payload.sourceUrl ?? relayUrl;
-    retrievedAt = payload.retrievedAt ?? retrievedAt;
-  }
-
-  return {
+  return fetchCustomsRelaySnapshot({
+    relayUrl,
+    relayToken: process.env.CUSTOMS_API_CARGO_PROGRESS_RELAY_TOKEN,
+    params,
+    timeoutMs: options?.timeoutMs,
     sourceName: configs.cargo_progress.sourceName,
-    sourceUrl,
     sourceVersion: `${configs.cargo_progress.sourceVersion}+relay`,
-    retrievedAt,
-    checksum: checksumText(rawText),
-    contentType,
-    rawText
-  };
+    failureLabel: "API001"
+  });
 }
 
 export function buildCustomsConfirmationQuery(input: {
@@ -383,6 +416,7 @@ export type CustomsCargoProgressSummary = {
   houseBlNo: string;
   progressStatus: string;
   progressStatusCode: string;
+  managementInspectionYn: string;
   declarationNo: string;
   vesselName: string;
   packageCount: string;
@@ -515,6 +549,15 @@ export function parseCustomsCargoProgressXml(rawText: string): CustomsCargoProgr
     houseBlNo: firstXmlValue(summaryBlock, ["hblNo"]),
     progressStatus: firstXmlValue(summaryBlock, ["prgsStts", "csclPrgsStts", "cargPrgsStts", "prgsSttsNm"]),
     progressStatusCode: firstXmlValue(summaryBlock, ["prgsStCd", "csclPrgsSttsCd", "cargPrgsSttsCd"]),
+    managementInspectionYn: firstXmlValue(summaryBlock, [
+      "mtTrgtCargYnNm",
+      "mtTrgtCargYn",
+      "mngTrgtInspYn",
+      "mgmtInscYn",
+      "inspTrgtYn",
+      "inscTrgtYn",
+      "examTrgtYn"
+    ]),
     declarationNo: firstXmlValue(summaryBlock, ["dclrNo", "csmhDclrNo", "imptDclrNo"]),
     vesselName: firstXmlValue(summaryBlock, ["shipNm", "vydf"]),
     packageCount: firstXmlValue(summaryBlock, ["pckGcnt", "pckQty", "pkgCnt"]),
@@ -561,6 +604,15 @@ export function parseCustomsCargoProgressXml(rawText: string): CustomsCargoProgr
   }
 
   return { summary, events };
+}
+
+export function getCargoManagementInspectionInfo(result: CustomsCargoProgressResult | null | undefined) {
+  const rawValue = result?.summary.managementInspectionYn?.trim() ?? "";
+  const normalized = rawValue.toUpperCase();
+  return {
+    value: rawValue,
+    isTarget: normalized === "Y" || rawValue === "예" || rawValue.includes("대상")
+  };
 }
 
 export function buildCustomsStatisticalCodeQuery(input: {

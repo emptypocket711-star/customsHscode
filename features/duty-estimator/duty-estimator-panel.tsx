@@ -248,16 +248,27 @@ export function DutyEstimatorPanel() {
                 <div className="grid gap-3 rounded-md border border-slate-200 bg-slate-50 p-3">
                   <div className="grid gap-3 lg:grid-cols-[minmax(180px,260px)_1fr] lg:items-end">
                     <NumericField disabled={currency === "KRW"} label="관세환율" onChange={setExchangeRate} suffix="KRW" value={currency === "KRW" ? "1" : exchangeRate} />
-                    <form className="grid gap-2 sm:grid-cols-[auto_1fr] sm:items-center" onSubmit={handleExchangeRateSubmit}>
+                    <form className="grid gap-2 sm:grid-cols-[auto_auto_1fr] sm:items-center" onSubmit={handleExchangeRateSubmit}>
                     <input name="currencyCode" type="hidden" value={currency} />
                     <input name="applyStartDate" type="hidden" value={basisDate} />
                     <input name="direction" type="hidden" value="import" />
                     <button
                       className="focus-ring inline-flex h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                       disabled={exchangeRatePending}
+                      name="rateMode"
                       type="submit"
+                      value="current"
                     >
-                      {exchangeRatePending ? "조회 중" : currency === "KRW" ? "원화 1 적용" : "관세환율 자동조회"}
+                      {exchangeRatePending ? "조회 중" : currency === "KRW" ? "원화 1 적용" : "저장 환율 적용"}
+                    </button>
+                    <button
+                      className="focus-ring inline-flex h-10 items-center justify-center rounded-md border border-blue-200 bg-blue-50 px-3 text-xs font-semibold text-blue-700 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+                      disabled={exchangeRatePending || currency === "KRW"}
+                      name="rateMode"
+                      type="submit"
+                      value="next"
+                    >
+                      차주 환율 적용
                     </button>
                     {exchangeRateState.status !== "idle" ? (
                       <span className={`min-w-0 text-xs leading-5 ${exchangeRateState.status === "success" ? "text-blue-700" : "text-amber-700"}`}>

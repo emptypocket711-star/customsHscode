@@ -89,3 +89,20 @@ export function buildCargoWatchEmailText(input: {
     ...cargoWatchStatusGuidance(input.targetStatus)
   ].join("\n");
 }
+
+export function buildCargoManagementInspectionEmailText(input: {
+  lookupValue: string;
+  currentStatus: string;
+  managementInspectionYn: string;
+}) {
+  return [
+    "등록하신 적하목록 감시 대상이 관리대상검사여부 Y로 확인되었습니다.",
+    "",
+    `조회값: ${input.lookupValue}`,
+    `현재 상태: ${input.currentStatus || "-"}`,
+    `관리대상검사여부: ${input.managementInspectionYn || "Y"}`,
+    "",
+    "검사 또는 추가 확인이 진행될 수 있으므로 진행 이력과 세관 안내사항을 확인해 주세요.",
+    "필요 서류, 품명ㆍ수량ㆍ중량, 요건 자료를 미리 정리해 두는 것이 좋습니다."
+  ].join("\n");
+}

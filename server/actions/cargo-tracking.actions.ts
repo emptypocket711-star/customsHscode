@@ -2,12 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { buildCargoWatchEmailText, cargoWatchStatusDisplay } from "@/lib/cargo-watch-status";
+import { buildCargoManagementInspectionEmailText, buildCargoWatchEmailText, cargoWatchStatusDisplay } from "@/lib/cargo-watch-status";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { PublicDataFetchError } from "@/server/integrations/public-data/client";
 import {
   buildCustomsCargoProgressQuery,
   fetchCustomsCargoProgressSnapshot,
+  getCargoManagementInspectionInfo,
   hasCustomsOpenApiEnv,
   parseCustomsCargoProgressXml,
   type CustomsCargoProgressResult
@@ -290,8 +291,20 @@ export async function createCargoWatchAction(
         };
         mailSent: boolean;
         mailError: string | null;
+        managementInspectionValue: string | null;
+        managementInspectionMailSent: boolean;
+        managementInspectionMailError: string | null;
       }
-      | { matched: false; lastStatus: string | null; snapshot?: undefined; mailSent?: undefined; mailError?: undefined } = { matched: false, lastStatus: null };
+      | {
+        matched: false;
+        lastStatus: string | null;
+        snapshot?: undefined;
+        mailSent?: undefined;
+        mailError?: undefined;
+        managementInspectionValue?: string | null;
+        managementInspectionMailSent?: boolean;
+        managementInspectionMailError?: string | null;
+      } = { matched: false, lastStatus: null };
 
     if (hasCustomsOpenApiEnv("cargo_progress")) {
       try {
@@ -307,10 +320,27 @@ export async function createCargoWatchAction(
             currentStatus: statusCandidates.currentStatus,
             eventStatuses: statusCandidates.eventStatuses
           });
+          const lookupValue = parsed.data.cargoManagementNo || parsed.data.houseBlNo || parsed.data.masterBlNo || "등록 화물";
+          const lastStatus = statusCandidates.displayCurrentStatus || statusCandidates.currentStatus || result.summary.progressStatus || null;
+          const managementInspection = getCargoManagementInspectionInfo(result);
+          let managementInspectionMailSent = false;
+          let managementInspectionMailError: string | null = null;
+
+          if (managementInspection.isTarget) {
+            const inspectionMailResult = await sendTransactionalEmail({
+              to: parsed.data.notifyEmail,
+              subject: `[HS Finder] ${lookupValue} 관리대상검사 안내`,
+              text: buildCargoManagementInspectionEmailText({
+                lookupValue,
+                currentStatus: lastStatus || "",
+                managementInspectionYn: managementInspection.value || "Y"
+              })
+            });
+            managementInspectionMailSent = inspectionMailResult.sent;
+            managementInspectionMailError = inspectionMailResult.sent ? null : inspectionMailResult.message;
+          }
 
           if (matched) {
-            const lookupValue = parsed.data.cargoManagementNo || parsed.data.houseBlNo || parsed.data.masterBlNo || "등록 화물";
-            const lastStatus = statusCandidates.displayCurrentStatus || statusCandidates.currentStatus || parsed.data.targetStatus;
             const targetStatusLabel = cargoWatchStatusDisplay(parsed.data.targetStatus);
             const mailResult = await sendTransactionalEmail({
               to: parsed.data.notifyEmail,
@@ -318,14 +348,14 @@ export async function createCargoWatchAction(
               text: buildCargoWatchEmailText({
                 lookupValue,
                 targetStatus: parsed.data.targetStatus,
-                currentStatus: lastStatus,
+                currentStatus: lastStatus || parsed.data.targetStatus,
                 alreadyReached: true
               })
             });
 
             immediateMatch = {
               matched: true,
-              lastStatus,
+              lastStatus: lastStatus || parsed.data.targetStatus,
               snapshot: {
                 sourceName: snapshot.sourceName,
                 sourceUrl: snapshot.sourceUrl,
@@ -334,12 +364,18 @@ export async function createCargoWatchAction(
                 checksum: snapshot.checksum
               },
               mailSent: mailResult.sent,
-              mailError: mailResult.sent ? null : mailResult.message
+              mailError: mailResult.sent ? null : mailResult.message,
+              managementInspectionValue: managementInspection.isTarget ? (managementInspection.value || "Y") : null,
+              managementInspectionMailSent,
+              managementInspectionMailError
             };
           } else {
             immediateMatch = {
               matched: false,
-              lastStatus: statusCandidates.displayCurrentStatus || statusCandidates.currentStatus || null
+              lastStatus,
+              managementInspectionValue: managementInspection.isTarget ? (managementInspection.value || "Y") : null,
+              managementInspectionMailSent,
+              managementInspectionMailError
             };
           }
         }
@@ -368,7 +404,14 @@ export async function createCargoWatchAction(
         next_check_at: now,
         matched_at: immediateMatch.matched && immediateMatch.mailSent ? now : null,
         notified_at: immediateMatch.matched && immediateMatch.mailSent ? now : null,
-        last_error: immediateMatch.matched && !immediateMatch.mailSent ? `목표 상태 도달 확인, 메일 발송 실패: ${immediateMatch.mailError}` : null,
+        management_inspection_notified_at: immediateMatch.managementInspectionMailSent ? now : null,
+        management_inspection_value: immediateMatch.managementInspectionValue ?? null,
+        last_error: [
+          immediateMatch.matched && !immediateMatch.mailSent ? `목표 상태 도달 확인, 메일 발송 실패: ${immediateMatch.mailError}` : null,
+          immediateMatch.managementInspectionValue && !immediateMatch.managementInspectionMailSent
+            ? `관리대상검사 안내 메일 발송 실패: ${immediateMatch.managementInspectionMailError}`
+            : null
+        ].filter(Boolean).join(" / ") || null,
         source_name: immediateMatch.snapshot?.sourceName ?? null,
         source_url: immediateMatch.snapshot?.sourceUrl ?? null,
         source_version: immediateMatch.snapshot?.sourceVersion ?? null,
@@ -384,12 +427,19 @@ export async function createCargoWatchAction(
       return {
         status: immediateMatch.mailSent ? "success" : "error",
         message: immediateMatch.mailSent
-          ? "이미 목표 상태가 지나간 건으로 확인되어 즉시 알림 메일을 보냈습니다."
+          ? immediateMatch.managementInspectionMailSent
+            ? "이미 목표 상태가 지나간 건으로 확인되어 상태 알림과 관리대상검사 안내 메일을 보냈습니다."
+            : "이미 목표 상태가 지나간 건으로 확인되어 즉시 알림 메일을 보냈습니다."
           : `이미 목표 상태가 지나간 건으로 확인했지만 메일 발송에 실패했습니다. ${immediateMatch.mailError ?? ""}`.trim()
       };
     }
 
-    return { status: "success", message: "1분 간격 알림 감시를 등록했습니다." };
+    return {
+      status: "success",
+      message: immediateMatch.managementInspectionMailSent
+        ? "1분 간격 알림 감시를 등록했고, 관리대상검사 안내 메일을 보냈습니다."
+        : "1분 간격 알림 감시를 등록했습니다."
+    };
   } catch (error) {
     return {
       status: "error",
