@@ -13,31 +13,44 @@ function escapeHtml(value: string) {
     .replace(/'/g, "&#39;");
 }
 
-type TerminalCode = "hjit" | "snct" | "ifpc";
+type TerminalCode = "hjit" | "snct" | "ifpc" | "ict";
 
 export function GET(request: Request) {
   const url = new URL(request.url);
   const containerNo = normalizeContainerNo(url.searchParams.get("containerNo"));
   const requestedTerminal = url.searchParams.get("terminal");
-  const terminal: TerminalCode = requestedTerminal === "snct" || requestedTerminal === "ifpc" ? requestedTerminal : "hjit";
+  const terminal: TerminalCode = requestedTerminal === "snct" || requestedTerminal === "ifpc" || requestedTerminal === "ict"
+    ? requestedTerminal
+    : "hjit";
 
   if (!/^[A-Z]{4}[0-9]{7}$/.test(containerNo)) {
     return new NextResponse("Invalid container number", { status: 400 });
   }
 
   const safeContainerNo = escapeHtml(containerNo);
-  const terminalLabel = terminal === "ifpc"
+  const terminalLabel = terminal === "ict"
+    ? "인천컨테이너터미널"
+    : terminal === "ifpc"
     ? "인천항국제페리부두"
     : terminal === "snct"
       ? "선광신컨테이너터미널"
       : "한진인천컨테이너터미널";
-  const actionUrl = terminal === "ifpc"
+  const actionUrl = terminal === "ict"
+    ? "https://service.psa-ict.co.kr/webpage/general/contInfo.jsp"
+    : terminal === "ifpc"
     ? "https://www.ifpc.co.kr/INFO/infoservice/index.html?gv_empno=cntr_info"
     : terminal === "snct"
       ? "https://snct.sun-kwang.co.kr/infoservice/webpage/opt/ContainerInfo.jsp"
       : "http://59.17.254.10:9130/esvc/inq/ContainerAction.do";
   const hiddenFields = terminal === "ifpc"
     ? ""
+    : terminal === "ict"
+      ? `
+          <input type="hidden" name="isSearch" value="Y">
+          <input type="hidden" name="page" value="1">
+          <input type="hidden" name="URI" value="/webpage/general/contInfo.jsp">
+          <input type="hidden" name="contNo" value="${safeContainerNo}">
+        `
     : terminal === "snct"
       ? `
           <input type="hidden" name="isSearch" value="Y">

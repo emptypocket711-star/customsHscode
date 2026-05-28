@@ -12,7 +12,7 @@ export type HjitContainerLookupState = {
   trackingRows?: EtransTrackingRow[];
 };
 
-type TerminalCode = "hjit" | "snct" | "ifpc";
+type TerminalCode = "hjit" | "snct" | "ifpc" | "ict";
 
 type TerminalLookupResult = {
   terminalCode: TerminalCode;
@@ -25,6 +25,7 @@ type TerminalLookupResult = {
 const hjitContainerInquiryUrl = "http://59.17.254.10:9130/esvc/inq/ContainerAction.do";
 const snctContainerInquiryUrl = "https://snct.sun-kwang.co.kr/infoservice/webpage/opt/ContainerInfo.jsp";
 const ifpcContainerInquiryUrl = "https://www.ifpc.co.kr/INFO/infoservice/index.html?gv_empno=cntr_info";
+const ictContainerInquiryUrl = "https://service.psa-ict.co.kr/webpage/general/contInfo.jsp";
 const etransTrackingUrl = "https://etrans.klnet.co.kr/main/searchTracking.do";
 
 export type EtransTrackingRow = {
@@ -131,6 +132,20 @@ function extractTextAfterCellLabel(html: string, label: string) {
   return htmlText((html.match(pattern)?.[1] ?? "").replace(/<[^>]+>/g, " "));
 }
 
+function extractLegacyTerminalCellLabel(html: string, label: string, occurrence = 0) {
+  const rows = [...html.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)];
+  const values: string[] = [];
+
+  for (const row of rows) {
+    const cells = [...row[1].matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)]
+      .map((cell) => htmlText(cell[1].replace(/<[^>]+>/g, " ")));
+    const index = cells.findIndex((cell) => cell.includes(label));
+    if (index >= 0 && cells[index + 1]) values.push(cells[index + 1]);
+  }
+
+  return values[occurrence] ?? "";
+}
+
 function extractSunKwangSummary(html: string) {
   const rows = [
     ["모선항차", extractTextAfterCellLabel(html, "모선항차")],
@@ -147,6 +162,25 @@ function extractSunKwangSummary(html: string) {
 
 function hasSunKwangResult(html: string) {
   return html.includes("goosl_tableHistory") && !html.includes("컨테이너에 대한 자료가 없습니다.");
+}
+
+function extractIctSummary(html: string) {
+  const rows = [
+    ["F/M", extractLegacyTerminalCellLabel(html, "F/M")],
+    ["ISO", extractLegacyTerminalCellLabel(html, "ISO")],
+    ["적하 모선", extractLegacyTerminalCellLabel(html, "모선", 1)],
+    ["적하 항차", extractLegacyTerminalCellLabel(html, "항차", 1)],
+    ["터미널 반입 시간", extractLegacyTerminalCellLabel(html, "터미널 반입 시간")],
+    ["터미널 반출 시간", extractLegacyTerminalCellLabel(html, "터미널 반출 시간")]
+  ];
+
+  return rows
+    .map(([label, value]) => ({ label, value }))
+    .filter((row) => row.value && row.value !== "-");
+}
+
+function hasIctResult(html: string, containerNo: string) {
+  return html.includes(containerNo) && html.includes("일반 정보") && !html.includes("자료가 없습니다");
 }
 
 type EtransTrackingApiRow = {
@@ -219,10 +253,11 @@ function preferredTerminalOrder(row?: EtransTrackingRow): TerminalCode[] {
   const terminalName = row?.terminalName ?? "";
   const terminalCode = row?.terminalCode.toUpperCase() ?? "";
 
-  if (terminalName.includes("인천신국제여객") || terminalCode.includes("IFPC")) return ["ifpc", "hjit", "snct"];
-  if (terminalName.includes("선광") || terminalCode.includes("SNCT")) return ["snct", "hjit", "ifpc"];
-  if (terminalName.includes("한진") || terminalCode.includes("HJIT")) return ["hjit", "snct", "ifpc"];
-  return ["hjit", "snct", "ifpc"];
+  if (terminalName.includes("인천컨테이너터미널") || terminalCode.includes("ICT")) return ["ict", "hjit", "snct", "ifpc"];
+  if (terminalName.includes("인천신국제여객") || terminalCode.includes("IFPC")) return ["ifpc", "hjit", "snct", "ict"];
+  if (terminalName.includes("선광") || terminalCode.includes("SNCT")) return ["snct", "hjit", "ict", "ifpc"];
+  if (terminalName.includes("한진") || terminalCode.includes("HJIT")) return ["hjit", "snct", "ict", "ifpc"];
+  return ["hjit", "snct", "ict", "ifpc"];
 }
 
 async function lookupHjitTerminal(containerNo: string): Promise<TerminalLookupResult> {
@@ -290,6 +325,39 @@ async function lookupSunKwangTerminal(containerNo: string): Promise<TerminalLook
     html: sanitizeExternalHtml(html, "https://snct.sun-kwang.co.kr/"),
     summary,
     hasResult: hasSunKwangResult(html)
+  };
+}
+
+async function lookupIctTerminal(containerNo: string): Promise<TerminalLookupResult> {
+  const body = new URLSearchParams({
+    isSearch: "Y",
+    page: "1",
+    URI: "/webpage/general/contInfo.jsp",
+    contNo: containerNo
+  });
+
+  const response = await fetch(ictContainerInquiryUrl, {
+    method: "POST",
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+      "user-agent": "HS Finder container terminal lookup"
+    },
+    body,
+    cache: "no-store",
+    signal: AbortSignal.timeout(20000)
+  });
+
+  if (!response.ok) throw new Error(`인천컨테이너터미널 조회에 실패했습니다. (${response.status})`);
+
+  const html = decodeEucKrHtml(await response.arrayBuffer());
+  const summary = extractIctSummary(html);
+
+  return {
+    terminalCode: "ict",
+    terminalName: "인천컨테이너터미널",
+    html: sanitizeExternalHtml(html, "https://service.psa-ict.co.kr/"),
+    summary,
+    hasResult: hasIctResult(html, containerNo)
   };
 }
 
@@ -363,7 +431,9 @@ async function lookupKnownTerminals(containerNo: string, order: TerminalCode[], 
         ? lookupIfpcTerminal(containerNo, topTrackingRow)
         : terminal === "snct"
           ? await lookupSunKwangTerminal(containerNo)
-          : await lookupHjitTerminal(containerNo);
+          : terminal === "ict"
+            ? await lookupIctTerminal(containerNo)
+            : await lookupHjitTerminal(containerNo);
 
       if (result.hasResult) return result;
       errors.push(`${result.terminalName}: 조회 결과 없음`);

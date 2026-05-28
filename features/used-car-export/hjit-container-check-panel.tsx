@@ -200,7 +200,7 @@ export function HjitContainerCheckPanel() {
                   <ExternalLink aria-hidden="true" size={16} />
                 </a>
               ) : null}
-              <p className="text-xs text-slate-500">현재는 한진인천컨테이너터미널, 선광신컨테이너터미널, 인천항국제페리부두 확인을 지원합니다.</p>
+              <p className="text-xs text-slate-500">현재는 한진인천, 선광신, 인천컨테이너터미널, 인천항국제페리부두 확인을 지원합니다.</p>
             </div>
             {pending ? (
               <div className="rounded-md border border-blue-100 bg-blue-50 p-3 text-sm text-blue-800">
