@@ -271,6 +271,8 @@ export async function findExportDestinationTariffs(
     ).slice(0, resultLimit);
   }
 
+  const resultLimit = input.limit ?? 5;
+  const queryLimit = normalized.length > 6 ? Math.max(resultLimit * 12, 120) : resultLimit;
   let query = supabase
     .from("export_destination_tariff_rates")
     .select("country_code, tariff_year, destination_hs_code, english_name, korean_name, unit, base_rate_text, agreement_rates, source_name, source_version")
@@ -278,7 +280,7 @@ export async function findExportDestinationTariffs(
     .or(`effective_to.is.null,effective_to.gte.${input.basisDate}`)
     .eq("status", "published")
     .order("destination_hs_code", { ascending: false })
-    .limit(input.limit ?? 5);
+    .limit(queryLimit);
 
   if (!shouldSearchAllCountries) {
     query = query.in("country_code", countries);
@@ -296,7 +298,7 @@ export async function findExportDestinationTariffs(
 
   return sortExportDestinationTariffs(
     ((data ?? []) as ExportDestinationTariffRow[]).map((row) => mapExportDestinationTariffRow(row, input.basisDate, input.hskCode))
-  );
+  ).slice(0, resultLimit);
 }
 
 export async function findExportDestinationTariffsByDestinationCode(

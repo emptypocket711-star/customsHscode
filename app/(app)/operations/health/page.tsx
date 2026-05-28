@@ -4,6 +4,12 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { requireDeveloperRole } from "@/server/auth/role-guard";
 import { getEnvironmentHealthGroups, type EnvironmentHealthItem } from "@/server/operations/environment-health.service";
+import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
+import {
+  isLookupTelemetryIssue,
+  listRecentLookupTelemetryEvents,
+  type LookupTelemetryEvent
+} from "@/server/repositories/lookup-telemetry.repository";
 
 function statusLabel(status: EnvironmentHealthItem["status"]) {
   if (status === "ok") return "정상";
@@ -17,6 +23,40 @@ function statusTone(status: EnvironmentHealthItem["status"]) {
   return "neutral";
 }
 
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    dateStyle: "short",
+    timeStyle: "medium",
+    timeZone: "Asia/Seoul"
+  }).format(new Date(value));
+}
+
+function eventLabel(eventType: string) {
+  const labels: Record<string, string> = {
+    product_search_normalized: "품명 AI 정규화",
+    product_candidates_recommended: "품명 후보 생성"
+  };
+
+  return labels[eventType] ?? eventType;
+}
+
+function eventTone(event: LookupTelemetryEvent) {
+  return isLookupTelemetryIssue(event) ? "warning" : "success";
+}
+
+function payloadValue(payload: Record<string, unknown>, key: string) {
+  const value = payload[key];
+  if (value === undefined || value === null || value === "") return "-";
+  return typeof value === "boolean" ? (value ? "Y" : "N") : String(value);
+}
+
+async function loadLookupTelemetryEvents() {
+  if (!hasSupabaseEnv()) return [];
+
+  const supabase = await createSupabaseServerClient();
+  return listRecentLookupTelemetryEvents(supabase, 30).catch(() => []);
+}
+
 export default async function OperationsHealthPage() {
   const guard = await requireDeveloperRole();
 
@@ -25,6 +65,8 @@ export default async function OperationsHealthPage() {
   }
 
   const groups = getEnvironmentHealthGroups();
+  const lookupTelemetryEvents = await loadLookupTelemetryEvents();
+  const lookupIssueCount = lookupTelemetryEvents.filter(isLookupTelemetryIssue).length;
   const items = groups.flatMap((group) => group.items);
   const missingRequiredCount = items.filter((item) => item.status === "missing").length;
   const configuredCount = items.filter((item) => item.status === "ok").length;
@@ -62,6 +104,66 @@ export default async function OperationsHealthPage() {
           </CardBody>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader
+          title="최근 조회 품질 로그"
+          description="품명 AI 검색과 후보 생성의 실패·무결과·fallback 흐름을 원문 없이 확인합니다. 원문 품명, 이메일, 문서 내용은 저장하지 않습니다."
+          action={<Badge tone={lookupIssueCount > 0 ? "warning" : "success"}>점검 대상 {lookupIssueCount}건</Badge>}
+        />
+        <CardBody className="p-0">
+          {lookupTelemetryEvents.length ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
+                  <tr>
+                    <th className="px-5 py-3">시간</th>
+                    <th className="px-5 py-3">이벤트</th>
+                    <th className="px-5 py-3">상태</th>
+                    <th className="px-5 py-3">결과</th>
+                    <th className="px-5 py-3">입력 형태</th>
+                    <th className="px-5 py-3">처리</th>
+                    <th className="px-5 py-3">오류</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {lookupTelemetryEvents.map((event) => (
+                    <tr key={event.id} className={isLookupTelemetryIssue(event) ? "bg-amber-50/45" : undefined}>
+                      <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-600">{formatDate(event.createdAt)}</td>
+                      <td className="px-5 py-4">
+                        <p className="font-semibold text-slate-950">{eventLabel(event.eventType)}</p>
+                        <p className="mt-1 font-mono text-xs text-slate-500">{event.sourceMode ?? payloadValue(event.payload, "provider")}</p>
+                      </td>
+                      <td className="px-5 py-4">
+                        <Badge tone={eventTone(event)}>{event.status ?? "-"}</Badge>
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-4 text-slate-700">
+                        <span className="font-semibold text-slate-950">{event.resultCount ?? payloadValue(event.payload, "candidateCount")}</span>
+                        <span className="ml-1 text-xs text-slate-500">건</span>
+                      </td>
+                      <td className="px-5 py-4 text-xs leading-5 text-slate-600">
+                        길이 {payloadValue(event.payload, "productNameLength")} / 토큰 {payloadValue(event.payload, "tokenCount")}
+                        <br />
+                        한글 {payloadValue(event.payload, "hasHangul")} · 영문 {payloadValue(event.payload, "hasLatin")} · 숫자 {payloadValue(event.payload, "hasDigits")}
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-600">
+                        {event.durationMs ?? payloadValue(event.payload, "durationMs")}ms
+                      </td>
+                      <td className="max-w-[240px] px-5 py-4 text-xs text-slate-600">
+                        {event.errorType ?? payloadValue(event.payload, "errorType")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="p-5 text-sm text-slate-600">
+              저장된 조회 품질 로그가 없습니다. 운영에서 `LOOKUP_TELEMETRY_ENABLED=true`와 `SUPABASE_SERVICE_ROLE_KEY`가 설정되어야 기록됩니다.
+            </div>
+          )}
+        </CardBody>
+      </Card>
 
       {groups.map((group) => (
         <Card key={group.title}>

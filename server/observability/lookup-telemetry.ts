@@ -1,6 +1,10 @@
+import { createSupabaseServiceRoleClient, hasSupabaseServiceRoleEnv } from "@/lib/supabase/service-role";
+
 const sensitiveFieldPattern = /(query|product|name|text|email|phone|address|raw|input|prompt|content|document|invoice|password|token|key)/i;
 
 export type LookupTelemetryPayload = Record<string, string | number | boolean | null | undefined>;
+
+let persistenceDisabled = false;
 
 export function lookupTelemetryEnabled() {
   return process.env.LOOKUP_TELEMETRY_ENABLED === "1" || process.env.LOOKUP_TELEMETRY_ENABLED === "true";
@@ -14,9 +18,44 @@ export function sanitizeLookupTelemetryPayload(payload: LookupTelemetryPayload) 
   );
 }
 
+function stringPayloadValue(payload: LookupTelemetryPayload, key: string) {
+  const value = payload[key];
+  return typeof value === "string" && value.trim() ? value.slice(0, 120) : null;
+}
+
+function numberPayloadValue(payload: LookupTelemetryPayload, key: string) {
+  const value = payload[key];
+  return typeof value === "number" && Number.isFinite(value) ? Math.round(value) : null;
+}
+
+async function persistLookupTelemetry(event: string, payload: LookupTelemetryPayload) {
+  if (persistenceDisabled || !hasSupabaseServiceRoleEnv()) return;
+
+  const supabase = createSupabaseServiceRoleClient();
+  const { error } = await supabase
+    .from("lookup_telemetry_events")
+    .insert({
+      event_type: event.slice(0, 120),
+      status: stringPayloadValue(payload, "status"),
+      source_mode: stringPayloadValue(payload, "sourceMode"),
+      route: stringPayloadValue(payload, "route"),
+      result_count: numberPayloadValue(payload, "resultCount"),
+      duration_ms: numberPayloadValue(payload, "durationMs"),
+      error_type: stringPayloadValue(payload, "errorType"),
+      payload
+    });
+
+  if (error) {
+    persistenceDisabled = true;
+    console.warn("[lookup-telemetry] persistence disabled", { message: error.message });
+  }
+}
+
 export function logLookupTelemetry(event: string, payload: LookupTelemetryPayload = {}) {
   if (!lookupTelemetryEnabled()) return;
-  console.info("[lookup-telemetry]", event, sanitizeLookupTelemetryPayload(payload));
+  const sanitized = sanitizeLookupTelemetryPayload(payload);
+  console.info("[lookup-telemetry]", event, sanitized);
+  void persistLookupTelemetry(event, sanitized);
 }
 
 export function productInputShape(input: {
@@ -50,4 +89,3 @@ export function productInputShape(input: {
     hasModelName: Boolean(input.modelName?.trim())
   };
 }
-

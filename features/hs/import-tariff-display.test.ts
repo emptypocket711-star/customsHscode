@@ -24,7 +24,13 @@ const rows: ImportTariffDisplayRow[] = [
   { rateType: "FCN1", label: "관세율구분 FCN1", rateText: "0%", countryGroup: null, usageRateType: null, sourceName: "test", sourceVersion: "v1" },
   { rateType: "FUS1", label: "관세율구분 FUS1", rateText: "0%", countryGroup: null, usageRateType: null, sourceName: "test", sourceVersion: "v1" },
   { rateType: "FEU1", label: "관세율구분 FEU1", rateText: "0%", countryGroup: null, usageRateType: null, sourceName: "test", sourceVersion: "v1" },
-  { rateType: "FRCJP1", label: "관세율구분 FRCJP1", rateText: "0%", countryGroup: null, usageRateType: null, sourceName: "test", sourceVersion: "v1" }
+  { rateType: "FRCJP1", label: "관세율구분 FRCJP1", rateText: "0%", countryGroup: null, usageRateType: null, sourceName: "test", sourceVersion: "v1" },
+  { rateType: "FAS1", label: "관세율구분 FAS1", rateText: "5%", countryGroup: null, usageRateType: null, sourceName: "test", sourceVersion: "v1" },
+  { rateType: "FRCAS1", label: "관세율구분 FRCAS1", rateText: "4%", countryGroup: null, usageRateType: null, sourceName: "test", sourceVersion: "v1" },
+  { rateType: "FNZ1", label: "관세율구분 FNZ1", rateText: "0%", countryGroup: null, usageRateType: null, sourceName: "test", sourceVersion: "v1" },
+  { rateType: "FRCNZ1", label: "관세율구분 FRCNZ1", rateText: "0%", countryGroup: null, usageRateType: null, sourceName: "test", sourceVersion: "v1" },
+  { rateType: "FPH1", label: "관세율구분 FPH1", rateText: "0%", countryGroup: null, usageRateType: null, sourceName: "test", sourceVersion: "v1" },
+  { rateType: "FAE1", label: "관세율구분 FAE1", rateText: "5.2%", countryGroup: null, usageRateType: null, sourceName: "test", sourceVersion: "v1" }
 ];
 
 describe("import tariff display", () => {
@@ -40,7 +46,7 @@ describe("import tariff display", () => {
     const filtered = filterImportTariffsForCountry(rows, "ALL");
     const labels = filtered.map((row) => displayImportTariffLabel(row, "ALL"));
 
-    expect(filtered.map((row) => row.rateType)).toEqual(["A", "C", "R", "U", "FEU1", "FCN1", "E1", "E1A1", "E2", "E3", "FRCJP1", "FUS1", "W1", "W2", "P1", "P3"]);
+    expect(filtered.map((row) => row.rateType)).toEqual(["A", "C", "R", "U", "FEU1", "FCN1", "E1", "E1A1", "E2", "E3", "FAS1", "FPH1", "FNZ1", "FAE1", "FRCAS1", "FRCNZ1", "FRCJP1", "FUS1", "W1", "W2", "P1", "P3"]);
     expect(labels).toContain("한-중 FTA 관세율");
     expect(labels).toContain("한-미 FTA 관세율");
     expect(labels).toContain("한-EU FTA 관세율");
@@ -76,6 +82,23 @@ describe("import tariff display", () => {
     const labels = filterImportTariffsForCountry(rows, "JPN").map((row) => displayImportTariffLabel(row, "JPN"));
 
     expect(labels).toContain("RCEP 관세율(일본)");
+  });
+
+  it("maps ASEAN, New Zealand, Philippines, and UAE country filters to their agreement rows", () => {
+    expect(filterImportTariffsForCountry(rows, "PHL").map((row) => displayImportTariffLabel(row, "PHL"))).toEqual(expect.arrayContaining([
+      "한-필리핀 FTA 관세율",
+      "한-아세안 FTA 관세율",
+      "RCEP 관세율(아세안)"
+    ]));
+    expect(filterImportTariffsForCountry(rows, "SG").map((row) => displayImportTariffLabel(row, "SG"))).toEqual(expect.arrayContaining([
+      "한-아세안 FTA 관세율",
+      "RCEP 관세율(아세안)"
+    ]));
+    expect(filterImportTariffsForCountry(rows, "NZL").map((row) => displayImportTariffLabel(row, "NZL"))).toEqual(expect.arrayContaining([
+      "한-뉴질랜드 FTA 관세율",
+      "RCEP 관세율(뉴질랜드)"
+    ]));
+    expect(filterImportTariffsForCountry(rows, "ARE").map((row) => displayImportTariffLabel(row, "ARE"))).toContain("한-UAE CEPA 관세율");
   });
 
   it("treats non-FTA rate types as common import tariffs", () => {

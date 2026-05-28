@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { buildCargoManagementInspectionEmailText, buildCargoWatchEmailText, cargoWatchStatusDisplay } from "@/lib/cargo-watch-status";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServiceRoleClient, hasSupabaseServiceRoleEnv } from "@/lib/supabase/service-role";
 import { PublicDataFetchError } from "@/server/integrations/public-data/client";
 import {
   buildCustomsCargoProgressQuery,
@@ -81,6 +82,52 @@ function readCargoInput(formData: FormData) {
     houseBlNo: cargoInputLooksLikeBl ? cargoManagementNo : houseBlNo,
     blYear: stringValue(formData, "blYear") || new Date().getFullYear().toString()
   };
+}
+
+function cargoInspectionIdentity(input: {
+  cargoManagementNo?: string | null;
+  masterBlNo?: string | null;
+  houseBlNo?: string | null;
+  blYear?: string | null;
+  notifyEmail?: string | null;
+}) {
+  return [
+    normalizeCargoWatchValue(input.cargoManagementNo),
+    normalizeCargoWatchValue(input.masterBlNo),
+    normalizeCargoWatchValue(input.houseBlNo),
+    normalizeCargoWatchValue(input.blYear),
+    normalizeCargoWatchValue(input.notifyEmail).toLowerCase()
+  ].join("|");
+}
+
+async function hasSentManagementInspectionNotice(notificationKey: string) {
+  if (!hasSupabaseServiceRoleEnv()) return false;
+  const { data, error } = await createSupabaseServiceRoleClient()
+    .from("cargo_management_inspection_notifications")
+    .select("id")
+    .eq("notification_key", notificationKey)
+    .maybeSingle();
+
+  if (error) return false;
+  return Boolean(data?.id);
+}
+
+async function recordManagementInspectionNotice(input: {
+  notificationKey: string;
+  notifyEmail: string;
+  lookupValue: string;
+  managementInspectionValue: string;
+}) {
+  if (!hasSupabaseServiceRoleEnv()) return;
+  await createSupabaseServiceRoleClient()
+    .from("cargo_management_inspection_notifications")
+    .upsert({
+      notification_key: input.notificationKey,
+      notify_email: input.notifyEmail,
+      lookup_value: input.lookupValue,
+      management_inspection_value: input.managementInspectionValue,
+      notified_at: new Date().toISOString()
+    }, { onConflict: "notification_key" });
 }
 
 function cargoNetworkFailureMessage(error: PublicDataFetchError) {
@@ -327,17 +374,34 @@ export async function createCargoWatchAction(
           let managementInspectionMailError: string | null = null;
 
           if (managementInspection.isTarget) {
-            const inspectionMailResult = await sendTransactionalEmail({
-              to: parsed.data.notifyEmail,
-              subject: `[HS Finder] ${lookupValue} 관리대상검사 안내`,
-              text: buildCargoManagementInspectionEmailText({
-                lookupValue,
-                currentStatus: lastStatus || "",
-                managementInspectionYn: managementInspection.value || "Y"
-              })
+            const inspectionKey = cargoInspectionIdentity({
+              ...parsed.data,
+              notifyEmail: parsed.data.notifyEmail
             });
-            managementInspectionMailSent = inspectionMailResult.sent;
-            managementInspectionMailError = inspectionMailResult.sent ? null : inspectionMailResult.message;
+            const alreadySentInspectionNotice = await hasSentManagementInspectionNotice(inspectionKey);
+            if (alreadySentInspectionNotice) {
+              managementInspectionMailSent = true;
+            } else {
+              const inspectionMailResult = await sendTransactionalEmail({
+                to: parsed.data.notifyEmail,
+                subject: `[HS Finder] ${lookupValue} 관리대상검사 안내`,
+                text: buildCargoManagementInspectionEmailText({
+                  lookupValue,
+                  currentStatus: lastStatus || "",
+                  managementInspectionYn: managementInspection.value || "Y"
+                })
+              });
+              managementInspectionMailSent = inspectionMailResult.sent;
+              managementInspectionMailError = inspectionMailResult.sent ? null : inspectionMailResult.message;
+              if (inspectionMailResult.sent) {
+                await recordManagementInspectionNotice({
+                  notificationKey: inspectionKey,
+                  notifyEmail: parsed.data.notifyEmail,
+                  lookupValue,
+                  managementInspectionValue: managementInspection.value || "Y"
+                });
+              }
+            }
           }
 
           if (matched) {

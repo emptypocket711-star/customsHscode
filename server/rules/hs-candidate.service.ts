@@ -914,11 +914,14 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       ...recommendHsCandidatesFromMockOfficialHsMasterSearch(augmentedInput, normalization)
     ];
     const aiHintCandidates = recommendAiHsCodeHintCandidates(augmentedInput, normalization, baseCandidates);
+    const fallbackCandidates = !shouldKeepAiAlternatives && !baseCandidates.length && !aiHintCandidates.length
+      ? recommendHsCandidates(augmentedInput)
+      : [];
 
     const candidates = pruneByUserHsHints(
       input,
       pruneWeakProductRecommendations(
-        mergeRecommendations([...baseCandidates, ...aiHintCandidates]),
+        mergeRecommendations([...baseCandidates, ...aiHintCandidates, ...fallbackCandidates]),
         { keepAmbiguousAlternatives: shouldKeepAiAlternatives }
       )
     );
@@ -930,6 +933,7 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       resultCount: candidates.length,
       aiHintCount: aiHintCandidates.length,
       officialCandidateCount: baseCandidates.length,
+      fallbackCandidateCount: fallbackCandidates.length,
       normalizationCandidateCount: normalizeAiHsCodeHints(normalization).length
     });
     return candidates;
@@ -964,7 +968,10 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       ...nonApiNormalizedBaseCandidates,
       ...aiHintCandidates
     ];
-    const normalizedCandidates = [...nonApiNormalizedCandidates];
+    const fallbackCandidates = !shouldKeepAiAlternatives && !nonApiNormalizedCandidates.length
+      ? recommendHsCandidates(augmentedInput)
+      : [];
+    const normalizedCandidates = [...nonApiNormalizedCandidates, ...fallbackCandidates];
     const merged = filterContextConflictingCandidates(augmentedInput, mergeRecommendations([
       ...recommendAmbiguousProductCandidates(input),
       ...normalizedCandidates
@@ -980,6 +987,7 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       resultCount: candidates.length,
       aiHintCount: aiHintCandidates.length,
       officialCandidateCount: officialHsMasterCandidates.length,
+      fallbackCandidateCount: fallbackCandidates.length,
       normalizationCandidateCount: normalizeAiHsCodeHints(normalization).length
     });
     return candidates;
@@ -1000,7 +1008,10 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
     }
     const mockOfficialCandidates = recommendHsCandidatesFromMockOfficialHsMasterSearch(augmentedInput, normalization);
     const aiHintCandidates = recommendAiHsCodeHintCandidates(augmentedInput, normalization, mockOfficialCandidates);
-    const normalizedCandidates = [...mockOfficialCandidates, ...aiHintCandidates];
+    const fallbackCandidates = !shouldKeepAiAlternatives && !mockOfficialCandidates.length && !aiHintCandidates.length
+      ? recommendHsCandidates(augmentedInput)
+      : [];
+    const normalizedCandidates = [...mockOfficialCandidates, ...aiHintCandidates, ...fallbackCandidates];
     const merged = filterContextConflictingCandidates(augmentedInput, mergeRecommendations([
       ...recommendAmbiguousProductCandidates(input),
       ...normalizedCandidates
@@ -1016,6 +1027,7 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       resultCount: candidates.length,
       aiHintCount: aiHintCandidates.length,
       officialCandidateCount: mockOfficialCandidates.length,
+      fallbackCandidateCount: fallbackCandidates.length,
       normalizationCandidateCount: normalizeAiHsCodeHints(normalization).length
     });
     return candidates;

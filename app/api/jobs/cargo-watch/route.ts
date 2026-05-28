@@ -136,6 +136,17 @@ async function processCargoWatches(request: NextRequest) {
   }
 
   const supabase = createSupabaseServiceRoleClient();
+  await supabase
+    .from("cargo_watch_requests")
+    .update({
+      status: "active",
+      next_check_at: new Date().toISOString(),
+      last_error: "이전 감시 작업이 완료되지 않아 재시도 대기 상태로 복구했습니다.",
+      updated_at: new Date().toISOString()
+    })
+    .eq("status", "checking")
+    .lt("updated_at", new Date(Date.now() - 10 * 60 * 1000).toISOString());
+
   const { data, error } = await supabase
     .from("cargo_watch_requests")
     .select("id,cargo_management_no,master_bl_no,house_bl_no,bl_year,target_status,notify_email,poll_interval_seconds,management_inspection_notified_at")
@@ -158,8 +169,23 @@ async function processCargoWatches(request: NextRequest) {
   const managementInspectionNotifiedKeys = new Set<string>();
 
   for (const row of rows) {
-    checked += 1;
     const nextCheckAt = new Date(Date.now() + Math.max(row.poll_interval_seconds || 300, 300) * 1000).toISOString();
+    const { data: claimedRows, error: claimError } = await supabase
+      .from("cargo_watch_requests")
+      .update({
+        status: "checking",
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", row.id)
+      .eq("status", "active")
+      .lte("next_check_at", new Date().toISOString())
+      .select("id");
+
+    if (claimError || !claimedRows?.length) {
+      continue;
+    }
+
+    checked += 1;
 
     try {
       const snapshot = await fetchCustomsCargoProgressSnapshot(
@@ -234,6 +260,7 @@ async function processCargoWatches(request: NextRequest) {
         await supabase
           .from("cargo_watch_requests")
           .update({
+            status: "active",
             last_status: statusCandidates.displayCurrentStatus || statusCandidates.currentStatus || null,
             last_checked_at: new Date().toISOString(),
             next_check_at: nextCheckAt,
@@ -320,6 +347,7 @@ async function processCargoWatches(request: NextRequest) {
       await supabase
         .from("cargo_watch_requests")
         .update({
+          status: "active",
           last_checked_at: new Date().toISOString(),
           next_check_at: nextCheckAt,
           last_error: error instanceof Error ? error.message : "화물 감시 작업 중 오류가 발생했습니다.",

@@ -406,7 +406,8 @@ function appendOriginMarkingCopyLines(lines: string[], originMarking: HsDirectLo
   lines.push("원산지 표시");
 
   if (!originMarking?.isTarget) {
-    lines.push("원산지표시대상으로 조회되는 항목은 없습니다.");
+    lines.push("원산지표시대상으로 조회되는 항목은 확인되지 않았습니다.");
+    lines.push("다만 표시방법, 개별법령, 거래조건에 따라 별도 표시·증빙 의무가 존재할 수 있으므로 제품 상세자료 기준 확인이 필요합니다.");
     return;
   }
 
@@ -1918,7 +1919,8 @@ function destinationCopySummaryText({
       lines.push(`- ${requirement.requirementName}${requirement.agency ? ` / ${requirement.agency}` : ""}`);
     }
   } else {
-    lines.push("수입 요건은 없습니다");
+    lines.push("조회된 수입요건 데이터가 없습니다.");
+    lines.push("다만 통합공고, 개별법령, 표시·인증·유통규제 의무가 존재할 수 있으므로 제품 상세자료 기준 확인이 필요합니다.");
   }
 
   return lines.join("\n");
@@ -3369,7 +3371,7 @@ export async function HsDirectLookupPanel({
                         </table>
                       </div>
                     ) : (
-                      <EmptySectionState>표시할 수입요건 데이터가 없습니다.</EmptySectionState>
+                      <EmptySectionState>세관장확인대상 수입요건은 조회되지 않았습니다. 다만 통합공고, 개별법령, 표시·인증·유통규제 의무가 존재할 수 있습니다.</EmptySectionState>
                     )}
                 </div>
 

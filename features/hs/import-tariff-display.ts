@@ -22,6 +22,20 @@ const koreaEuAgreement: AgreementOption = {
   evidence: "원산지신고문안, 인증수출자 번호, 직접운송 증빙"
 };
 
+const koreaAseanAgreement: AgreementOption = {
+  prefix: "FAS",
+  label: "한-아세안 FTA 관세율",
+  coType: "기관발급 원산지증명서",
+  evidence: "AK Form 등 원산지증명, 직접운송 증빙"
+};
+
+const rcepAseanAgreement: AgreementOption = {
+  prefix: "FRCAS",
+  label: "RCEP 관세율(아세안)",
+  coType: "RCEP 원산지증명서 또는 인증수출자 원산지신고",
+  evidence: "RCEP 원산지증명, 직접운송, 누적 적용 여부"
+};
+
 const euMemberImportCountryCodes = [
   "AUT", "AT",
   "BEL", "BE",
@@ -64,20 +78,82 @@ const countryAgreementOptions: Record<string, AgreementOption[]> = {
   GBR: [{ prefix: "FGB", label: "한-영 FTA 관세율", coType: "원산지신고", evidence: "원산지신고문안, 직접운송 증빙, 생산·원재료 증빙" }],
   IDN: [
     { prefix: "FID", label: "한-인도네시아 CEPA 관세율", coType: "협정상 원산지증명", evidence: "원산지증명, 직접운송, 원산지소명자료" },
-    { prefix: "FRCAS", label: "RCEP 관세율(아세안)", coType: "RCEP 원산지증명서 또는 인증수출자 원산지신고", evidence: "RCEP 원산지증명, 직접운송, 누적 적용 여부" }
+    rcepAseanAgreement
   ],
   IND: [{ prefix: "FIN", label: "한-인도 CEPA 관세율", coType: "기관발급 원산지증명서", evidence: "원산지증명서, 직접운송 증빙, 원산지소명자료" }],
+  ISR: [{ prefix: "FIL", label: "한-이스라엘 FTA 관세율", coType: "협정상 원산지증명", evidence: "원산지증명, 직접운송, 생산·원재료 증빙" }],
   JPN: [{ prefix: "FRCJP", label: "RCEP 관세율(일본)", coType: "RCEP 원산지증명서 또는 인증수출자 원산지신고", evidence: "RCEP 원산지증명, 직접운송, 원산지소명자료" }],
-  THA: [
-    { prefix: "FAS", label: "한-아세안 FTA 관세율", coType: "기관발급 원산지증명서", evidence: "AK Form 등 원산지증명, 직접운송 증빙" },
-    { prefix: "FRCAS", label: "RCEP 관세율(아세안)", coType: "RCEP 원산지증명서 또는 인증수출자 원산지신고", evidence: "RCEP 원산지증명, 직접운송, 누적 적용 여부" }
+  KHM: [
+    { prefix: "FKH", label: "한-캄보디아 FTA 관세율", coType: "기관발급 원산지증명서", evidence: "원산지증명, 직접운송, 원산지소명자료" },
+    koreaAseanAgreement,
+    rcepAseanAgreement
   ],
+  MYS: [koreaAseanAgreement, rcepAseanAgreement],
+  NZL: [
+    { prefix: "FNZ", label: "한-뉴질랜드 FTA 관세율", coType: "원산지증명서 또는 원산지신고", evidence: "원산지증명, 직접운송, 생산·원재료 증빙" },
+    { prefix: "FRCNZ", label: "RCEP 관세율(뉴질랜드)", coType: "RCEP 원산지증명서 또는 인증수출자 원산지신고", evidence: "RCEP 원산지증명, 직접운송, 누적 적용 여부" }
+  ],
+  PHL: [
+    { prefix: "FPH", label: "한-필리핀 FTA 관세율", coType: "협정상 원산지증명", evidence: "원산지증명, 직접운송, 생산·원재료 증빙" },
+    koreaAseanAgreement,
+    rcepAseanAgreement
+  ],
+  SGP: [koreaAseanAgreement, rcepAseanAgreement],
+  THA: [
+    koreaAseanAgreement,
+    rcepAseanAgreement
+  ],
+  TUR: [{ prefix: "FTR", label: "한-튀르키예 FTA 관세율", coType: "원산지증명서 또는 원산지신고", evidence: "원산지증명, 직접운송, 생산·원재료 증빙" }],
+  ARE: [{ prefix: "FAE", label: "한-UAE CEPA 관세율", coType: "협정상 원산지증명", evidence: "원산지증명, 직접운송, 생산·원재료 증빙" }],
   USA: [{ prefix: "FUS", label: "한-미 FTA 관세율", coType: "수입자·수출자·생산자 원산지증명", evidence: "원산지증명서 또는 자율증명, 직접운송, 원산지소명자료" }],
   VNM: [
     { prefix: "FVN", label: "한-베트남 FTA 관세율", coType: "기관발급 원산지증명서", evidence: "KV Form 등 원산지증명, 직접운송 증빙" },
-    { prefix: "FAS", label: "한-아세안 FTA 관세율", coType: "기관발급 원산지증명서", evidence: "AK Form 등 원산지증명, 직접운송 증빙" },
-    { prefix: "FRCAS", label: "RCEP 관세율(아세안)", coType: "RCEP 원산지증명서 또는 인증수출자 원산지신고", evidence: "RCEP 원산지증명, 직접운송, 누적 적용 여부" }
-  ]
+    koreaAseanAgreement,
+    rcepAseanAgreement
+  ],
+  MMR: [koreaAseanAgreement, rcepAseanAgreement],
+  BRU: [koreaAseanAgreement, rcepAseanAgreement],
+  CHL: [{ prefix: "FCL", label: "한-칠레 FTA 관세율", coType: "협정상 원산지증명", evidence: "원산지증명, 직접운송, 생산·원재료 증빙" }],
+  COL: [{ prefix: "FCO", label: "한-콜롬비아 FTA 관세율", coType: "협정상 원산지증명", evidence: "원산지증명, 직접운송, 생산·원재료 증빙" }],
+  PER: [{ prefix: "FPE", label: "한-페루 FTA 관세율", coType: "협정상 원산지증명", evidence: "원산지증명, 직접운송, 생산·원재료 증빙" }],
+  CRI: [{ prefix: "FCECR", label: "한-중미 FTA 관세율(코스타리카)", coType: "협정상 원산지증명", evidence: "원산지증명, 직접운송, 생산·원재료 증빙" }],
+  SLV: [{ prefix: "FCESV", label: "한-중미 FTA 관세율(엘살바도르)", coType: "협정상 원산지증명", evidence: "원산지증명, 직접운송, 생산·원재료 증빙" }],
+  HND: [{ prefix: "FCEHN", label: "한-중미 FTA 관세율(온두라스)", coType: "협정상 원산지증명", evidence: "원산지증명, 직접운송, 생산·원재료 증빙" }],
+  NIC: [
+    { prefix: "FCEINI", label: "한-중미 FTA 관세율(니카라과)", coType: "협정상 원산지증명", evidence: "원산지증명, 직접운송, 생산·원재료 증빙" },
+    { prefix: "FCENI", label: "한-중미 FTA 관세율(니카라과)", coType: "협정상 원산지증명", evidence: "원산지증명, 직접운송, 생산·원재료 증빙" }
+  ],
+  PAN: [{ prefix: "FCEPA", label: "한-중미 FTA 관세율(파나마)", coType: "협정상 원산지증명", evidence: "원산지증명, 직접운송, 생산·원재료 증빙" }]
+};
+
+const importCountryAgreementAliases: Record<string, string> = {
+  AE: "ARE",
+  AU: "AUS",
+  BN: "BRU",
+  CA: "CAN",
+  CL: "CHL",
+  CN: "CHN",
+  CO: "COL",
+  CR: "CRI",
+  GB: "GBR",
+  ID: "IDN",
+  IL: "ISR",
+  IN: "IND",
+  JP: "JPN",
+  KH: "KHM",
+  MM: "MMR",
+  MY: "MYS",
+  NI: "NIC",
+  NZ: "NZL",
+  PA: "PAN",
+  PE: "PER",
+  PH: "PHL",
+  SG: "SGP",
+  SV: "SLV",
+  TH: "THA",
+  TR: "TUR",
+  US: "USA",
+  VN: "VNM"
 };
 
 function canonicalRateType(rateType: string) {
@@ -291,7 +367,9 @@ function agreementForRateType(rateType: string, countryCode: string) {
     return Object.values(countryAgreementOptions).flat().find((agreement) => canonical === agreement.prefix);
   }
 
-  return (countryAgreementOptions[countryCode.toUpperCase()] ?? []).find((agreement) => canonical === agreement.prefix);
+  const normalizedCountry = countryCode.toUpperCase();
+  const agreementCountry = importCountryAgreementAliases[normalizedCountry] ?? normalizedCountry;
+  return (countryAgreementOptions[agreementCountry] ?? []).find((agreement) => canonical === agreement.prefix);
 }
 
 export function isCommonImportTariff(tariff: Pick<ImportTariffDisplayRow, "rateType">) {
