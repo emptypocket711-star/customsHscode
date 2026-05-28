@@ -260,6 +260,21 @@
 - `npm test`
 - `npm run build`
 
+### 예상 납세액 산출 다국어 1차
+
+- 예상 납세액 산출 페이지와 계산 패널의 주요 UI chrome을 `duty-estimator` dictionary로 분리했다.
+- HS 조회에서 전달된 세율, 내국세명, FTA 후보 라벨, 서버 액션 응답 메시지는 원문 데이터 또는 기존 응답값으로 유지했다.
+- 결과 복사 문구의 기본 라벨도 locale별로 분리하되, 납세액은 계속 “예상/estimate” 표현을 사용한다.
+- dictionary 누락과 영어권 단정 표현을 방지하는 테스트를 추가했다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test -- lib/i18n/duty-estimator.test.ts`
+- `npm test`
+- `npm run build`
+
 2026-05-25 기준 전체 테스트 결과:
 
 - 52 test files passed

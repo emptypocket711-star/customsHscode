@@ -26,3 +26,7 @@ export {
   getHsDirectDictionary,
   type HsDirectDictionary
 } from "./hs-direct";
+export {
+  getDutyEstimatorDictionary,
+  type DutyEstimatorDictionary
+} from "./duty-estimator";

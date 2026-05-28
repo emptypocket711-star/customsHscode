@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { calculateDutyEstimate, parseNumericInput, type DutyEstimateInternalTaxItem, type DutyEstimateTaxBaseType } from "@/features/duty-estimator/calculation";
 import { dutyEstimatorHskCodeError, normalizeDutyEstimatorHskCode } from "@/features/duty-estimator/hsk-validation";
+import type { DutyEstimatorDictionary } from "@/lib/i18n";
 import { lookupExchangeRateAction, type ExchangeRateLookupState } from "@/server/actions/exchange-rate.actions";
 
 const currencyOptions = ["USD", "EUR", "JPY", "CNY", "KRW"] as const;
@@ -92,7 +93,7 @@ function parseInternalTaxItemsParam(value: string | null): DutyEstimateInternalT
   }
 }
 
-export function DutyEstimatorPanel() {
+export function DutyEstimatorPanel({ dictionary }: { dictionary: DutyEstimatorDictionary }) {
   const searchParams = useSearchParams();
   const initialInternalTaxItems = useMemo(() => parseInternalTaxItemsParam(searchParams.get("internalTaxItems")), [searchParams]);
   const initialCurrency = currencyOptions.includes(searchParams.get("currency") as (typeof currencyOptions)[number])
@@ -139,22 +140,22 @@ export function DutyEstimatorPanel() {
   }).toString()}`;
 
   const copyText = [
-    `HS CODE: ${hskCodeError ? "10자리 확인 필요" : hskCode}`,
-    `조회기준일: ${basisDate}`,
-    countryCode && countryCode !== "ALL" ? `수입 국가/협정 필터: ${countryCode}` : null,
-    `물품가격: ${currency} ${goodsAmount || "0"}`,
-    `관세환율: ${currency === "KRW" ? "1" : exchangeRate}`,
-    exchangeRateState.status === "success" && exchangeRateState.effectiveFrom ? `관세환율 적용일: ${exchangeRateState.effectiveFrom}` : null,
-    exchangeRateState.status === "success" && exchangeRateState.sourceSnapshotId ? `관세환율 스냅샷: ${exchangeRateState.sourceSnapshotId}` : null,
-    `과세가격: ${formatMoney(result.taxableValueKrw)}`,
-    `적용 관세율: ${result.appliedDutyRate}%`,
-    preferentialRateLabel ? `FTA/협정 후보: ${preferentialRateLabel}` : null,
-    `관세: ${formatMoney(result.customsDutyKrw)}`,
-    `기타 내국세: ${formatMoney(result.otherInternalTaxKrw)}`,
+    `HS CODE: ${hskCodeError ? dictionary.copy.hskNeedsTenDigits : hskCode}`,
+    `${dictionary.form.basisDate}: ${basisDate}`,
+    countryCode && countryCode !== "ALL" ? `${dictionary.copy.importCountryFilter}: ${countryCode}` : null,
+    `${dictionary.copy.goodsAmount}: ${currency} ${goodsAmount || "0"}`,
+    `${dictionary.copy.exchangeRate}: ${currency === "KRW" ? "1" : exchangeRate}`,
+    exchangeRateState.status === "success" && exchangeRateState.effectiveFrom ? `${dictionary.copy.exchangeRateDate}: ${exchangeRateState.effectiveFrom}` : null,
+    exchangeRateState.status === "success" && exchangeRateState.sourceSnapshotId ? `${dictionary.copy.exchangeRateSnapshot}: ${exchangeRateState.sourceSnapshotId}` : null,
+    `${dictionary.copy.taxableValue}: ${formatMoney(result.taxableValueKrw)}`,
+    `${dictionary.copy.appliedDutyRate}: ${result.appliedDutyRate}%`,
+    preferentialRateLabel ? `${dictionary.copy.ftaCandidate}: ${preferentialRateLabel}` : null,
+    `${dictionary.copy.customsDuty}: ${formatMoney(result.customsDutyKrw)}`,
+    `${dictionary.copy.otherInternalTax}: ${formatMoney(result.otherInternalTaxKrw)}`,
     ...result.otherInternalTaxItems.map((item) => `- ${item.name} ${item.rate}% (${taxBaseLabel(item.baseType)} 기준): ${formatMoney(item.amountKrw)}`),
-    `부가세 과세표준: ${formatMoney(result.vatBaseKrw)}`,
-    `부가세: ${formatMoney(result.vatKrw)}`,
-    `예상 납세액: ${formatMoney(result.totalTaxKrw)}`
+    `${dictionary.copy.vatBase}: ${formatMoney(result.vatBaseKrw)}`,
+    `${dictionary.copy.vat}: ${formatMoney(result.vatKrw)}`,
+    `${dictionary.copy.totalTax}: ${formatMoney(result.totalTaxKrw)}`
   ].filter(Boolean).join("\n");
 
   async function copyResult() {
@@ -185,9 +186,9 @@ export function DutyEstimatorPanel() {
     <div className="grid gap-5">
       <Card>
         <CardHeader
-          title="예상 납세액 계산"
-          description="물품가격, 관세환율, 운임·보험료, 관세율, 내국세율을 입력해 예상 납세액을 계산합니다. HS 조회에서 넘어온 값은 자동으로 채워집니다."
-          action={<Badge tone="info">예상 계산</Badge>}
+          title={dictionary.page.title}
+          description={dictionary.page.panelDescription}
+          action={<Badge tone="info">{dictionary.page.badge}</Badge>}
         />
         <CardBody>
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px] xl:items-start">
@@ -195,7 +196,7 @@ export function DutyEstimatorPanel() {
               <section className="grid gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
                 <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_160px] lg:items-start">
                 <label className="grid gap-1 text-sm font-medium text-slate-700">
-                  HS CODE
+                  {dictionary.form.hskCode}
                   <input
                     aria-invalid={Boolean(hskCodeError)}
                     className={`focus-ring rounded-md border px-3 py-2 ${hskCodeError ? "border-red-300 bg-red-50" : "border-slate-300"}`}
@@ -205,7 +206,7 @@ export function DutyEstimatorPanel() {
                     value={hskCode}
                   />
                   {hskCodeError ? <span className="text-xs font-semibold text-red-700">{hskCodeError}</span> : null}
-                  <span className="text-xs text-slate-500">예: 3401.30-0000 또는 3401300000</span>
+                  <span className="text-xs text-slate-500">{dictionary.form.hskHint}</span>
                 </label>
                 {hskCodeError ? (
                   <button
@@ -214,18 +215,18 @@ export function DutyEstimatorPanel() {
                     type="button"
                   >
                     <Search aria-hidden="true" size={17} />
-                    HS 조회
+                    {dictionary.form.hskLookup}
                   </button>
                 ) : (
                   <Link className="focus-ring inline-flex items-center justify-center gap-2 self-end rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" href={lookupHref}>
                     <Search aria-hidden="true" size={17} />
-                    HS 조회
+                    {dictionary.form.hskLookup}
                   </Link>
                 )}
                 </div>
 
                 <label className="grid max-w-xs gap-1 text-sm font-medium text-slate-700">
-                  조회기준일
+                  {dictionary.form.basisDate}
                   <input
                     className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-950"
                     onChange={(event) => setBasisDate(event.target.value)}
@@ -237,22 +238,22 @@ export function DutyEstimatorPanel() {
 
               <section className="grid gap-4 rounded-lg border border-slate-200 bg-white p-4">
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-950">과세가격 입력</h3>
-                  <p className="mt-1 text-xs leading-5 text-slate-500">외화 물품가격은 관세환율을 곱해 원화 과세가격에 반영합니다.</p>
+                  <h3 className="text-sm font-semibold text-slate-950">{dictionary.form.taxableSectionTitle}</h3>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">{dictionary.form.taxableSectionDescription}</p>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[140px_minmax(0,1fr)]">
                 <label className="grid gap-1 text-sm font-medium text-slate-700">
-                  통화
+                  {dictionary.form.currency}
                   <select className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2" onChange={(event) => setCurrency(event.target.value as (typeof currencyOptions)[number])} value={currency}>
                     {currencyOptions.map((option) => <option key={option} value={option}>{option}</option>)}
                   </select>
                 </label>
-                <NumericField label="물품가격" onChange={setGoodsAmount} suffix={currency} value={goodsAmount} />
+                <NumericField label={dictionary.form.goodsAmount} onChange={setGoodsAmount} suffix={currency} value={goodsAmount} />
                 </div>
 
                 <div className="grid gap-3 rounded-md border border-slate-200 bg-slate-50 p-3">
                   <div className="grid gap-3 lg:grid-cols-[minmax(180px,260px)_1fr] lg:items-end">
-                    <NumericField disabled={currency === "KRW"} label="관세환율" onChange={setExchangeRate} suffix="KRW" value={currency === "KRW" ? "1" : exchangeRate} />
+                    <NumericField disabled={currency === "KRW"} label={dictionary.form.exchangeRate} onChange={setExchangeRate} suffix="KRW" value={currency === "KRW" ? "1" : exchangeRate} />
                     <form className="grid gap-2 sm:grid-cols-[auto_auto_1fr] sm:items-center" onSubmit={handleExchangeRateSubmit}>
                     <input name="currencyCode" type="hidden" value={currency} />
                     <input name="applyStartDate" type="hidden" value={basisDate} />
@@ -264,7 +265,7 @@ export function DutyEstimatorPanel() {
                       type="submit"
                       value="current"
                     >
-                      {exchangeRatePending ? "조회 중" : currency === "KRW" ? "원화 1 적용" : "저장 환율 적용"}
+                      {exchangeRatePending ? "..." : currency === "KRW" ? dictionary.form.applyKrwOne : dictionary.form.applyCurrentRate}
                     </button>
                     <button
                       className="focus-ring inline-flex h-10 items-center justify-center rounded-md border border-blue-200 bg-blue-50 px-3 text-xs font-semibold text-blue-700 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
@@ -273,7 +274,7 @@ export function DutyEstimatorPanel() {
                       type="submit"
                       value="next"
                     >
-                      차주 환율 적용
+                      {dictionary.form.applyNextWeekRate}
                     </button>
                     {exchangeRateState.status !== "idle" ? (
                       <span className={`min-w-0 text-xs leading-5 ${exchangeRateState.status === "success" ? "text-blue-700" : "text-amber-700"}`}>
@@ -283,41 +284,41 @@ export function DutyEstimatorPanel() {
                   </form>
                   </div>
                   {exchangeRateState.status === "success" && exchangeRateState.effectiveFrom ? (
-                    <p className="text-xs text-slate-500">관세환율 적용일 {exchangeRateState.effectiveFrom}</p>
+                    <p className="text-xs text-slate-500">{dictionary.copy.exchangeRateDate} {exchangeRateState.effectiveFrom}</p>
                   ) : null}
                   {exchangeRateState.status === "success" && exchangeRateState.sourceSnapshotId ? (
-                    <p className="text-xs text-slate-500">스냅샷 {exchangeRateState.sourceSnapshotId}</p>
+                    <p className="text-xs text-slate-500">{dictionary.copy.exchangeRateSnapshot} {exchangeRateState.sourceSnapshotId}</p>
                   ) : null}
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
-                  <NumericField label="운임" onChange={setFreightKrw} suffix="KRW" value={freightKrw} />
-                  <NumericField label="보험료" onChange={setInsuranceKrw} suffix="KRW" value={insuranceKrw} />
+                  <NumericField label={dictionary.form.freight} onChange={setFreightKrw} suffix="KRW" value={freightKrw} />
+                  <NumericField label={dictionary.form.insurance} onChange={setInsuranceKrw} suffix="KRW" value={insuranceKrw} />
                 </div>
               </section>
 
               <section className="grid gap-4 rounded-lg border border-slate-200 bg-white p-4">
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-950">세율 입력</h3>
-                  <p className="mt-1 text-xs leading-5 text-slate-500">HS 조회에서 넘어온 값이 있으면 초기값으로 사용하고, 실제 조건에 맞게 조정합니다.</p>
+                  <h3 className="text-sm font-semibold text-slate-950">{dictionary.form.rateSectionTitle}</h3>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">{dictionary.form.rateSectionDescription}</p>
                 </div>
                 {countryCode !== "ALL" || preferentialRateLabel ? (
                   <div className="rounded-md border border-blue-100 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-800">
-                    {countryCode !== "ALL" ? <span className="font-semibold">국가/협정 필터 {countryCode}</span> : null}
-                    {preferentialRateLabel ? <span className="block">FTA/협정 후보: {preferentialRateLabel}</span> : null}
-                    <span className="block text-blue-700">FTA 적용 여부는 원산지증명, 직접운송, 협정 요건 확인 후 선택해 주세요.</span>
+                    {countryCode !== "ALL" ? <span className="font-semibold">{dictionary.copy.importCountryFilter} {countryCode}</span> : null}
+                    {preferentialRateLabel ? <span className="block">{dictionary.copy.ftaCandidate}: {preferentialRateLabel}</span> : null}
+                    <span className="block text-blue-700">{dictionary.form.ftaHelp}</span>
                   </div>
                 ) : null}
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                  <NumericField label="기본 관세율" onChange={setDutyRate} suffix="%" value={dutyRate} />
-                  <NumericField label="FTA/협정 관세율" onChange={setPreferentialRate} placeholder="선택" suffix="%" value={preferentialRate} />
-                  <NumericField label="기타 내국세율 합계" onChange={setOtherInternalTaxRate} suffix="%" value={otherInternalTaxRate} />
-                  <NumericField label="부가세율" onChange={setVatRate} suffix="%" value={vatRate} />
+                  <NumericField label={dictionary.form.dutyRate} onChange={setDutyRate} suffix="%" value={dutyRate} />
+                  <NumericField label={dictionary.form.ftaRate} onChange={setPreferentialRate} placeholder="선택" suffix="%" value={preferentialRate} />
+                  <NumericField label={dictionary.form.otherInternalTaxRate} onChange={setOtherInternalTaxRate} suffix="%" value={otherInternalTaxRate} />
+                  <NumericField label={dictionary.form.vatRate} onChange={setVatRate} suffix="%" value={vatRate} />
                 </div>
 
                 {initialInternalTaxItems.length ? (
                   <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600">
-                    <span className="font-semibold text-slate-700">세목별 초기값</span>
+                    <span className="font-semibold text-slate-700">{dictionary.form.internalTaxItems}</span>
                     <span className="mt-1 block">
                       {initialInternalTaxItems.map((item) => `${item.name} ${item.rate}%${item.baseType ? ` (${taxBaseLabel(item.baseType)} 기준)` : ""}`).join(" / ")}
                     </span>
@@ -331,7 +332,7 @@ export function DutyEstimatorPanel() {
                     onChange={(event) => setUsePreferentialRate(event.target.checked)}
                     type="checkbox"
                   />
-                  FTA/협정 관세율 적용
+                  {dictionary.form.preferentialRateCheckbox}
                 </label>
               </section>
             </div>
@@ -342,27 +343,27 @@ export function DutyEstimatorPanel() {
                   <Calculator aria-hidden="true" size={18} />
                 </span>
                 <div>
-                  <p className="text-sm font-semibold text-slate-950">계산 결과</p>
-                  <p className="text-xs text-slate-500">원화 기준</p>
+                  <p className="text-sm font-semibold text-slate-950">{dictionary.result.resultTitle}</p>
+                  <p className="text-xs text-slate-500">{dictionary.result.wonBasis}</p>
                 </div>
               </div>
 
               <dl className="mt-4 grid gap-2 text-sm">
-                <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3"><dt className="text-slate-600">과세가격</dt><dd className="text-right font-semibold text-slate-950">{formatMoney(result.taxableValueKrw)}</dd></div>
-                <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3"><dt className="text-slate-600">적용 관세율</dt><dd className="text-right font-semibold text-slate-950">{result.appliedDutyRate}%</dd></div>
-                <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3"><dt className="text-slate-600">관세</dt><dd className="text-right font-semibold text-slate-950">{formatMoney(result.customsDutyKrw)}</dd></div>
-                <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3"><dt className="text-slate-600">기타 내국세</dt><dd className="text-right font-semibold text-slate-950">{formatMoney(result.otherInternalTaxKrw)}</dd></div>
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3"><dt className="text-slate-600">{dictionary.result.taxableValue}</dt><dd className="text-right font-semibold text-slate-950">{formatMoney(result.taxableValueKrw)}</dd></div>
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3"><dt className="text-slate-600">{dictionary.result.appliedDutyRate}</dt><dd className="text-right font-semibold text-slate-950">{result.appliedDutyRate}%</dd></div>
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3"><dt className="text-slate-600">{dictionary.result.customsDuty}</dt><dd className="text-right font-semibold text-slate-950">{formatMoney(result.customsDutyKrw)}</dd></div>
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3"><dt className="text-slate-600">{dictionary.result.otherInternalTax}</dt><dd className="text-right font-semibold text-slate-950">{formatMoney(result.otherInternalTaxKrw)}</dd></div>
                 {result.otherInternalTaxItems.map((item) => (
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 pl-3 text-xs" key={`${item.name}-${item.rate}`}>
                     <dt className="min-w-0 text-slate-500">{item.name} {item.rate}% ({taxBaseLabel(item.baseType)})</dt>
                     <dd className="text-right font-semibold text-slate-700">{formatMoney(item.amountKrw)}</dd>
                   </div>
                 ))}
-                <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3"><dt className="text-slate-600">부가세 과세표준</dt><dd className="text-right font-semibold text-slate-950">{formatMoney(result.vatBaseKrw)}</dd></div>
-                <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3"><dt className="text-slate-600">부가세</dt><dd className="text-right font-semibold text-slate-950">{formatMoney(result.vatKrw)}</dd></div>
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3"><dt className="text-slate-600">{dictionary.result.vatBase}</dt><dd className="text-right font-semibold text-slate-950">{formatMoney(result.vatBaseKrw)}</dd></div>
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3"><dt className="text-slate-600">{dictionary.result.vat}</dt><dd className="text-right font-semibold text-slate-950">{formatMoney(result.vatKrw)}</dd></div>
                 <div className="mt-2 border-t border-slate-200 pt-3">
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3">
-                    <dt className="font-semibold text-slate-950">예상 납세액</dt>
+                    <dt className="font-semibold text-slate-950">{dictionary.result.estimatedTotal}</dt>
                     <dd className="text-right text-lg font-semibold text-blue-700">{formatMoney(result.totalTaxKrw)}</dd>
                   </div>
                 </div>
@@ -370,7 +371,7 @@ export function DutyEstimatorPanel() {
 
               {hskCodeError ? (
                 <p className="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">
-                  HS CODE 10자리를 입력하면 계산 결과를 복사할 수 있습니다.
+                  {dictionary.result.copyDisabled}
                 </p>
               ) : null}
 
@@ -381,7 +382,7 @@ export function DutyEstimatorPanel() {
                 type="button"
               >
                 <Clipboard aria-hidden="true" size={17} />
-                {copied ? "복사됨" : "계산 결과 복사"}
+                {copied ? dictionary.copy.copied : dictionary.copy.copyResult}
               </button>
             </aside>
           </div>
@@ -389,13 +390,13 @@ export function DutyEstimatorPanel() {
       </Card>
 
       <Card>
-        <CardHeader title="자동 입력 범위" description="HS 조회 결과와 관세청 관세환율 API로 채울 수 있는 항목은 자동 입력하고, 과세가격 구성 항목은 사용자가 조정합니다." />
+        <CardHeader title={dictionary.autoInput.cardTitle} description={dictionary.autoInput.description} />
         <CardBody>
           <div className="grid gap-3 md:grid-cols-3">
             {[
-              ["관세환율", "API012 관세환율정보조회로 기준일·수입 구분별 환율을 조회합니다."],
-              ["관세율", "통합 조회에서 넘어온 기본 관세율과 FTA/협정 관세율 후보를 초기값으로 사용합니다."],
-              ["내국세", "현재는 테스트 법령룰과 통계부호 매칭값을 초기값으로 사용하고, 실제 매핑 자료 입수 후 대체합니다."]
+              [dictionary.autoInput.exchangeTitle, dictionary.autoInput.exchangeBody],
+              [dictionary.autoInput.dutyRateTitle, dictionary.autoInput.dutyRateBody],
+              [dictionary.autoInput.internalTaxTitle, dictionary.autoInput.internalTaxBody]
             ].map(([title, body]) => (
               <div className="rounded-md border border-slate-200 p-4" key={title}>
                 <p className="font-semibold text-slate-950">{title}</p>
