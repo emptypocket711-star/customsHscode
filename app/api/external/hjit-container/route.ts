@@ -13,35 +13,50 @@ function escapeHtml(value: string) {
     .replace(/'/g, "&#39;");
 }
 
+type TerminalCode = "hjit" | "snct" | "ifpc";
+
 export function GET(request: Request) {
   const url = new URL(request.url);
   const containerNo = normalizeContainerNo(url.searchParams.get("containerNo"));
-  const terminal = url.searchParams.get("terminal") === "snct" ? "snct" : "hjit";
+  const requestedTerminal = url.searchParams.get("terminal");
+  const terminal: TerminalCode = requestedTerminal === "snct" || requestedTerminal === "ifpc" ? requestedTerminal : "hjit";
 
   if (!/^[A-Z]{4}[0-9]{7}$/.test(containerNo)) {
     return new NextResponse("Invalid container number", { status: 400 });
   }
 
   const safeContainerNo = escapeHtml(containerNo);
-  const terminalLabel = terminal === "snct" ? "선광신컨테이너터미널" : "한진인천컨테이너터미널";
-  const actionUrl = terminal === "snct"
-    ? "https://snct.sun-kwang.co.kr/infoservice/webpage/opt/ContainerInfo.jsp"
-    : "http://59.17.254.10:9130/esvc/inq/ContainerAction.do";
-  const hiddenFields = terminal === "snct"
-    ? `
-        <input type="hidden" name="isSearch" value="Y">
-        <input type="hidden" name="page" value="1">
-        <input type="hidden" name="URI" value="/infoservice/webpage/opt/ContainerInfo.jsp">
-        <input type="hidden" name="INPUT_PSN" value="">
-        <input type="hidden" name="cntrNo" value="${safeContainerNo}">
-      `
-    : `
-        <input type="hidden" name="cmd" value="ContainerInq">
-        <input type="hidden" name="mode" value="">
-        <input type="hidden" name="nowPage" value="1">
-        <input type="hidden" name="contNo" value="${safeContainerNo}">
-        <input type="hidden" name="contPoint" value="">
-      `;
+  const terminalLabel = terminal === "ifpc"
+    ? "인천항국제페리부두"
+    : terminal === "snct"
+      ? "선광신컨테이너터미널"
+      : "한진인천컨테이너터미널";
+  const actionUrl = terminal === "ifpc"
+    ? "https://www.ifpc.co.kr/INFO/infoservice/index.html?gv_empno=cntr_info"
+    : terminal === "snct"
+      ? "https://snct.sun-kwang.co.kr/infoservice/webpage/opt/ContainerInfo.jsp"
+      : "http://59.17.254.10:9130/esvc/inq/ContainerAction.do";
+  const hiddenFields = terminal === "ifpc"
+    ? ""
+    : terminal === "snct"
+      ? `
+          <input type="hidden" name="isSearch" value="Y">
+          <input type="hidden" name="page" value="1">
+          <input type="hidden" name="URI" value="/infoservice/webpage/opt/ContainerInfo.jsp">
+          <input type="hidden" name="INPUT_PSN" value="">
+          <input type="hidden" name="cntrNo" value="${safeContainerNo}">
+        `
+      : `
+          <input type="hidden" name="cmd" value="ContainerInq">
+          <input type="hidden" name="mode" value="">
+          <input type="hidden" name="nowPage" value="1">
+          <input type="hidden" name="contNo" value="${safeContainerNo}">
+          <input type="hidden" name="contPoint" value="">
+        `;
+  const method = terminal === "ifpc" ? "get" : "post";
+  const submitScript = terminal === "ifpc"
+    ? "window.location.href = document.getElementById(\"lookupForm\").action;"
+    : "document.getElementById(\"lookupForm\").submit();";
   const html = `<!doctype html>
 <html lang="ko">
   <head>
@@ -58,15 +73,15 @@ export function GET(request: Request) {
   <body>
     <main>
       <h1>${terminalLabel} 조회 화면으로 이동합니다.</h1>
-      <p>컨테이너 번호 ${safeContainerNo}를 입력한 상태로 조회 요청을 전송합니다.</p>
-      <form id="lookupForm" method="post" action="${actionUrl}">
+      <p>${terminal === "ifpc" ? `원문 화면이 열리면 컨테이너 번호 ${safeContainerNo}를 입력해 조회해 주세요.` : `컨테이너 번호 ${safeContainerNo}를 입력한 상태로 조회 요청을 전송합니다.`}</p>
+      <form id="lookupForm" method="${method}" action="${actionUrl}">
         ${hiddenFields}
         <button type="submit">조회 화면 열기</button>
       </form>
     </main>
     <script>
       window.setTimeout(function () {
-        document.getElementById("lookupForm").submit();
+        ${submitScript}
       }, 250);
     </script>
   </body>

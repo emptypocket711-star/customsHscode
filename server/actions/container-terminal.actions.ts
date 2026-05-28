@@ -12,7 +12,7 @@ export type HjitContainerLookupState = {
   trackingRows?: EtransTrackingRow[];
 };
 
-type TerminalCode = "hjit" | "snct";
+type TerminalCode = "hjit" | "snct" | "ifpc";
 
 type TerminalLookupResult = {
   terminalCode: TerminalCode;
@@ -24,6 +24,7 @@ type TerminalLookupResult = {
 
 const hjitContainerInquiryUrl = "http://59.17.254.10:9130/esvc/inq/ContainerAction.do";
 const snctContainerInquiryUrl = "https://snct.sun-kwang.co.kr/infoservice/webpage/opt/ContainerInfo.jsp";
+const ifpcContainerInquiryUrl = "https://www.ifpc.co.kr/INFO/infoservice/index.html?gv_empno=cntr_info";
 const etransTrackingUrl = "https://etrans.klnet.co.kr/main/searchTracking.do";
 
 export type EtransTrackingRow = {
@@ -89,6 +90,15 @@ function htmlText(value: string) {
     .replace(/&gt;/g, ">")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function escapeMarkup(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function extractInputValueAfterLabel(html: string, label: string) {
@@ -209,9 +219,10 @@ function preferredTerminalOrder(row?: EtransTrackingRow): TerminalCode[] {
   const terminalName = row?.terminalName ?? "";
   const terminalCode = row?.terminalCode.toUpperCase() ?? "";
 
-  if (terminalName.includes("선광") || terminalCode.includes("SNCT")) return ["snct", "hjit"];
-  if (terminalName.includes("한진") || terminalCode.includes("HJIT")) return ["hjit", "snct"];
-  return ["hjit", "snct"];
+  if (terminalName.includes("인천신국제여객") || terminalCode.includes("IFPC")) return ["ifpc", "hjit", "snct"];
+  if (terminalName.includes("선광") || terminalCode.includes("SNCT")) return ["snct", "hjit", "ifpc"];
+  if (terminalName.includes("한진") || terminalCode.includes("HJIT")) return ["hjit", "snct", "ifpc"];
+  return ["hjit", "snct", "ifpc"];
 }
 
 async function lookupHjitTerminal(containerNo: string): Promise<TerminalLookupResult> {
@@ -282,14 +293,77 @@ async function lookupSunKwangTerminal(containerNo: string): Promise<TerminalLook
   };
 }
 
-async function lookupKnownTerminals(containerNo: string, order: TerminalCode[]) {
+function buildIfpcHtml(containerNo: string, row?: EtransTrackingRow) {
+  const safeContainerNo = escapeMarkup(containerNo);
+  const statusDate = escapeMarkup(row?.statusDate ?? "-");
+  const statusTime = escapeMarkup(row?.statusTime ?? "-");
+  const statusName = escapeMarkup(row?.statusName ?? "-");
+  const terminalName = escapeMarkup(row?.terminalName || "인천신국제여객터미널");
+  const terminalCode = escapeMarkup(row?.terminalCode || "IFPC");
+
+  return `
+    <base href="https://www.ifpc.co.kr/">
+    <style>
+      body { margin: 0; padding: 18px; font-family: Arial, sans-serif; color: #0f172a; background: #f8fafc; }
+      .panel { border: 1px solid #dbe3ef; border-radius: 12px; background: #fff; padding: 18px; box-shadow: 0 12px 35px rgb(15 23 42 / 8%); }
+      h1 { margin: 0 0 10px; font-size: 18px; }
+      p { margin: 6px 0; font-size: 13px; line-height: 1.6; color: #475569; }
+      dl { display: grid; grid-template-columns: 140px 1fr; overflow: hidden; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 14px; }
+      dt, dd { margin: 0; padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
+      dt { background: #f1f5f9; font-weight: 700; color: #475569; }
+      dd { background: #fff; font-weight: 700; color: #0f172a; }
+      dt:last-of-type, dd:last-of-type { border-bottom: 0; }
+      a { display: inline-flex; margin-top: 14px; min-height: 36px; align-items: center; border-radius: 8px; background: #1d4ed8; color: #fff; padding: 0 12px; font-weight: 700; text-decoration: none; font-size: 13px; }
+    </style>
+    <div class="panel">
+      <h1>${terminalName} 컨테이너 조회</h1>
+      <p>인천항국제페리부두 원문 화면은 Nexacro 기반이라 현재는 eTrans 최신 이력으로 최종 반입지를 식별해 표시합니다.</p>
+      <p>원문 확인이 필요하면 아래 버튼으로 터미널 조회 화면을 열어 컨테이너 번호를 입력해 주세요.</p>
+      <dl>
+        <dt>컨테이너 번호</dt><dd>${safeContainerNo}</dd>
+        <dt>터미널</dt><dd>${terminalName}</dd>
+        <dt>터미널 코드</dt><dd>${terminalCode}</dd>
+        <dt>최신 상태</dt><dd>${statusName}</dd>
+        <dt>상태 일시</dt><dd>${statusDate} ${statusTime}</dd>
+      </dl>
+      <a href="${ifpcContainerInquiryUrl}" target="_blank" rel="noreferrer">인천항국제페리부두 원문 열기</a>
+    </div>
+  `;
+}
+
+function lookupIfpcTerminal(containerNo: string, row?: EtransTrackingRow): TerminalLookupResult {
+  const isIfpcRow = Boolean(row && (
+    row.terminalName.includes("인천신국제여객") ||
+    row.terminalCode.toUpperCase().includes("IFPC")
+  ));
+  const summary = [
+    ["최신 상태", row?.statusName ?? ""],
+    ["상태 일시", [row?.statusDate, row?.statusTime].filter(Boolean).join(" ")],
+    ["터미널", row?.terminalName ?? "인천신국제여객터미널"],
+    ["터미널 코드", row?.terminalCode ?? "IFPC"]
+  ]
+    .map(([label, value]) => ({ label, value }))
+    .filter((item) => item.value);
+
+  return {
+    terminalCode: "ifpc",
+    terminalName: "인천항국제페리부두",
+    html: buildIfpcHtml(containerNo, row),
+    summary,
+    hasResult: isIfpcRow
+  };
+}
+
+async function lookupKnownTerminals(containerNo: string, order: TerminalCode[], topTrackingRow?: EtransTrackingRow) {
   const errors: string[] = [];
 
   for (const terminal of order) {
     try {
-      const result = terminal === "snct"
-        ? await lookupSunKwangTerminal(containerNo)
-        : await lookupHjitTerminal(containerNo);
+      const result = terminal === "ifpc"
+        ? lookupIfpcTerminal(containerNo, topTrackingRow)
+        : terminal === "snct"
+          ? await lookupSunKwangTerminal(containerNo)
+          : await lookupHjitTerminal(containerNo);
 
       if (result.hasResult) return result;
       errors.push(`${result.terminalName}: 조회 결과 없음`);
@@ -327,7 +401,7 @@ export async function lookupHjitContainerAction(
   const terminalOrder = preferredTerminalOrder(topTrackingRow);
 
   try {
-    const terminalResult = await lookupKnownTerminals(containerNo, terminalOrder);
+    const terminalResult = await lookupKnownTerminals(containerNo, terminalOrder, topTrackingRow);
 
     return {
       status: "success",
@@ -343,7 +417,9 @@ export async function lookupHjitContainerAction(
   } catch (error) {
     return {
       status: "error",
-      message: error instanceof Error ? `한진인천컨테이너터미널 연결에 실패했습니다. ${error.message}` : "한진인천컨테이너터미널 연결에 실패했습니다."
+      notice,
+      trackingRows,
+      message: error instanceof Error ? `터미널 조회에 실패했습니다. ${error.message}` : "터미널 조회에 실패했습니다."
     };
   }
 }
