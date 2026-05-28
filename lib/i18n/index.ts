@@ -50,3 +50,7 @@ export {
   getDiagnosisDictionary,
   type DiagnosisDictionary
 } from "./diagnosis";
+export {
+  getReportPreviewDictionary,
+  type ReportPreviewDictionary
+} from "./report-preview";

@@ -229,6 +229,10 @@
 - `npm run typecheck`
 - `npm run lint`
 - `npm test`
+- `npm test -- lib/i18n/report-preview.test.ts`
+- `npm run build`
+- `npm run lint`
+- `npm test`
 - `npm test -- lib/i18n/diagnosis.test.ts`
 - `npm run build`
 - `npm run lint`
@@ -474,4 +478,19 @@
 - `npm run lint`
 - `npm test`
 - `npm test -- lib/i18n/diagnosis.test.ts`
+- `npm run build`
+
+### 리포트 미리보기 다국어 1차
+
+- `/reports/preview` 페이지 제목, 담당자 검토 상태, 생성 메타 라벨, Source Locks, 담당자 메모, PDF 출력, 고지사항 UI chrome을 `report-preview` dictionary로 분리했다.
+- 보고서 제목, 본문 섹션, source lock 데이터, disclaimer는 생성/원천 데이터이므로 자동 번역하지 않는다.
+- 자동 예비진단과 담당자 검토 전 상태 라벨을 locale별로 분리하되 법적 확정 표현은 피했다.
+- Report preview dictionary 누락과 영어권 단정 표현을 방지하는 테스트를 추가했다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm test -- lib/i18n/report-preview.test.ts`
 - `npm run build`

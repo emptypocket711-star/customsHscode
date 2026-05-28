@@ -3,12 +3,13 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import type { MockReport } from "@/features/reports/mock-report-data";
 import { formatHsCode } from "@/lib/hs-code";
+import type { ReportPreviewDictionary } from "@/lib/i18n";
 
-function approvalLabel(status: MockReport["approval"]["status"]) {
-  if (status === "approved") return "담당자 승인";
-  if (status === "published") return "고객 게시";
-  if (status === "pending_review") return "담당자 검토 필요";
-  return "초안";
+function approvalLabel(status: MockReport["approval"]["status"], dictionary: ReportPreviewDictionary) {
+  if (status === "approved") return dictionary.approval.approved;
+  if (status === "published") return dictionary.approval.published;
+  if (status === "pending_review") return dictionary.approval.pendingReview;
+  return dictionary.approval.draft;
 }
 
 function statusTone(status: string): "warning" | "info" | "neutral" | "success" {
@@ -18,7 +19,7 @@ function statusTone(status: string): "warning" | "info" | "neutral" | "success" 
   return "success";
 }
 
-export function ReportPreview({ report }: { report: MockReport }) {
+export function ReportPreview({ dictionary, report }: { dictionary: ReportPreviewDictionary; report: MockReport }) {
   return (
     <div className="grid gap-5">
       <Card className="print:border-0 print:shadow-none">
@@ -26,25 +27,25 @@ export function ReportPreview({ report }: { report: MockReport }) {
           <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <div className="flex flex-wrap gap-2">
-                <Badge tone="warning">자동 예비진단 / 담당자 검토 전</Badge>
-                <Badge tone={report.reportType === "import" ? "info" : "neutral"}>{report.reportType === "import" ? "수입" : "수출"}</Badge>
+                <Badge tone="warning">{dictionary.labels.autoPreliminary}</Badge>
+                <Badge tone={report.reportType === "import" ? "info" : "neutral"}>{report.reportType === "import" ? dictionary.labels.import : dictionary.labels.export}</Badge>
               </div>
               <h1 className="mt-4 text-2xl font-semibold text-slate-950">{report.title}</h1>
-              <p className="mt-2 text-sm leading-6 text-slate-600">{report.companyName} / 요청 ID {report.requestId}</p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">{report.companyName} / {dictionary.labels.requestId} {report.requestId}</p>
             </div>
             <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
               <div className="flex items-center gap-2 font-semibold">
                 <Stamp aria-hidden="true" size={18} />
-                {approvalLabel(report.approval.status)}
+                {approvalLabel(report.approval.status, dictionary)}
               </div>
-              <p className="mt-1">승인자: {report.approval.reviewerName ?? "미지정"}</p>
-              <p>승인시각: {report.approval.reviewedAt ?? "검토 전"}</p>
+              <p className="mt-1">{dictionary.approval.reviewer}: {report.approval.reviewerName ?? dictionary.approval.unassigned}</p>
+              <p>{dictionary.approval.reviewedAt}: {report.approval.reviewedAt ?? dictionary.approval.unreviewed}</p>
             </div>
           </div>
 
           <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-4">
-            <div className="rounded-md bg-slate-50 p-3"><dt className="font-semibold text-slate-500">조회기준일</dt><dd className="mt-1 text-slate-900">{report.basisDate}</dd></div>
-            <div className="rounded-md bg-slate-50 p-3"><dt className="font-semibold text-slate-500">생성일시</dt><dd className="mt-1 text-slate-900">{report.generatedAt}</dd></div>
+            <div className="rounded-md bg-slate-50 p-3"><dt className="font-semibold text-slate-500">{dictionary.labels.basisDate}</dt><dd className="mt-1 text-slate-900">{report.basisDate}</dd></div>
+            <div className="rounded-md bg-slate-50 p-3"><dt className="font-semibold text-slate-500">{dictionary.labels.generatedAt}</dt><dd className="mt-1 text-slate-900">{report.generatedAt}</dd></div>
             <div className="rounded-md bg-slate-50 p-3"><dt className="font-semibold text-slate-500">HSK</dt><dd className="mt-1 text-slate-900">{formatHsCode(report.hskCode)}</dd></div>
             <div className="rounded-md bg-slate-50 p-3"><dt className="font-semibold text-slate-500">HS6</dt><dd className="mt-1 text-slate-900">{formatHsCode(report.hs6)}</dd></div>
           </dl>
@@ -74,7 +75,7 @@ export function ReportPreview({ report }: { report: MockReport }) {
 
         <aside className="grid gap-5 self-start">
           <Card>
-            <CardHeader title="Source Locks" description="보고서 생성 시점의 원천 snapshot과 rule version입니다." action={<LockKeyhole aria-hidden="true" className="text-blue-700" size={18} />} />
+            <CardHeader title={dictionary.sections.sourceLocksTitle} description={dictionary.sections.sourceLocksDescription} action={<LockKeyhole aria-hidden="true" className="text-blue-700" size={18} />} />
             <CardBody className="grid gap-3">
               {report.sourceLocks.map((lock) => (
                 <div className="rounded-md border border-slate-200 p-3" key={lock.id}>
@@ -88,7 +89,7 @@ export function ReportPreview({ report }: { report: MockReport }) {
           </Card>
 
           <Card>
-            <CardHeader title="담당자 메모" />
+            <CardHeader title={dictionary.sections.staffNotes} />
             <CardBody>
               <ul className="grid gap-2">
                 {report.approval.staffNotes.map((note) => (
@@ -99,16 +100,16 @@ export function ReportPreview({ report }: { report: MockReport }) {
           </Card>
 
           <Card>
-            <CardHeader title="PDF 출력" action={<FileDown aria-hidden="true" className="text-slate-500" size={18} />} />
+            <CardHeader title={dictionary.sections.pdfTitle} action={<FileDown aria-hidden="true" className="text-slate-500" size={18} />} />
             <CardBody>
-              <p className="text-sm leading-6 text-slate-700">PDF 라이브러리 도입 전 단계입니다. 현재는 브라우저 인쇄용 레이아웃만 제공합니다.</p>
+              <p className="text-sm leading-6 text-slate-700">{dictionary.sections.pdfDescription}</p>
             </CardBody>
           </Card>
         </aside>
       </div>
 
       <Card className="print:border-slate-300 print:shadow-none">
-        <CardHeader title="고지사항" />
+        <CardHeader title={dictionary.sections.disclaimer} />
         <CardBody>
           <p className="text-sm leading-6 text-slate-700">{report.disclaimer}</p>
         </CardBody>
