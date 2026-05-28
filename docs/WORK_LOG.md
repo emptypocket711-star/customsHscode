@@ -273,3 +273,18 @@
 
 - 53 test files passed
 - 286 tests passed
+
+### 다국어 1차 기반
+
+- 공통 locale을 `ko-KR`, `en-US`, `zh-CN`으로 정의했다.
+- 헤더와 사이드 내비게이션은 공통 chrome dictionary를 통해 한국어, 영어, 중국어 간 전환할 수 있다.
+- 선택 언어는 `hsfinder_locale` 쿠키에 저장하고, `profiles.preferred_locale` 컬럼이 적용된 환경에서는 프로필에도 best effort로 저장한다.
+- 루트 레이아웃의 `<html lang>` 값을 선택 언어에 맞춰 변경한다.
+- AI/법적 안전문구는 별도 dictionary helper로 분리해 “예비진단”, “확정 아님”, “검토 필요” 흐름을 유지한다.
+- 프로필 언어 컬럼용 Supabase migration `20260529002000_profile_preferred_locale.sql`을 추가했다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test -- lib/i18n/locales.test.ts lib/i18n/hs-finder-locale.test.ts`

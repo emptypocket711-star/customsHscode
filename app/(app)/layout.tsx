@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
 import { AppSideNav } from "@/components/app-side-nav";
+import { getRequestLocale } from "@/lib/i18n/server";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import { isDeveloperEmail } from "@/server/auth/developer";
 import { validatePersonalActiveSession } from "@/server/auth/session-policy";
@@ -30,6 +31,7 @@ async function getCurrentAccessState() {
 }
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
+  const locale = await getRequestLocale();
   const access = await getCurrentAccessState();
 
   if (!access?.user) {
@@ -51,9 +53,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen">
-      <AppHeader email={user.email ?? null} fullName={profile.full_name ?? null} />
+      <AppHeader email={user.email ?? null} fullName={profile.full_name ?? null} locale={locale} />
       <div className="mx-auto flex w-full max-w-[1680px] flex-col gap-5 px-4 py-5 sm:px-6 lg:flex-row lg:gap-5 lg:px-8">
-        <AppSideNav showOperations={isDeveloperEmail(user.email)} />
+        <AppSideNav locale={locale} showOperations={isDeveloperEmail(user.email)} />
         <main className="min-w-0 flex-1">{children}</main>
       </div>
     </div>
