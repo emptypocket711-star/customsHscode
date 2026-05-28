@@ -173,12 +173,17 @@
   - 선광신컨테이너터미널: 원문 자동 POST 조회 지원
   - 인천컨테이너터미널: 원문 자동 POST 조회 지원
   - 인천항국제페리부두: eTrans 최신 이력 기반 요약 표시와 원문 사이트 연결 지원
+  - BNCT: JSON 조회 엔드포인트 기반 요약 표시와 원문 사이트 연결 지원
+  - 평택컨테이너터미널: JSON 조회 엔드포인트 기반 요약 표시와 `cntrNo` 원문 URL 연결 지원
 - eTrans 최신 상태가 `반출`이면 “아직 최종 반입지에 반입이 되지 않았습니다” 안내를 표시한다.
 - eTrans 조회 결과가 없으면 컨테이너 번호 오류 또는 이미 선적된 컨테이너 가능성을 안내한다.
 - 2026-05-28 샘플 `TBJU7406466` 확인 결과 eTrans 최신 이력은 `인천신국제여객터미널 / IFPCC / 반입완료`로 식별된다.
 - IFPC 원문 화면은 Nexacro 기반이라 현재 서버 직접 조회는 보류하고, 원문 사이트 연결과 eTrans 최신 이력 요약으로 우선 제공한다.
 - 2026-05-28 샘플 `UETU6784452` 확인 결과 eTrans 최신 이력은 `인천컨테이너터미널 / ICTPC / 반입완료`로 식별된다.
 - 인천컨테이너터미널은 `https://service.psa-ict.co.kr/webpage/general/contInfo.jsp` 구형 JSP 조회를 사용한다.
+- BNCT는 `https://info.bnctkorea.com/esvc/cntr/cntrSrch/search?CNTR_NO=` JSON 조회를 사용한다. 샘플 컨테이너가 없어 실제 운영 컨테이너 검증은 추후 필요하다.
+- 평택컨테이너터미널은 `http://www.pctc21.com/esvc/cntr/info2/data?cntrNo=` JSON 조회를 사용한다. 원문 화면은 `cntrNo` URL 파라미터 자동 검색을 지원한다.
+- 평택동방아이포트(PNCT) `http://www.pnct.co.kr/infoservice/index.html`는 Nexacro 단일 앱 구조로 확인했다. 컨테이너 조회 버튼 클릭 시 별도 정적 URL이 드러나지 않아 내부 XFDL 화면과 `.do` 트랜잭션 추적이 추가로 필요하다.
 
 ### 품명 AI 검색 보강
 

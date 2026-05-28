@@ -12,7 +12,7 @@ export type HjitContainerLookupState = {
   trackingRows?: EtransTrackingRow[];
 };
 
-type TerminalCode = "hjit" | "snct" | "ifpc" | "ict";
+type TerminalCode = "hjit" | "snct" | "ifpc" | "ict" | "bnct" | "pctc";
 
 type TerminalLookupResult = {
   terminalCode: TerminalCode;
@@ -26,6 +26,8 @@ const hjitContainerInquiryUrl = "http://59.17.254.10:9130/esvc/inq/ContainerActi
 const snctContainerInquiryUrl = "https://snct.sun-kwang.co.kr/infoservice/webpage/opt/ContainerInfo.jsp";
 const ifpcContainerInquiryUrl = "https://www.ifpc.co.kr/INFO/infoservice/index.html?gv_empno=cntr_info";
 const ictContainerInquiryUrl = "https://service.psa-ict.co.kr/webpage/general/contInfo.jsp";
+const bnctContainerInquiryUrl = "https://info.bnctkorea.com/esvc/cntr/cntrSrch/search";
+const pctcContainerInquiryUrl = "http://www.pctc21.com/esvc/cntr/info2/data";
 const etransTrackingUrl = "https://etrans.klnet.co.kr/main/searchTracking.do";
 
 export type EtransTrackingRow = {
@@ -183,6 +185,61 @@ function hasIctResult(html: string, containerNo: string) {
   return html.includes(containerNo) && html.includes("일반 정보") && !html.includes("자료가 없습니다");
 }
 
+function recordValue(record: Record<string, unknown> | undefined, keys: string[]) {
+  if (!record) return "";
+  for (const key of keys) {
+    const value = record[key];
+    if (value === null || value === undefined) continue;
+    const text = String(value).trim();
+    if (text) return text;
+  }
+  return "";
+}
+
+function buildJsonTerminalHtml({
+  title,
+  containerNo,
+  rows,
+  note,
+  sourceUrl
+}: {
+  title: string;
+  containerNo: string;
+  rows: Array<{ label: string; value: string }>;
+  note?: string;
+  sourceUrl?: string;
+}) {
+  const safeTitle = escapeMarkup(title);
+  const safeContainerNo = escapeMarkup(containerNo);
+  const rowMarkup = rows.length
+    ? rows.map((row) => `<dt>${escapeMarkup(row.label)}</dt><dd>${escapeMarkup(row.value)}</dd>`).join("")
+    : `<dt>조회 결과</dt><dd>표시할 상세 항목이 없습니다.</dd>`;
+  const noteMarkup = note ? `<p>${escapeMarkup(note)}</p>` : "";
+  const sourceMarkup = sourceUrl ? `<a href="${escapeMarkup(sourceUrl)}" target="_blank" rel="noreferrer">원문 화면 열기</a>` : "";
+
+  return `
+    <style>
+      body { margin: 0; padding: 18px; font-family: Arial, sans-serif; color: #0f172a; background: #f8fafc; }
+      .panel { border: 1px solid #dbe3ef; border-radius: 12px; background: #fff; padding: 18px; box-shadow: 0 12px 35px rgb(15 23 42 / 8%); }
+      h1 { margin: 0 0 10px; font-size: 18px; }
+      p { margin: 6px 0; font-size: 13px; line-height: 1.6; color: #475569; }
+      dl { display: grid; grid-template-columns: 150px 1fr; overflow: hidden; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 14px; }
+      dt, dd { margin: 0; padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
+      dt { background: #f1f5f9; font-weight: 700; color: #475569; }
+      dd { background: #fff; font-weight: 700; color: #0f172a; }
+      dt:last-of-type, dd:last-of-type { border-bottom: 0; }
+      a { display: inline-flex; margin-top: 14px; min-height: 36px; align-items: center; border-radius: 8px; background: #1d4ed8; color: #fff; padding: 0 12px; font-weight: 700; text-decoration: none; font-size: 13px; }
+    </style>
+    <div class="panel">
+      <h1>${safeTitle}</h1>
+      <p>컨테이너 번호 ${safeContainerNo}의 터미널 조회 결과입니다.</p>
+      ${noteMarkup}
+      <dl>${rowMarkup}</dl>
+      ${sourceMarkup}
+    </div>
+  `;
+}
+
 type EtransTrackingApiRow = {
   CAR_CODE?: string;
   STATUS_TM?: string;
@@ -253,11 +310,17 @@ function preferredTerminalOrder(row?: EtransTrackingRow): TerminalCode[] {
   const terminalName = row?.terminalName ?? "";
   const terminalCode = row?.terminalCode.toUpperCase() ?? "";
 
-  if (terminalName.includes("인천컨테이너터미널") || terminalCode.includes("ICT")) return ["ict", "hjit", "snct", "ifpc"];
-  if (terminalName.includes("인천신국제여객") || terminalCode.includes("IFPC")) return ["ifpc", "hjit", "snct", "ict"];
-  if (terminalName.includes("선광") || terminalCode.includes("SNCT")) return ["snct", "hjit", "ict", "ifpc"];
-  if (terminalName.includes("한진") || terminalCode.includes("HJIT")) return ["hjit", "snct", "ict", "ifpc"];
-  return ["hjit", "snct", "ict", "ifpc"];
+  if (terminalName.includes("BNCT") || terminalName.includes("부산신항컨테이너터미널") || terminalCode.includes("BNCT")) {
+    return ["bnct", "hjit", "snct", "ict", "ifpc", "pctc"];
+  }
+  if (terminalName.includes("평택컨테이너") || terminalCode.includes("PCTC")) {
+    return ["pctc", "hjit", "snct", "ict", "ifpc", "bnct"];
+  }
+  if (terminalName.includes("인천컨테이너터미널") || terminalCode.includes("ICT")) return ["ict", "hjit", "snct", "ifpc", "bnct", "pctc"];
+  if (terminalName.includes("인천신국제여객") || terminalCode.includes("IFPC")) return ["ifpc", "hjit", "snct", "ict", "bnct", "pctc"];
+  if (terminalName.includes("선광") || terminalCode.includes("SNCT")) return ["snct", "hjit", "ict", "ifpc", "bnct", "pctc"];
+  if (terminalName.includes("한진") || terminalCode.includes("HJIT")) return ["hjit", "snct", "ict", "ifpc", "bnct", "pctc"];
+  return ["hjit", "snct", "ict", "ifpc", "bnct", "pctc"];
 }
 
 async function lookupHjitTerminal(containerNo: string): Promise<TerminalLookupResult> {
@@ -422,18 +485,127 @@ function lookupIfpcTerminal(containerNo: string, row?: EtransTrackingRow): Termi
   };
 }
 
+type BnctContainerResponse = {
+  cntrInfo?: Array<Record<string, unknown>>;
+};
+
+async function lookupBnctTerminal(containerNo: string): Promise<TerminalLookupResult> {
+  const url = new URL(bnctContainerInquiryUrl);
+  url.searchParams.set("CNTR_NO", containerNo);
+
+  const response = await fetch(url, {
+    headers: {
+      accept: "application/json",
+      "user-agent": "HS Finder container terminal lookup"
+    },
+    cache: "no-store",
+    signal: AbortSignal.timeout(20000)
+  });
+
+  if (!response.ok) throw new Error(`BNCT 조회에 실패했습니다. (${response.status})`);
+
+  const json = await response.json() as BnctContainerResponse;
+  const info = json.cntrInfo?.find((item) => recordValue(item, ["CNTR_NO"]).toUpperCase() === containerNo)
+    ?? json.cntrInfo?.[0];
+  const summary = [
+    ["상태", recordValue(info, ["STS_NM", "CNL_DESC", "STS"])],
+    ["F/M", recordValue(info, ["CNTR_FOE_NM", "CNTR_FOE"])],
+    ["Size/Type", [recordValue(info, ["CNTR_SIZ"]), recordValue(info, ["CNTR_TYP"])].filter(Boolean).join("/") || recordValue(info, ["ISO_SIZ_TYP"])],
+    ["Operator", recordValue(info, ["CNTR_OPR", "ACT_OPR"])],
+    ["Vessel/Voyage", recordValue(info, ["VVD", "IN_VVD", "OUT_VVD"])],
+    ["Terminal In", recordValue(info, ["TML_IN_DTE", "TRK_IN_DTE", "YARD_STACK_DTE"])],
+    ["Terminal Out", recordValue(info, ["TML_OUT_DTE"])],
+    ["Yard 위치", recordValue(info, ["YLOC", "VLOC"])],
+    ["검사", recordValue(info, ["CNTR_INSP_NM", "CNTR_INSP"])]
+  ]
+    .map(([label, value]) => ({ label, value }))
+    .filter((row) => row.value && row.value !== "-");
+
+  return {
+    terminalCode: "bnct",
+    terminalName: "BNCT",
+    html: buildJsonTerminalHtml({
+      title: "BNCT 컨테이너 조회",
+      containerNo,
+      rows: summary,
+      sourceUrl: "https://info.bnctkorea.com/esvc/cntr/cntrSrch"
+    }),
+    summary,
+    hasResult: Boolean(info && recordValue(info, ["CNTR_NO"]))
+  };
+}
+
+type PctcContainerResponse = {
+  info?: Record<string, unknown>;
+};
+
+async function lookupPctcTerminal(containerNo: string): Promise<TerminalLookupResult> {
+  const url = new URL(pctcContainerInquiryUrl);
+  url.searchParams.set("cntrNo", containerNo);
+  url.searchParams.set("vesselVoyage", "");
+  url.searchParams.set("CNTR_UID", "");
+
+  const response = await fetch(url, {
+    headers: {
+      accept: "application/json",
+      "user-agent": "HS Finder container terminal lookup"
+    },
+    cache: "no-store",
+    signal: AbortSignal.timeout(20000)
+  });
+
+  if (!response.ok) throw new Error(`평택컨테이너터미널 조회에 실패했습니다. (${response.status})`);
+
+  const json = await response.json() as PctcContainerResponse;
+  const info = json.info;
+  const summary = [
+    ["상태", recordValue(info, ["CNTR_STATE_NM", "CNTR_STATE", "STS_NM", "STATUS"])],
+    ["F/M", recordValue(info, ["CNTR_FM", "CNTR_FOE_NM", "CNTR_FOE", "FE"])],
+    ["Size/Type", recordValue(info, ["CNTR_SIZ_TYP", "SZTP", "ISO", "ISO_SIZ_TYP"])],
+    ["Operator", recordValue(info, ["PTNR_CODE", "CNTR_OPR", "OPR"])],
+    ["Vessel/Voyage", [recordValue(info, ["VSL_NM", "VSL_NAME"]), recordValue(info, ["VOYAGE", "VOY_NO", "VVD"])].filter(Boolean).join(" / ")],
+    ["Terminal In", recordValue(info, ["TML_IN_DTE", "IN_DT", "GATE_IN_DTE", "CY_IN_DT"])],
+    ["Terminal Out", recordValue(info, ["TML_OUT_DTE", "OUT_DT", "GATE_OUT_DTE", "CY_OUT_DT"])],
+    ["Yard 위치", recordValue(info, ["YARD_POS", "YLOC", "VLOC", "STACK_POS"])],
+    ["검사", recordValue(info, ["INSP_YN", "CNTR_INSP_NM", "CNTR_INSP"])]
+  ]
+    .map(([label, value]) => ({ label, value }))
+    .filter((row) => row.value && row.value !== "-");
+
+  return {
+    terminalCode: "pctc",
+    terminalName: "평택컨테이너터미널",
+    html: buildJsonTerminalHtml({
+      title: "평택컨테이너터미널 컨테이너 조회",
+      containerNo,
+      rows: summary,
+      note: "평택컨테이너터미널은 원문 화면이 cntrNo 파라미터를 지원하므로 원사이트 열기 시 입력한 컨테이너 번호로 조회 화면이 열립니다.",
+      sourceUrl: `http://www.pctc21.com/esvc/cntr/info2?cntrNo=${encodeURIComponent(containerNo)}`
+    }),
+    summary,
+    hasResult: Boolean(info && (recordValue(info, ["CNTR_NO", "cntrNo"]) || summary.length > 0))
+  };
+}
+
 async function lookupKnownTerminals(containerNo: string, order: TerminalCode[], topTrackingRow?: EtransTrackingRow) {
   const errors: string[] = [];
 
   for (const terminal of order) {
     try {
-      const result = terminal === "ifpc"
-        ? lookupIfpcTerminal(containerNo, topTrackingRow)
-        : terminal === "snct"
-          ? await lookupSunKwangTerminal(containerNo)
-          : terminal === "ict"
-            ? await lookupIctTerminal(containerNo)
-            : await lookupHjitTerminal(containerNo);
+      let result: TerminalLookupResult;
+      if (terminal === "ifpc") {
+        result = lookupIfpcTerminal(containerNo, topTrackingRow);
+      } else if (terminal === "bnct") {
+        result = await lookupBnctTerminal(containerNo);
+      } else if (terminal === "pctc") {
+        result = await lookupPctcTerminal(containerNo);
+      } else if (terminal === "snct") {
+        result = await lookupSunKwangTerminal(containerNo);
+      } else if (terminal === "ict") {
+        result = await lookupIctTerminal(containerNo);
+      } else {
+        result = await lookupHjitTerminal(containerNo);
+      }
 
       if (result.hasResult) return result;
       errors.push(`${result.terminalName}: 조회 결과 없음`);

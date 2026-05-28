@@ -13,13 +13,13 @@ function escapeHtml(value: string) {
     .replace(/'/g, "&#39;");
 }
 
-type TerminalCode = "hjit" | "snct" | "ifpc" | "ict";
+type TerminalCode = "hjit" | "snct" | "ifpc" | "ict" | "bnct" | "pctc";
 
 export function GET(request: Request) {
   const url = new URL(request.url);
   const containerNo = normalizeContainerNo(url.searchParams.get("containerNo"));
   const requestedTerminal = url.searchParams.get("terminal");
-  const terminal: TerminalCode = requestedTerminal === "snct" || requestedTerminal === "ifpc" || requestedTerminal === "ict"
+  const terminal: TerminalCode = requestedTerminal === "snct" || requestedTerminal === "ifpc" || requestedTerminal === "ict" || requestedTerminal === "bnct" || requestedTerminal === "pctc"
     ? requestedTerminal
     : "hjit";
 
@@ -30,6 +30,10 @@ export function GET(request: Request) {
   const safeContainerNo = escapeHtml(containerNo);
   const terminalLabel = terminal === "ict"
     ? "인천컨테이너터미널"
+    : terminal === "bnct"
+    ? "BNCT"
+    : terminal === "pctc"
+    ? "평택컨테이너터미널"
     : terminal === "ifpc"
     ? "인천항국제페리부두"
     : terminal === "snct"
@@ -37,12 +41,16 @@ export function GET(request: Request) {
       : "한진인천컨테이너터미널";
   const actionUrl = terminal === "ict"
     ? "https://service.psa-ict.co.kr/webpage/general/contInfo.jsp"
+    : terminal === "bnct"
+    ? "https://info.bnctkorea.com/esvc/cntr/cntrSrch"
+    : terminal === "pctc"
+    ? `http://www.pctc21.com/esvc/cntr/info2?cntrNo=${safeContainerNo}`
     : terminal === "ifpc"
     ? "https://www.ifpc.co.kr/INFO/infoservice/index.html?gv_empno=cntr_info"
     : terminal === "snct"
       ? "https://snct.sun-kwang.co.kr/infoservice/webpage/opt/ContainerInfo.jsp"
       : "http://59.17.254.10:9130/esvc/inq/ContainerAction.do";
-  const hiddenFields = terminal === "ifpc"
+  const hiddenFields = terminal === "ifpc" || terminal === "bnct" || terminal === "pctc"
     ? ""
     : terminal === "ict"
       ? `
@@ -66,10 +74,15 @@ export function GET(request: Request) {
           <input type="hidden" name="contNo" value="${safeContainerNo}">
           <input type="hidden" name="contPoint" value="">
         `;
-  const method = terminal === "ifpc" ? "get" : "post";
-  const submitScript = terminal === "ifpc"
+  const method = terminal === "ifpc" || terminal === "bnct" || terminal === "pctc" ? "get" : "post";
+  const submitScript = terminal === "ifpc" || terminal === "bnct" || terminal === "pctc"
     ? "window.location.href = document.getElementById(\"lookupForm\").action;"
     : "document.getElementById(\"lookupForm\").submit();";
+  const guideText = terminal === "ifpc" || terminal === "bnct"
+    ? `원문 화면이 열리면 컨테이너 번호 ${safeContainerNo}를 입력해 조회해 주세요.`
+    : terminal === "pctc"
+      ? `컨테이너 번호 ${safeContainerNo}가 URL에 입력된 상태로 원문 화면을 엽니다.`
+      : `컨테이너 번호 ${safeContainerNo}를 입력한 상태로 조회 요청을 전송합니다.`;
   const html = `<!doctype html>
 <html lang="ko">
   <head>
@@ -86,7 +99,7 @@ export function GET(request: Request) {
   <body>
     <main>
       <h1>${terminalLabel} 조회 화면으로 이동합니다.</h1>
-      <p>${terminal === "ifpc" ? `원문 화면이 열리면 컨테이너 번호 ${safeContainerNo}를 입력해 조회해 주세요.` : `컨테이너 번호 ${safeContainerNo}를 입력한 상태로 조회 요청을 전송합니다.`}</p>
+      <p>${guideText}</p>
       <form id="lookupForm" method="${method}" action="${actionUrl}">
         ${hiddenFields}
         <button type="submit">조회 화면 열기</button>
