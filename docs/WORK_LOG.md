@@ -180,6 +180,8 @@
 - eTrans 조회 결과가 없으면 컨테이너 번호 오류 또는 이미 선적된 컨테이너 가능성을 안내한다.
 - 2026-05-28 샘플 `TBJU7406466` 확인 결과 eTrans 최신 이력은 `인천신국제여객터미널 / IFPCC / 반입완료`로 식별된다.
 - IFPC는 `guest` 세션 로그인 후 `isu_010Qry.selectContainerDup`로 수출/수입 중복 구분값을 받고, `isu_010Qry.selectContainer` 상세 조회를 직접 호출한다. 상세 결과가 없을 때만 eTrans 최신 이력 요약으로 대체한다.
+- 컨테이너 조회 결과는 화면 내 로우 데이터 요약을 기본으로 유지하고, 사용자가 `원문 화면 보기`를 누를 때만 원문 팝업을 연다.
+- `반입계 출력`은 Playwright 기반 API에서 실제 터미널 조회 화면을 렌더링해 PNG로 다운로드한다. IFPC는 원사이트를 직접 열어 컨테이너 번호 입력 후 조회 버튼을 눌러 캡처하는 방식으로 검증했다.
 - 2026-05-28 샘플 `UETU6784452` 확인 결과 eTrans 최신 이력은 `인천컨테이너터미널 / ICTPC / 반입완료`로 식별된다.
 - 인천컨테이너터미널은 `https://service.psa-ict.co.kr/webpage/general/contInfo.jsp` 구형 JSP 조회를 사용한다.
 - BNCT는 `https://info.bnctkorea.com/esvc/cntr/cntrSrch/search?CNTR_NO=` JSON 조회를 사용한다. 샘플 컨테이너가 없어 실제 운영 컨테이너 검증은 추후 필요하다.

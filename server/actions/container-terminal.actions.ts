@@ -5,6 +5,7 @@ export type HjitContainerLookupState = {
   message?: string;
   notice?: string;
   containerNo?: string;
+  terminalCode?: string;
   terminalName?: string;
   sourceUrl?: string;
   html?: string;
@@ -828,6 +829,7 @@ export async function lookupHjitContainerAction(
       message: `${terminalResult.terminalName} 조회 결과를 불러왔습니다.`,
       notice,
       containerNo,
+      terminalCode: terminalResult.terminalCode,
       terminalName: terminalResult.terminalName,
       sourceUrl: `/api/external/hjit-container?terminal=${terminalResult.terminalCode}&containerNo=${encodeURIComponent(containerNo)}`,
       html: terminalResult.html,

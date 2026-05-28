@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { Container, ExternalLink, Loader2, Search, X } from "lucide-react";
+import { Container, Download, ExternalLink, Loader2, Search, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import {
@@ -10,6 +10,32 @@ import {
 } from "@/server/actions/container-terminal.actions";
 
 const initialState: HjitContainerLookupState = { status: "idle" };
+
+async function downloadReceiptImage({
+  containerNo,
+  html,
+  terminalCode
+}: {
+  containerNo: string;
+  html: string;
+  terminalCode?: string;
+}) {
+  const response = await fetch("/api/external/container-receipt", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ containerNo, html, terminalCode })
+  });
+  if (!response.ok) throw new Error(await response.text());
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${containerNo}_반입계.png`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 function SummaryTable({ rows }: { rows: Array<{ label: string; value: string }> }) {
   if (!rows.length) return null;
@@ -123,7 +149,8 @@ function ResultModal({
 export function HjitContainerCheckPanel() {
   const [state, action, pending] = useActionState(lookupHjitContainerAction, initialState);
   const [clientError, setClientError] = useState("");
-  const [dismissedHtml, setDismissedHtml] = useState("");
+  const [rawHtmlOpen, setRawHtmlOpen] = useState(false);
+  const [receiptPending, setReceiptPending] = useState(false);
 
   useEffect(() => {
     if (state.status !== "idle" || !pending) {
@@ -133,7 +160,7 @@ export function HjitContainerCheckPanel() {
 
   const message = clientError || state.message;
   const isSuccess = !clientError && state.status === "success";
-  const modalOpen = Boolean(state.html) && dismissedHtml !== state.html;
+  const modalOpen = Boolean(state.html) && rawHtmlOpen;
 
   return (
     <div className="grid gap-5">
@@ -152,6 +179,7 @@ export function HjitContainerCheckPanel() {
               const value = String(formData.get("containerNo") ?? "").trim();
               if (value) {
                 setClientError("");
+                setRawHtmlOpen(false);
                 return;
               }
 
@@ -182,11 +210,35 @@ export function HjitContainerCheckPanel() {
               {state.html ? (
                 <button
                   className="focus-ring inline-flex min-h-10 items-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                  onClick={() => setDismissedHtml("")}
+                  onClick={() => setRawHtmlOpen(true)}
                   type="button"
                 >
                   <Container aria-hidden="true" size={17} />
-                  원문 팝업 다시 열기
+                  원문 화면 보기
+                </button>
+              ) : null}
+              {state.status === "success" && state.containerNo && state.html ? (
+                <button
+                  className="focus-ring inline-flex min-h-10 items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-100"
+                  disabled={receiptPending}
+                  onClick={async () => {
+                    setReceiptPending(true);
+                    try {
+                      await downloadReceiptImage({
+                        containerNo: state.containerNo ?? "",
+                        html: state.html ?? "",
+                        terminalCode: state.terminalCode
+                      });
+                    } catch {
+                      setClientError("반입계 이미지를 생성하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+                    } finally {
+                      setReceiptPending(false);
+                    }
+                  }}
+                  type="button"
+                >
+                  {receiptPending ? <Loader2 aria-hidden="true" className="animate-spin" size={17} /> : <Download aria-hidden="true" size={17} />}
+                  {receiptPending ? "출력 생성 중" : "반입계 출력"}
                 </button>
               ) : null}
               {state.sourceUrl ? (
@@ -247,7 +299,7 @@ export function HjitContainerCheckPanel() {
       {modalOpen && state.html ? (
         <ResultModal
           html={state.html}
-          onClose={() => setDismissedHtml(state.html ?? "")}
+          onClose={() => setRawHtmlOpen(false)}
           sourceUrl={state.sourceUrl}
           terminalName={state.terminalName}
         />
