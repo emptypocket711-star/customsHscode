@@ -25,6 +25,7 @@ type TerminalLookupResult = {
 const hjitContainerInquiryUrl = "http://59.17.254.10:9130/esvc/inq/ContainerAction.do";
 const snctContainerInquiryUrl = "https://snct.sun-kwang.co.kr/infoservice/webpage/opt/ContainerInfo.jsp";
 const ifpcContainerInquiryUrl = "https://www.ifpc.co.kr/INFO/infoservice/index.html?gv_empno=cntr_info";
+const ifpcNexacroUrl = "https://www.ifpc.co.kr/INFO";
 const ictContainerInquiryUrl = "https://service.psa-ict.co.kr/webpage/general/contInfo.jsp";
 const bnctContainerInquiryUrl = "https://info.bnctkorea.com/esvc/cntr/cntrSrch/search";
 const pctcContainerInquiryUrl = "http://www.pctc21.com/esvc/cntr/info2/data";
@@ -103,6 +104,15 @@ function escapeMarkup(value: string) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+function escapeXml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
 }
 
 function extractInputValueAfterLabel(html: string, label: string) {
@@ -239,6 +249,31 @@ function buildJsonTerminalHtml({
       ${sourceMarkup}
     </div>
   `;
+}
+
+function decodeNexacroText(value: string) {
+  return value
+    .replace(/&#32;/g, " ")
+    .replace(/&#10;/g, "\n")
+    .replace(/&quot;/g, "\"")
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
+    .trim();
+}
+
+function parseNexacroRows(xml: string) {
+  const rows: Array<Record<string, string>> = [];
+  for (const rowMatch of xml.matchAll(/<Row\b[^>]*>([\s\S]*?)<\/Row>/g)) {
+    const row: Record<string, string> = {};
+    for (const colMatch of rowMatch[1].matchAll(/<Col id="([^"]+)">([\s\S]*?)<\/Col>|<Col id="([^"]+)"\s*\/>/g)) {
+      const key = colMatch[1] ?? colMatch[3] ?? "";
+      row[key] = decodeNexacroText(colMatch[2] ?? "");
+    }
+    rows.push(row);
+  }
+  return rows;
 }
 
 type EtransTrackingApiRow = {
@@ -432,64 +467,157 @@ async function lookupIctTerminal(containerNo: string): Promise<TerminalLookupRes
   };
 }
 
-function buildIfpcHtml(containerNo: string, row?: EtransTrackingRow) {
-  const safeContainerNo = escapeMarkup(containerNo);
-  const statusDate = escapeMarkup(row?.statusDate ?? "-");
-  const statusTime = escapeMarkup(row?.statusTime ?? "-");
-  const statusName = escapeMarkup(row?.statusName ?? "-");
-  const terminalName = escapeMarkup(row?.terminalName || "인천신국제여객터미널");
-  const terminalCode = escapeMarkup(row?.terminalCode || "IFPC");
-
-  return `
-    <base href="https://www.ifpc.co.kr/">
-    <style>
-      body { margin: 0; padding: 18px; font-family: Arial, sans-serif; color: #0f172a; background: #f8fafc; }
-      .panel { border: 1px solid #dbe3ef; border-radius: 12px; background: #fff; padding: 18px; box-shadow: 0 12px 35px rgb(15 23 42 / 8%); }
-      h1 { margin: 0 0 10px; font-size: 18px; }
-      p { margin: 6px 0; font-size: 13px; line-height: 1.6; color: #475569; }
-      dl { display: grid; grid-template-columns: 140px 1fr; overflow: hidden; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 14px; }
-      dt, dd { margin: 0; padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
-      dt { background: #f1f5f9; font-weight: 700; color: #475569; }
-      dd { background: #fff; font-weight: 700; color: #0f172a; }
-      dt:last-of-type, dd:last-of-type { border-bottom: 0; }
-      a { display: inline-flex; margin-top: 14px; min-height: 36px; align-items: center; border-radius: 8px; background: #1d4ed8; color: #fff; padding: 0 12px; font-weight: 700; text-decoration: none; font-size: 13px; }
-    </style>
-    <div class="panel">
-      <h1>${terminalName} 컨테이너 조회</h1>
-      <p>인천항국제페리부두 원문 화면은 Nexacro 기반이라 현재는 eTrans 최신 이력으로 최종 반입지를 식별해 표시합니다.</p>
-      <p>원문 확인이 필요하면 아래 버튼으로 터미널 조회 화면을 열어 컨테이너 번호를 입력해 주세요.</p>
-      <dl>
-        <dt>컨테이너 번호</dt><dd>${safeContainerNo}</dd>
-        <dt>터미널</dt><dd>${terminalName}</dd>
-        <dt>터미널 코드</dt><dd>${terminalCode}</dd>
-        <dt>최신 상태</dt><dd>${statusName}</dd>
-        <dt>상태 일시</dt><dd>${statusDate} ${statusTime}</dd>
-      </dl>
-      <a href="${ifpcContainerInquiryUrl}" target="_blank" rel="noreferrer">인천항국제페리부두 원문 열기</a>
-    </div>
-  `;
+function ifpcLoginXml() {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<Root xmlns="http://www.nexacroplatform.com/platform/dataset">
+  <Parameters />
+  <Dataset id="ds_cond">
+    <ColumnInfo>
+      <Column id="id" type="STRING" size="256" />
+      <Column id="pw" type="STRING" size="256" />
+      <Column id="locale" type="STRING" size="256" />
+      <Column id="autoLogin" type="STRING" size="256" />
+      <Column id="token" type="STRING" size="256" />
+    </ColumnInfo>
+    <Rows>
+      <Row type="update">
+        <Col id="id">guest</Col>
+        <Col id="pw" />
+        <Col id="locale">ko</Col>
+        <Col id="autoLogin">Y</Col>
+        <OrgRow>
+          <Col id="id" />
+          <Col id="pw" />
+          <Col id="locale">ko</Col>
+          <Col id="autoLogin">N</Col>
+        </OrgRow>
+      </Row>
+    </Rows>
+  </Dataset>
+</Root>`;
 }
 
-function lookupIfpcTerminal(containerNo: string, row?: EtransTrackingRow): TerminalLookupResult {
-  const isIfpcRow = Boolean(row && (
-    row.terminalName.includes("인천신국제여객") ||
-    row.terminalCode.toUpperCase().includes("IFPC")
-  ));
+function ifpcContainerXml(containerNo: string, sqlId: string, dup = "") {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<Root xmlns="http://www.nexacroplatform.com/platform/dataset">
+  <Parameters>
+    <Parameter id="method">getList</Parameter>
+    <Parameter id="sqlId">${escapeXml(sqlId)}</Parameter>
+    <Parameter id="useIudSql" />
+    <Parameter id="dao" />
+  </Parameters>
+  <Dataset id="input1">
+    <ColumnInfo>
+      <Column id="cntrno" type="STRING" size="256" />
+      <Column id="dup" type="STRING" size="256" />
+      <Column id="plvVessel" type="STRING" size="256" />
+      <Column id="zonCd" type="STRING" size="256" />
+      <Column id="cycIso" type="STRING" size="256" />
+      <Column id="cycUnno" type="STRING" size="256" />
+    </ColumnInfo>
+    <Rows>
+      <Row>
+        <Col id="cntrno">${escapeXml(containerNo)}</Col>
+        ${dup ? `<Col id="dup">${escapeXml(dup)}</Col>` : ""}
+        <Col id="zonCd">1510IF</Col>
+      </Row>
+    </Rows>
+  </Dataset>
+</Root>`;
+}
+
+async function fetchIfpcNexacro(path: string, body: string, cookie?: string) {
+  const response = await fetch(`${ifpcNexacroUrl}${path}`, {
+    method: "POST",
+    headers: {
+      "content-type": "text/xml; charset=UTF-8",
+      "user-agent": "HS Finder container terminal lookup",
+      ...(cookie ? { cookie } : {})
+    },
+    body,
+    cache: "no-store",
+    signal: AbortSignal.timeout(20000)
+  });
+
+  if (!response.ok) throw new Error(`인천항국제페리부두 조회에 실패했습니다. (${response.status})`);
+  return {
+    cookie: response.headers.get("set-cookie")?.split(";")[0] ?? cookie ?? "",
+    text: await response.text()
+  };
+}
+
+async function lookupIfpcTerminal(containerNo: string, row?: EtransTrackingRow): Promise<TerminalLookupResult> {
+  const login = await fetchIfpcNexacro("/com/SsoCtr/login.do", ifpcLoginXml());
+  const dupResponse = await fetchIfpcNexacro("/nxCtr.do", ifpcContainerXml(containerNo, "isu_010Qry.selectContainerDup"), login.cookie);
+  const dupRows = parseNexacroRows(dupResponse.text);
+  const selectedDup = dupRows[0]?.code ?? "";
+  if (!selectedDup) {
+    const fallbackSummary = [
+      ["최신 상태", row?.statusName ?? ""],
+      ["상태 일시", [row?.statusDate, row?.statusTime].filter(Boolean).join(" ")],
+      ["터미널", row?.terminalName ?? "인천신국제여객터미널"],
+      ["터미널 코드", row?.terminalCode ?? "IFPC"]
+    ]
+      .map(([label, value]) => ({ label, value }))
+      .filter((item) => item.value);
+
+    return {
+      terminalCode: "ifpc",
+      terminalName: "인천항국제페리부두",
+      html: buildJsonTerminalHtml({
+        title: "인천항국제페리부두 컨테이너 조회",
+        containerNo,
+        rows: fallbackSummary,
+        note: "IFPC 상세 조회 결과가 없어 eTrans 최신 이력만 표시합니다.",
+        sourceUrl: ifpcContainerInquiryUrl
+      }),
+      summary: fallbackSummary,
+      hasResult: Boolean(row && (row.terminalName.includes("인천신국제여객") || row.terminalCode.toUpperCase().includes("IFPC")))
+    };
+  }
+
+  const detailResponse = await fetchIfpcNexacro(
+    "/nxCtr.do",
+    ifpcContainerXml(containerNo, "isu_010Qry.selectContainer", selectedDup),
+    login.cookie
+  );
+  const detail = parseNexacroRows(detailResponse.text)[0];
   const summary = [
-    ["최신 상태", row?.statusName ?? ""],
-    ["상태 일시", [row?.statusDate, row?.statusTime].filter(Boolean).join(" ")],
-    ["터미널", row?.terminalName ?? "인천신국제여객터미널"],
-    ["터미널 코드", row?.terminalCode ?? "IFPC"]
+    ["구분", dupRows[0]?.codeNam ?? selectedDup],
+    ["상태", recordValue(detail, ["cycStatus"])],
+    ["Location", recordValue(detail, ["cycLocation"])],
+    ["F/M", recordValue(detail, ["cycFmcd"])],
+    ["T/S", recordValue(detail, ["cycTscd"])],
+    ["Class", recordValue(detail, ["cycClass"])],
+    ["ISO", recordValue(detail, ["cycIso"])],
+    ["Size/Type", [recordValue(detail, ["cycSize"]), recordValue(detail, ["cycType"])].filter(Boolean).join("/")],
+    ["중량", recordValue(detail, ["cycWeight"])],
+    ["Operator", recordValue(detail, ["cycOper"])],
+    ["반입 일시", recordValue(detail, ["cycIndate"])],
+    ["반입 차량", recordValue(detail, ["cycItruckno"])],
+    ["반출 일시", recordValue(detail, ["cycOutdate"])],
+    ["반출 차량", recordValue(detail, ["cycOtruckno"])],
+    ["선적 ATB", recordValue(detail, ["ovslAtb"])],
+    ["선적 ATD", recordValue(detail, ["ovslAtd"])],
+    ["POD", recordValue(detail, ["cycPod"])],
+    ["POL", recordValue(detail, ["cycPol"])],
+    ["X-Ray/검사", recordValue(detail, ["cycInsp"])],
+    ["Direct", recordValue(detail, ["cycDirect"])]
   ]
     .map(([label, value]) => ({ label, value }))
-    .filter((item) => item.value);
+    .filter((item) => item.value && item.value !== "undefined");
 
   return {
     terminalCode: "ifpc",
     terminalName: "인천항국제페리부두",
-    html: buildIfpcHtml(containerNo, row),
+    html: buildJsonTerminalHtml({
+      title: "인천항국제페리부두 컨테이너 조회",
+      containerNo,
+      rows: summary,
+      sourceUrl: ifpcContainerInquiryUrl
+    }),
     summary,
-    hasResult: isIfpcRow
+    hasResult: Boolean(detail && recordValue(detail, ["cycCntrno"]))
   };
 }
 
@@ -642,7 +770,7 @@ async function lookupKnownTerminals(containerNo: string, order: TerminalCode[], 
     try {
       let result: TerminalLookupResult;
       if (terminal === "ifpc") {
-        result = lookupIfpcTerminal(containerNo, topTrackingRow);
+        result = await lookupIfpcTerminal(containerNo, topTrackingRow);
       } else if (terminal === "bnct") {
         result = await lookupBnctTerminal(containerNo);
       } else if (terminal === "pctc") {
