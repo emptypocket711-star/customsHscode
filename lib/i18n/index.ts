@@ -46,3 +46,7 @@ export {
   getUsedCarExportDictionary,
   type UsedCarExportDictionary
 } from "./used-car-export";
+export {
+  getDiagnosisDictionary,
+  type DiagnosisDictionary
+} from "./diagnosis";

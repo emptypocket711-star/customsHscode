@@ -2,6 +2,7 @@ import { Search } from "lucide-react";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { destinationCountryOptions, exportCountryLabel } from "@/features/export-diagnosis/country-options";
 import { formatHsCode } from "@/lib/hs-code";
+import type { DiagnosisDictionary } from "@/lib/i18n";
 import { getSeoulDateString } from "@/lib/utils";
 import { getExportDiagnosis } from "@/server/rules/export-diagnosis.service";
 
@@ -30,10 +31,10 @@ function Field({
   );
 }
 
-function DestinationCountrySelect({ defaultValue }: { defaultValue: string }) {
+function DestinationCountrySelect({ defaultValue, label }: { defaultValue: string; label: string }) {
   return (
     <label className="grid gap-1 text-sm font-medium text-slate-700">
-      목적국
+      {label}
       <select className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2" defaultValue={defaultValue} name="destinationCountry">
         {destinationCountryOptions.map((country) => (
           <option key={country.code} value={country.code}>
@@ -46,8 +47,10 @@ function DestinationCountrySelect({ defaultValue }: { defaultValue: string }) {
 }
 
 export async function ExportDiagnosisPanel({
+  dictionary,
   params
 }: {
+  dictionary: DiagnosisDictionary;
   params: {
     hskCode?: string;
     basisDate?: string;
@@ -74,65 +77,65 @@ export async function ExportDiagnosisPanel({
 
   return (
     <Card>
-      <CardHeader title="수출·상대국 관세율 조회" />
+      <CardHeader title={dictionary.export.panelTitle} />
       <CardBody>
         <form className="grid gap-4" method="get">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Field defaultValue={hskCode} label="HSK 코드" name="hskCode" placeholder="예: 8507.60-1000" />
-            <Field defaultValue={basisDate} label="조회기준일" name="basisDate" />
-            <DestinationCountrySelect defaultValue={destinationCountry} />
-            <Field defaultValue={params.finalUser ?? ""} label="최종사용자" name="finalUser" placeholder="해외 유통사 또는 제조사" />
+            <Field defaultValue={hskCode} label={dictionary.common.hskCode} name="hskCode" placeholder="예: 8507.60-1000" />
+            <Field defaultValue={basisDate} label={dictionary.common.basisDate} name="basisDate" />
+            <DestinationCountrySelect defaultValue={destinationCountry} label={dictionary.common.destinationCountry} />
+            <Field defaultValue={params.finalUser ?? ""} label={dictionary.export.fields.finalUser} name="finalUser" placeholder={dictionary.export.fields.finalUserPlaceholder} />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field defaultValue={params.productUse ?? ""} label="최종 용도" name="productUse" placeholder="예: 전기자전거 교체용" />
-            <Field defaultValue={params.productSpecs ?? ""} label="제품 스펙" name="productSpecs" placeholder="전압, 용량, 통신/암호 기능 등" />
+            <Field defaultValue={params.productUse ?? ""} label={dictionary.export.fields.productUse} name="productUse" placeholder={dictionary.export.fields.productUsePlaceholder} />
+            <Field defaultValue={params.productSpecs ?? ""} label={dictionary.export.fields.productSpecs} name="productSpecs" placeholder={dictionary.export.fields.productSpecsPlaceholder} />
           </div>
           <button className="focus-ring inline-flex w-full items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 sm:w-fit" type="submit">
             <Search aria-hidden="true" size={18} />
-            조회
+            {dictionary.common.search}
           </button>
         </form>
 
         {!params.hskCode ? (
           <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700">
-            HSK와 목적국을 입력하면 수출요건, FTA C/O, 바이어 제출서류, 상대국 관세율이 표시됩니다.
+            {dictionary.export.empty}
           </div>
         ) : null}
 
         {params.hskCode && !result ? (
           <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-            조회기준일에 표시할 수 있는 수출 정보가 없습니다.
+            {dictionary.export.noResult}
           </div>
         ) : null}
 
         {result ? (
           <div className="mt-5 overflow-hidden rounded-md border border-slate-200">
-            <div className="bg-blue-700 px-3 py-2 text-sm font-semibold text-white">수출 조회 결과</div>
+            <div className="bg-blue-700 px-3 py-2 text-sm font-semibold text-white">{dictionary.export.exportResult}</div>
             <dl className="grid text-sm sm:grid-cols-[140px_1fr_140px_1fr]">
               <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">HSK</dt>
               <dd className="border-b border-slate-200 px-3 py-2 font-mono font-semibold text-slate-950">{formatHsCode(result.hskCode)}</dd>
-              <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">HS6</dt>
+              <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.common.hs6}</dt>
               <dd className="border-b border-slate-200 px-3 py-2 font-mono text-slate-700">{formatHsCode(result.hs6)}</dd>
-              <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">품명</dt>
+              <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.common.productName}</dt>
               <dd className="border-b border-slate-200 px-3 py-2 sm:col-span-3">{result.productName}</dd>
-              <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">목적국</dt>
+              <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.common.destinationCountry}</dt>
               <dd className="border-b border-slate-200 px-3 py-2">{destinationCountryLabel}</dd>
-              <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">조회기준일</dt>
+              <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.common.basisDate}</dt>
               <dd className="border-b border-slate-200 px-3 py-2">{result.basisDate}</dd>
             </dl>
 
             <section className="border-t border-slate-200">
-              <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">수출요건</div>
+              <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">{dictionary.export.requirementSection}</div>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[900px] text-left text-sm">
                   <thead className="border-y border-slate-200 text-xs font-semibold text-slate-500">
                     <tr>
-                      <th className="px-3 py-2">구분</th>
-                      <th className="px-3 py-2">요건명</th>
-                      <th className="px-3 py-2">법령</th>
-                      <th className="px-3 py-2">기관</th>
-                      <th className="px-3 py-2">내용</th>
-                      <th className="px-3 py-2">제출서류</th>
+                      <th className="px-3 py-2">{dictionary.common.type}</th>
+                      <th className="px-3 py-2">{dictionary.common.name}</th>
+                      <th className="px-3 py-2">{dictionary.common.law}</th>
+                      <th className="px-3 py-2">{dictionary.common.agency}</th>
+                      <th className="px-3 py-2">{dictionary.import.table.procedure}</th>
+                      <th className="px-3 py-2">{dictionary.common.documents}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -148,7 +151,7 @@ export async function ExportDiagnosisPanel({
                     </tr>
                   ))
                 ) : (
-                  <tr><td className="px-3 py-2 text-slate-600" colSpan={6}>표시 가능한 수출요건 데이터 없음</td></tr>
+                  <tr><td className="px-3 py-2 text-slate-600" colSpan={6}>{dictionary.export.requirementEmpty}</td></tr>
                 )}
                   </tbody>
                 </table>
@@ -156,17 +159,17 @@ export async function ExportDiagnosisPanel({
             </section>
 
             <section className="border-t border-slate-200">
-              <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">전략물자 / 수출통제</div>
+              <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">{dictionary.export.exportControlSection}</div>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[860px] text-left text-sm">
                   <thead className="border-y border-slate-200 text-xs font-semibold text-slate-500">
                     <tr>
-                      <th className="px-3 py-2">분류</th>
-                      <th className="px-3 py-2">키워드</th>
-                      <th className="px-3 py-2">조건</th>
-                      <th className="px-3 py-2">자가판정</th>
-                      <th className="px-3 py-2">전문판정</th>
-                      <th className="px-3 py-2">허가</th>
+                      <th className="px-3 py-2">{dictionary.export.table.category}</th>
+                      <th className="px-3 py-2">{dictionary.export.table.keyword}</th>
+                      <th className="px-3 py-2">{dictionary.export.table.specCondition}</th>
+                      <th className="px-3 py-2">{dictionary.export.table.selfClassification}</th>
+                      <th className="px-3 py-2">{dictionary.export.table.expertClassification}</th>
+                      <th className="px-3 py-2">{dictionary.export.table.license}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -176,13 +179,13 @@ export async function ExportDiagnosisPanel({
                       <td className="px-3 py-2 text-slate-700">{control.category}</td>
                       <td className="px-3 py-2 font-medium text-slate-900">{control.keyword}</td>
                       <td className="px-3 py-2 leading-6 text-slate-700">{control.specCondition}</td>
-                      <td className="px-3 py-2 text-slate-700">{control.selfClassificationNeeded ? "필요 가능성 있음" : "-"}</td>
-                      <td className="px-3 py-2 text-slate-700">{control.expertClassificationNeeded ? "필요 가능성 있음" : "-"}</td>
+                      <td className="px-3 py-2 text-slate-700">{control.selfClassificationNeeded ? dictionary.export.possible : "-"}</td>
+                      <td className="px-3 py-2 text-slate-700">{control.expertClassificationNeeded ? dictionary.export.possible : "-"}</td>
                       <td className="px-3 py-2 text-slate-700">{control.licenseType ?? "-"}</td>
                     </tr>
                   ))
                 ) : (
-                  <tr><td className="px-3 py-2 text-slate-600" colSpan={6}>표시 가능한 수출통제 데이터 없음</td></tr>
+                  <tr><td className="px-3 py-2 text-slate-600" colSpan={6}>{dictionary.export.exportControlEmpty}</td></tr>
                 )}
                   </tbody>
                 </table>
@@ -190,15 +193,15 @@ export async function ExportDiagnosisPanel({
             </section>
 
             <section className="border-t border-slate-200">
-              <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">FTA C/O 및 원산지증빙</div>
+              <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">{dictionary.export.ftaCoSection}</div>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[760px] text-left text-sm">
                   <thead className="border-y border-slate-200 text-xs font-semibold text-slate-500">
                     <tr>
-                      <th className="px-3 py-2">협정</th>
-                      <th className="px-3 py-2">발급 가능성</th>
-                      <th className="px-3 py-2">발급방식</th>
-                      <th className="px-3 py-2">원산지증빙</th>
+                      <th className="px-3 py-2">{dictionary.common.agreement}</th>
+                      <th className="px-3 py-2">{dictionary.common.issue}</th>
+                      <th className="px-3 py-2">{dictionary.export.table.issueMethod}</th>
+                      <th className="px-3 py-2">{dictionary.common.evidence}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -212,7 +215,7 @@ export async function ExportDiagnosisPanel({
                     </tr>
                   ))
                 ) : (
-                  <tr><td className="px-3 py-2 text-slate-600" colSpan={4}>표시 가능한 FTA C/O 데이터 없음</td></tr>
+                  <tr><td className="px-3 py-2 text-slate-600" colSpan={4}>{dictionary.export.ftaCoEmpty}</td></tr>
                 )}
                   </tbody>
                 </table>
@@ -220,18 +223,18 @@ export async function ExportDiagnosisPanel({
             </section>
 
             <section className="border-t border-slate-200">
-              <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">수출상대국 관세율</div>
+              <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">{dictionary.export.destinationTariffSection}</div>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[920px] text-left text-sm">
                   <thead className="border-y border-slate-200 text-xs font-semibold text-slate-500">
                     <tr>
-                      <th className="px-3 py-2">국가</th>
-                      <th className="px-3 py-2">상대국 HS</th>
-                      <th className="px-3 py-2">품명</th>
-                      <th className="px-3 py-2">기본세율</th>
-                      <th className="px-3 py-2">협정세율</th>
-                      <th className="px-3 py-2">연도</th>
-                      <th className="px-3 py-2">출처 버전</th>
+                      <th className="px-3 py-2">{dictionary.common.country}</th>
+                      <th className="px-3 py-2">{dictionary.export.table.destinationHs}</th>
+                      <th className="px-3 py-2">{dictionary.export.table.destinationName}</th>
+                      <th className="px-3 py-2">{dictionary.export.table.baseRate}</th>
+                      <th className="px-3 py-2">{dictionary.export.table.preferentialRate}</th>
+                      <th className="px-3 py-2">{dictionary.export.table.tariffYear}</th>
+                      <th className="px-3 py-2">{dictionary.common.sourceVersion}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -252,7 +255,7 @@ export async function ExportDiagnosisPanel({
                     </tr>
                   ))
                 ) : (
-                  <tr><td className="px-3 py-2 text-slate-600" colSpan={7}>목적국 관세율 데이터 없음</td></tr>
+                  <tr><td className="px-3 py-2 text-slate-600" colSpan={7}>{dictionary.export.destinationTariffEmpty}</td></tr>
                 )}
                   </tbody>
                 </table>
@@ -260,12 +263,12 @@ export async function ExportDiagnosisPanel({
             </section>
 
             <section className="border-t border-slate-200">
-              <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">바이어 제출서류</div>
+              <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">{dictionary.export.buyerDocumentsSection}</div>
               <div className="px-3 py-3 text-sm leading-6 text-slate-700">{result.buyerDocumentList.join(", ")}</div>
             </section>
 
             <section className="border-t border-slate-200 bg-slate-50 px-3 py-3">
-              <h2 className="text-sm font-semibold text-slate-950">참고사항</h2>
+              <h2 className="text-sm font-semibold text-slate-950">{dictionary.common.notes}</h2>
               <ul className="mt-2 grid gap-1 text-xs leading-5 text-slate-600">
                 {result.notices.map((notice) => (
                   <li key={notice}>{notice}</li>

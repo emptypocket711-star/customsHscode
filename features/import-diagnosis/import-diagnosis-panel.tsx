@@ -1,6 +1,7 @@
 import { Search } from "lucide-react";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { formatHsCode } from "@/lib/hs-code";
+import type { DiagnosisDictionary } from "@/lib/i18n";
 import { getSeoulDateString } from "@/lib/utils";
 import { getImportDiagnosis } from "@/server/rules/import-diagnosis.service";
 
@@ -50,18 +51,20 @@ function CountrySelect({
   name,
   label,
   defaultValue,
-  allowBlank = false
+  allowBlank = false,
+  blankLabel
 }: {
   name: string;
   label: string;
   defaultValue: string;
   allowBlank?: boolean;
+  blankLabel: string;
 }) {
   return (
     <label className="grid gap-1 text-sm font-medium text-slate-700">
       {label}
       <select className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2" defaultValue={defaultValue} name={name}>
-        {allowBlank ? <option value="">선택 안 함</option> : null}
+        {allowBlank ? <option value="">{blankLabel}</option> : null}
         {importCountryOptions.map((country) => (
           <option key={country.code} value={country.code}>
             {country.label}
@@ -73,8 +76,10 @@ function CountrySelect({
 }
 
 export async function ImportDiagnosisPanel({
+  dictionary,
   params
 }: {
+  dictionary: DiagnosisDictionary;
   params: {
     hskCode?: string;
     basisDate?: string;
@@ -103,64 +108,64 @@ export async function ImportDiagnosisPanel({
 
   return (
     <Card>
-      <CardHeader title="수입 관세·요건 조회" />
+      <CardHeader title={dictionary.import.panelTitle} />
       <CardBody>
         <form className="grid gap-4" method="get">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Field defaultValue={hskCode} label="HSK 코드" name="hskCode" placeholder="예: 3304.99-1000" />
-            <Field defaultValue={basisDate} label="조회기준일" name="basisDate" />
-            <CountrySelect defaultValue={params.originCountry ?? "CN"} label="원산지" name="originCountry" />
-            <CountrySelect defaultValue={params.destinationCountry ?? "KR"} label="목적국" name="destinationCountry" />
+            <Field defaultValue={hskCode} label={dictionary.common.hskCode} name="hskCode" placeholder="예: 3304.99-1000" />
+            <Field defaultValue={basisDate} label={dictionary.common.basisDate} name="basisDate" />
+            <CountrySelect blankLabel="-" defaultValue={params.originCountry ?? "CN"} label={dictionary.import.fields.originCountry} name="originCountry" />
+            <CountrySelect blankLabel="-" defaultValue={params.destinationCountry ?? "KR"} label={dictionary.import.fields.destinationCountry} name="destinationCountry" />
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <CountrySelect defaultValue={params.exportCountry ?? "CN"} label="수출국" name="exportCountry" />
-            <CountrySelect defaultValue={params.shipmentCountry ?? "CN"} label="선적국" name="shipmentCountry" />
-            <CountrySelect defaultValue={params.manufacturingCountry ?? "CN"} label="제조국" name="manufacturingCountry" />
-            <CountrySelect allowBlank defaultValue={params.sellerCountry ?? ""} label="판매국" name="sellerCountry" />
+            <CountrySelect blankLabel="-" defaultValue={params.exportCountry ?? "CN"} label={dictionary.import.fields.exportCountry} name="exportCountry" />
+            <CountrySelect blankLabel="-" defaultValue={params.shipmentCountry ?? "CN"} label={dictionary.import.fields.shipmentCountry} name="shipmentCountry" />
+            <CountrySelect blankLabel="-" defaultValue={params.manufacturingCountry ?? "CN"} label={dictionary.import.fields.manufacturingCountry} name="manufacturingCountry" />
+            <CountrySelect allowBlank blankLabel="-" defaultValue={params.sellerCountry ?? ""} label={dictionary.import.fields.sellerCountry} name="sellerCountry" />
           </div>
           <button className="focus-ring inline-flex w-full items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 sm:w-fit" type="submit">
             <Search aria-hidden="true" size={18} />
-            조회
+            {dictionary.common.search}
           </button>
         </form>
 
         {!params.hskCode ? (
           <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700">
-            HSK와 국가 정보를 입력하면 관세율, FTA, C/O, 수입요건이 표시됩니다.
+            {dictionary.import.empty}
           </div>
         ) : null}
 
         {params.hskCode && !result ? (
           <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-            조회기준일에 표시할 수 있는 수입 정보가 없습니다.
+            {dictionary.import.noResult}
           </div>
         ) : null}
 
         {result ? (
           <div className="mt-5 overflow-hidden rounded-md border border-slate-200">
-            <div className="bg-blue-700 px-3 py-2 text-sm font-semibold text-white">수입 조회 결과</div>
+            <div className="bg-blue-700 px-3 py-2 text-sm font-semibold text-white">{dictionary.import.importResult}</div>
             <dl className="grid text-sm sm:grid-cols-[140px_1fr_140px_1fr]">
               <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">HSK</dt>
               <dd className="border-b border-slate-200 px-3 py-2 font-mono font-semibold text-slate-950">{formatHsCode(result.hskCode)}</dd>
-              <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">HS6</dt>
+              <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.common.hs6}</dt>
               <dd className="border-b border-slate-200 px-3 py-2 font-mono text-slate-700">{formatHsCode(result.hs6)}</dd>
-              <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">품명</dt>
+              <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.common.productName}</dt>
               <dd className="border-b border-slate-200 px-3 py-2 sm:col-span-3">{result.productName}</dd>
-              <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">조회기준일</dt>
+              <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.common.basisDate}</dt>
               <dd className="border-b border-slate-200 px-3 py-2">{result.basisDate}</dd>
-              <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">출처 버전</dt>
+              <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.common.sourceVersion}</dt>
               <dd className="border-b border-slate-200 px-3 py-2">{result.sourceVersion}</dd>
             </dl>
 
             <section className="border-t border-slate-200">
-              <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">관세율</div>
+              <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">{dictionary.import.tariffSection}</div>
               <table className="w-full text-left text-sm">
                 <thead className="border-y border-slate-200 text-xs font-semibold text-slate-500">
                   <tr>
-                    <th className="px-3 py-2">구분</th>
-                    <th className="px-3 py-2">세율</th>
-                    <th className="px-3 py-2">출처</th>
-                    <th className="px-3 py-2">버전</th>
+                    <th className="px-3 py-2">{dictionary.common.type}</th>
+                    <th className="px-3 py-2">{dictionary.common.rate}</th>
+                    <th className="px-3 py-2">{dictionary.common.source}</th>
+                    <th className="px-3 py-2">{dictionary.common.sourceVersion}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -174,25 +179,25 @@ export async function ImportDiagnosisPanel({
                       </tr>
                     ))
                   ) : (
-                    <tr><td className="px-3 py-2 text-slate-600" colSpan={4}>관세율 데이터 없음</td></tr>
+                    <tr><td className="px-3 py-2 text-slate-600" colSpan={4}>{dictionary.import.tariffEmpty}</td></tr>
                   )}
                 </tbody>
               </table>
             </section>
 
             <section className="border-t border-slate-200">
-              <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">FTA / C/O</div>
+              <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">{dictionary.import.ftaSection}</div>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[920px] text-left text-sm">
                   <thead className="border-y border-slate-200 text-xs font-semibold text-slate-500">
                     <tr>
-                      <th className="px-3 py-2">협정</th>
-                      <th className="px-3 py-2">국가</th>
-                      <th className="px-3 py-2">협정세율</th>
-                      <th className="px-3 py-2">C/O</th>
-                      <th className="px-3 py-2">발급</th>
-                      <th className="px-3 py-2">직접운송</th>
-                      <th className="px-3 py-2">증빙</th>
+                      <th className="px-3 py-2">{dictionary.common.agreement}</th>
+                      <th className="px-3 py-2">{dictionary.common.country}</th>
+                      <th className="px-3 py-2">{dictionary.import.table.preferentialRate}</th>
+                      <th className="px-3 py-2">{dictionary.common.co}</th>
+                      <th className="px-3 py-2">{dictionary.common.issue}</th>
+                      <th className="px-3 py-2">{dictionary.import.table.directTransport}</th>
+                      <th className="px-3 py-2">{dictionary.common.evidence}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -209,7 +214,7 @@ export async function ImportDiagnosisPanel({
                     </tr>
                   ))
                 ) : (
-                  <tr><td className="px-3 py-2 text-slate-600" colSpan={7}>표시 가능한 FTA 데이터 없음</td></tr>
+                  <tr><td className="px-3 py-2 text-slate-600" colSpan={7}>{dictionary.import.ftaEmpty}</td></tr>
                 )}
                   </tbody>
                 </table>
@@ -217,17 +222,17 @@ export async function ImportDiagnosisPanel({
             </section>
 
             <section className="border-t border-slate-200">
-              <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">수입요건</div>
+              <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">{dictionary.import.requirementSection}</div>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[920px] text-left text-sm">
                   <thead className="border-y border-slate-200 text-xs font-semibold text-slate-500">
                     <tr>
-                      <th className="px-3 py-2">구분</th>
-                      <th className="px-3 py-2">요건명</th>
-                      <th className="px-3 py-2">법령</th>
-                      <th className="px-3 py-2">기관</th>
-                      <th className="px-3 py-2">내용</th>
-                      <th className="px-3 py-2">요청자료</th>
+                      <th className="px-3 py-2">{dictionary.common.type}</th>
+                      <th className="px-3 py-2">{dictionary.common.name}</th>
+                      <th className="px-3 py-2">{dictionary.common.law}</th>
+                      <th className="px-3 py-2">{dictionary.common.agency}</th>
+                      <th className="px-3 py-2">{dictionary.import.table.procedure}</th>
+                      <th className="px-3 py-2">{dictionary.import.table.requestedDocuments}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -243,7 +248,7 @@ export async function ImportDiagnosisPanel({
                     </tr>
                   ))
                 ) : (
-                  <tr><td className="px-3 py-2 text-slate-600" colSpan={6}>표시 가능한 수입요건 데이터 없음</td></tr>
+                  <tr><td className="px-3 py-2 text-slate-600" colSpan={6}>{dictionary.import.requirementEmpty}</td></tr>
                 )}
                   </tbody>
                 </table>
@@ -251,7 +256,7 @@ export async function ImportDiagnosisPanel({
             </section>
 
             <section className="border-t border-slate-200 bg-slate-50 px-3 py-3">
-              <h2 className="text-sm font-semibold text-slate-950">참고사항</h2>
+              <h2 className="text-sm font-semibold text-slate-950">{dictionary.common.notes}</h2>
               <ul className="mt-2 grid gap-1 text-xs leading-5 text-slate-600">
                 {result.notices.map((notice) => (
                   <li key={notice}>{notice}</li>

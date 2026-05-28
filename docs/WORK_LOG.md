@@ -229,6 +229,10 @@
 - `npm run typecheck`
 - `npm run lint`
 - `npm test`
+- `npm test -- lib/i18n/diagnosis.test.ts`
+- `npm run build`
+- `npm run lint`
+- `npm test`
 - `npm run build`
 - `npm test`
 - `npm test -- lib/i18n/used-car-export.test.ts`
@@ -455,4 +459,19 @@
 - `npm run typecheck`
 - `npm run lint`
 - `npm test`
+- `npm run build`
+
+### 수입·수출 진단 화면 다국어 1차
+
+- `/diagnosis/import`와 `/diagnosis/export`의 페이지 제목, 조회 폼, 빈 상태, 결과 헤더, 섹션명, 테이블 헤더 UI chrome을 `diagnosis` dictionary로 분리했다.
+- HS 코드, 품명, 법령, 기관, 출처, 요건 설명, mock/source 데이터는 원문 신뢰도를 위해 자동 번역하지 않는다.
+- 수출통제의 “필요 가능성 있음” 문구도 locale별 dictionary로 분리해 법적 확정 표현을 피한다.
+- Diagnosis dictionary 누락과 영어권 단정 표현을 방지하는 테스트를 추가했다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm test -- lib/i18n/diagnosis.test.ts`
 - `npm run build`

@@ -1,5 +1,7 @@
 import { PageHeading } from "@/components/page-heading";
 import { ImportDiagnosisPanel } from "@/features/import-diagnosis/import-diagnosis-panel";
+import { getDiagnosisDictionary } from "@/lib/i18n";
+import { resolveCurrentUserLocale } from "@/lib/i18n/server";
 
 export default async function ImportDiagnosisPage({
   searchParams
@@ -16,11 +18,12 @@ export default async function ImportDiagnosisPage({
   }>;
 }) {
   const params = await searchParams;
+  const dictionary = getDiagnosisDictionary(await resolveCurrentUserLocale());
 
   return (
     <>
-      <PageHeading title="수입 관세·요건" description="HSK와 국가 정보를 기준으로 관세율, FTA, C/O, 수입요건을 표시합니다." />
-      <ImportDiagnosisPanel params={params} />
+      <PageHeading title={dictionary.import.pageTitle} description={dictionary.import.pageDescription} />
+      <ImportDiagnosisPanel dictionary={dictionary} params={params} />
     </>
   );
 }
