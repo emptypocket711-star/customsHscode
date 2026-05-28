@@ -10,6 +10,11 @@ import {
 } from "@/server/integrations/customs/customs-api";
 import { sendTransactionalEmail } from "@/server/notifications/email";
 import {
+  claimCargoWatchStatusNotification,
+  markCargoWatchStatusNotificationSent,
+  releaseCargoWatchStatusNotificationClaim
+} from "@/server/repositories/cargo-watch-notification.repository";
+import {
   buildCargoStatusCandidates,
   loadCargoShedInfoByCode,
   statusMatched
@@ -304,6 +309,37 @@ async function processCargoWatches(request: NextRequest) {
 
       const lookupValue = row.cargo_management_no || row.house_bl_no || row.master_bl_no || "등록 화물";
       const targetStatusLabel = cargoWatchStatusDisplay(row.target_status);
+      const notificationClaimId = await claimCargoWatchStatusNotification(supabase, {
+        notificationKey: rowWatchKey,
+        notifyEmail: row.notify_email,
+        lookupValue,
+        targetStatus: row.target_status,
+        sourceWatchId: row.id
+      });
+
+      if (!notificationClaimId) {
+        await supabase
+          .from("cargo_watch_requests")
+          .update({
+            status: "matched",
+            last_status: statusCandidates.displayCurrentStatus || statusCandidates.currentStatus || row.target_status,
+            last_checked_at: new Date().toISOString(),
+            matched_at: new Date().toISOString(),
+            notified_at: new Date().toISOString(),
+            next_check_at: null,
+            last_error: "동일 감시 조건의 상태 알림 발송 이력이 있어 메일 발송을 생략했습니다.",
+            source_name: snapshot.sourceName,
+            source_url: snapshot.sourceUrl,
+            source_version: snapshot.sourceVersion,
+            retrieved_at: snapshot.retrievedAt,
+            checksum: snapshot.checksum,
+            updated_at: new Date().toISOString(),
+            ...managementInspectionUpdate
+          })
+          .eq("id", row.id);
+        continue;
+      }
+
       const mailResult = await sendTransactionalEmail({
         to: row.notify_email,
         subject: `[HS Finder] ${lookupValue} ${targetStatusLabel} 상태 알림`,
@@ -315,9 +351,11 @@ async function processCargoWatches(request: NextRequest) {
       });
 
       if (mailResult.sent) {
+        await markCargoWatchStatusNotificationSent(supabase, notificationClaimId);
         notified += 1;
         notifiedKeys.add(rowWatchKey);
       } else {
+        await releaseCargoWatchStatusNotificationClaim(supabase, notificationClaimId);
         failed += 1;
       }
 

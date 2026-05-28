@@ -58,12 +58,18 @@ export function buildDutyEstimatorHref({
   basisDate,
   dutyRate,
   preferentialRate,
+  countryCode,
+  preferentialRateLabel,
+  usePreferentialRate,
   internalTaxRows
 }: {
   hskCode: string;
   basisDate: string;
   dutyRate?: string;
   preferentialRate?: string;
+  countryCode?: string;
+  preferentialRateLabel?: string;
+  usePreferentialRate?: boolean;
   internalTaxRows?: InternalTaxEstimateRow[];
 }) {
   const params = new URLSearchParams({ hskCode, basisDate });
@@ -77,6 +83,18 @@ export function buildDutyEstimatorHref({
 
   if (parsedPreferentialRate !== null) {
     params.set("preferentialRate", String(parsedPreferentialRate));
+  }
+
+  if (countryCode?.trim()) {
+    params.set("countryCode", countryCode.trim().toUpperCase());
+  }
+
+  if (preferentialRateLabel?.trim()) {
+    params.set("preferentialRateLabel", preferentialRateLabel.trim().slice(0, 120));
+  }
+
+  if (usePreferentialRate) {
+    params.set("usePreferentialRate", "true");
   }
 
   if (internalTaxRates.otherInternalTaxRate > 0) {

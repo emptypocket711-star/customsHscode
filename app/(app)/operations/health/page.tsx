@@ -11,6 +11,12 @@ import {
   type LookupTelemetryEvent
 } from "@/server/repositories/lookup-telemetry.repository";
 
+const dateFormatter = new Intl.DateTimeFormat("ko-KR", {
+  dateStyle: "short",
+  timeStyle: "medium",
+  timeZone: "Asia/Seoul"
+});
+
 function statusLabel(status: EnvironmentHealthItem["status"]) {
   if (status === "ok") return "정상";
   if (status === "missing") return "필수 누락";
@@ -24,11 +30,7 @@ function statusTone(status: EnvironmentHealthItem["status"]) {
 }
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
-    dateStyle: "short",
-    timeStyle: "medium",
-    timeZone: "Asia/Seoul"
-  }).format(new Date(value));
+  return dateFormatter.format(new Date(value));
 }
 
 function eventLabel(eventType: string) {
@@ -38,6 +40,13 @@ function eventLabel(eventType: string) {
   };
 
   return labels[eventType] ?? eventType;
+}
+
+function telemetryStatusLabel(status: string | null) {
+  if (status === "success") return "정상";
+  if (status === "fallback") return "Fallback";
+  if (status === "error") return "오류";
+  return status ?? "-";
 }
 
 function eventTone(event: LookupTelemetryEvent) {
@@ -67,6 +76,8 @@ export default async function OperationsHealthPage() {
   const groups = getEnvironmentHealthGroups();
   const lookupTelemetryEvents = await loadLookupTelemetryEvents();
   const lookupIssueCount = lookupTelemetryEvents.filter(isLookupTelemetryIssue).length;
+  const lookupSuccessCount = lookupTelemetryEvents.length - lookupIssueCount;
+  const zeroResultCount = lookupTelemetryEvents.filter((event) => event.resultCount === 0).length;
   const items = groups.flatMap((group) => group.items);
   const missingRequiredCount = items.filter((item) => item.status === "missing").length;
   const configuredCount = items.filter((item) => item.status === "ok").length;
@@ -113,50 +124,66 @@ export default async function OperationsHealthPage() {
         />
         <CardBody className="p-0">
           {lookupTelemetryEvents.length ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-left text-sm">
-                <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
-                  <tr>
-                    <th className="px-5 py-3">시간</th>
-                    <th className="px-5 py-3">이벤트</th>
-                    <th className="px-5 py-3">상태</th>
-                    <th className="px-5 py-3">결과</th>
-                    <th className="px-5 py-3">입력 형태</th>
-                    <th className="px-5 py-3">처리</th>
-                    <th className="px-5 py-3">오류</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {lookupTelemetryEvents.map((event) => (
-                    <tr key={event.id} className={isLookupTelemetryIssue(event) ? "bg-amber-50/45" : undefined}>
-                      <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-600">{formatDate(event.createdAt)}</td>
-                      <td className="px-5 py-4">
-                        <p className="font-semibold text-slate-950">{eventLabel(event.eventType)}</p>
-                        <p className="mt-1 font-mono text-xs text-slate-500">{event.sourceMode ?? payloadValue(event.payload, "provider")}</p>
-                      </td>
-                      <td className="px-5 py-4">
-                        <Badge tone={eventTone(event)}>{event.status ?? "-"}</Badge>
-                      </td>
-                      <td className="whitespace-nowrap px-5 py-4 text-slate-700">
-                        <span className="font-semibold text-slate-950">{event.resultCount ?? payloadValue(event.payload, "candidateCount")}</span>
-                        <span className="ml-1 text-xs text-slate-500">건</span>
-                      </td>
-                      <td className="px-5 py-4 text-xs leading-5 text-slate-600">
-                        길이 {payloadValue(event.payload, "productNameLength")} / 토큰 {payloadValue(event.payload, "tokenCount")}
-                        <br />
-                        한글 {payloadValue(event.payload, "hasHangul")} · 영문 {payloadValue(event.payload, "hasLatin")} · 숫자 {payloadValue(event.payload, "hasDigits")}
-                      </td>
-                      <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-600">
-                        {event.durationMs ?? payloadValue(event.payload, "durationMs")}ms
-                      </td>
-                      <td className="max-w-[240px] px-5 py-4 text-xs text-slate-600">
-                        {event.errorType ?? payloadValue(event.payload, "errorType")}
-                      </td>
+            <>
+              <div className="grid gap-2 border-b border-slate-200 bg-slate-50 p-3 text-sm sm:grid-cols-3">
+                <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+                  <p className="text-xs font-semibold text-slate-500">정상 처리</p>
+                  <p className="mt-1 font-semibold text-emerald-700">{lookupSuccessCount}건</p>
+                </div>
+                <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+                  <p className="text-xs font-semibold text-slate-500">점검 대상</p>
+                  <p className="mt-1 font-semibold text-amber-700">{lookupIssueCount}건</p>
+                </div>
+                <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+                  <p className="text-xs font-semibold text-slate-500">무결과</p>
+                  <p className="mt-1 font-semibold text-slate-950">{zeroResultCount}건</p>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-[980px] text-left text-sm">
+                  <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
+                    <tr>
+                      <th className="px-5 py-3">시간</th>
+                      <th className="px-5 py-3">이벤트</th>
+                      <th className="px-5 py-3">상태</th>
+                      <th className="px-5 py-3">결과</th>
+                      <th className="px-5 py-3">입력 형태</th>
+                      <th className="px-5 py-3">처리</th>
+                      <th className="px-5 py-3">오류</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {lookupTelemetryEvents.map((event) => (
+                      <tr key={event.id} className={isLookupTelemetryIssue(event) ? "bg-amber-50/45" : undefined}>
+                        <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-600">{formatDate(event.createdAt)}</td>
+                        <td className="px-5 py-4">
+                          <p className="font-semibold text-slate-950">{eventLabel(event.eventType)}</p>
+                          <p className="mt-1 font-mono text-xs text-slate-500">{event.sourceMode ?? payloadValue(event.payload, "provider")}</p>
+                        </td>
+                        <td className="px-5 py-4">
+                          <Badge tone={eventTone(event)}>{telemetryStatusLabel(event.status)}</Badge>
+                        </td>
+                        <td className="whitespace-nowrap px-5 py-4 text-slate-700">
+                          <span className="font-semibold text-slate-950">{event.resultCount ?? payloadValue(event.payload, "candidateCount")}</span>
+                          <span className="ml-1 text-xs text-slate-500">건</span>
+                        </td>
+                        <td className="px-5 py-4 text-xs leading-5 text-slate-600">
+                          길이 {payloadValue(event.payload, "productNameLength")} / 토큰 {payloadValue(event.payload, "tokenCount")}
+                          <br />
+                          한글 {payloadValue(event.payload, "hasHangul")} · 영문 {payloadValue(event.payload, "hasLatin")} · 숫자 {payloadValue(event.payload, "hasDigits")}
+                        </td>
+                        <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-600">
+                          {event.durationMs ?? payloadValue(event.payload, "durationMs")}ms
+                        </td>
+                        <td className="max-w-[240px] px-5 py-4 text-xs font-medium text-slate-600">
+                          {event.errorType ?? payloadValue(event.payload, "errorType")}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           ) : (
             <div className="p-5 text-sm text-slate-600">
               저장된 조회 품질 로그가 없습니다. 운영에서 `LOOKUP_TELEMETRY_ENABLED=true`와 `SUPABASE_SERVICE_ROLE_KEY`가 설정되어야 기록됩니다.

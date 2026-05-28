@@ -34,12 +34,24 @@ describe("buildDutyEstimatorHref", () => {
       basisDate: "2026-05-24",
       dutyRate: "8%",
       preferentialRate: "0%",
+      countryCode: "cn",
+      preferentialRateLabel: "한-중 FTA 관세율",
       internalTaxRows: [
         { name: "부가가치세", lawName: "부가가치세법", rateText: "10%" },
         { name: "개별소비세", lawName: "개별소비세법", rateText: "7%" }
       ]
     });
 
-    expect(decodeURIComponent(href)).toBe('/duty-estimator?hskCode=3304.10-1000&basisDate=2026-05-24&dutyRate=8&preferentialRate=0&otherInternalTaxRate=7&internalTaxItems=[{"name":"개별소비세","rate":7,"baseType":"taxable_value"}]&vatRate=10');
+    const url = new URL(href, "https://example.test");
+    expect(url.pathname).toBe("/duty-estimator");
+    expect(url.searchParams.get("hskCode")).toBe("3304.10-1000");
+    expect(url.searchParams.get("basisDate")).toBe("2026-05-24");
+    expect(url.searchParams.get("dutyRate")).toBe("8");
+    expect(url.searchParams.get("preferentialRate")).toBe("0");
+    expect(url.searchParams.get("countryCode")).toBe("CN");
+    expect(url.searchParams.get("preferentialRateLabel")).toBe("한-중 FTA 관세율");
+    expect(url.searchParams.get("otherInternalTaxRate")).toBe("7");
+    expect(url.searchParams.get("internalTaxItems")).toBe('[{"name":"개별소비세","rate":7,"baseType":"taxable_value"}]');
+    expect(url.searchParams.get("vatRate")).toBe("10");
   });
 });

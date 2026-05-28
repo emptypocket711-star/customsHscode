@@ -149,6 +149,7 @@ export function HjitContainerCheckPanel() {
   const [clientError, setClientError] = useState("");
   const [rawHtmlOpen, setRawHtmlOpen] = useState(false);
   const [receiptPending, setReceiptPending] = useState(false);
+  const [receiptElapsedSeconds, setReceiptElapsedSeconds] = useState(0);
   const [receiptMessage, setReceiptMessage] = useState("");
 
   useEffect(() => {
@@ -156,6 +157,17 @@ export function HjitContainerCheckPanel() {
       window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
     }
   }, [pending, state.status]);
+
+  useEffect(() => {
+    if (!receiptPending) return;
+
+    const startedAt = Date.now();
+    const timer = window.setInterval(() => {
+      setReceiptElapsedSeconds(Math.max(1, Math.floor((Date.now() - startedAt) / 1000)));
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [receiptPending]);
 
   const message = clientError || state.message;
   const isSuccess = !clientError && state.status === "success";
@@ -224,6 +236,7 @@ export function HjitContainerCheckPanel() {
                   onClick={async () => {
                     setClientError("");
                     setReceiptMessage("");
+                    setReceiptElapsedSeconds(0);
                     setReceiptPending(true);
                     try {
                       await downloadReceiptImage({
@@ -241,7 +254,7 @@ export function HjitContainerCheckPanel() {
                   type="button"
                 >
                   {receiptPending ? <Loader2 aria-hidden="true" className="animate-spin" size={17} /> : <Download aria-hidden="true" size={17} />}
-                  {receiptPending ? "출력 생성 중" : "반입계 출력"}
+                  {receiptPending ? `출력 생성 중${receiptElapsedSeconds ? ` ${receiptElapsedSeconds}초` : ""}` : "반입계 출력"}
                 </button>
               ) : null}
               {state.sourceUrl ? (

@@ -1,6 +1,23 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { extractHsCodeHintsFromText } from "@/server/ai/product-search-normalization.service";
 import { hsCandidateServiceInternals, recommendHsCandidates, recommendHsCandidatesForProduct } from "@/server/rules/hs-candidate.service";
+
+const originalAiProvider = process.env.AI_PROVIDER;
+const originalOpenAiApiKey = process.env.OPENAI_API_KEY;
+
+afterEach(() => {
+  if (originalAiProvider === undefined) {
+    delete process.env.AI_PROVIDER;
+  } else {
+    process.env.AI_PROVIDER = originalAiProvider;
+  }
+  if (originalOpenAiApiKey === undefined) {
+    delete process.env.OPENAI_API_KEY;
+  } else {
+    process.env.OPENAI_API_KEY = originalOpenAiApiKey;
+  }
+  vi.unstubAllGlobals();
+});
 
 describe("recommendHsCandidates", () => {
   it("returns matching published candidates with required review fields", () => {
@@ -176,6 +193,113 @@ describe("recommendHsCandidates", () => {
     expect(candidates[0]?.lookupBasis).toBe("ai_hs_hint");
     expect(candidates[0]?.reason).toContain("피부 적용 화장품");
     expect(candidates[0]?.riskNotes).toContain("품목분류 확정");
+  });
+
+  it("keeps GPT-only provisional HS candidates visible when no official HSK row exists", async () => {
+    process.env.AI_PROVIDER = "openai";
+    process.env.OPENAI_API_KEY = "test-key";
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      output_text: JSON.stringify({
+        classificationState: "single_likely_candidate",
+        certainty: "high",
+        displayMode: "single",
+        correctedProductName: "smart watch",
+        primaryCandidate: {
+          code: "8517.62",
+          reason: "스마트폰과 통신하는 웨어러블 전자기기 가능성이 높습니다.",
+          requiredInfo: ["셀룰러 통신 기능 여부"]
+        },
+        candidateHsCodes: ["851762"],
+        candidateHsCodeReasons: [
+          { code: "851762", reason: "무선 데이터 송수신용 스마트워치 가능성", requiredInfo: ["셀룰러 통신 기능 여부"] }
+        ],
+        searchTerms: ["smart watch"],
+        koreanTerms: ["스마트워치"],
+        englishTerms: ["smart watch"],
+        missingQuestions: ["셀룰러 통신 기능 여부 확인"]
+      })
+    }), { status: 200 })));
+
+    const candidates = await recommendHsCandidatesForProduct({
+      productName: "애플워치 모델 A999",
+      basisDate: "2026-05-21"
+    });
+
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]?.hskCode).toBe("851762");
+    expect(candidates[0]?.lookupBasis).toBe("ai_hs_hint");
+    expect(candidates[0]?.riskNotes).toContain("품목분류 확정");
+  });
+
+  it("shows one broad GPT candidate with minimal questions when branch facts are missing", async () => {
+    process.env.AI_PROVIDER = "openai";
+    process.env.OPENAI_API_KEY = "test-key";
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      output_text: JSON.stringify({
+        classificationState: "needs_clarification",
+        certainty: "medium",
+        displayMode: "needs_more_info",
+        correctedProductName: "smart watch",
+        primaryCandidate: {
+          code: "8517.62",
+          reason: "스마트워치 제품군으로 보이나 통신 기능에 따라 하위 판단이 필요합니다.",
+          requiredInfo: ["셀룰러 통신 가능 여부", "블루투스 단독 모델인지"]
+        },
+        candidateHsCodes: ["851762", "910212"],
+        candidateHsCodeReasons: [
+          { code: "851762", reason: "무선통신 기능이 있는 웨어러블 전자기기 가능성", requiredInfo: ["셀룰러 통신 가능 여부"] },
+          { code: "910212", reason: "스마트 기능이 제한적인 시계형 제품이면 조건부 검토", requiredInfo: ["스마트 기능 범위"] }
+        ],
+        searchTerms: ["smart watch"],
+        koreanTerms: ["스마트워치"],
+        englishTerms: ["smart watch"],
+        missingQuestions: ["셀룰러 통신 가능 여부", "스마트폰 없이 독립 통신이 가능한지"]
+      })
+    }), { status: 200 })));
+
+    const candidates = await recommendHsCandidatesForProduct({
+      productName: "애플워치",
+      basisDate: "2026-05-21"
+    });
+
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]?.hskCode).toBe("851762");
+    expect(candidates[0]?.requiredQuestions.join(" ")).toContain("셀룰러");
+  });
+
+  it("uses GPT multilingual normalization for Chinese product names through the same candidate path", async () => {
+    process.env.AI_PROVIDER = "openai";
+    process.env.OPENAI_API_KEY = "test-key";
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      output_text: JSON.stringify({
+        classificationState: "single_likely_candidate",
+        certainty: "high",
+        displayMode: "single",
+        normalizedProductName: "无线键盘",
+        primaryHsCandidate: {
+          hs6: "847160",
+          description: "중국어 품명은 무선 키보드로 해석되며 컴퓨터 입력장치 계열 가능성이 높습니다.",
+          missingInfo: ["완제품 여부", "컴퓨터용 입력장치인지"]
+        },
+        hsCandidates: [
+          { hsCode: "8471.60", name: "키보드 등 입력장치", missingInfo: ["컴퓨터용 입력장치인지"] },
+          { hsCode: "8536.50", description: "스위치 단품이면 조건부 검토", requiredInfo: ["스위치 단품인지"] }
+        ],
+        searchTerms: ["wireless keyboard", "无线键盘"],
+        koreanTerms: ["무선 키보드"],
+        englishTerms: ["wireless keyboard"],
+        missingQuestions: ["완제품 키보드인지 확인"]
+      })
+    }), { status: 200 })));
+
+    const candidates = await recommendHsCandidatesForProduct({
+      productName: "无线键盘",
+      basisDate: "2026-05-21"
+    });
+
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]?.hs6).toBe("847160");
+    expect(candidates[0]?.hskCode).toBe("8471601020");
   });
 
   it("removes dairy cream candidates when cosmetic skin-care context is present", () => {

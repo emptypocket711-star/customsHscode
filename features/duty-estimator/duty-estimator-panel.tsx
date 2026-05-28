@@ -100,6 +100,8 @@ export function DutyEstimatorPanel() {
     : "USD";
   const [hskCode, setHskCode] = useState(searchParams.get("hskCode") ?? "");
   const [basisDate, setBasisDate] = useState(searchParams.get("basisDate") ?? new Date().toISOString().slice(0, 10));
+  const countryCode = (searchParams.get("countryCode") ?? "ALL").toUpperCase();
+  const preferentialRateLabel = searchParams.get("preferentialRateLabel") ?? "";
   const [currency, setCurrency] = useState<(typeof currencyOptions)[number]>(initialCurrency);
   const [goodsAmount, setGoodsAmount] = useState(searchParams.get("goodsAmount") ?? "1000");
   const [exchangeRate, setExchangeRate] = useState(searchParams.get("exchangeRate") ?? "1350");
@@ -132,18 +134,21 @@ export function DutyEstimatorPanel() {
   const lookupHref = `/hs/direct?${new URLSearchParams({
     query: normalizedHskCode,
     direction: "import",
-    destinationCountry: "ALL"
+    destinationCountry: countryCode || "ALL",
+    basisDate
   }).toString()}`;
 
   const copyText = [
     `HS CODE: ${hskCodeError ? "10자리 확인 필요" : hskCode}`,
     `조회기준일: ${basisDate}`,
+    countryCode && countryCode !== "ALL" ? `수입 국가/협정 필터: ${countryCode}` : null,
     `물품가격: ${currency} ${goodsAmount || "0"}`,
     `관세환율: ${currency === "KRW" ? "1" : exchangeRate}`,
     exchangeRateState.status === "success" && exchangeRateState.effectiveFrom ? `관세환율 적용일: ${exchangeRateState.effectiveFrom}` : null,
     exchangeRateState.status === "success" && exchangeRateState.sourceSnapshotId ? `관세환율 스냅샷: ${exchangeRateState.sourceSnapshotId}` : null,
     `과세가격: ${formatMoney(result.taxableValueKrw)}`,
     `적용 관세율: ${result.appliedDutyRate}%`,
+    preferentialRateLabel ? `FTA/협정 후보: ${preferentialRateLabel}` : null,
     `관세: ${formatMoney(result.customsDutyKrw)}`,
     `기타 내국세: ${formatMoney(result.otherInternalTaxKrw)}`,
     ...result.otherInternalTaxItems.map((item) => `- ${item.name} ${item.rate}% (${taxBaseLabel(item.baseType)} 기준): ${formatMoney(item.amountKrw)}`),
@@ -296,6 +301,13 @@ export function DutyEstimatorPanel() {
                   <h3 className="text-sm font-semibold text-slate-950">세율 입력</h3>
                   <p className="mt-1 text-xs leading-5 text-slate-500">HS 조회에서 넘어온 값이 있으면 초기값으로 사용하고, 실제 조건에 맞게 조정합니다.</p>
                 </div>
+                {countryCode !== "ALL" || preferentialRateLabel ? (
+                  <div className="rounded-md border border-blue-100 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-800">
+                    {countryCode !== "ALL" ? <span className="font-semibold">국가/협정 필터 {countryCode}</span> : null}
+                    {preferentialRateLabel ? <span className="block">FTA/협정 후보: {preferentialRateLabel}</span> : null}
+                    <span className="block text-blue-700">FTA 적용 여부는 원산지증명, 직접운송, 협정 요건 확인 후 선택해 주세요.</span>
+                  </div>
+                ) : null}
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                   <NumericField label="기본 관세율" onChange={setDutyRate} suffix="%" value={dutyRate} />
                   <NumericField label="FTA/협정 관세율" onChange={setPreferentialRate} placeholder="선택" suffix="%" value={preferentialRate} />

@@ -16,6 +16,12 @@ import {
 } from "@/server/integrations/customs/customs-api";
 import { sendTransactionalEmail } from "@/server/notifications/email";
 import {
+  claimCargoWatchStatusNotification,
+  hasSentCargoWatchStatusNotification,
+  markCargoWatchStatusNotificationSent,
+  releaseCargoWatchStatusNotificationClaim
+} from "@/server/repositories/cargo-watch-notification.repository";
+import {
   buildCargoStatusCandidates,
   enrichCargoProgressResultWithShedInfo,
   loadCargoShedInfoByCode,
@@ -300,12 +306,13 @@ export async function createCargoWatchAction(
       ...parsed.data,
       notifyEmail: parsed.data.notifyEmail
     });
+    const serviceSupabase = hasSupabaseServiceRoleEnv() ? createSupabaseServiceRoleClient() : null;
     const { data: activeWatches, error: duplicateLookupError } = await supabase
       .from("cargo_watch_requests")
       .select("id,cargo_management_no,master_bl_no,house_bl_no,bl_year,target_status,notify_email")
       .eq("company_id", profile.company_id)
       .eq("created_by", user.id)
-      .eq("status", "active");
+      .in("status", ["active", "checking"]);
 
     if (duplicateLookupError) throw duplicateLookupError;
 
@@ -325,6 +332,20 @@ export async function createCargoWatchAction(
       };
     }
 
+    if (serviceSupabase) {
+      const alreadySentStatusNotification = await hasSentCargoWatchStatusNotification(
+        serviceSupabase,
+        watchKey
+      );
+
+      if (alreadySentStatusNotification) {
+        return {
+          status: "success",
+          message: "동일한 조회값, 목표 상태, 알림 이메일로 이미 상태 알림 메일을 발송한 이력이 있어 새 감시를 등록하지 않았습니다."
+        };
+      }
+    }
+
     let immediateMatch:
       | {
         matched: true;
@@ -338,6 +359,7 @@ export async function createCargoWatchAction(
         };
         mailSent: boolean;
         mailError: string | null;
+        mailSkippedDuplicate: boolean;
         managementInspectionValue: string | null;
         managementInspectionMailSent: boolean;
         managementInspectionMailError: string | null;
@@ -348,6 +370,7 @@ export async function createCargoWatchAction(
         snapshot?: undefined;
         mailSent?: undefined;
         mailError?: undefined;
+        mailSkippedDuplicate?: undefined;
         managementInspectionValue?: string | null;
         managementInspectionMailSent?: boolean;
         managementInspectionMailError?: string | null;
@@ -406,16 +429,44 @@ export async function createCargoWatchAction(
 
           if (matched) {
             const targetStatusLabel = cargoWatchStatusDisplay(parsed.data.targetStatus);
-            const mailResult = await sendTransactionalEmail({
-              to: parsed.data.notifyEmail,
-              subject: `[HS Finder] ${lookupValue} ${targetStatusLabel} 상태 알림`,
-              text: buildCargoWatchEmailText({
+            let mailSent = false;
+            let mailError: string | null = null;
+            let mailSkippedDuplicate = false;
+            let notificationClaimId: string | null = null;
+
+            if (serviceSupabase) {
+              notificationClaimId = await claimCargoWatchStatusNotification(serviceSupabase, {
+                notificationKey: watchKey,
+                notifyEmail: parsed.data.notifyEmail,
                 lookupValue,
                 targetStatus: parsed.data.targetStatus,
-                currentStatus: lastStatus || parsed.data.targetStatus,
-                alreadyReached: true
-              })
-            });
+                sourceWatchId: null
+              });
+              mailSkippedDuplicate = !notificationClaimId;
+            }
+
+            if (!mailSkippedDuplicate) {
+              const mailResult = await sendTransactionalEmail({
+                to: parsed.data.notifyEmail,
+                subject: `[HS Finder] ${lookupValue} ${targetStatusLabel} 상태 알림`,
+                text: buildCargoWatchEmailText({
+                  lookupValue,
+                  targetStatus: parsed.data.targetStatus,
+                  currentStatus: lastStatus || parsed.data.targetStatus,
+                  alreadyReached: true
+                })
+              });
+              mailSent = mailResult.sent;
+              mailError = mailResult.sent ? null : mailResult.message;
+
+              if (notificationClaimId && serviceSupabase) {
+                if (mailResult.sent) {
+                  await markCargoWatchStatusNotificationSent(serviceSupabase, notificationClaimId);
+                } else {
+                  await releaseCargoWatchStatusNotificationClaim(serviceSupabase, notificationClaimId);
+                }
+              }
+            }
 
             immediateMatch = {
               matched: true,
@@ -427,8 +478,9 @@ export async function createCargoWatchAction(
                 retrievedAt: snapshot.retrievedAt,
                 checksum: snapshot.checksum
               },
-              mailSent: mailResult.sent,
-              mailError: mailResult.sent ? null : mailResult.message,
+              mailSent,
+              mailError,
+              mailSkippedDuplicate,
               managementInspectionValue: managementInspection.isTarget ? (managementInspection.value || "Y") : null,
               managementInspectionMailSent,
               managementInspectionMailError
@@ -462,16 +514,21 @@ export async function createCargoWatchAction(
         target_status: parsed.data.targetStatus,
         notify_email: parsed.data.notifyEmail,
         poll_interval_seconds: 300,
-        status: immediateMatch.matched && immediateMatch.mailSent ? "matched" : "active",
+        status: immediateMatch.matched && (immediateMatch.mailSent || immediateMatch.mailSkippedDuplicate) ? "matched" : "active",
         last_status: immediateMatch.lastStatus,
         last_checked_at: immediateMatch.lastStatus ? now : null,
         next_check_at: now,
-        matched_at: immediateMatch.matched && immediateMatch.mailSent ? now : null,
-        notified_at: immediateMatch.matched && immediateMatch.mailSent ? now : null,
+        matched_at: immediateMatch.matched && (immediateMatch.mailSent || immediateMatch.mailSkippedDuplicate) ? now : null,
+        notified_at: immediateMatch.matched && (immediateMatch.mailSent || immediateMatch.mailSkippedDuplicate) ? now : null,
         management_inspection_notified_at: immediateMatch.managementInspectionMailSent ? now : null,
         management_inspection_value: immediateMatch.managementInspectionValue ?? null,
         last_error: [
-          immediateMatch.matched && !immediateMatch.mailSent ? `목표 상태 도달 확인, 메일 발송 실패: ${immediateMatch.mailError}` : null,
+          immediateMatch.matched && immediateMatch.mailSkippedDuplicate
+            ? "동일 감시 조건의 상태 알림 발송 이력이 있어 메일 발송을 생략했습니다."
+            : null,
+          immediateMatch.matched && !immediateMatch.mailSkippedDuplicate && !immediateMatch.mailSent
+            ? `목표 상태 도달 확인, 메일 발송 실패: ${immediateMatch.mailError}`
+            : null,
           immediateMatch.managementInspectionValue && !immediateMatch.managementInspectionMailSent
             ? `관리대상검사 안내 메일 발송 실패: ${immediateMatch.managementInspectionMailError}`
             : null
@@ -489,8 +546,10 @@ export async function createCargoWatchAction(
     revalidatePath("/cargo");
     if (immediateMatch.matched) {
       return {
-        status: immediateMatch.mailSent ? "success" : "error",
-        message: immediateMatch.mailSent
+        status: immediateMatch.mailSent || immediateMatch.mailSkippedDuplicate ? "success" : "error",
+        message: immediateMatch.mailSkippedDuplicate
+          ? "이미 목표 상태가 지나간 건으로 확인했지만 동일 감시 조건의 상태 알림 발송 이력이 있어 메일 발송을 생략했습니다."
+          : immediateMatch.mailSent
           ? immediateMatch.managementInspectionMailSent
             ? "이미 목표 상태가 지나간 건으로 확인되어 상태 알림과 관리대상검사 안내 메일을 보냈습니다."
             : "이미 목표 상태가 지나간 건으로 확인되어 즉시 알림 메일을 보냈습니다."

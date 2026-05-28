@@ -31,6 +31,27 @@ function isFutureEffectiveRate(basisDate: string, effectiveFrom?: string | null)
   return effectiveFrom > basisDate;
 }
 
+function nextRateUnavailableMessage(currencyCode: string) {
+  return `${currencyCode} 차주 관세환율은 아직 저장되지 않았습니다. 관세청 고시 후 다시 조회하거나 현재 저장 환율을 적용해 주세요.`;
+}
+
+function cachedRateMessage(input: {
+  currencyCode: string;
+  mode: "current" | "next";
+  basisDate: string;
+  effectiveFrom: string | null;
+}) {
+  if (input.mode === "next") {
+    return `${input.currencyCode} 차주 관세환율을 적용했습니다. 적용일 ${input.effectiveFrom ?? "확인 필요"} 기준입니다.`;
+  }
+
+  if (input.effectiveFrom && input.effectiveFrom < input.basisDate) {
+    return `${input.currencyCode} 저장 관세환율을 적용했습니다. 조회기준일 이전 최신 고시일(${input.effectiveFrom}) 기준입니다.`;
+  }
+
+  return `${input.currencyCode} 저장 관세환율을 적용했습니다.`;
+}
+
 export async function lookupExchangeRateAction(
   _previousState: ExchangeRateLookupState,
   formData: FormData
@@ -73,15 +94,18 @@ export async function lookupExchangeRateAction(
         if (mode === "next" && !isFutureEffectiveRate(applyStartDate, cached.effectiveFrom)) {
           return {
             status: "error",
-            message: "아직 차주 환율을 가져올 수 없습니다."
+            message: nextRateUnavailableMessage(currencyCode)
           };
         }
 
         return {
           status: "success",
-          message: mode === "next"
-            ? "다음주 기준 환율 입니다."
-            : `${currencyCode} 저장 관세환율을 적용했습니다.`,
+          message: cachedRateMessage({
+            currencyCode,
+            mode,
+            basisDate: applyStartDate,
+            effectiveFrom: cached.effectiveFrom
+          }),
           rate: cached.rate,
           currencyCode: cached.currencyCode,
           effectiveFrom: cached.effectiveFrom,
@@ -97,7 +121,7 @@ export async function lookupExchangeRateAction(
   if (mode === "next") {
     return {
       status: "error",
-      message: "아직 차주 환율을 가져올 수 없습니다."
+      message: nextRateUnavailableMessage(currencyCode)
     };
   }
 

@@ -786,6 +786,7 @@ function HsHierarchyTrail({
             ) : (
               <Link
                 className="rounded px-2 py-1 font-medium text-blue-700 underline-offset-2 hover:bg-blue-50 hover:underline"
+                data-navigation-progress="상위 HS 조회"
                 href={hsLookupHref({
                   hskCode: node.code,
                   direction,
@@ -860,6 +861,7 @@ function DestinationHsHierarchyTrail({
           ) : (
             <Link
               className="rounded px-2 py-1 font-medium text-blue-700 underline-offset-2 hover:bg-blue-50 hover:underline"
+              data-navigation-progress="수입국 HS 계층 조회"
               href={hsLookupHref({
                 hskCode: row.hskCode ?? item.code,
                 direction: "export",
@@ -2549,6 +2551,10 @@ function HsPrefixFolderNavigation({
 
   return (
     <aside className="border-b border-slate-200 bg-white lg:border-b-0 lg:border-r">
+      <div className="flex items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2">
+        <span className="text-xs font-semibold text-slate-600">HS CODE 계층 탐색</span>
+        <span className="text-[11px] font-medium text-slate-500">{items.length}개 HS4 그룹</span>
+      </div>
       <div className="grid grid-cols-[144px_minmax(0,1fr)] border-b border-blue-800 bg-blue-700 text-sm font-semibold text-white">
         <div className="border-r border-blue-500 px-3 py-2 text-center">HSK</div>
         <div className="px-3 py-2 text-center">품명</div>
@@ -3257,6 +3263,10 @@ export async function HsDirectLookupPanel({
                             basisDate: result.basisDate,
                             dutyRate: estimatorDutyTariff?.rateText,
                             preferentialRate: estimatorPreferentialTariff?.rateText,
+                            preferentialRateLabel: estimatorPreferentialTariff
+                              ? displayImportTariffLabel(estimatorPreferentialTariff, selectedDestinationCountry)
+                              : undefined,
+                            countryCode: selectedDestinationCountry,
                             internalTaxRows: (internalTaxCodesByHsk.get(result.hskCode) ?? []).map((row) => ({
                               name: row.name,
                               lawName: row.lawName,

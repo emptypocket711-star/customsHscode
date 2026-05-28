@@ -16,13 +16,15 @@ import type { ManagedUser } from "@/server/rules/developer-users.service";
 
 const initialState: DeveloperUserActionState = { status: "idle" };
 
+const dateFormatter = new Intl.DateTimeFormat("ko-KR", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: "Asia/Seoul"
+});
+
 function formatDate(value: string | null) {
   if (!value) return "-";
-  return new Intl.DateTimeFormat("ko-KR", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "Asia/Seoul"
-  }).format(new Date(value));
+  return dateFormatter.format(new Date(value));
 }
 
 function formatBusinessNo(value: string) {
@@ -60,6 +62,11 @@ function truncate(value: string | null, maxLength: number) {
   return value.length > maxLength ? `${value.slice(0, maxLength - 1)}...` : value;
 }
 
+function roleLabel(role: ManagedUser["role"]) {
+  if (role === "customs_staff") return "staff";
+  return role;
+}
+
 function StatusMessage({ state }: { state: DeveloperUserActionState }) {
   if (!state.message) return null;
 
@@ -93,6 +100,12 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
     if (createState.status === "idle" && updateState.status === "idle" && deleteState.status === "idle" && testLoginState.status === "idle") return;
     window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
   }, [createState.status, deleteState.status, testLoginState.status, updateState.status]);
+
+  const userSummary = useMemo(() => ({
+    completed: users.filter((user) => user.onboardingCompletedAt).length,
+    company: users.filter((user) => user.accountType === "company").length,
+    staff: users.filter((user) => user.role === "customs_staff" || user.role === "admin" || user.role === "developer").length
+  }), [users]);
 
   const filteredUsers = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -134,15 +147,15 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
             </div>
             <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
               <p className="text-xs font-semibold text-slate-500">가입 완료</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-950">{users.filter((user) => user.onboardingCompletedAt).length}</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-950">{userSummary.completed}</p>
             </div>
             <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
               <p className="text-xs font-semibold text-slate-500">기업회원</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-950">{users.filter((user) => user.accountType === "company").length}</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-950">{userSummary.company}</p>
             </div>
             <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs font-semibold text-slate-500">개인회원</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-950">{users.filter((user) => user.accountType === "personal").length}</p>
+              <p className="text-xs font-semibold text-slate-500">운영 권한</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-950">{userSummary.staff}</p>
             </div>
           </div>
           <div className="grid gap-3 rounded-md border border-slate-200 bg-white p-3 lg:grid-cols-[minmax(260px,1fr)_160px_160px_160px]">
@@ -179,6 +192,9 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
           <div className="flex items-center gap-2 text-sm text-slate-600">
             <Filter aria-hidden="true" size={16} />
             <span>표시 중 {filteredUsers.length}명 / 전체 {users.length}명</span>
+            {query || accountTypeFilter !== "all" || statusFilter !== "all" || roleFilter !== "all" ? (
+              <span className="rounded bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">필터 적용</span>
+            ) : null}
           </div>
           <StatusMessage state={updateState} />
           <StatusMessage state={deleteState} />
@@ -391,7 +407,7 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
               </span>
               <span className="flex items-center gap-2 text-sm font-medium text-slate-700 lg:block">
                 <span className="text-xs font-semibold text-slate-500 lg:hidden">권한</span>
-                {user.role}
+                <Badge tone={user.role === "client" ? "neutral" : "info"}>{roleLabel(user.role)}</Badge>
               </span>
               <span className="flex min-w-0 items-center gap-2 text-sm text-slate-700 lg:block">
                 <span className="shrink-0 text-xs font-semibold text-slate-500 lg:hidden">회사/공간</span>
@@ -399,7 +415,8 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
               </span>
               <span className="flex items-center gap-2 text-sm text-slate-600 lg:block">
                 <span className="text-xs font-semibold text-slate-500 lg:hidden">마지막 로그인</span>
-                {formatDate(user.lastSignInAt)}
+                <span>{formatDate(user.lastSignInAt)}</span>
+                <span className="mt-1 block text-xs text-slate-500">로그 {user.recentAccessEvents.length}건 · IP {user.usedLoginIps.length}개</span>
               </span>
               <span className="flex justify-end">
                 <ChevronDown

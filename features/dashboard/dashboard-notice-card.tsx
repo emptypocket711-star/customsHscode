@@ -12,6 +12,18 @@ const noticeCategoryLabels: Record<AppNotice["category"], string> = {
   release: "기능 배포"
 };
 
+const shortDateFormatter = new Intl.DateTimeFormat("ko-KR", {
+  month: "2-digit",
+  day: "2-digit",
+  timeZone: "Asia/Seoul"
+});
+
+const fullDateFormatter = new Intl.DateTimeFormat("ko-KR", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: "Asia/Seoul"
+});
+
 function categoryTone(category: AppNotice["category"]) {
   if (category === "maintenance") return "warning";
   if (category === "release") return "success";
@@ -19,19 +31,17 @@ function categoryTone(category: AppNotice["category"]) {
 }
 
 function formatShortDate(value: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
-    month: "2-digit",
-    day: "2-digit",
-    timeZone: "Asia/Seoul"
-  }).format(new Date(value));
+  return shortDateFormatter.format(new Date(value));
 }
 
 function formatFullDate(value: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "Asia/Seoul"
-  }).format(new Date(value));
+  return fullDateFormatter.format(new Date(value));
+}
+
+function noticePreview(body: string) {
+  const normalized = body.replace(/\s+/g, " ").trim();
+  if (!normalized) return "내용 없음";
+  return normalized.length > 82 ? `${normalized.slice(0, 81)}...` : normalized;
 }
 
 const oneDayMs = 24 * 60 * 60 * 1000;
@@ -97,6 +107,7 @@ function NoticeDialog({ autoOpen, notice }: { autoOpen?: boolean; notice: AppNot
           <span className="ml-auto text-xs font-semibold text-blue-700">열기</span>
         </span>
         <span className="mt-2 block px-1 text-sm font-semibold text-[var(--text-primary)]">{notice.title}</span>
+        <span className="mt-1 block truncate px-1 text-xs leading-5 text-[var(--text-secondary)]">{noticePreview(notice.body)}</span>
       </button>
 
       {isOpen ? (
@@ -160,6 +171,7 @@ export function DashboardNoticeCard({ notices }: { notices: AppNotice[] }) {
           <Megaphone aria-hidden="true" className="text-blue-700" size={18} />
           <h2 className="text-base font-semibold text-[var(--text-primary)]">공지사항</h2>
         </div>
+        {notices.length ? <span className="text-xs font-semibold text-[var(--text-muted)]">최근 {notices.length}건</span> : null}
       </div>
       <div className="divide-y divide-[var(--border-subtle)] px-4">
         {notices.length ? notices.map((notice) => (

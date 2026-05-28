@@ -16,7 +16,8 @@ import {
   productSearchTerms,
   scoreProductHint,
   scoreStandardNameWithTerms,
-  type ProductNameSearchAnalysis
+  type ProductNameSearchAnalysis,
+  type ProductNameSearchRow
 } from "@/server/rules/product-name-search-engine";
 
 export type HsCandidateRecommendation = {
@@ -60,6 +61,15 @@ type CustomsHsCodeSearchRow = {
   weight_unit: string | null;
   rate_text: string | null;
   rate_type_code: string | null;
+  source_name: string;
+  source_url: string;
+  source_version: string;
+  effective_from: string;
+  effective_to: string | null;
+};
+
+type StandardProductNameSearchRow = ProductNameSearchRow & {
+  standard_name_en?: string | null;
   source_name: string;
   source_url: string;
   source_version: string;
@@ -169,6 +179,11 @@ const hsMasterMaterialOnlyTerms = new Set([
   "면"
 ]);
 
+function isUsefulProductSearchTerm(term: string) {
+  if (term.length >= 3) return true;
+  return term.length >= 2 && /[\u3131-\u318e\uac00-\ud7a3\u3040-\u30ff\u3400-\u9fff]/.test(term);
+}
+
 function hsMasterSearchTerms(analysis: ProductNameSearchAnalysis, normalization?: AiProductSearchNormalizationResult | null) {
   return Array.from(new Set([
     ...analysis.terms,
@@ -178,7 +193,7 @@ function hsMasterSearchTerms(analysis: ProductNameSearchAnalysis, normalization?
     ...(normalization?.productFamilies ?? [])
   ]
     .map((term) => term.trim().toLowerCase())
-    .filter((term) => term.length >= 3)
+    .filter(isUsefulProductSearchTerm)
     .filter((term) => !hsMasterWeakTerms.has(term))
   )).slice(0, 16);
 }
@@ -234,10 +249,16 @@ function normalizeAiHsCodeHints(normalization: AiProductSearchNormalizationResul
   )).slice(0, 8);
 }
 
-function hasCandidateForAiCodeHint(candidate: HsCandidateRecommendation, code: string) {
-  if (code.length >= 10) return candidate.hskCode === code.slice(0, 10);
+function candidateMatchesCodeHint(candidate: HsCandidateRecommendation, codeHint: string) {
+  const code = codeHint.replace(/[^0-9]/g, "");
+  if (code.length < 4) return false;
+  if (code.length >= 10) return candidate.hskCode === code.slice(0, 10) || candidate.hs6 === code.slice(0, 6);
   if (code.length === 6) return candidate.hs6 === code || candidate.hskCode.startsWith(code);
   return candidate.hskCode.startsWith(code) || candidate.hs6.startsWith(code);
+}
+
+function hasCandidateForAiCodeHint(candidate: HsCandidateRecommendation, code: string) {
+  return candidateMatchesCodeHint(candidate, code);
 }
 
 function aiHsCodeHintLabel(code: string) {
@@ -481,6 +502,184 @@ function mapStoredCustomsHsCodeSearchRowsToCandidates(
     }));
 }
 
+function dbIlikePattern(term: string) {
+  return `%${term.replace(/[\\%_]/g, "\\$&")}%`;
+}
+
+function uniqueByHskCode<T extends { hsk_code: string }>(rows: T[]) {
+  return [...rows.reduce((best, row) => {
+    if (!best.has(row.hsk_code)) best.set(row.hsk_code, row);
+    return best;
+  }, new Map<string, T>()).values()];
+}
+
+async function findHsMasterRowsByTerms(
+  supabase: SupabaseClient,
+  input: ProductHsRecommendationInput,
+  terms: string[]
+) {
+  const collected: HsMasterSearchRow[] = [];
+  const queryTerms = terms.filter((term) => !hsMasterMaterialOnlyTerms.has(term)).slice(0, 8);
+
+  for (const term of queryTerms) {
+    for (const field of ["korean_name", "english_name"] as const) {
+      const { data, error } = await supabase
+        .from("hs_master")
+        .select("hsk_code, hs6, korean_name, english_name, source_name, source_url, source_version, effective_from, effective_to")
+        .ilike(field, dbIlikePattern(term))
+        .lte("effective_from", input.basisDate)
+        .or(`effective_to.is.null,effective_to.gte.${input.basisDate}`)
+        .eq("status", "published")
+        .order("hsk_code")
+        .limit(8);
+
+      if (error) throw new Error(error.message);
+      collected.push(...((data ?? []) as HsMasterSearchRow[]));
+    }
+  }
+
+  return uniqueByHskCode(collected);
+}
+
+async function findStoredCustomsHsCodeRowsByTerms(
+  supabase: SupabaseClient,
+  input: ProductHsRecommendationInput,
+  terms: string[]
+) {
+  const collected: CustomsHsCodeSearchRow[] = [];
+  const queryTerms = terms.filter((term) => !hsMasterMaterialOnlyTerms.has(term)).slice(0, 8);
+
+  for (const term of queryTerms) {
+    for (const field of ["korean_name", "english_name"] as const) {
+      const { data, error } = await supabase
+        .from("customs_hs_code_search_items")
+        .select("hsk_code, hs6, korean_name, english_name, quantity_unit, weight_unit, rate_text, rate_type_code, source_name, source_url, source_version, effective_from, effective_to")
+        .ilike(field, dbIlikePattern(term))
+        .lte("effective_from", input.basisDate)
+        .or(`effective_to.is.null,effective_to.gte.${input.basisDate}`)
+        .eq("status", "published")
+        .order("hsk_code")
+        .limit(8);
+
+      if (error) throw new Error(error.message);
+      collected.push(...((data ?? []) as CustomsHsCodeSearchRow[]));
+    }
+  }
+
+  return uniqueByHskCode(collected);
+}
+
+async function findStandardProductNameRowsByTerms(
+  supabase: SupabaseClient,
+  input: ProductHsRecommendationInput,
+  terms: string[]
+) {
+  const collected: StandardProductNameSearchRow[] = [];
+  const queryTerms = terms.filter((term) => !hsMasterMaterialOnlyTerms.has(term)).slice(0, 8);
+
+  for (const term of queryTerms) {
+    for (const field of ["standard_name_kr", "standard_name_en", "required_spec_kr", "detailed_classification"] as const) {
+      const { data, error } = await supabase
+        .from("standard_product_names")
+        .select("hsk_code, standard_name_kr, standard_name_en, required_spec_kr, detailed_classification, source_name, source_url, source_version, effective_from, effective_to")
+        .ilike(field, dbIlikePattern(term))
+        .lte("effective_from", input.basisDate)
+        .or(`effective_to.is.null,effective_to.gte.${input.basisDate}`)
+        .eq("status", "published")
+        .order("hsk_code")
+        .limit(8);
+
+      if (error) throw new Error(error.message);
+      collected.push(...((data ?? []) as StandardProductNameSearchRow[]));
+    }
+  }
+
+  return uniqueByHskCode(collected);
+}
+
+async function findHsMasterRowsByExactCodes(
+  supabase: SupabaseClient,
+  input: ProductHsRecommendationInput,
+  hskCodes: string[]
+) {
+  const codes = Array.from(new Set(hskCodes.map((code) => code.replace(/[^0-9]/g, "")).filter((code) => code.length === 10)));
+  if (!codes.length) return [];
+
+  const { data, error } = await supabase
+    .from("hs_master")
+    .select("hsk_code, hs6, korean_name, english_name, source_name, source_url, source_version, effective_from, effective_to")
+    .in("hsk_code", codes)
+    .lte("effective_from", input.basisDate)
+    .or(`effective_to.is.null,effective_to.gte.${input.basisDate}`)
+    .eq("status", "published")
+    .order("hsk_code");
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as HsMasterSearchRow[];
+}
+
+async function recommendHsCandidatesFromStandardProductNames(
+  supabase: SupabaseClient,
+  input: ProductHsRecommendationInput,
+  normalization: AiProductSearchNormalizationResult | null,
+  terms: string[],
+  analysis: ProductNameSearchAnalysis
+) {
+  const standardRows = await findStandardProductNameRowsByTerms(supabase, input, terms);
+  if (!standardRows.length) return [];
+
+  const hskRows = await findHsMasterRowsByExactCodes(supabase, input, standardRows.map((row) => row.hsk_code));
+  const hskByCode = new Map(hskRows.map((row) => [row.hsk_code, row]));
+  const scored = standardRows
+    .map((row) => ({
+      row,
+      hsk: hskByCode.get(row.hsk_code),
+      score: scoreStandardNameWithTerms(row, terms),
+      fallbackScore: scoreStandardNameWithTerms(row, analysis.terms)
+    }))
+    .map((item) => ({ ...item, score: Math.max(item.score, item.fallbackScore) }))
+    .filter((item) => item.hsk && item.score > 0)
+    .sort((a, b) => b.score - a.score || a.row.hsk_code.localeCompare(b.row.hsk_code))
+    .slice(0, 5);
+
+  return scored.map(({ row, hsk, score }, index) => {
+    const hintReason = reasonForHsCodeHint(normalization, row.hsk_code, hsk!.hs6);
+    const matchedTerms = terms.filter((term) =>
+      `${row.standard_name_kr} ${row.standard_name_en ?? ""} ${row.required_spec_kr ?? ""} ${row.detailed_classification ?? ""}`.toLowerCase().includes(term)
+    );
+
+    return {
+      hskCode: row.hsk_code,
+      hs6: hsk!.hs6,
+      rank: index + 1,
+      confidenceScore: Math.max(0.42, Math.min(0.74, 0.48 + score * 0.04 - index * 0.03)),
+      koreanName: hsk!.korean_name,
+      reason: hintReason
+        ? `${hintReason.reason} 공식 표준품명 데이터와 함께 대조한 예비 후보입니다.`
+        : "공식 표준품명 데이터에서 입력 품명 단서와 맞는 예비 HS 후보입니다. 실제 제품 사양 확인이 필요합니다.",
+      requiredQuestions: [
+        row.required_spec_kr ? `표준품명 필수규격 확인: ${row.required_spec_kr}` : null,
+        ...(hintReason?.requiredInfo ?? []),
+        ...(normalization?.missingQuestions ?? []),
+        "카탈로그, 제품 사양서, 재질·성분, 용도 확인"
+      ].filter((question): question is string => Boolean(question)).filter((question, questionIndex, questions) => questions.indexOf(question) === questionIndex).slice(0, 4),
+      riskNotes: "공식 표준품명 기반 검색 결과는 예비 후보이며 품목분류 확정이 아닙니다.",
+      scoreBreakdown: [
+        "공식 표준품명 조회",
+        ...matchedTerms.slice(0, 4).map((term) => `표준품명 보조어 ${term}`)
+      ],
+      lookupBasis: "official_name_match" as const,
+      reviewStatus: "suggested" as const,
+      sourceName: row.source_name,
+      sourceUrl: row.source_url,
+      sourceVersion: row.source_version,
+      effectiveFrom: row.effective_from,
+      effectiveTo: row.effective_to,
+      basisDate: input.basisDate
+    };
+  });
+}
+
 function mockHsMasterRowsByCodeHints(
   input: ProductHsRecommendationInput,
   codeHints: string[]
@@ -647,11 +846,32 @@ async function recommendHsCandidatesFromOfficialHsMasterSearch(
   input: ProductHsRecommendationInput,
   normalization: AiProductSearchNormalizationResult | null
 ): Promise<HsCandidateRecommendation[]> {
-  if (!normalization?.candidateHsCodes.length) return [];
   const analysis = analyzeProductNameInput(input);
   const terms = hsMasterSearchTerms(analysis, normalization);
-  const codeHintRows = await findHsMasterRowsByCodeHints(supabase, input, normalization.candidateHsCodes);
-  return rankOfficialHsMasterRows(input, normalization, terms, [], codeHintRows);
+  const codeHints = normalization?.candidateHsCodes ?? [];
+  if (!codeHints.length && !terms.length) return [];
+
+  const [
+    codeHintRows,
+    termRows,
+    standardNameCandidates,
+    storedCustomsCandidates
+  ] = await Promise.all([
+    codeHints.length ? findHsMasterRowsByCodeHints(supabase, input, codeHints).catch(() => []) : Promise.resolve([]),
+    terms.length ? findHsMasterRowsByTerms(supabase, input, terms).catch(() => []) : Promise.resolve([]),
+    terms.length ? recommendHsCandidatesFromStandardProductNames(supabase, input, normalization, terms, analysis).catch(() => []) : Promise.resolve([]),
+    terms.length
+      ? findStoredCustomsHsCodeRowsByTerms(supabase, input, terms)
+        .then((rows) => mapStoredCustomsHsCodeSearchRowsToCandidates(input, rows, terms))
+        .catch(() => [])
+      : Promise.resolve([])
+  ]);
+
+  return mergeRecommendations([
+    ...rankOfficialHsMasterRows(input, normalization, terms, termRows, codeHintRows),
+    ...standardNameCandidates,
+    ...storedCustomsCandidates
+  ]);
 }
 
 function mergeRecommendations(candidates: HsCandidateRecommendation[]) {
@@ -698,6 +918,22 @@ function pruneWeakProductRecommendations(candidates: HsCandidateRecommendation[]
   const focused = candidates.filter((candidate) => candidate.confidenceScore >= threshold);
 
   return focused.length ? focused.map((candidate, index) => ({ ...candidate, rank: index + 1 })) : candidates.slice(0, 1);
+}
+
+function focusHighCertaintySingleRecommendation(
+  candidates: HsCandidateRecommendation[],
+  normalization: AiProductSearchNormalizationResult | null,
+  options: { keepAmbiguousAlternatives: boolean }
+) {
+  if (options.keepAmbiguousAlternatives || candidates.length <= 1) return candidates;
+  if (normalization?.certainty !== "high" || normalization.displayMode !== "single") return candidates;
+
+  const primaryCode = normalization.primaryCandidate?.code.replace(/[^0-9]/g, "");
+  const focusedCode = primaryCode || normalizeAiHsCodeHints(normalization)[0];
+  if (!focusedCode) return candidates;
+
+  const candidate = candidates.find((item) => candidateMatchesCodeHint(item, focusedCode));
+  return candidate ? [{ ...candidate, rank: 1 }] : candidates.slice(0, 1).map((item) => ({ ...item, rank: 1 }));
 }
 
 function shouldUseAiSearchNormalization(input: ProductHsRecommendationInput) {
@@ -918,13 +1154,13 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       ? recommendHsCandidates(augmentedInput)
       : [];
 
-    const candidates = pruneByUserHsHints(
+    const candidates = focusHighCertaintySingleRecommendation(pruneByUserHsHints(
       input,
       pruneWeakProductRecommendations(
         mergeRecommendations([...baseCandidates, ...aiHintCandidates, ...fallbackCandidates]),
         { keepAmbiguousAlternatives: shouldKeepAiAlternatives }
       )
-    );
+    ), normalization, { keepAmbiguousAlternatives: shouldKeepAiAlternatives });
     logLookupTelemetry("product_candidates_recommended", {
       ...productInputShape(input),
       status: "success",
@@ -955,9 +1191,11 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       });
       return [];
     }
-    const officialHsMasterCandidates = normalization
-      ? await recommendHsCandidatesFromOfficialHsMasterSearch(supabase, augmentedInput, normalization).catch(() => [])
-      : [];
+    const officialHsMasterCandidates = await recommendHsCandidatesFromOfficialHsMasterSearch(
+      supabase,
+      augmentedInput,
+      normalization
+    ).catch(() => []);
     const nonApiNormalizedBaseCandidates = [
       ...officialHsMasterCandidates
     ];
@@ -976,9 +1214,9 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       ...recommendAmbiguousProductCandidates(input),
       ...normalizedCandidates
     ]));
-    const candidates = pruneByUserHsHints(input, pruneWeakProductRecommendations(merged, {
+    const candidates = focusHighCertaintySingleRecommendation(pruneByUserHsHints(input, pruneWeakProductRecommendations(merged, {
       keepAmbiguousAlternatives: shouldKeepAiAlternatives
-    }));
+    })), normalization, { keepAmbiguousAlternatives: shouldKeepAiAlternatives });
     logLookupTelemetry("product_candidates_recommended", {
       ...productInputShape(input),
       status: "success",
@@ -1016,9 +1254,9 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       ...recommendAmbiguousProductCandidates(input),
       ...normalizedCandidates
     ]));
-    const candidates = pruneByUserHsHints(input, pruneWeakProductRecommendations(merged, {
+    const candidates = focusHighCertaintySingleRecommendation(pruneByUserHsHints(input, pruneWeakProductRecommendations(merged, {
       keepAmbiguousAlternatives: shouldKeepAiAlternatives
-    }));
+    })), normalization, { keepAmbiguousAlternatives: shouldKeepAiAlternatives });
     logLookupTelemetry("product_candidates_recommended", {
       ...productInputShape(input),
       status: "fallback",

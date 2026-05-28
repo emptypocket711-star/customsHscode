@@ -358,7 +358,7 @@ export async function normalizeProductSearchInput(input: ProductHsRecommendation
       candidateHsCodeReasons
     });
     const candidateHsCodes = (needsClarificationFirst
-      ? (prioritizedHsCodes.length ? prioritizedHsCodes.slice(0, 3) : userProvidedHsCodes)
+      ? (prioritizedHsCodes.length ? prioritizedHsCodes.slice(0, normalization.displayMode === "multiple" ? 3 : 1) : userProvidedHsCodes)
       : focusedDisplayHsHints(normalization, prioritizedHsCodes)
     ).slice(0, 10);
     const result = {

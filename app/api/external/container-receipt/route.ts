@@ -11,6 +11,8 @@ function normalizeContainerNo(value: unknown) {
 
 type TerminalCode = "hjit" | "snct" | "ifpc" | "ict" | "bnct" | "pctc" | "pnct";
 
+const receiptViewport = { width: 1680, height: 1050 };
+
 function normalizeTerminalCode(value: unknown): TerminalCode | "" {
   return value === "hjit" || value === "snct" || value === "ifpc" || value === "ict" || value === "bnct" || value === "pctc" || value === "pnct"
     ? value
@@ -33,7 +35,56 @@ async function captureIfpc(page: Page, containerNo: string) {
   await input.waitFor({ timeout: 15000 });
   await input.fill(containerNo);
   await page.mouse.click(1160, 72);
-  await page.waitForTimeout(3500);
+  await waitForReceiptScreenReady(page, containerNo, { requireContainerText: false });
+}
+
+async function receiptReadiness(page: Page, containerNo: string) {
+  return page.evaluate((targetContainerNo) => {
+    const bodyText = document.body?.innerText?.replace(/\s+/g, " ").trim() ?? "";
+    const readyState = document.readyState;
+    const isHelperPage = /조회 화면으로 이동합니다|조회 화면 열기/.test(bodyText);
+    const hasContainerNo = bodyText.toUpperCase().includes(targetContainerNo);
+    const hasUsefulText = bodyText.length > 220;
+    const hasTable = document.querySelectorAll("table, [role='table'], .grid, .x-grid").length > 0;
+
+    return {
+      readyState,
+      isHelperPage,
+      hasContainerNo,
+      hasUsefulText,
+      hasTable,
+      url: window.location.href
+    };
+  }, containerNo);
+}
+
+async function waitForReceiptScreenReady(
+  page: Page,
+  containerNo: string,
+  options: { timeoutMs?: number; requireContainerText?: boolean } = {}
+) {
+  const timeoutMs = options.timeoutMs ?? 15_000;
+  const startedAt = Date.now();
+  let lastReady = await receiptReadiness(page, containerNo);
+
+  while (Date.now() - startedAt < timeoutMs) {
+    lastReady = await receiptReadiness(page, containerNo);
+    const documentLoaded = lastReady.readyState === "interactive" || lastReady.readyState === "complete";
+    const terminalScreenVisible = !lastReady.isHelperPage && lastReady.hasUsefulText;
+    const containerMatched = options.requireContainerText === false || lastReady.hasContainerNo;
+
+    if (documentLoaded && terminalScreenVisible && containerMatched) {
+      return lastReady;
+    }
+
+    if (documentLoaded && terminalScreenVisible && lastReady.hasTable && Date.now() - startedAt > 4_000) {
+      return lastReady;
+    }
+
+    await page.waitForTimeout(1000);
+  }
+
+  return lastReady;
 }
 
 async function captureLiveTerminal(page: Page, request: Request, terminalCode: TerminalCode, containerNo: string) {
@@ -54,7 +105,7 @@ async function captureLiveTerminal(page: Page, request: Request, terminalCode: T
     waitUntil: "networkidle",
     timeout: 30000
   });
-  await page.waitForTimeout(3500);
+  await waitForReceiptScreenReady(page, containerNo);
 }
 
 async function launchChromium(): Promise<Browser> {
@@ -106,24 +157,31 @@ export async function POST(request: Request) {
   try {
     browser = await launchChromium();
   } catch (error) {
-    const detail = error instanceof Error ? error.message : "unknown";
-    return new NextResponse(`반입계 출력 브라우저를 실행하지 못했습니다. ${detail}`, { status: 500 });
+    console.warn("[container-receipt] browser launch failed", { message: error instanceof Error ? error.message : "unknown" });
+    return new NextResponse("반입계 출력 브라우저를 실행하지 못했습니다. 잠시 후 다시 시도해 주세요.", { status: 500 });
   }
 
   try {
     const page = await browser.newPage({
-      viewport: { width: 1280, height: 1600 },
+      viewport: receiptViewport,
       deviceScaleFactor: 1
     });
     try {
       await captureLiveTerminal(page, request, terminalCode, containerNo);
     } catch (error) {
-      const detail = error instanceof Error ? error.message : "unknown";
-      return new NextResponse(`터미널 원문 화면을 불러오지 못했습니다. ${detail}`, { status: 502 });
+      console.warn("[container-receipt] terminal capture failed", {
+        terminalCode,
+        containerNo,
+        message: error instanceof Error ? error.message : "unknown"
+      });
+      return new NextResponse("터미널 원문 화면을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.", { status: 502 });
     }
     await page.emulateMedia({ media: "screen" });
+    await page.setViewportSize(receiptViewport);
     const buffer = await page.screenshot({
-      fullPage: true,
+      animations: "disabled",
+      caret: "hide",
+      fullPage: false,
       type: "png"
     });
 

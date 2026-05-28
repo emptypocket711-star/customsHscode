@@ -15,11 +15,23 @@ function withResultStage(stages: string[]) {
 function progressStages(form: HTMLFormElement, label: string) {
   const action = form.getAttribute("action") ?? "";
   const query = form.querySelector<HTMLInputElement>("[name='query']")?.value?.trim();
+  const direction = form.querySelector<HTMLSelectElement | HTMLInputElement>("[name='direction']")?.value;
+  const destinationCountry = form.querySelector<HTMLSelectElement | HTMLInputElement>("[name='destinationCountry']")?.value;
   const normalizedQuery = query?.replace(/[^0-9]/g, "") ?? "";
   const isHsCodeQuery = Boolean(query && /^[0-9.\-\s]+$/.test(query) && normalizedQuery.length >= 2);
   const hasModelLikeToken = Boolean(query && /\b(?=[a-z0-9-]{4,}\b)(?=[a-z0-9-]*[a-z])(?=[a-z0-9-]*[0-9])[a-z0-9-]+\b/i.test(query));
+  const isDestinationExport = direction === "export" && Boolean(destinationCountry && destinationCountry !== "ALL");
 
   if (action.includes("/hs/direct") || query) {
+    if (isDestinationExport) {
+      return withResultStage([
+        query ? `수출 목적국 조회 입력값 확인: ${query}` : "수출 목적국 조회 입력값을 확인하고 있습니다",
+        "한국 HSK와 목적국 HS 연결 후보를 조회하고 있습니다",
+        "목적국 관세율, 내국세, 수입요건을 함께 구성하고 있습니다",
+        "원산지와 직접운송 검토 항목을 정리하고 있습니다"
+      ]);
+    }
+
     if (isHsCodeQuery) {
       return withResultStage([
         query ? `HS CODE 형식 확인: ${query}` : "HS CODE 형식을 확인하고 있습니다",
@@ -175,7 +187,7 @@ export function NavigationProgress() {
       }, 120000);
       forceStopTimerRef.current = setTimeout(() => {
         stopProgress();
-      }, 20000);
+      }, 180000);
 
       const startedAt = Date.now();
       const locationAtSubmit = window.location.href;
@@ -220,7 +232,7 @@ export function NavigationProgress() {
       }, 120000);
       forceStopTimerRef.current = setTimeout(() => {
         stopProgress();
-      }, 30000);
+      }, 180000);
     }
 
     document.addEventListener("submit", handleSubmit, { capture: true });
