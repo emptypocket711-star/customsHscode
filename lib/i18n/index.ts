@@ -17,3 +17,8 @@ export {
   getHeaderGreeting,
   type NavItemKey
 } from "./dictionaries";
+export {
+  formatDashboardCount,
+  getDashboardDictionary,
+  type DashboardDictionary
+} from "./dashboard";

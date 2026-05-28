@@ -3,26 +3,13 @@
 import { Megaphone, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import {
+  formatDashboardCount,
+  getDashboardDictionary,
+  type AppLocale,
+  type DashboardDictionary
+} from "@/lib/i18n";
 import type { AppNotice } from "@/server/repositories/app-notice.repository";
-
-const noticeCategoryLabels: Record<AppNotice["category"], string> = {
-  notice: "공지",
-  maintenance: "점검",
-  data_update: "자료 업데이트",
-  release: "기능 배포"
-};
-
-const shortDateFormatter = new Intl.DateTimeFormat("ko-KR", {
-  month: "2-digit",
-  day: "2-digit",
-  timeZone: "Asia/Seoul"
-});
-
-const fullDateFormatter = new Intl.DateTimeFormat("ko-KR", {
-  dateStyle: "medium",
-  timeStyle: "short",
-  timeZone: "Asia/Seoul"
-});
 
 function categoryTone(category: AppNotice["category"]) {
   if (category === "maintenance") return "warning";
@@ -30,17 +17,25 @@ function categoryTone(category: AppNotice["category"]) {
   return "neutral";
 }
 
-function formatShortDate(value: string) {
-  return shortDateFormatter.format(new Date(value));
+function formatShortDate(value: string, locale: AppLocale) {
+  return new Intl.DateTimeFormat(locale, {
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: "Asia/Seoul"
+  }).format(new Date(value));
 }
 
-function formatFullDate(value: string) {
-  return fullDateFormatter.format(new Date(value));
+function formatFullDate(value: string, locale: AppLocale) {
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Asia/Seoul"
+  }).format(new Date(value));
 }
 
-function noticePreview(body: string) {
+function noticePreview(body: string, noContent: string) {
   const normalized = body.replace(/\s+/g, " ").trim();
-  if (!normalized) return "내용 없음";
+  if (!normalized) return noContent;
   return normalized.length > 82 ? `${normalized.slice(0, 81)}...` : normalized;
 }
 
@@ -63,7 +58,17 @@ function isDismissedForToday(noticeId: string) {
   return true;
 }
 
-function NoticeDialog({ autoOpen, notice }: { autoOpen?: boolean; notice: AppNotice }) {
+function NoticeDialog({
+  autoOpen,
+  dictionary,
+  locale,
+  notice
+}: {
+  autoOpen?: boolean;
+  dictionary: DashboardDictionary["notices"];
+  locale: AppLocale;
+  notice: AppNotice;
+}) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [hideForToday, setHideForToday] = useState(false);
@@ -101,13 +106,13 @@ function NoticeDialog({ autoOpen, notice }: { autoOpen?: boolean; notice: AppNot
         type="button"
       >
         <span className="flex flex-wrap items-center gap-2 px-1">
-          {notice.pinned ? <Badge tone="info">상단</Badge> : null}
-          <Badge tone={categoryTone(notice.category)}>{noticeCategoryLabels[notice.category]}</Badge>
-          <span className="text-xs font-medium text-[var(--text-muted)]">{formatShortDate(notice.publishedAt)}</span>
-          <span className="ml-auto text-xs font-semibold text-blue-700">열기</span>
+          {notice.pinned ? <Badge tone="info">{dictionary.pinned}</Badge> : null}
+          <Badge tone={categoryTone(notice.category)}>{dictionary.categories[notice.category]}</Badge>
+          <span className="text-xs font-medium text-[var(--text-muted)]">{formatShortDate(notice.publishedAt, locale)}</span>
+          <span className="ml-auto text-xs font-semibold text-blue-700">{dictionary.open}</span>
         </span>
         <span className="mt-2 block px-1 text-sm font-semibold text-[var(--text-primary)]">{notice.title}</span>
-        <span className="mt-1 block truncate px-1 text-xs leading-5 text-[var(--text-secondary)]">{noticePreview(notice.body)}</span>
+        <span className="mt-1 block truncate px-1 text-xs leading-5 text-[var(--text-secondary)]">{noticePreview(notice.body, dictionary.noContent)}</span>
       </button>
 
       {isOpen ? (
@@ -119,14 +124,14 @@ function NoticeDialog({ autoOpen, notice }: { autoOpen?: boolean; notice: AppNot
           <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                {notice.pinned ? <Badge tone="info">상단</Badge> : null}
-                <Badge tone={categoryTone(notice.category)}>{noticeCategoryLabels[notice.category]}</Badge>
-                <span className="text-xs font-medium text-slate-500">{formatFullDate(notice.publishedAt)}</span>
+                {notice.pinned ? <Badge tone="info">{dictionary.pinned}</Badge> : null}
+                <Badge tone={categoryTone(notice.category)}>{dictionary.categories[notice.category]}</Badge>
+                <span className="text-xs font-medium text-slate-500">{formatFullDate(notice.publishedAt, locale)}</span>
               </div>
               <h2 className="mt-2 text-base font-semibold text-slate-950">{notice.title}</h2>
             </div>
             <button
-              aria-label="닫기"
+              aria-label={dictionary.close}
               className="focus-ring ml-3 grid size-8 shrink-0 place-items-center rounded-md text-slate-700 hover:bg-slate-100"
               onClick={closeDialog}
               type="button"
@@ -145,14 +150,14 @@ function NoticeDialog({ autoOpen, notice }: { autoOpen?: boolean; notice: AppNot
                 onChange={(event) => setHideForToday(event.target.checked)}
                 type="checkbox"
               />
-              1일 동안 보지 않기
+              {dictionary.hideOneDay}
             </label>
             <button
               className="focus-ring inline-flex h-9 items-center justify-center rounded-md bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800"
               onClick={closeDialog}
               type="button"
             >
-              닫기
+              {dictionary.close}
             </button>
           </div>
         </dialog>
@@ -161,23 +166,38 @@ function NoticeDialog({ autoOpen, notice }: { autoOpen?: boolean; notice: AppNot
   );
 }
 
-export function DashboardNoticeCard({ notices }: { notices: AppNotice[] }) {
+export function DashboardNoticeCard({
+  locale,
+  notices
+}: {
+  locale: AppLocale;
+  notices: AppNotice[];
+}) {
   const autoPopupNoticeId = notices.find((notice) => notice.popupEnabled)?.id;
+  const dictionary = getDashboardDictionary(locale).notices;
 
   return (
     <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface)] shadow-[var(--shadow-panel)]">
       <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-5 py-4">
         <div className="flex items-center gap-2">
           <Megaphone aria-hidden="true" className="text-blue-700" size={18} />
-          <h2 className="text-base font-semibold text-[var(--text-primary)]">공지사항</h2>
+          <h2 className="text-base font-semibold text-[var(--text-primary)]">{dictionary.title}</h2>
         </div>
-        {notices.length ? <span className="text-xs font-semibold text-[var(--text-muted)]">최근 {notices.length}건</span> : null}
+        {notices.length ? (
+          <span className="text-xs font-semibold text-[var(--text-muted)]">{formatDashboardCount(dictionary.recent, notices.length)}</span>
+        ) : null}
       </div>
       <div className="divide-y divide-[var(--border-subtle)] px-4">
         {notices.length ? notices.map((notice) => (
-          <NoticeDialog autoOpen={notice.id === autoPopupNoticeId} key={notice.id} notice={notice} />
+          <NoticeDialog
+            autoOpen={notice.id === autoPopupNoticeId}
+            dictionary={dictionary}
+            key={notice.id}
+            locale={locale}
+            notice={notice}
+          />
         )) : (
-          <div className="py-6 text-sm text-[var(--text-secondary)]">등록된 공지사항이 없습니다.</div>
+          <div className="py-6 text-sm text-[var(--text-secondary)]">{dictionary.empty}</div>
         )}
       </div>
     </div>

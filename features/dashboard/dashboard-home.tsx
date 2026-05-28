@@ -5,6 +5,7 @@ import { DashboardWorkflowLinks } from "@/features/dashboard/dashboard-workflow-
 import { destinationCountryOptions } from "@/features/export-diagnosis/country-options";
 import { cargoWatchStatusDisplay } from "@/lib/cargo-watch-status";
 import { formatHsCode } from "@/lib/hs-code";
+import { getDashboardDictionary, type AppLocale } from "@/lib/i18n";
 import type { CargoWatchListItem } from "@/features/cargo/cargo-tracking-panel";
 import type { AppNotice } from "@/server/repositories/app-notice.repository";
 import type { HsFavoriteItem } from "@/server/repositories/hs-favorite.repository";
@@ -21,8 +22,8 @@ function displayLookupTitle(query: string) {
   return digits.length === 10 ? formatHsCode(digits) : query;
 }
 
-function displayLookupMeta(item: HsLookupHistoryItem) {
-  const direction = item.direction === "export" ? "수출" : "수입";
+function displayLookupMeta(item: HsLookupHistoryItem, dictionary: ReturnType<typeof getDashboardDictionary>) {
+  const direction = item.direction === "export" ? dictionary.lists.history.export : dictionary.lists.history.import;
   return `${direction} · ${item.destinationCountry}`;
 }
 
@@ -38,28 +39,35 @@ function lookupHistoryHref(item: HsLookupHistoryItem) {
   return `${path}?${params.toString()}`;
 }
 
-function cargoWatchStatusLabel(status: string) {
-  if (status === "active") return "감시중";
-  if (status === "matched") return "메일 발송 완료";
-  if (status === "cancelled") return "감시 해제";
-  if (status === "paused") return "일시중지";
-  if (status === "error") return "오류";
-  return status;
+function cargoWatchStatusLabel(status: string, dictionary: ReturnType<typeof getDashboardDictionary>) {
+  const meta = dictionary.lists.cargo.meta as Record<string, string>;
+  return meta[status] ?? status;
 }
 
 export function DashboardHome({
   basisDate,
   cargoWatches,
   favorites,
+  locale,
   lookupHistory,
   notices
 }: {
   basisDate: string;
   cargoWatches: CargoWatchListItem[];
   favorites: HsFavoriteItem[];
+  locale: AppLocale;
   lookupHistory: HsLookupHistoryItem[];
   notices: AppNotice[];
 }) {
+  const dictionary = getDashboardDictionary(locale);
+  const formattedDate = new Intl.DateTimeFormat(locale, {
+    day: "numeric",
+    month: "long",
+    timeZone: "Asia/Seoul",
+    weekday: "short",
+    year: "numeric"
+  }).format(new Date(`${basisDate}T00:00:00+09:00`));
+
   return (
     <div className="grid gap-4">
       <section className="overflow-hidden rounded-lg border border-[var(--border-subtle)] bg-[var(--surface)] shadow-[var(--shadow-panel)]">
@@ -67,23 +75,17 @@ export function DashboardHome({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-medium text-[var(--text-muted)]">조회 기준일 {basisDate}</span>
+                <span className="text-xs font-medium text-[var(--text-muted)]">{dictionary.hero.basisDate} {basisDate}</span>
               </div>
               <h1 className="mt-4 text-2xl font-semibold tracking-normal text-[var(--text-primary)] sm:text-3xl">
-                대시보드
+                {dictionary.hero.title}
               </h1>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
-                자주 쓰는 메뉴, 공지사항, 즐겨찾기와 최근 검색 기록을 한 곳에서 확인합니다.
+                {dictionary.hero.description}
               </p>
             </div>
             <div className="rounded-md border border-[var(--border-subtle)] bg-white px-4 py-3 text-sm font-semibold text-[var(--text-primary)] shadow-sm">
-              {new Intl.DateTimeFormat("ko-KR", {
-                timeZone: "Asia/Seoul",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-                weekday: "short"
-              }).format(new Date(`${basisDate}T00:00:00+09:00`))}
+              {formattedDate}
             </div>
           </div>
         </div>
@@ -92,32 +94,32 @@ export function DashboardHome({
           <form action="/hs/direct" className="rounded-lg border border-[var(--border-subtle)] bg-white p-4 shadow-sm" method="get">
             <input defaultValue={basisDate} name="basisDate" type="hidden" />
             <div className="flex gap-6 border-b border-[var(--border-subtle)] text-sm font-semibold text-[var(--text-secondary)]">
-              <span className="border-b-2 border-blue-700 px-2 pb-3 text-blue-700">HS CODE 직접 검색</span>
-              <span className="px-2 pb-3">품명 검색 AI</span>
-              <Link className="px-2 pb-3 hover:text-blue-700" href="/hs/overseas">해외 HS 검색</Link>
+              <span className="border-b-2 border-blue-700 px-2 pb-3 text-blue-700">{dictionary.lookup.hsDirect}</span>
+              <span className="px-2 pb-3">{dictionary.lookup.productAi}</span>
+              <Link className="px-2 pb-3 hover:text-blue-700" href="/hs/overseas">{dictionary.lookup.overseasHs}</Link>
             </div>
             <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(280px,1fr)_160px_220px_120px] lg:items-end">
               <label className="grid min-w-0 gap-1.5">
-                <span className="text-xs font-semibold text-[var(--text-secondary)]">검색어</span>
+                <span className="text-xs font-semibold text-[var(--text-secondary)]">{dictionary.lookup.query}</span>
                 <div className="relative">
                   <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                   <input
                     className="focus-ring h-12 w-full rounded-md border border-[var(--border-strong)] bg-white pl-10 pr-3 text-base font-medium text-[var(--text-primary)] shadow-sm placeholder:text-slate-400"
                     name="query"
-                    placeholder="예: 3304.99-1000, mushroom powder, 레이니 키보드"
+                    placeholder={dictionary.lookup.queryPlaceholder}
                     type="text"
                   />
                 </div>
               </label>
               <label className="grid min-w-0 gap-1.5">
-                <span className="text-xs font-semibold text-[var(--text-secondary)]">조회 구분</span>
+                <span className="text-xs font-semibold text-[var(--text-secondary)]">{dictionary.lookup.direction}</span>
                 <select className="focus-ring h-12 w-full rounded-md border border-[var(--border-strong)] bg-white px-3 text-base font-semibold text-[var(--text-primary)] shadow-sm" defaultValue="import" name="direction">
-                  <option value="import">수입</option>
-                  <option value="export">수출</option>
+                  <option value="import">{dictionary.lookup.import}</option>
+                  <option value="export">{dictionary.lookup.export}</option>
                 </select>
               </label>
               <label className="grid min-w-0 gap-1.5">
-                <span className="text-xs font-semibold text-[var(--text-secondary)]">수입국가/목적국</span>
+                <span className="text-xs font-semibold text-[var(--text-secondary)]">{dictionary.lookup.country}</span>
                 <select className="focus-ring h-12 w-full rounded-md border border-[var(--border-strong)] bg-white px-3 text-base font-semibold text-[var(--text-primary)] shadow-sm" defaultValue="ALL" name="destinationCountry">
                   {destinationCountryOptions.map((country) => (
                     <option key={country.code} value={country.code}>{country.label}</option>
@@ -126,12 +128,12 @@ export function DashboardHome({
               </label>
               <button className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-md bg-[var(--brand-solid)] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--brand-solid-hover)]" type="submit">
                 <Search aria-hidden="true" size={18} />
-                조회
+                {dictionary.lookup.submit}
               </button>
             </div>
 
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold text-[var(--text-muted)]">인기 검색어</span>
+              <span className="text-xs font-semibold text-[var(--text-muted)]">{dictionary.lookup.popular}</span>
               {quickExamples.map((item) => (
                 <Link
                   className="focus-ring rounded-full border border-[var(--border-subtle)] bg-[var(--surface-muted)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-800"
@@ -147,42 +149,42 @@ export function DashboardHome({
         </div>
       </section>
 
-      <DashboardWorkflowLinks />
+      <DashboardWorkflowLinks locale={locale} />
 
       <section className="grid gap-5 lg:grid-cols-3">
-        <DashboardNoticeCard notices={notices} />
+        <DashboardNoticeCard locale={locale} notices={notices} />
         <DashboardListCard
-          emptyText="작동 중인 적하목록 감시가 없습니다."
+          emptyText={dictionary.lists.cargo.empty}
           icon={Bell}
           items={cargoWatches.map((watch) => ({
             href: "/cargo",
             title: watch.houseBlNo || watch.masterBlNo || watch.cargoManagementNo || "-",
-            subtitle: `${cargoWatchStatusDisplay(watch.targetStatus)} 도달 알림 · 현재 ${watch.lastStatus || "확인 전"}`,
-            meta: cargoWatchStatusLabel(watch.status)
+            subtitle: `${cargoWatchStatusDisplay(watch.targetStatus)} ${dictionary.lists.cargo.targetSuffix} · ${dictionary.lists.cargo.statusPrefix} ${watch.lastStatus || dictionary.lists.cargo.unchecked}`,
+            meta: cargoWatchStatusLabel(watch.status, dictionary)
           }))}
-          title="적하목록 알림 감시"
+          title={dictionary.lists.cargo.title}
         />
         <DashboardListCard
-          emptyText="아직 즐겨찾기한 HS CODE가 없습니다."
+          emptyText={dictionary.lists.favorites.empty}
           icon={Star}
           items={favorites.map((favorite) => ({
             href: `/hs/direct?query=${favorite.hskCode}&direction=import&destinationCountry=ALL&basisDate=${favorite.basisDate ?? basisDate}`,
             title: formatHsCode(favorite.hskCode),
-            subtitle: favorite.displayName ?? "저장한 HS CODE",
+            subtitle: favorite.displayName ?? dictionary.lists.favorites.defaultName,
             meta: favorite.basisDate ?? basisDate
           }))}
-          title="즐겨찾기 HS CODE"
+          title={dictionary.lists.favorites.title}
         />
         <DashboardListCard
           icon={Clock3}
-          emptyText="아직 저장된 최근 검색이 없습니다."
+          emptyText={dictionary.lists.history.empty}
           items={lookupHistory.map((item) => ({
             href: lookupHistoryHref(item),
             title: displayLookupTitle(item.query),
-            subtitle: displayLookupMeta(item),
+            subtitle: displayLookupMeta(item, dictionary),
             meta: item.basisDate
           }))}
-          title="최근 검색"
+          title={dictionary.lists.history.title}
         />
       </section>
     </div>

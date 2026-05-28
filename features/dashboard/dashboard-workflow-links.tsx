@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { ArrowRight, Bell, Calculator, Car, FileSearch, Globe2, Settings2, type LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { getDashboardDictionary, type AppLocale } from "@/lib/i18n";
+
+type WorkflowId = "cargo" | "direct" | "duty" | "overseas" | "vehicle-spec";
 
 type WorkflowLink = {
   href: string;
-  id: string;
-  title: string;
-  description: string;
+  id: WorkflowId;
   tone: "blue" | "emerald" | "slate" | "amber";
 };
 
@@ -16,41 +17,31 @@ const workflowLinks: WorkflowLink[] = [
   {
     href: "/hs/direct",
     id: "direct",
-    title: "통합 조회",
-    description: "코드 또는 품명으로 조회",
     tone: "blue"
   },
   {
     href: "/hs/overseas",
     id: "overseas",
-    title: "해외 HS CODE조회",
-    description: "목적국 기준으로 조회",
     tone: "emerald"
   },
   {
     href: "/cargo",
     id: "cargo",
-    title: "적하목록 조회",
-    description: "HBL 진행 상태와 알림",
     tone: "amber"
   },
   {
     href: "/duty-estimator",
     id: "duty",
-    title: "예상 납세액 계산",
-    description: "금액 입력 후 계산",
     tone: "slate"
   },
   {
     href: "/used-car-export",
     id: "vehicle-spec",
-    title: "중고차 수출",
-    description: "제원·컨테이너 조회",
     tone: "blue"
   }
 ];
 
-const iconById: Record<string, LucideIcon> = {
+const iconById: Record<WorkflowId, LucideIcon> = {
   direct: FileSearch,
   overseas: Globe2,
   cargo: Bell,
@@ -67,7 +58,7 @@ function toneClass(tone: WorkflowLink["tone"]) {
   return "bg-slate-100 text-slate-700 ring-slate-200";
 }
 
-function loadSelectedIds() {
+function loadSelectedIds(): WorkflowId[] {
   if (typeof window === "undefined") return workflowLinks.map((link) => link.id);
 
   try {
@@ -76,16 +67,17 @@ function loadSelectedIds() {
     const parsed = JSON.parse(stored);
     if (!Array.isArray(parsed)) return workflowLinks.map((link) => link.id);
     const validIds = workflowLinks.map((link) => link.id);
-    const selected = parsed.filter((id): id is string => typeof id === "string" && validIds.includes(id));
+    const selected = parsed.filter((id): id is WorkflowId => typeof id === "string" && validIds.includes(id as WorkflowId));
     return selected.length ? selected : validIds;
   } catch {
     return workflowLinks.map((link) => link.id);
   }
 }
 
-export function DashboardWorkflowLinks() {
+export function DashboardWorkflowLinks({ locale }: { locale: AppLocale }) {
   const [editing, setEditing] = useState(false);
   const [selectedIds, setSelectedIds] = useState(loadSelectedIds);
+  const dictionary = getDashboardDictionary(locale).workflows;
 
   useEffect(() => {
     window.localStorage.setItem(storageKey, JSON.stringify(selectedIds));
@@ -96,7 +88,7 @@ export function DashboardWorkflowLinks() {
     [selectedIds]
   );
 
-  function toggleLink(id: string) {
+  function toggleLink(id: WorkflowId) {
     setSelectedIds((current) => {
       if (current.includes(id)) {
         return current.length > 1 ? current.filter((item) => item !== id) : current;
@@ -111,14 +103,14 @@ export function DashboardWorkflowLinks() {
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] px-5 py-4">
         <div className="flex items-center gap-2">
           <Settings2 aria-hidden="true" className="text-blue-700" size={18} />
-          <h2 className="text-base font-semibold text-[var(--text-primary)]">바로가기</h2>
+          <h2 className="text-base font-semibold text-[var(--text-primary)]">{dictionary.title}</h2>
         </div>
         <button
           className="focus-ring rounded-md border border-[var(--border-subtle)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] hover:bg-slate-50"
           onClick={() => setEditing((current) => !current)}
           type="button"
         >
-          {editing ? "편집 닫기" : "대시보드 편집"}
+          {editing ? dictionary.editClose : dictionary.edit}
         </button>
       </div>
 
@@ -132,7 +124,7 @@ export function DashboardWorkflowLinks() {
                 onChange={() => toggleLink(link.id)}
                 type="checkbox"
               />
-              {link.title}
+              {dictionary.items[link.id].title}
             </label>
           ))}
         </div>
@@ -147,11 +139,11 @@ export function DashboardWorkflowLinks() {
                 <Icon aria-hidden="true" size={19} />
               </span>
               <span>
-                <span className="block font-semibold text-[var(--text-primary)]">{workflow.title}</span>
-                <span className="mt-1 block text-sm leading-5 text-[var(--text-secondary)]">{workflow.description}</span>
+                <span className="block font-semibold text-[var(--text-primary)]">{dictionary.items[workflow.id].title}</span>
+                <span className="mt-1 block text-sm leading-5 text-[var(--text-secondary)]">{dictionary.items[workflow.id].description}</span>
               </span>
               <span className="mt-auto inline-flex items-center gap-1 text-xs font-semibold text-blue-700">
-                열기
+                {dictionary.open}
                 <ArrowRight aria-hidden="true" className="transition group-hover:translate-x-0.5" size={14} />
               </span>
             </Link>

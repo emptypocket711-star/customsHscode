@@ -1,5 +1,6 @@
 import { DashboardHome } from "@/features/dashboard/dashboard-home";
 import type { CargoWatchListItem } from "@/features/cargo/cargo-tracking-panel";
+import { getRequestLocale, resolveUserLocale } from "@/lib/i18n/server";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import { getSeoulDateString } from "@/lib/utils";
 import { listPublishedAppNotices } from "@/server/repositories/app-notice.repository";
@@ -35,7 +36,10 @@ async function listDashboardCargoWatches(
 
 export default async function DashboardPage() {
   const basisDate = getSeoulDateString();
+  const requestLocale = await getRequestLocale();
   const supabase = hasSupabaseEnv() ? await createSupabaseServerClient() : null;
+  const user = supabase ? (await supabase.auth.getUser()).data.user : null;
+  const locale = user?.id ? await resolveUserLocale(user.id) : requestLocale;
   const [cargoWatches, favorites, lookupHistory, notices] = await Promise.all([
     supabase ? listDashboardCargoWatches(supabase).catch(() => []) : Promise.resolve([]),
     supabase ? listUserHsFavorites(supabase, 5).catch(() => []) : Promise.resolve([]),
@@ -43,5 +47,14 @@ export default async function DashboardPage() {
     supabase ? listPublishedAppNotices(supabase, 5).catch(() => []) : Promise.resolve([])
   ]);
 
-  return <DashboardHome basisDate={basisDate} cargoWatches={cargoWatches} favorites={favorites} lookupHistory={lookupHistory} notices={notices} />;
+  return (
+    <DashboardHome
+      basisDate={basisDate}
+      cargoWatches={cargoWatches}
+      favorites={favorites}
+      locale={locale}
+      lookupHistory={lookupHistory}
+      notices={notices}
+    />
+  );
 }

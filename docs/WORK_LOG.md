@@ -288,3 +288,18 @@
 - `npm run typecheck`
 - `npm run lint`
 - `npm test -- lib/i18n/locales.test.ts lib/i18n/hs-finder-locale.test.ts`
+
+### 대시보드 다국어 확장
+
+- 대시보드 hero, 통합 검색 폼, 공지사항 chrome, 바로가기, 즐겨찾기, 최근 검색, 적하목록 감시 카드의 UI 문구를 dashboard dictionary로 분리했다.
+- 공지사항 제목과 본문은 운영자가 작성한 원문 콘텐츠이므로 자동 번역하지 않고, 카테고리·버튼·빈 상태 등 chrome만 locale별로 표시한다.
+- 진행 게이지는 `<html lang>` 기준으로 한국어, 영어, 중국어 메시지를 표시하도록 확장했다.
+- 인증 app layout과 dashboard page는 `profiles.preferred_locale`이 있으면 이를 우선 사용하고, 없으면 쿠키/브라우저 언어로 fallback한다.
+- “예상 납세액 계산”처럼 확정 산출로 읽힐 수 있는 dashboard 문구는 “예상 납세액 산출”, “입력값 기준 예비 산출”로 완화했다.
+- 대시보드 dictionary 누락과 영어권 단정 표현을 방지하는 테스트를 추가했다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test -- lib/i18n/dashboard.test.ts lib/i18n/locales.test.ts lib/i18n/hs-finder-locale.test.ts`

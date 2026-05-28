@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
 import { AppSideNav } from "@/components/app-side-nav";
+import { normalizeLocaleOrNull } from "@/lib/i18n";
 import { getRequestLocale } from "@/lib/i18n/server";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import { isDeveloperEmail } from "@/server/auth/developer";
@@ -20,7 +21,7 @@ async function getCurrentAccessState() {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("account_type,full_name,onboarding_completed_at")
+      .select("account_type,full_name,onboarding_completed_at,preferred_locale")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -31,7 +32,7 @@ async function getCurrentAccessState() {
 }
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
-  const locale = await getRequestLocale();
+  const requestLocale = await getRequestLocale();
   const access = await getCurrentAccessState();
 
   if (!access?.user) {
@@ -42,6 +43,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   if (!profile?.onboarding_completed_at) {
     redirect("/auth/complete-signup");
   }
+  const locale = normalizeLocaleOrNull(profile.preferred_locale) ?? requestLocale;
 
   const sessionCheck = await validatePersonalActiveSession({
     accountType: profile.account_type === "personal" ? "personal" : "company",

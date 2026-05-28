@@ -151,7 +151,8 @@ describe("lookup governance guards", () => {
     expect(dashboardPage).toContain("listPublishedAppNotices");
     expect(noticePanel).toContain("공지사항 작성");
     expect(noticePanel).toContain("popupEnabled");
-    expect(read("features/dashboard/dashboard-notice-card.tsx")).toContain("1일 동안 보지 않기");
+    expect(read("features/dashboard/dashboard-notice-card.tsx")).toContain("dictionary.hideOneDay");
+    expect(read("lib/i18n/dashboard.ts")).toContain("1일 동안 보지 않기");
   });
 
   it("keeps developer test login links gated and audited", () => {
