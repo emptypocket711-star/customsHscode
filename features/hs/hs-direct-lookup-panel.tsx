@@ -3197,7 +3197,14 @@ export async function HsDirectLookupPanel({
 
         {lookupDirection === "import" && !isHs6Lookup && results.length ? (
           <div className="mt-5 grid gap-4">
-            {results.map((result) => (
+            {results.map((result) => {
+              const countryFilteredTariffs = filterImportTariffsForCountry(result.tariffPreviews, selectedDestinationCountry);
+              const estimatorDutyTariff = baselineCopyTariff(countryFilteredTariffs, selectedDestinationCountry);
+              const estimatorPreferentialTariff = selectedDestinationCountry === "ALL"
+                ? undefined
+                : lowestTariff(countryFilteredTariffs.filter((tariff) => isFtaTariffRate(tariff.rateType)));
+
+              return (
               <article className="overflow-hidden rounded-md border border-slate-200" key={result.hskCode}>
                 <div className="grid lg:grid-cols-[430px_minmax(0,1fr)]">
                   <HsCodeSideNavigator
@@ -3223,8 +3230,8 @@ export async function HsDirectLookupPanel({
                           href={buildDutyEstimatorHref({
                             hskCode: result.hskCode,
                             basisDate: result.basisDate,
-                            dutyRate: lowestTariff(filterImportTariffsForCountry(result.tariffPreviews, selectedDestinationCountry).filter((tariff) => isCommonImportTariff(tariff)))?.rateText,
-                            preferentialRate: lowestTariff(filterImportTariffsForCountry(result.tariffPreviews, selectedDestinationCountry).filter((tariff) => isFtaTariffRate(tariff.rateType)))?.rateText,
+                            dutyRate: estimatorDutyTariff?.rateText,
+                            preferentialRate: estimatorPreferentialTariff?.rateText,
                             internalTaxRows: (internalTaxCodesByHsk.get(result.hskCode) ?? []).map((row) => ({
                               name: row.name,
                               lawName: row.lawName,
@@ -3351,7 +3358,8 @@ export async function HsDirectLookupPanel({
                   </div>
                 </div>
               </article>
-            ))}
+              );
+            })}
           </div>
         ) : null}
       </CardBody>

@@ -26,6 +26,11 @@ function stringValue(formData: FormData, key: string) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function isFutureEffectiveRate(basisDate: string, effectiveFrom?: string | null) {
+  if (!effectiveFrom) return false;
+  return effectiveFrom > basisDate;
+}
+
 export async function lookupExchangeRateAction(
   _previousState: ExchangeRateLookupState,
   formData: FormData
@@ -65,10 +70,17 @@ export async function lookupExchangeRateAction(
       });
 
       if (cached) {
+        if (mode === "next" && !isFutureEffectiveRate(applyStartDate, cached.effectiveFrom)) {
+          return {
+            status: "error",
+            message: "아직 차주 환율을 가져올 수 없습니다."
+          };
+        }
+
         return {
           status: "success",
           message: mode === "next"
-            ? `${currencyCode} 차주 관세환율을 적용했습니다.`
+            ? "다음주 기준 환율 입니다."
             : `${currencyCode} 저장 관세환율을 적용했습니다.`,
           rate: cached.rate,
           currencyCode: cached.currencyCode,
@@ -85,7 +97,7 @@ export async function lookupExchangeRateAction(
   if (mode === "next") {
     return {
       status: "error",
-      message: "차주 환율을 가져오지 못했습니다."
+      message: "아직 차주 환율을 가져올 수 없습니다."
     };
   }
 

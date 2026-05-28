@@ -55,7 +55,7 @@ function formData(values: Record<string, string>) {
 
 describe("lookupExchangeRateAction", () => {
   afterEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it("uses cached exchange rates before calling API012", async () => {
@@ -102,7 +102,64 @@ describe("lookupExchangeRateAction", () => {
 
     expect(result).toEqual({
       status: "error",
-      message: "차주 환율을 가져오지 못했습니다."
+      message: "아직 차주 환율을 가져올 수 없습니다."
+    });
+    expect(mockedFetchCustomsOpenApiSnapshot).not.toHaveBeenCalled();
+  });
+
+  it("uses a cached future exchange rate as next-week rate", async () => {
+    mockedHasSupabaseServiceRoleEnv.mockReturnValue(true);
+    mockedCreateSupabaseServiceRoleClient.mockReturnValue({} as ReturnType<typeof createSupabaseServiceRoleClient>);
+    mockedFindCachedExchangeRate.mockResolvedValue({
+      currencyCode: "USD",
+      rate: "1370.20",
+      effectiveFrom: "2026-05-31",
+      direction: "import",
+      sourceVersion: "myc-openapi-api012-v1.0",
+      sourceSnapshotId: "00000000-0000-0000-0000-000000000100"
+    });
+
+    const result = await lookupExchangeRateAction({ status: "idle" }, formData({
+      currencyCode: "USD",
+      applyStartDate: "2026-05-27",
+      direction: "import",
+      rateMode: "next"
+    }));
+
+    expect(result).toEqual({
+      status: "success",
+      message: "다음주 기준 환율 입니다.",
+      rate: "1370.20",
+      currencyCode: "USD",
+      effectiveFrom: "2026-05-31",
+      sourceVersion: "myc-openapi-api012-v1.0",
+      sourceSnapshotId: "00000000-0000-0000-0000-000000000100"
+    });
+    expect(mockedFetchCustomsOpenApiSnapshot).not.toHaveBeenCalled();
+  });
+
+  it("rejects a cached non-future rate for next-week mode", async () => {
+    mockedHasSupabaseServiceRoleEnv.mockReturnValue(true);
+    mockedCreateSupabaseServiceRoleClient.mockReturnValue({} as ReturnType<typeof createSupabaseServiceRoleClient>);
+    mockedFindCachedExchangeRate.mockResolvedValue({
+      currencyCode: "USD",
+      rate: "1360.10",
+      effectiveFrom: "2026-05-24",
+      direction: "import",
+      sourceVersion: "myc-openapi-api012-v1.0",
+      sourceSnapshotId: "00000000-0000-0000-0000-000000000101"
+    });
+
+    const result = await lookupExchangeRateAction({ status: "idle" }, formData({
+      currencyCode: "USD",
+      applyStartDate: "2026-05-27",
+      direction: "import",
+      rateMode: "next"
+    }));
+
+    expect(result).toEqual({
+      status: "error",
+      message: "아직 차주 환율을 가져올 수 없습니다."
     });
     expect(mockedFetchCustomsOpenApiSnapshot).not.toHaveBeenCalled();
   });
