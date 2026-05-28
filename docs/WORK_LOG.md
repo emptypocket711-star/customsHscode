@@ -218,6 +218,20 @@
 - `npm test`
 - `npm run build`
 
+### HS 통합조회 다국어 2차
+
+- 해외 HS 조회 결과 테이블과 수입국 HS 상세 화면의 헤더, 빈 상태, 매칭 라벨을 `hs-direct` dictionary로 추가 분리했다.
+- 목적국 품명, 세율, 내국세, 수입요건 등 공식 데이터 값은 그대로 유지하고, 화면 chrome만 한국어/영어/중국어로 전환한다.
+- 수입국 요건/내국세가 표시되지 않는 경우에도 “없음”으로 단정하지 않고 “표시할 데이터가 없음” 수준의 표현을 유지했다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test -- lib/i18n/hs-direct.test.ts`
+- `npm test`
+- `npm run build`
+
 2026-05-25 기준 전체 테스트 결과:
 
 - 52 test files passed

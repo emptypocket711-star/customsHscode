@@ -1,6 +1,34 @@
 import { defaultLocale, type AppLocale } from "./locales";
 
 export type HsDirectDictionary = {
+  destination: {
+    additionalTariff: string;
+    adCvd: string;
+    agreementRate: string;
+    baseRate: string;
+    customsCodeCandidates: string;
+    dataYear: string;
+    destinationCountry: string;
+    destinationHsCode: string;
+    destinationHsDetail: string;
+    destinationHsPath: string;
+    destinationProductName: string;
+    generalRate: string;
+    hs6Connection: string;
+    importRequirements: string;
+    internalTaxes: string;
+    koreaHs6: string;
+    match: string;
+    matchExact: string;
+    matchHs4: string;
+    matchHs6: string;
+    matchPrefix: string;
+    noDestinationData: string;
+    noInternalTaxData: string;
+    noRequirementData: string;
+    points: string;
+    tariffBasisCode: string;
+  };
   empty: {
     invalidInput: string;
     noHsData: string;
@@ -51,6 +79,34 @@ export type HsDirectDictionary = {
 
 const dictionaries = {
   "ko-KR": {
+    destination: {
+      additionalTariff: "추가관세",
+      adCvd: "AD/CVD",
+      agreementRate: "협정세율",
+      baseRate: "기본세율",
+      customsCodeCandidates: "10자리 후보",
+      dataYear: "자료연도",
+      destinationCountry: "수입국",
+      destinationHsCode: "수입국 HS CODE",
+      destinationHsDetail: "수입국 HS 상세",
+      destinationHsPath: "수입국 HS 경로",
+      destinationProductName: "수입국 품명",
+      generalRate: "일반세율",
+      hs6Connection: "한국 HS6 연결",
+      importRequirements: "수입요건",
+      internalTaxes: "내국세",
+      koreaHs6: "한국 HS6",
+      match: "매칭",
+      matchExact: "동일 코드",
+      matchHs4: "HS4 기준",
+      matchHs6: "HS6 공용 기준",
+      matchPrefix: "하위 코드",
+      noDestinationData: "표시할 상대국 수입 HS/관세율 데이터가 없습니다.",
+      noInternalTaxData: "표시할 수입국 내국세 데이터가 없습니다.",
+      noRequirementData: "표시할 수입국 수입요건 데이터가 없습니다.",
+      points: "점",
+      tariffBasisCode: "관세율 기준 세번"
+    },
     empty: {
       invalidInput: "입력값을 확인해 주세요.",
       noHsData: "조회기준일에 표시할 수 있는 HS CODE 데이터가 없습니다."
@@ -99,6 +155,34 @@ const dictionaries = {
     }
   },
   "en-US": {
+    destination: {
+      additionalTariff: "Additional tariffs",
+      adCvd: "AD/CVD",
+      agreementRate: "Preferential rate",
+      baseRate: "Base rate",
+      customsCodeCandidates: "10-digit candidates",
+      dataYear: "Data year",
+      destinationCountry: "Import country",
+      destinationHsCode: "Import-country HS code",
+      destinationHsDetail: "Import-country HS detail",
+      destinationHsPath: "Import-country HS path",
+      destinationProductName: "Import-country description",
+      generalRate: "General rate",
+      hs6Connection: "Korean HS6 connection",
+      importRequirements: "Import requirements",
+      internalTaxes: "Internal taxes",
+      koreaHs6: "Korean HS6",
+      match: "Match",
+      matchExact: "Exact code",
+      matchHs4: "HS4 basis",
+      matchHs6: "Common HS6 basis",
+      matchPrefix: "Sub-code",
+      noDestinationData: "No displayable destination import HS or tariff data was found.",
+      noInternalTaxData: "No displayable import-country internal tax data was found.",
+      noRequirementData: "No displayable import-country requirement data was found.",
+      points: "pts",
+      tariffBasisCode: "Tariff basis code"
+    },
     empty: {
       invalidInput: "Please check the input value.",
       noHsData: "No displayable HS code data was found for the basis date."
@@ -147,6 +231,34 @@ const dictionaries = {
     }
   },
   "zh-CN": {
+    destination: {
+      additionalTariff: "附加关税",
+      adCvd: "AD/CVD",
+      agreementRate: "协定税率",
+      baseRate: "基本税率",
+      customsCodeCandidates: "10位候选编码",
+      dataYear: "资料年度",
+      destinationCountry: "进口国",
+      destinationHsCode: "进口国HS编码",
+      destinationHsDetail: "进口国HS详情",
+      destinationHsPath: "进口国HS路径",
+      destinationProductName: "进口国品名",
+      generalRate: "普通税率",
+      hs6Connection: "韩国HS6连接",
+      importRequirements: "进口要求",
+      internalTaxes: "内税",
+      koreaHs6: "韩国HS6",
+      match: "匹配",
+      matchExact: "相同编码",
+      matchHs4: "HS4基准",
+      matchHs6: "HS6通用基准",
+      matchPrefix: "下级编码",
+      noDestinationData: "未找到可显示的目的国进口HS或关税率数据。",
+      noInternalTaxData: "未找到可显示的进口国内税数据。",
+      noRequirementData: "未找到可显示的进口国要求数据。",
+      points: "分",
+      tariffBasisCode: "税率基准编码"
+    },
     empty: {
       invalidInput: "请确认输入值。",
       noHsData: "未找到该查询基准日可显示的HS编码数据。"

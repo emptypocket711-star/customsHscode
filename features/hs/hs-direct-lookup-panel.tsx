@@ -1712,10 +1712,10 @@ async function uncachedHsCodeNavigationStatsForResults({
 
   return rowsByHsk;
 }
-function EmptyDestinationTariffState() {
+function EmptyDestinationTariffState({ dictionary }: { dictionary: HsDirectDictionary }) {
   return (
     <div className="px-3 py-4 text-sm text-slate-500">
-      표시할 상대국 수입 HS/관세율 데이터가 없습니다.
+      {dictionary.destination.noDestinationData}
     </div>
   );
 }
@@ -1728,15 +1728,15 @@ function destinationCountrySubjectLabel(countryCode: string) {
   return label.replace(/\s*\([A-Z]{2,3}\)\s*$/, "");
 }
 
-function destinationMatchLabel(matchBasis: ExportDestinationTariffItem["matchBasis"]) {
-  if (matchBasis === "exact") return "동일 코드";
-  if (matchBasis === "prefix") return "하위 코드";
-  if (matchBasis === "hs6") return "HS6 공용 기준";
-  return "HS4 기준";
+function destinationMatchLabel(matchBasis: ExportDestinationTariffItem["matchBasis"], dictionary: HsDirectDictionary) {
+  if (matchBasis === "exact") return dictionary.destination.matchExact;
+  if (matchBasis === "prefix") return dictionary.destination.matchPrefix;
+  if (matchBasis === "hs6") return dictionary.destination.matchHs6;
+  return dictionary.destination.matchHs4;
 }
 
-function destinationMatchDisplay(row: ExportDestinationTariffItem) {
-  return `${destinationMatchLabel(row.matchBasis)} · ${row.matchScore}점`;
+function destinationMatchDisplay(row: ExportDestinationTariffItem, dictionary: HsDirectDictionary) {
+  return `${destinationMatchLabel(row.matchBasis, dictionary)} · ${row.matchScore}${dictionary.destination.points}`;
 }
 
 function destinationTariffKey(row: ExportDestinationTariffItem) {
@@ -1767,7 +1767,8 @@ function DestinationCountryResultTable({
   basisDate,
   sourceQuery,
   sourceHs6,
-  originCountry
+  originCountry,
+  dictionary
 }: {
   rows: Array<ExportDestinationTariffItem & { hskCode?: string }>;
   destinationCountry: string;
@@ -1780,30 +1781,31 @@ function DestinationCountryResultTable({
   sourceQuery: string;
   sourceHs6?: string;
   originCountry: string;
+  dictionary: HsDirectDictionary;
 }) {
-  if (!rows.length) return <EmptyDestinationTariffState />;
+  if (!rows.length) return <EmptyDestinationTariffState dictionary={dictionary} />;
 
   const showCountryColumn = destinationCountry === "ALL";
-  const countryLabel = showCountryColumn ? "수입국" : destinationCountrySubjectLabel(destinationCountry);
+  const countryLabel = showCountryColumn ? dictionary.destination.destinationCountry : destinationCountrySubjectLabel(destinationCountry);
 
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[1120px] text-left text-sm">
         <thead className="border-y border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
           <tr>
-            {showCountryColumn ? <th className="px-3 py-2">국가</th> : null}
+            {showCountryColumn ? <th className="px-3 py-2">{dictionary.destination.destinationCountry}</th> : null}
             <th className="px-3 py-2">{countryLabel} HS CODE</th>
-            <th className="px-3 py-2">10자리 후보</th>
-            <th className="px-3 py-2">{countryLabel} 품명</th>
-            <th className="px-3 py-2">기본세율</th>
-            <th className="px-3 py-2">협정세율</th>
-            <th className="px-3 py-2">추가관세</th>
-            <th className="px-3 py-2">AD/CVD</th>
-            <th className="px-3 py-2">내국세</th>
-            <th className="px-3 py-2">수입요건</th>
-            <th className="px-3 py-2">자료연도</th>
-            <th className="px-3 py-2">매칭</th>
-            <th className="px-3 py-2">한국 HS6</th>
+            <th className="px-3 py-2">{dictionary.destination.customsCodeCandidates}</th>
+            <th className="px-3 py-2">{dictionary.destination.destinationProductName}</th>
+            <th className="px-3 py-2">{dictionary.destination.baseRate}</th>
+            <th className="px-3 py-2">{dictionary.destination.agreementRate}</th>
+            <th className="px-3 py-2">{dictionary.destination.additionalTariff}</th>
+            <th className="px-3 py-2">{dictionary.destination.adCvd}</th>
+            <th className="px-3 py-2">{dictionary.destination.internalTaxes}</th>
+            <th className="px-3 py-2">{dictionary.destination.importRequirements}</th>
+            <th className="px-3 py-2">{dictionary.destination.dataYear}</th>
+            <th className="px-3 py-2">{dictionary.destination.match}</th>
+            <th className="px-3 py-2">{dictionary.destination.koreaHs6}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
@@ -1882,7 +1884,7 @@ function DestinationCountryResultTable({
                   {requirements.length ? `${requirements.length}건` : "-"}
                 </td>
                 <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.tariffYear}년</td>
-                <td className="whitespace-nowrap px-3 py-2 text-slate-600">{destinationMatchDisplay(row)}</td>
+                <td className="whitespace-nowrap px-3 py-2 text-slate-600">{destinationMatchDisplay(row, dictionary)}</td>
                 <td className="whitespace-nowrap px-3 py-2 font-mono text-slate-500">{koreanHs6 ? formatHsCode(koreanHs6) : "-"}</td>
               </tr>
             );
@@ -1973,7 +1975,8 @@ function DestinationCountryDetailPage({
   tradeRemedyCases,
   customsCodes,
   sourceHs6,
-  originCountry
+  originCountry,
+  dictionary
 }: {
   row: ExportDestinationTariffItem & { hskCode?: string };
   destinationCountry: string;
@@ -1984,6 +1987,7 @@ function DestinationCountryDetailPage({
   customsCodes: ExportDestinationCustomsCodeItem[];
   sourceHs6?: string;
   originCountry: string;
+  dictionary: HsDirectDictionary;
 }) {
   const productName = row.koreanName ?? row.englishName ?? "-";
   const koreanHs6 = sourceHs6 ?? (row.hskCode ? normalizeHsInput(row.hskCode).slice(0, 6) : "");
@@ -1996,7 +2000,7 @@ function DestinationCountryDetailPage({
   return (
     <section className="border-b border-slate-200">
       <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-900 px-3 py-2 text-sm font-semibold text-white">
-        <span>수입국 HS 상세</span>
+        <span>{dictionary.destination.destinationHsDetail}</span>
         <HsCopySummaryButton
           text={destinationCopySummaryText({
             row,
@@ -2010,11 +2014,11 @@ function DestinationCountryDetailPage({
         />
       </div>
       <dl className="grid text-sm sm:grid-cols-[160px_1fr]">
-        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">수입국</dt>
+        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.destination.destinationCountry}</dt>
         <dd className="border-b border-slate-200 px-3 py-2">{exportCountryLabel(detailCountry)}</dd>
-        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">수입국 HS CODE</dt>
+        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.destination.destinationHsCode}</dt>
         <dd className="border-b border-slate-200 px-3 py-2 font-mono font-semibold text-slate-950">{formatHsCode(row.destinationHsCode)}</dd>
-        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">수입국 HS 경로</dt>
+        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.destination.destinationHsPath}</dt>
         <dd className="border-b border-slate-200 px-3 py-2">
           <DestinationHsHierarchyTrail
             destinationCountry={detailCountry}
@@ -2024,36 +2028,36 @@ function DestinationCountryDetailPage({
         </dd>
         {selectedCustomsCode ? (
           <>
-            <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">관세율 기준 세번</dt>
+            <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.destination.tariffBasisCode}</dt>
             <dd className="border-b border-slate-200 px-3 py-2">
               <span className="font-mono font-semibold">{formatHsCode(tariffCode)}</span>
               <span className="ml-2 text-slate-600">중국 2026 세칙 8자리 기준</span>
             </dd>
           </>
         ) : null}
-        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">수입국 품명</dt>
+        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.destination.destinationProductName}</dt>
         <dd className="border-b border-slate-200 px-3 py-2">{productName}</dd>
-        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">최혜국/기본세율</dt>
+        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.destination.baseRate}</dt>
         <dd className="border-b border-slate-200 px-3 py-2 font-semibold text-orange-600">{destinationDisplayBaseRate(row)}</dd>
-        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">협정세율</dt>
+        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.destination.agreementRate}</dt>
         <dd className="border-b border-slate-200 px-3 py-2 leading-6">
           <DestinationAgreementRateDialog items={agreementRateItems} label={agreementRateLabel} />
         </dd>
-        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">추가관세</dt>
+        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.destination.additionalTariff}</dt>
         <dd className="border-b border-slate-200 px-3 py-2 leading-6 text-rose-700">
           <DestinationAdditionalTariffSummary rows={additionalTariffs} />
         </dd>
-        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">AD/CVD</dt>
+        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.destination.adCvd}</dt>
         <dd className="border-b border-slate-200 px-3 py-2 leading-6 text-rose-700">
           <DestinationTradeRemedySummary rows={tradeRemedyCases} />
         </dd>
-        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">일반세율</dt>
+        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.destination.generalRate}</dt>
         <dd className="border-b border-slate-200 px-3 py-2 text-slate-700">{row.baseRateText ?? "-"}</dd>
-        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">내국세</dt>
+        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.destination.internalTaxes}</dt>
         <dd className="border-b border-slate-200 px-3 py-2">
-          {internalTaxes.length ? <DestinationInternalTaxSummary rows={internalTaxes} /> : "표시할 수입국 내국세 데이터가 없습니다."}
+          {internalTaxes.length ? <DestinationInternalTaxSummary rows={internalTaxes} /> : dictionary.destination.noInternalTaxData}
         </dd>
-        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">수입요건</dt>
+        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.destination.importRequirements}</dt>
         <dd className="border-b border-slate-200 px-3 py-2">
           {requirements.length ? (
             <ul className="grid gap-2">
@@ -2064,13 +2068,13 @@ function DestinationCountryDetailPage({
                 </li>
               ))}
             </ul>
-          ) : "표시할 수입국 수입요건 데이터가 없습니다."}
+          ) : dictionary.destination.noRequirementData}
         </dd>
-        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">자료연도</dt>
+        <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.destination.dataYear}</dt>
         <dd className="border-b border-slate-200 px-3 py-2">{row.tariffYear}년</dd>
         {customsCodes.length ? (
           <>
-            <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">10자리 신고상품번호</dt>
+            <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.destination.customsCodeCandidates}</dt>
             <dd className="border-b border-slate-200 px-3 py-2">
               <div className="grid gap-2">
                 {customsCodes.slice(0, 20).map((code) => (
@@ -2095,7 +2099,7 @@ function DestinationCountryDetailPage({
             </dd>
           </>
         ) : null}
-        <dt className="bg-slate-50 px-3 py-2 font-semibold text-slate-600">한국 HS6 연결</dt>
+        <dt className="bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.destination.hs6Connection}</dt>
         <dd className="px-3 py-2 font-mono">{koreanHs6 ? formatHsCode(koreanHs6) : "-"}</dd>
       </dl>
     </section>
@@ -3105,6 +3109,7 @@ export async function HsDirectLookupPanel({
                 additionalTariffs={destinationImportData.additionalTariffsByKey.get(destinationImportDataKey(selectedDestinationRow.countryCode, selectedDestinationRow.destinationHsCode)) ?? []}
                 customsCodes={destinationCustomsCodesByTariffKey.get(destinationTariffKey(selectedDestinationRow)) ?? []}
                 destinationCountry={selectedDestinationCountry}
+                dictionary={dictionary}
                 internalTaxes={destinationImportData.internalTaxesByKey.get(destinationImportDataKey(selectedDestinationRow.countryCode, selectedDestinationRow.destinationHsCode)) ?? []}
                 originCountry={selectedOriginCountry}
                 requirements={destinationImportData.requirementsByKey.get(destinationImportDataKey(selectedDestinationRow.countryCode, selectedDestinationRow.destinationHsCode)) ?? []}
@@ -3129,6 +3134,7 @@ export async function HsDirectLookupPanel({
               additionalTariffsByKey={destinationImportData.additionalTariffsByKey}
               customsCodesByTariffKey={destinationCustomsCodesByTariffKey}
               destinationCountry={selectedDestinationCountry}
+              dictionary={dictionary}
               internalTaxesByKey={destinationImportData.internalTaxesByKey}
               originCountry={selectedOriginCountry}
               requirementsByKey={destinationImportData.requirementsByKey}
