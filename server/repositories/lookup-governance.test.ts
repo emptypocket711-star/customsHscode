@@ -127,7 +127,8 @@ describe("lookup governance guards", () => {
     expect(noticesPage).toContain("requireDeveloperRole()");
     expect(healthPage).toContain("requireDeveloperRole()");
     expect(documentUploadPage).toContain("requireDeveloperRole()");
-    expect(documentUploadPage).toContain("문서 업로드 준비 중");
+    expect(documentUploadPage).toContain("getDocumentsDictionary");
+    expect(documentUploadPage).toContain("notReadyTitle");
     expect(overseasPage).toContain("recordHsLookupHistory");
     expect(overseasPage).toContain('direction: "export"');
     expect(sideNav).toContain("showOperations ? <NavGroup");

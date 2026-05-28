@@ -54,3 +54,7 @@ export {
   getReportPreviewDictionary,
   type ReportPreviewDictionary
 } from "./report-preview";
+export {
+  getDocumentsDictionary,
+  type DocumentsDictionary
+} from "./documents";

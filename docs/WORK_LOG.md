@@ -229,6 +229,10 @@
 - `npm run typecheck`
 - `npm run lint`
 - `npm test`
+- `npm test -- lib/i18n/documents.test.ts`
+- `npm run build`
+- `npm run lint`
+- `npm test`
 - `npm test -- lib/i18n/report-preview.test.ts`
 - `npm run build`
 - `npm run lint`
@@ -493,4 +497,18 @@
 - `npm run lint`
 - `npm test`
 - `npm test -- lib/i18n/report-preview.test.ts`
+- `npm run build`
+
+### 선적서류 업로드 페이지 다국어 1차
+
+- `/documents/upload` 페이지 헤더와 일반 사용자에게 보이는 “준비 중” 안내 카드 UI chrome을 `documents` dictionary로 분리했다.
+- 개발자 전용 mock extraction preview와 업로드 form 상세 문구는 아직 원문 유지하며, 기능 확장은 하지 않았다.
+- Documents dictionary 누락 방지 테스트를 추가했다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm test -- lib/i18n/documents.test.ts`
 - `npm run build`
