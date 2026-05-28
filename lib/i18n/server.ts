@@ -70,3 +70,19 @@ export async function resolveUserLocale(userId?: string | null): Promise<AppLoca
 
   return resolveRequestLocale();
 }
+
+export async function resolveCurrentUserLocale(userId?: string | null): Promise<AppLocale> {
+  const requestLocale = await resolveRequestLocale();
+
+  if (userId) return resolveUserLocale(userId);
+
+  if (!hasSupabaseEnv()) return requestLocale;
+
+  try {
+    const supabase = await createSupabaseServerClient();
+    const user = (await supabase.auth.getUser()).data.user;
+    return user?.id ? await resolveUserLocale(user.id) : requestLocale;
+  } catch {
+    return requestLocale;
+  }
+}

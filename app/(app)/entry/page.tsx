@@ -3,8 +3,7 @@ import { ArrowRight, Calculator, Globe2, PackageSearch, Search } from "lucide-re
 import { PageHeading } from "@/components/page-heading";
 import { Card, CardBody } from "@/components/ui/card";
 import { getEntryDictionary } from "@/lib/i18n";
-import { getRequestLocale, resolveUserLocale } from "@/lib/i18n/server";
-import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
+import { resolveCurrentUserLocale } from "@/lib/i18n/server";
 
 const entryIcons = {
   cargo: PackageSearch,
@@ -14,19 +13,7 @@ const entryIcons = {
 };
 
 export default async function EntryPage() {
-  const requestLocale = await getRequestLocale();
-  let locale = requestLocale;
-
-  if (hasSupabaseEnv()) {
-    try {
-      const supabase = await createSupabaseServerClient();
-      const user = (await supabase.auth.getUser()).data.user;
-      locale = user?.id ? await resolveUserLocale(user.id) : requestLocale;
-    } catch {
-      locale = requestLocale;
-    }
-  }
-
+  const locale = await resolveCurrentUserLocale();
   const dictionary = getEntryDictionary(locale);
 
   return (

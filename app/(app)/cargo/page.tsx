@@ -1,7 +1,7 @@
 import { PageHeading } from "@/components/page-heading";
 import { CargoTrackingPanel, type CargoWatchListItem } from "@/features/cargo/cargo-tracking-panel";
 import { getCargoDictionary } from "@/lib/i18n";
-import { getRequestLocale, resolveUserLocale } from "@/lib/i18n/server";
+import { resolveCurrentUserLocale } from "@/lib/i18n/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 async function loadCargoWatches(): Promise<CargoWatchListItem[]> {
@@ -31,7 +31,6 @@ async function loadCargoWatches(): Promise<CargoWatchListItem[]> {
 
 export default async function CargoPage() {
   const supabase = await createSupabaseServerClient();
-  const requestLocale = await getRequestLocale();
   const [
     {
       data: { user }
@@ -41,7 +40,7 @@ export default async function CargoPage() {
     supabase.auth.getUser(),
     loadCargoWatches()
   ]);
-  const locale = user?.id ? await resolveUserLocale(user.id) : requestLocale;
+  const locale = await resolveCurrentUserLocale(user?.id);
   const dictionary = getCargoDictionary(locale);
 
   return (

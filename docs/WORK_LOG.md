@@ -229,6 +229,8 @@
 - `npm run typecheck`
 - `npm run lint`
 - `npm test`
+- `npm run build`
+- `npm test`
 - `npm test -- lib/i18n/used-car-export.test.ts`
 - `npm run build`
 - `npm run lint`
@@ -440,4 +442,17 @@
 - `npm run lint`
 - `npm test`
 - `npm test -- lib/i18n/used-car-export.test.ts`
+- `npm run build`
+
+### Locale 해석 helper 정리
+
+- `resolveCurrentUserLocale` helper를 추가해 쿠키/브라우저 언어와 `profiles.preferred_locale` fallback 흐름을 공통화했다.
+- 관부가세 계산기, 통합 진입점, 무역뉴스, 적하목록 조회, 중고차 수출 페이지의 반복된 locale 해석 코드를 제거했다.
+- 이미 user id를 확보한 화면은 같은 helper에 user id를 넘겨 Supabase Auth 조회를 중복하지 않도록 했다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
 - `npm run build`
