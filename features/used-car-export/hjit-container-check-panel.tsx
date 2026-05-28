@@ -149,6 +149,7 @@ export function HjitContainerCheckPanel() {
   const [clientError, setClientError] = useState("");
   const [rawHtmlOpen, setRawHtmlOpen] = useState(false);
   const [receiptPending, setReceiptPending] = useState(false);
+  const [receiptMessage, setReceiptMessage] = useState("");
 
   useEffect(() => {
     if (state.status !== "idle" || !pending) {
@@ -177,6 +178,7 @@ export function HjitContainerCheckPanel() {
               const value = String(formData.get("containerNo") ?? "").trim();
               if (value) {
                 setClientError("");
+                setReceiptMessage("");
                 setRawHtmlOpen(false);
                 return;
               }
@@ -220,16 +222,20 @@ export function HjitContainerCheckPanel() {
                   className="focus-ring inline-flex min-h-10 items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-100"
                   disabled={receiptPending}
                   onClick={async () => {
+                    setClientError("");
+                    setReceiptMessage("");
                     setReceiptPending(true);
                     try {
                       await downloadReceiptImage({
                         containerNo: state.containerNo ?? "",
                         terminalCode: state.terminalCode
                       });
+                      setReceiptMessage("반입계 이미지 다운로드를 시작했습니다.");
                     } catch (error) {
                       setClientError(error instanceof Error ? error.message : "반입계 이미지를 생성하지 못했습니다. 잠시 후 다시 시도해 주세요.");
                     } finally {
                       setReceiptPending(false);
+                      window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
                     }
                   }}
                   type="button"
@@ -264,6 +270,14 @@ export function HjitContainerCheckPanel() {
                 className={isSuccess ? "rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800" : "rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"}
               >
                 {message}
+              </div>
+            ) : null}
+            {receiptMessage ? (
+              <div
+                data-progress-complete="true"
+                className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800"
+              >
+                {receiptMessage}
               </div>
             ) : null}
             {state.notice ? (

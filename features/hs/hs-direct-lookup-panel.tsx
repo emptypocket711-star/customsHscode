@@ -2572,7 +2572,6 @@ function HsPrefixFolderNavigation({
               <div>
                 {hs4Item.hs6Items.map((hs6Item) => {
                   const isActive = hs6Item.hs6 === activeHs6;
-                  const childHs8GroupIndexes = buildHs8GroupIndexes(hs6Item.children.map((child) => child.hskCode));
                   const hs6Href = hsLookupHref({
                     hskCode: hs6Item.hs6,
                     direction,
@@ -2597,16 +2596,13 @@ function HsPrefixFolderNavigation({
                         {hs6Item.children.map((child) => {
                           const normalized = normalizeHsInput(child.hskCode);
                           const isHs8Range = normalized.length === 8;
-                          const hs8Style = hs8NavigatorStyle(normalized, childHs8GroupIndexes);
 
                           return (
                             <Link
                               className={cn(
                                 "flex items-start gap-2 px-3 py-1.5 text-slate-700 hover:bg-blue-50",
                                 normalized.length >= 10 ? "pl-20" : "pl-16",
-                                isHs8Range && "font-semibold",
-                                hs8Style?.rowClass,
-                                hs8Style?.borderClass
+                                isHs8Range && "font-semibold"
                               )}
                               data-navigation-progress="상세조회"
                               href={hsLookupHref({
@@ -2618,12 +2614,12 @@ function HsPrefixFolderNavigation({
                               key={child.hskCode}
                             >
                               <FileText className={cn("mt-0.5 size-3.5 shrink-0 text-slate-400", isHs8Range && "text-slate-600")} />
-                              <span className={cn("min-w-24 rounded px-1 font-mono font-semibold text-slate-700", hs8Style?.codeClass)}>
+                              <span className="min-w-24 rounded px-1 font-mono font-semibold text-slate-700">
                                 {formatHsCode(child.hskCode)}
                               </span>
                               <span className="min-w-0 flex-1 truncate">{child.koreanName}</span>
                               {isHs8Range ? (
-                                <span className={cn("shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold", hs8Style?.badgeClass)}>
+                                <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
                                   8자리 범위
                                 </span>
                               ) : null}
