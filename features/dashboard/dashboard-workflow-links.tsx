@@ -42,10 +42,10 @@ const workflowLinks: WorkflowLink[] = [
     tone: "slate"
   },
   {
-    href: "/vehicle-spec",
+    href: "/used-car-export",
     id: "vehicle-spec",
-    title: "자동차 제원 조회",
-    description: "제원관리번호 기준 조회",
+    title: "중고차 수출",
+    description: "제원·컨테이너 조회",
     tone: "blue"
   }
 ];
