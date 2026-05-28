@@ -71,18 +71,20 @@ function TrackingTable({
 function ResultModal({
   html,
   onClose,
-  sourceUrl
+  sourceUrl,
+  terminalName
 }: {
   html: string;
   onClose: () => void;
   sourceUrl?: string;
+  terminalName?: string;
 }) {
   return (
     <div className="fixed inset-0 z-50 grid bg-slate-950/60 p-3 sm:p-6">
       <div className="mx-auto grid h-full w-full max-w-6xl grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-lg bg-white shadow-2xl">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
           <div>
-            <p className="text-sm font-semibold text-slate-950">한진인천컨테이너터미널 원문 조회 화면</p>
+            <p className="text-sm font-semibold text-slate-950">{terminalName ?? "터미널"} 원문 조회 화면</p>
             <p className="text-xs text-slate-500">외부 터미널 조회 결과를 읽기 전용으로 표시합니다.</p>
           </div>
           <div className="flex items-center gap-2">
@@ -138,8 +140,8 @@ export function HjitContainerCheckPanel() {
       <Card>
         <CardHeader
           title="컨테이너 반입 확인"
-          description="컨테이너 번호를 입력하면 한진인천컨테이너터미널 조회 결과를 팝업으로 표시합니다."
-          action={<Badge tone="info">HJIT</Badge>}
+          description="컨테이너 번호를 입력하면 eTrans 운송현황을 먼저 확인하고 터미널 조회 결과를 팝업으로 표시합니다."
+          action={<Badge tone="info">eTrans + 터미널</Badge>}
         />
         <CardBody>
           <form
@@ -198,7 +200,7 @@ export function HjitContainerCheckPanel() {
                   <ExternalLink aria-hidden="true" size={16} />
                 </a>
               ) : null}
-              <p className="text-xs text-slate-500">현재는 한진인천컨테이너터미널 조회부터 지원합니다.</p>
+              <p className="text-xs text-slate-500">현재는 한진인천컨테이너터미널과 선광신컨테이너터미널 조회를 지원합니다.</p>
             </div>
             {pending ? (
               <div className="rounded-md border border-blue-100 bg-blue-50 p-3 text-sm text-blue-800">
@@ -234,14 +236,19 @@ export function HjitContainerCheckPanel() {
             <SummaryTable rows={state.summary ?? []} />
             <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600">
               <p>상단 이력은 KL-Net 운송현황 통합 정보 검색 결과의 최신 순서입니다.</p>
-              <p>현재 결과는 한진인천컨테이너터미널 원문 조회 화면을 기준으로 표시합니다.</p>
+              <p>현재 결과는 연결된 터미널 원문 조회 화면을 기준으로 표시합니다.</p>
             </div>
           </CardBody>
         </Card>
       ) : null}
 
       {modalOpen && state.html ? (
-        <ResultModal html={state.html} onClose={() => setDismissedHtml(state.html ?? "")} sourceUrl={state.sourceUrl} />
+        <ResultModal
+          html={state.html}
+          onClose={() => setDismissedHtml(state.html ?? "")}
+          sourceUrl={state.sourceUrl}
+          terminalName={state.terminalName}
+        />
       ) : null}
     </div>
   );
