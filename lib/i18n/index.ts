@@ -22,3 +22,7 @@ export {
   getDashboardDictionary,
   type DashboardDictionary
 } from "./dashboard";
+export {
+  getHsDirectDictionary,
+  type HsDirectDictionary
+} from "./hs-direct";

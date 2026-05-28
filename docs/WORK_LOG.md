@@ -303,3 +303,18 @@
 - `npm run typecheck`
 - `npm run lint`
 - `npm test -- lib/i18n/dashboard.test.ts lib/i18n/locales.test.ts lib/i18n/hs-finder-locale.test.ts`
+
+### HS 통합조회 다국어 1차
+
+- HS 통합조회와 해외 HS 조회의 페이지 제목, 설명, 검색 폼, 기준일 옵션, 품명 후보 카드, 주요 상세 섹션 chrome을 `hs-direct` dictionary로 분리했다.
+- HS 코드, 공식 품명, 법령명, 기관명, source data는 원문 신뢰도를 위해 자동 번역하지 않는다.
+- 해외 HS 조회 화면도 같은 dictionary를 사용하되, 페이지 제목과 설명은 목적국 조회 흐름에 맞는 별도 문구를 사용한다.
+- 영어/중국어 화면에서도 조회 로직, 최근 검색 저장, 즐겨찾기, 관세율/요건 조회 로직은 변경하지 않았다.
+- HS direct dictionary 누락과 영어권 단정 표현을 방지하는 테스트를 추가했다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm run build`

@@ -29,6 +29,7 @@ import {
 } from "@/features/hs/hs-supplement-guidance";
 import { formatHsCode, normalizeHsCode } from "@/lib/hs-code";
 import { buildHsHierarchyPath, type HsHierarchyNode } from "@/lib/hs-hierarchy";
+import { defaultLocale, getHsDirectDictionary, type AppLocale, type HsDirectDictionary } from "@/lib/i18n";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import { cn, getSeoulDateString } from "@/lib/utils";
 import { cachedLookup, lookupCacheKey } from "@/server/cache/lookup-cache";
@@ -112,13 +113,19 @@ function QueryField({
   );
 }
 
-function DirectionSelect({ defaultValue }: { defaultValue: "import" | "export" }) {
+function DirectionSelect({
+  defaultValue,
+  dictionary
+}: {
+  defaultValue: "import" | "export";
+  dictionary: HsDirectDictionary;
+}) {
   return (
     <label className="grid min-w-0 gap-1 text-sm font-medium text-slate-700">
-      거래구분
+      {dictionary.form.direction}
       <select className="focus-ring w-full min-w-0 rounded-md border border-slate-300 px-3 py-2" defaultValue={defaultValue} name="direction">
-        <option value="import">수입</option>
-        <option value="export">수출</option>
+        <option value="import">{dictionary.form.import}</option>
+        <option value="export">{dictionary.form.export}</option>
       </select>
     </label>
   );
@@ -134,14 +141,22 @@ function DestinationCountrySelect({ defaultValue, direction }: { defaultValue: s
   );
 }
 
-function OriginCountrySelect({ defaultValue, direction }: { defaultValue: string; direction: "import" | "export" }) {
+function OriginCountrySelect({
+  defaultValue,
+  dictionary,
+  direction
+}: {
+  defaultValue: string;
+  dictionary: HsDirectDictionary;
+  direction: "import" | "export";
+}) {
   if (direction !== "export") return null;
 
   return (
     <label className="grid min-w-0 gap-1 text-sm font-medium text-slate-700">
-      원산지
+      {dictionary.form.originCountry}
       <select className="focus-ring w-full min-w-0 rounded-md border border-slate-300 px-3 py-2" defaultValue={defaultValue} name="originCountry">
-        <option value="ALL">모든 원산지</option>
+        <option value="ALL">{dictionary.form.destinationAllOrigins}</option>
         {exportCountryOptions.filter((country) => country.code !== "ALL").map((country) => (
           <option key={country.code} value={country.code}>
             {country.label}
@@ -152,15 +167,21 @@ function OriginCountrySelect({ defaultValue, direction }: { defaultValue: string
   );
 }
 
-function BasisDateOptions({ defaultValue }: { defaultValue: string }) {
+function BasisDateOptions({
+  defaultValue,
+  dictionary
+}: {
+  defaultValue: string;
+  dictionary: HsDirectDictionary;
+}) {
   return (
     <details className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 lg:col-span-full">
       <summary className="cursor-pointer text-sm font-semibold text-slate-700">
-        조회 옵션
-        <span className="ml-2 text-xs font-medium text-slate-500">기준일 {defaultValue}</span>
+        {dictionary.form.options}
+        <span className="ml-2 text-xs font-medium text-slate-500">{dictionary.form.basisDate} {defaultValue}</span>
       </summary>
       <label className="mt-3 grid max-w-xs gap-1 text-sm font-medium text-slate-700">
-        조회기준일
+        {dictionary.form.basisDate}
         <input
           className="focus-ring w-full rounded-md border border-slate-300 bg-white px-3 py-2"
           defaultValue={defaultValue}
@@ -169,7 +190,7 @@ function BasisDateOptions({ defaultValue }: { defaultValue: string }) {
         />
       </label>
       <p className="mt-2 text-xs leading-5 text-slate-500">
-        세율과 수입요건은 시행일이 달라질 수 있어 기본적으로 오늘 날짜 기준으로 조회합니다. 예상 신고일이 다르면 이 날짜만 바꾸면 됩니다.
+        {dictionary.form.basisDateDescription}
       </p>
     </details>
   );
@@ -2658,7 +2679,8 @@ export async function HsDirectLookupPanel({
   favoriteStatus,
   defaultDirection = "import",
   exportResultMode = "domestic",
-  panelTitle = "통합 조회",
+  locale = defaultLocale,
+  panelTitle,
   showDirectionSelect = true
 }: {
   query?: string;
@@ -2671,9 +2693,12 @@ export async function HsDirectLookupPanel({
   favoriteStatus?: string;
   defaultDirection?: "import" | "export";
   exportResultMode?: "domestic" | "destination";
+  locale?: AppLocale;
   panelTitle?: string;
   showDirectionSelect?: boolean;
 }) {
+  const dictionary = getHsDirectDictionary(locale);
+  const resolvedPanelTitle = panelTitle ?? dictionary.page.directTitle;
   const resolvedBasisDate = basisDate || getSeoulDateString();
   const lookupDirection = direction === "export" || (!direction && defaultDirection === "export") ? "export" : "import";
   const selectedDestinationCountry = destinationCountry || (exportResultMode === "destination" ? "CHN" : "ALL");
@@ -2864,34 +2889,34 @@ export async function HsDirectLookupPanel({
 
   return (
     <Card>
-      <CardHeader title={panelTitle} />
+      <CardHeader title={resolvedPanelTitle} />
       <CardBody>
         <FavoriteStatusMessage status={favoriteStatus} />
         <form className={`grid gap-4 ${showDirectionSelect ? "lg:grid-cols-[minmax(240px,1fr)_130px_minmax(220px,260px)_minmax(180px,230px)_auto]" : "lg:grid-cols-[minmax(260px,1fr)_minmax(240px,300px)_minmax(180px,230px)_auto]"}`} method="get">
-          <QueryField defaultValue={searchQuery} label="HS CODE 또는 품명" name="query" placeholder="예: 3401.30-0000 또는 입술화장품" />
-          {showDirectionSelect ? <DirectionSelect defaultValue={lookupDirection} /> : <DirectionHiddenField value={lookupDirection} />}
+          <QueryField defaultValue={searchQuery} label={dictionary.form.query} name="query" placeholder={dictionary.form.queryPlaceholder} />
+          {showDirectionSelect ? <DirectionSelect defaultValue={lookupDirection} dictionary={dictionary} /> : <DirectionHiddenField value={lookupDirection} />}
           {showDestinationExportResults ? (
             <DestinationCountryPicker defaultValue={selectedDestinationCountry} direction={lookupDirection} showMap={shouldShowDestinationMap} />
           ) : (
             <DestinationCountrySelect defaultValue={selectedDestinationCountry} direction={lookupDirection} />
           )}
-          <OriginCountrySelect defaultValue={selectedOriginCountry} direction={lookupDirection} />
+          <OriginCountrySelect defaultValue={selectedOriginCountry} dictionary={dictionary} direction={lookupDirection} />
           <button className="focus-ring inline-flex items-center justify-center gap-2 self-end rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800" type="submit">
             <Search aria-hidden="true" size={18} />
-            조회
+            {dictionary.form.submit}
           </button>
-          <BasisDateOptions defaultValue={resolvedBasisDate} />
+          <BasisDateOptions defaultValue={resolvedBasisDate} dictionary={dictionary} />
         </form>
 
         {parsed && !parsed.success ? (
           <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-            {parsed.error.issues[0]?.message ?? "입력값을 확인해 주세요."}
+            {parsed.error.issues[0]?.message ?? dictionary.empty.invalidInput}
           </div>
         ) : null}
 
         {parsed?.success && results.length === 0 && !(lookupDirection === "export" && exportDestinationRows.length) ? (
           <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-            조회기준일에 표시할 수 있는 HS CODE 데이터가 없습니다.
+            {dictionary.empty.noHsData}
           </div>
         ) : null}
 
@@ -2922,7 +2947,7 @@ export async function HsDirectLookupPanel({
         {productCandidates.length ? (
           <div className="mt-5 overflow-hidden rounded-md border border-slate-200">
             <div className="flex flex-wrap items-center justify-between gap-2 bg-blue-700 px-3 py-2 text-sm font-semibold text-white">
-              <span>품명 검색 결과</span>
+              <span>{dictionary.product.productResult}</span>
               {lookupDirection === "import" ? (
                 <HsCopySummaryButton
                   text={productCandidateCopySummaryText({
@@ -2959,7 +2984,7 @@ export async function HsDirectLookupPanel({
                   <article className="rounded-md border border-slate-200 bg-white p-4" key={candidate.hskCode}>
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
-                        <div className="text-xs font-semibold text-slate-500">후보 {candidate.rank}</div>
+                        <div className="text-xs font-semibold text-slate-500">{dictionary.product.rank(candidate.rank)}</div>
                         <Link className="mt-1 block font-mono text-lg font-semibold text-blue-700 underline-offset-2 hover:underline" data-navigation-progress="상세조회" href={detailHref}>
                           {formatHsCode(candidate.hskCode)}
                         </Link>
@@ -2969,7 +2994,7 @@ export async function HsDirectLookupPanel({
                           {productCandidateLookupBasisLabel(candidate)}
                         </Badge>
                         <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
-                          참고도 {(candidate.confidenceScore * 100).toFixed(0)}%
+                          {dictionary.product.referenceScore(candidate.confidenceScore)}
                         </span>
                       </div>
                     </div>
@@ -2979,7 +3004,7 @@ export async function HsDirectLookupPanel({
 
                     <div className="mt-3 grid gap-2 rounded-md border border-slate-100 bg-slate-50 p-3">
                       <div className="flex flex-wrap items-center gap-2 text-sm">
-                        <span className="text-xs font-semibold text-slate-500">HS6</span>
+                        <span className="text-xs font-semibold text-slate-500">{dictionary.product.hs6}</span>
                         <Link className="font-mono font-semibold text-blue-700 underline-offset-2 hover:underline" data-navigation-progress="상세조회" href={hs6Href}>
                           {formatHsCode(candidate.hs6)}
                         </Link>
@@ -2993,11 +3018,11 @@ export async function HsDirectLookupPanel({
 
                     <div className="mt-3 grid gap-2 text-sm">
                       <div>
-                        <div className="text-xs font-semibold text-slate-500">판단 근거</div>
+                        <div className="text-xs font-semibold text-slate-500">{dictionary.product.evidence}</div>
                         <p className="mt-1 leading-6 text-slate-700">{productCandidateEvidenceText(candidate)}</p>
                       </div>
                       <div>
-                        <div className="text-xs font-semibold text-slate-500">보완 필요 정보</div>
+                        <div className="text-xs font-semibold text-slate-500">{dictionary.product.missingFacts}</div>
                         <p className="mt-1 leading-6 text-slate-700">{candidate.requiredQuestions.slice(0, 3).join(" / ")}</p>
                       </div>
                     </div>
@@ -3007,7 +3032,7 @@ export async function HsDirectLookupPanel({
                       data-navigation-progress="상세조회"
                       href={detailHref}
                     >
-                      이 HS CODE로 상세조회
+                      {dictionary.product.detailLookup}
                     </Link>
                   </article>
                 );
@@ -3247,7 +3272,7 @@ export async function HsDirectLookupPanel({
                   <div className="min-w-0">
                   <section className="overflow-hidden border-b border-slate-200">
                     <div className="flex h-10 items-center justify-between gap-2 bg-blue-700 px-3 text-sm font-semibold text-white">
-                      <span>품목 상세</span>
+                      <span>{dictionary.result.itemDetail}</span>
                       <div className="flex shrink-0 gap-2">
                         <HsFavoriteToggleButton
                           basisDate={result.basisDate}
@@ -3275,7 +3300,7 @@ export async function HsDirectLookupPanel({
                             }))
                           })}
                         >
-                          납세액 계산
+                          {dictionary.result.dutyEstimate}
                         </Link>
                         <HsCopySummaryButton
                           text={hsCopySummaryText({
@@ -3289,24 +3314,24 @@ export async function HsDirectLookupPanel({
                       </div>
                     </div>
                     <dl className="grid text-sm sm:grid-cols-[140px_1fr]">
-                      <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">품목번호</dt>
+                      <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.result.hsk}</dt>
                       <dd
                         className="select-all border-b border-slate-200 px-3 py-2 font-mono font-semibold text-slate-950"
-                        title="더블클릭하거나 드래그해서 복사할 수 있습니다."
+                        title={dictionary.result.favoriteTitle}
                       >
                           {formatHsCode(result.hskCode)}
                       </dd>
-                      <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">국문</dt>
+                      <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.result.koreanName}</dt>
                       <dd className="border-b border-slate-200 px-3 py-2">{result.koreanName}</dd>
                       <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">영문</dt>
                       <dd className="border-b border-slate-200 px-3 py-2">{displayValue(result.englishName)}</dd>
-                      <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">단위</dt>
+                      <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.result.unit}</dt>
                       <dd className="border-b border-slate-200 px-3 py-2">수량 {displayValue(result.quantityUnit)} / 중량 {displayValue(result.weightUnit)}</dd>
-                      <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">원산지</dt>
+                      <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.result.originMarking}</dt>
                       <dd className="border-b border-slate-200 px-3 py-2">
                         <OriginMarkingLinks hskCode={result.hskCode} itemName={result.koreanName} originMarking={result.originMarking} />
                       </dd>
-                      <dt className="bg-slate-50 px-3 py-2 font-semibold text-slate-600">기준일</dt>
+                      <dt className="bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.result.basisDate}</dt>
                       <dd className="px-3 py-2">조회기준일 {result.basisDate}</dd>
                     </dl>
 
@@ -3319,7 +3344,7 @@ export async function HsDirectLookupPanel({
                 <InternalTaxSection rows={internalTaxCodesByHsk.get(result.hskCode) ?? []} />
 
                 <div className="border-t border-slate-200">
-                  <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">표준품명/필수규격</div>
+                  <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">{dictionary.result.standardProduct}</div>
                   {result.standardProductNames.length ? (
                     <div className="overflow-x-auto">
                       <table className="w-full min-w-[720px] text-left text-sm">
@@ -3340,12 +3365,12 @@ export async function HsDirectLookupPanel({
                       </table>
                     </div>
                   ) : (
-                    <EmptySectionState>표시할 표준품명 데이터가 없습니다.</EmptySectionState>
+                    <EmptySectionState>{dictionary.result.standardProductEmpty}</EmptySectionState>
                   )}
                 </div>
 
                 <div className="border-t border-slate-200">
-                    <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">수입요건</div>
+                    <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">{dictionary.result.importRequirement}</div>
                     {result.importRequirements.length ? (
                       <div className="overflow-x-auto">
                         <table className="w-full min-w-[860px] text-left text-sm">

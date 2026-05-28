@@ -1,5 +1,7 @@
 import { PageHeading } from "@/components/page-heading";
 import { HsDirectLookupPanel } from "@/features/hs/hs-direct-lookup-panel";
+import { getHsDirectDictionary } from "@/lib/i18n";
+import { getRequestLocale, resolveUserLocale } from "@/lib/i18n/server";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import { getSeoulDateString } from "@/lib/utils";
 import { recordHsLookupHistory } from "@/server/repositories/hs-lookup-history.repository";
@@ -11,10 +13,14 @@ export default async function OverseasHsPage({
 }) {
   const params = await searchParams;
   const query = params.query?.trim() || params.hskCode?.trim() || params.destinationHsCode?.trim();
+  const requestLocale = await getRequestLocale();
+  let locale = requestLocale;
 
   if (query && hasSupabaseEnv()) {
     try {
       const supabase = await createSupabaseServerClient();
+      const user = (await supabase.auth.getUser()).data.user;
+      locale = user?.id ? await resolveUserLocale(user.id) : requestLocale;
       await recordHsLookupHistory(supabase, {
         basisDate: params.basisDate || getSeoulDateString(),
         destinationCountry: params.destinationCountry || "CHN",
@@ -25,13 +31,22 @@ export default async function OverseasHsPage({
     } catch {
       // 최근 검색 저장 실패가 조회 화면 렌더링을 막지 않도록 한다.
     }
+  } else if (hasSupabaseEnv()) {
+    try {
+      const supabase = await createSupabaseServerClient();
+      const user = (await supabase.auth.getUser()).data.user;
+      locale = user?.id ? await resolveUserLocale(user.id) : requestLocale;
+    } catch {
+      locale = requestLocale;
+    }
   }
+  const dictionary = getHsDirectDictionary(locale);
 
   return (
     <>
       <PageHeading
-        title="해외 HS CODE조회"
-        description="한국 HS CODE 또는 품명으로 수출 목적국의 HS CODE, 현지 품명, 관세율, 내국세, 수입요건을 조회합니다."
+        title={dictionary.page.overseasTitle}
+        description={dictionary.page.overseasDescription}
       />
       <HsDirectLookupPanel
         basisDate={params.basisDate}
@@ -40,8 +55,9 @@ export default async function OverseasHsPage({
         destinationHsCode={params.destinationHsCode}
         exportResultMode="destination"
         hskCode={params.hskCode}
+        locale={locale}
         originCountry={params.originCountry}
-        panelTitle="해외 HS CODE조회"
+        panelTitle={dictionary.page.overseasTitle}
         query={params.query}
         showDirectionSelect={false}
       />
