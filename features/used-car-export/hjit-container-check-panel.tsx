@@ -167,8 +167,8 @@ export function HjitContainerCheckPanel() {
       <Card>
         <CardHeader
           title="컨테이너 반입 확인"
-          description="컨테이너 번호를 입력하면 eTrans 운송현황을 먼저 확인하고 터미널 조회 결과를 팝업으로 표시합니다."
-          action={<Badge tone="info">eTrans + 터미널</Badge>}
+          description="컨테이너 번호를 입력하면 운송현황을 먼저 확인하고 터미널 조회 결과를 화면에 표시합니다."
+          action={<Badge tone="info">운송현황 + 터미널</Badge>}
         />
         <CardBody>
           <form
@@ -229,8 +229,8 @@ export function HjitContainerCheckPanel() {
                         html: state.html ?? "",
                         terminalCode: state.terminalCode
                       });
-                    } catch {
-                      setClientError("반입계 이미지를 생성하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+                    } catch (error) {
+                      setClientError(error instanceof Error ? error.message : "반입계 이미지를 생성하지 못했습니다. 잠시 후 다시 시도해 주세요.");
                     } finally {
                       setReceiptPending(false);
                     }
@@ -289,7 +289,7 @@ export function HjitContainerCheckPanel() {
             <TrackingTable rows={state.trackingRows ?? []} />
             <SummaryTable rows={state.summary ?? []} />
             <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600">
-              <p>상단 이력은 KL-Net 운송현황 통합 정보 검색 결과의 최신 순서입니다.</p>
+              <p>상단 이력은 운송현황 조회 결과의 최신 순서입니다.</p>
               <p>현재 결과는 연결된 터미널 원문 조회 화면을 기준으로 표시합니다.</p>
             </div>
           </CardBody>

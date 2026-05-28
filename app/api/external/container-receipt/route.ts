@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import chromiumServerless from "@sparticuz/chromium";
 import { chromium, type Page } from "playwright";
 
 export const runtime = "nodejs";
@@ -52,6 +53,18 @@ async function captureLiveTerminal(page: Page, request: Request, terminalCode: T
   await page.waitForTimeout(3500);
 }
 
+async function launchChromium() {
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    return chromium.launch({
+      args: chromiumServerless.args,
+      executablePath: await chromiumServerless.executablePath(),
+      headless: true
+    });
+  }
+
+  return chromium.launch({ headless: true });
+}
+
 export async function POST(request: Request) {
   let payload: { containerNo?: unknown; html?: unknown; terminalCode?: unknown };
   try {
@@ -72,19 +85,28 @@ export async function POST(request: Request) {
     return new NextResponse("캡처할 원문 조회 화면이 없습니다.", { status: 400 });
   }
 
-  const browser = await chromium.launch({
-    headless: true
-  });
+  let browser: Awaited<ReturnType<typeof launchChromium>>;
+  try {
+    browser = await launchChromium();
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "unknown";
+    return new NextResponse(`반입계 출력 브라우저를 실행하지 못했습니다. ${detail}`, { status: 500 });
+  }
 
   try {
     const page = await browser.newPage({
       viewport: { width: 1280, height: 1600 },
       deviceScaleFactor: 1
     });
-    if (terminalCode) {
-      await captureLiveTerminal(page, request, terminalCode, containerNo);
-    } else {
-      await page.setContent(html, { waitUntil: "networkidle", timeout: 15000 });
+    try {
+      if (terminalCode) {
+        await captureLiveTerminal(page, request, terminalCode, containerNo);
+      } else {
+        await page.setContent(html, { waitUntil: "networkidle", timeout: 15000 });
+      }
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "unknown";
+      return new NextResponse(`터미널 원문 화면을 불러오지 못했습니다. ${detail}`, { status: 502 });
     }
     await page.emulateMedia({ media: "screen" });
     const buffer = await page.screenshot({

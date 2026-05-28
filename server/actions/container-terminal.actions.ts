@@ -340,7 +340,7 @@ function topTrackingNotice(row?: EtransTrackingRow) {
 }
 
 function noEtransResultNotice(rows: EtransTrackingRow[]) {
-  return rows.length ? undefined : "eTrans 운송현황에서 조회 결과가 없습니다. 입력한 컨테이너 번호가 틀렸거나 이미 선적된 컨테이너일 수 있습니다.";
+  return rows.length ? undefined : "운송현황 조회 결과가 없습니다. 입력한 컨테이너 번호가 틀렸거나 이미 선적된 컨테이너일 수 있습니다.";
 }
 
 function preferredTerminalOrder(row?: EtransTrackingRow): TerminalCode[] {
@@ -569,7 +569,7 @@ async function lookupIfpcTerminal(containerNo: string, row?: EtransTrackingRow):
         title: "인천항국제페리부두 컨테이너 조회",
         containerNo,
         rows: fallbackSummary,
-        note: "IFPC 상세 조회 결과가 없어 eTrans 최신 이력만 표시합니다.",
+        note: "IFPC 상세 조회 결과가 없어 운송현황 최신 이력만 표시합니다.",
         sourceUrl: ifpcContainerInquiryUrl
       }),
       summary: fallbackSummary,
