@@ -46,6 +46,34 @@ export type HsDirectDictionary = {
     submit: string;
     options: string;
   };
+  exportDomestic: {
+    availablePossibility: string;
+    buyerDocuments: string;
+    category: string;
+    condition: string;
+    destinationCountry: string;
+    destinationHelp: string;
+    destinationLabel: string;
+    expertClassification: string;
+    exportControl: string;
+    exportRequirement: string;
+    ftaCo: string;
+    hskResultTitle: string;
+    issueMethod: string;
+    keyword: string;
+    license: string;
+    noExportControlData: string;
+    noExportRequirementData: string;
+    noFtaCoData: string;
+    noKoreaExportData: string;
+    originEvidence: string;
+    productName: string;
+    relatedLaw: string;
+    requirementName: string;
+    reviewPossibility: string;
+    selfClassification: string;
+    showDestinationResult: string;
+  };
   page: {
     directDescription: string;
     directTitle: string;
@@ -62,18 +90,45 @@ export type HsDirectDictionary = {
     referenceScore: (score: number) => string;
   };
   result: {
+    additionalInternalTaxEmpty: string;
+    agency: string;
     basisDate: string;
+    basisDatePrefix: string;
+    code: string;
+    content: string;
     detail: string;
     dutyEstimate: string;
+    englishName: string;
     favoriteTitle: string;
     hsk: string;
     importRequirement: string;
+    importRequirementEmpty: string;
     itemDetail: string;
     koreanName: string;
+    law: string;
+    name: string;
     originMarking: string;
+    playbook: string;
+    playbookPending: string;
+    playbookReady: string;
+    quantityUnit: string;
+    requiredSpec: string;
+    requirement: string;
+    requirementKind: string;
+    statisticCount: string;
+    statisticEmpty: string;
+    statisticProductName: string;
+    statisticRank: string;
+    statisticTitle: string;
     standardProduct: string;
     standardProductEmpty: string;
+    standardProductName: string;
+    taxType: string;
+    taxRate: string;
     unit: string;
+    vatDefault: string;
+    vatGeneralImport: string;
+    weightUnit: string;
   };
 };
 
@@ -124,6 +179,34 @@ const dictionaries = {
       queryPlaceholder: "예: 3401.30-0000 또는 입술화장품",
       submit: "예비 조회"
     },
+    exportDomestic: {
+      availablePossibility: "발급 가능성",
+      buyerDocuments: "요청서류",
+      category: "분류",
+      condition: "조건",
+      destinationCountry: "목적국",
+      destinationHelp: "선택한 목적국의 HS CODE, 현지 품명, 관세율, 내국세, 수입요건 화면으로 이동합니다.",
+      destinationLabel: "해외 기준 목적국",
+      expertClassification: "전문판정",
+      exportControl: "전략물자 / 수출통제",
+      exportRequirement: "수출요건",
+      ftaCo: "FTA C/O 및 원산지증빙",
+      hskResultTitle: "한국 수출 기준 조회 결과",
+      issueMethod: "발급방식",
+      keyword: "키워드",
+      license: "허가",
+      noExportControlData: "표시 가능한 수출통제 데이터 없음",
+      noExportRequirementData: "표시 가능한 수출요건 데이터 없음",
+      noFtaCoData: "표시 가능한 FTA C/O 데이터 없음",
+      noKoreaExportData: "조회기준일에 표시할 수 있는 한국 수출요건 데이터가 없습니다.",
+      originEvidence: "원산지증빙",
+      productName: "품명",
+      relatedLaw: "법령",
+      requirementName: "요건명",
+      reviewPossibility: "필요 가능성 있음",
+      selfClassification: "자가판정",
+      showDestinationResult: "해외 기준 결과 확인하기"
+    },
     page: {
       directDescription: "HS CODE 또는 품명을 입력하면 수입 기준 관세율·수입요건 또는 한국 수출 기준 수출요건을 표시합니다.",
       directTitle: "HS 예비 조회",
@@ -140,18 +223,45 @@ const dictionaries = {
       referenceScore: (score: number) => `참고도 ${(score * 100).toFixed(0)}%`
     },
     result: {
+      additionalInternalTaxEmpty: "품명과 직접 매칭되는 추가 내국세율 코드표 항목이 표시되지 않았습니다.",
+      agency: "기관",
       basisDate: "기준일",
+      basisDatePrefix: "조회기준일",
+      code: "코드",
+      content: "내용",
       detail: "상세",
       dutyEstimate: "예상 납세액 산출",
+      englishName: "영문",
       favoriteTitle: "더블클릭하거나 드래그해서 복사할 수 있습니다.",
       hsk: "HSK 코드",
       importRequirement: "수입요건 예비 스크리닝",
+      importRequirementEmpty: "세관장확인대상 수입요건은 조회되지 않았습니다. 다만 통합공고, 개별법령, 표시·인증·유통규제 의무가 존재할 수 있습니다.",
       itemDetail: "품목 상세 정보",
       koreanName: "공식 국문 품명",
+      law: "법령",
+      name: "구분",
       originMarking: "원산지",
+      playbook: "상세",
+      playbookPending: "상세 준비중",
+      playbookReady: "상세 있음",
+      quantityUnit: "수량",
+      requiredSpec: "필수규격",
+      requirement: "요건",
+      requirementKind: "성격",
+      statisticCount: "신고 건수",
+      statisticEmpty: "표시할 신고 품명 통계가 없습니다.",
+      statisticProductName: "신고 품명",
+      statisticRank: "순위",
+      statisticTitle: "신고 품명 통계",
       standardProduct: "표준품명/필수규격",
       standardProductEmpty: "표시할 표준품명 데이터가 없습니다.",
-      unit: "신고 단위"
+      standardProductName: "표준품명",
+      taxRate: "세율",
+      taxType: "구분",
+      unit: "신고 단위",
+      vatDefault: "기본",
+      vatGeneralImport: "일반 수입물품 기준 부가가치세",
+      weightUnit: "중량"
     }
   },
   "en-US": {
@@ -200,6 +310,34 @@ const dictionaries = {
       queryPlaceholder: "e.g. 3401.30-0000 or lip cosmetics",
       submit: "Run preliminary lookup"
     },
+    exportDomestic: {
+      availablePossibility: "Issuance possibility",
+      buyerDocuments: "Requested documents",
+      category: "Category",
+      condition: "Condition",
+      destinationCountry: "Destination country",
+      destinationHelp: "Move to the destination-country HS code, local description, tariff, internal tax, and import requirement view.",
+      destinationLabel: "Destination-country basis",
+      expertClassification: "Expert classification",
+      exportControl: "Strategic goods / export control",
+      exportRequirement: "Export requirements",
+      ftaCo: "FTA C/O and origin evidence",
+      hskResultTitle: "Korea export-side lookup result",
+      issueMethod: "Issue method",
+      keyword: "Keyword",
+      license: "License",
+      noExportControlData: "No displayable export-control data was found.",
+      noExportRequirementData: "No displayable export-requirement data was found.",
+      noFtaCoData: "No displayable FTA C/O data was found.",
+      noKoreaExportData: "No displayable Korea export-side requirement data was found for the basis date.",
+      originEvidence: "Origin evidence",
+      productName: "Product name",
+      relatedLaw: "Law",
+      requirementName: "Requirement name",
+      reviewPossibility: "Possibly required",
+      selfClassification: "Self-classification",
+      showDestinationResult: "View destination-country result"
+    },
     page: {
       directDescription: "Enter an HS code or product name to view import-side tariff and requirement data, or Korea export-side requirement data.",
       directTitle: "Preliminary HS Lookup",
@@ -216,18 +354,45 @@ const dictionaries = {
       referenceScore: (score: number) => `Reference ${(score * 100).toFixed(0)}%`
     },
     result: {
+      additionalInternalTaxEmpty: "No additional internal tax code-table item was matched directly to the product description.",
+      agency: "Agency",
       basisDate: "Basis date",
+      basisDatePrefix: "Basis date",
+      code: "Code",
+      content: "Content",
       detail: "Detail",
       dutyEstimate: "Duty estimate",
+      englishName: "English description",
       favoriteTitle: "Double-click or drag to copy.",
       hsk: "HSK",
       importRequirement: "Import requirements",
+      importRequirementEmpty: "No customs-confirmation import requirement is displayed. Other public notices, individual laws, marking, certification, or distribution obligations may still apply.",
       itemDetail: "Item details",
       koreanName: "Official Korean description",
+      law: "Law",
+      name: "Type",
       originMarking: "Origin marking",
+      playbook: "Detail",
+      playbookPending: "Detail pending",
+      playbookReady: "Detail available",
+      quantityUnit: "Quantity",
+      requiredSpec: "Required specs",
+      requirement: "Requirement",
+      requirementKind: "Kind",
+      statisticCount: "Declaration count",
+      statisticEmpty: "No declaration-name statistics are available.",
+      statisticProductName: "Declaration name",
+      statisticRank: "Rank",
+      statisticTitle: "Declaration-name statistics",
       standardProduct: "Standard names / required specs",
       standardProductEmpty: "No displayable standard-name data was found.",
-      unit: "Declaration unit"
+      standardProductName: "Standard name",
+      taxRate: "Rate",
+      taxType: "Type",
+      unit: "Declaration unit",
+      vatDefault: "Default",
+      vatGeneralImport: "VAT for general imported goods",
+      weightUnit: "Weight"
     }
   },
   "zh-CN": {
@@ -276,6 +441,34 @@ const dictionaries = {
       queryPlaceholder: "例：3401.30-0000 或 唇部化妆品",
       submit: "初步查询"
     },
+    exportDomestic: {
+      availablePossibility: "签发可能性",
+      buyerDocuments: "请求文件",
+      category: "分类",
+      condition: "条件",
+      destinationCountry: "目的国",
+      destinationHelp: "跳转至目的国HS编码、当地品名、关税、内税和进口要求页面。",
+      destinationLabel: "海外基准目的国",
+      expertClassification: "专业判定",
+      exportControl: "战略物资/出口管制",
+      exportRequirement: "出口要求",
+      ftaCo: "FTA C/O及原产地证明",
+      hskResultTitle: "韩国出口基准查询结果",
+      issueMethod: "签发方式",
+      keyword: "关键词",
+      license: "许可",
+      noExportControlData: "暂无可显示的出口管制数据。",
+      noExportRequirementData: "暂无可显示的出口要求数据。",
+      noFtaCoData: "暂无可显示的FTA C/O数据。",
+      noKoreaExportData: "该查询基准日暂无可显示的韩国出口要求数据。",
+      originEvidence: "原产地证明",
+      productName: "品名",
+      relatedLaw: "法律",
+      requirementName: "要求名称",
+      reviewPossibility: "可能需要",
+      selfClassification: "自行判定",
+      showDestinationResult: "查看海外基准结果"
+    },
     page: {
       directDescription: "输入HS编码或品名后，显示进口侧关税率、进口要求，或韩国出口侧要求数据。",
       directTitle: "HS初步查询",
@@ -292,18 +485,45 @@ const dictionaries = {
       referenceScore: (score: number) => `参考度 ${(score * 100).toFixed(0)}%`
     },
     result: {
+      additionalInternalTaxEmpty: "未显示与品名直接匹配的追加内税代码表项目。",
+      agency: "机构",
       basisDate: "基准日",
+      basisDatePrefix: "查询基准日",
+      code: "代码",
+      content: "内容",
       detail: "详细",
       dutyEstimate: "税费估算",
+      englishName: "英文品名",
       favoriteTitle: "可双击或拖拽复制。",
       hsk: "HSK编码",
       importRequirement: "进口要求初步筛查",
+      importRequirementEmpty: "未显示海关确认对象进口要求。但综合公告、个别法律、标示、认证或流通监管义务仍可能存在。",
       itemDetail: "商品详情",
       koreanName: "官方韩文品名",
+      law: "法律",
+      name: "区分",
       originMarking: "原产地标示",
+      playbook: "详细",
+      playbookPending: "详细准备中",
+      playbookReady: "有详细信息",
+      quantityUnit: "数量",
+      requiredSpec: "必要规格",
+      requirement: "要求",
+      requirementKind: "性质",
+      statisticCount: "申报件数",
+      statisticEmpty: "暂无可显示的申报品名统计。",
+      statisticProductName: "申报品名",
+      statisticRank: "排名",
+      statisticTitle: "申报品名统计",
       standardProduct: "标准品名/必要规格",
       standardProductEmpty: "未找到可显示的标准品名数据。",
-      unit: "申报单位"
+      standardProductName: "标准品名",
+      taxRate: "税率",
+      taxType: "区分",
+      unit: "申报单位",
+      vatDefault: "基本",
+      vatGeneralImport: "一般进口货物增值税",
+      weightUnit: "重量"
     }
   }
 } satisfies Record<AppLocale, HsDirectDictionary>;

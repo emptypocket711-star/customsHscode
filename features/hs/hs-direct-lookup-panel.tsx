@@ -320,13 +320,13 @@ function RequirementKindBadges({ requirement }: { requirement: GroupedImportRequ
   );
 }
 
-function PlaybookStatusBadge({ hasPlaybook }: { hasPlaybook: boolean }) {
+function PlaybookStatusBadge({ dictionary, hasPlaybook }: { dictionary: HsDirectDictionary; hasPlaybook: boolean }) {
   return (
     <span className={[
       "inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-semibold ring-1",
       hasPlaybook ? "bg-blue-50 text-blue-700 ring-blue-200" : "bg-slate-100 text-slate-600 ring-slate-200"
     ].join(" ")}>
-      {hasPlaybook ? "상세 있음" : "상세 준비중"}
+      {hasPlaybook ? dictionary.result.playbookReady : dictionary.result.playbookPending}
     </span>
   );
 }
@@ -2106,28 +2106,28 @@ function DestinationCountryDetailPage({
   );
 }
 
-function InternalTaxSection({ rows }: { rows: InternalTaxCodeMatch[] }) {
+function InternalTaxSection({ dictionary, rows }: { dictionary: HsDirectDictionary; rows: InternalTaxCodeMatch[] }) {
   const hasVatRule = rows.some((row) => row.name.includes("부가가치세"));
 
   return (
     <div className="border-t border-slate-200">
-      <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">내국세</div>
+      <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">{dictionary.destination.internalTaxes}</div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead className="border-y border-slate-200 text-xs font-semibold text-slate-500">
             <tr>
-              <th className="px-3 py-2">구분</th>
-              <th className="px-3 py-2">코드</th>
-              <th className="px-3 py-2">내용</th>
-              <th className="px-3 py-2">세율</th>
+              <th className="px-3 py-2">{dictionary.result.taxType}</th>
+              <th className="px-3 py-2">{dictionary.result.code}</th>
+              <th className="px-3 py-2">{dictionary.result.content}</th>
+              <th className="px-3 py-2">{dictionary.result.taxRate}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {!hasVatRule ? (
               <tr>
                 <td className="px-3 py-2 font-medium text-slate-900">부가가치세</td>
-                <td className="px-3 py-2 text-slate-500">기본</td>
-                <td className="px-3 py-2 text-slate-700">일반 수입물품 기준 부가가치세</td>
+                <td className="px-3 py-2 text-slate-500">{dictionary.result.vatDefault}</td>
+                <td className="px-3 py-2 text-slate-700">{dictionary.result.vatGeneralImport}</td>
                 <td className="px-3 py-2 font-semibold text-orange-600">10%</td>
               </tr>
             ) : null}
@@ -2149,7 +2149,7 @@ function InternalTaxSection({ rows }: { rows: InternalTaxCodeMatch[] }) {
             {!rows.length ? (
               <tr>
                 <td className="px-3 py-3 text-slate-500" colSpan={4}>
-                  품명과 직접 매칭되는 추가 내국세율 코드표 항목이 표시되지 않았습니다.
+                  {dictionary.result.additionalInternalTaxEmpty}
                 </td>
               </tr>
             ) : null}
@@ -2160,18 +2160,18 @@ function InternalTaxSection({ rows }: { rows: InternalTaxCodeMatch[] }) {
   );
 }
 
-function HsNavigationStatsSection({ rows }: { rows: CustomsHsCodeNavigationItem[] }) {
+function HsNavigationStatsSection({ dictionary, rows }: { dictionary: HsDirectDictionary; rows: CustomsHsCodeNavigationItem[] }) {
   return (
     <div className="border-t border-slate-200">
-      <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">신고 품명 통계</div>
+      <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">{dictionary.result.statisticTitle}</div>
       {rows.length ? (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="border-y border-slate-200 text-xs font-semibold text-slate-500">
               <tr>
-                <th className="px-3 py-2">순위</th>
-                <th className="px-3 py-2">신고 품명</th>
-                <th className="px-3 py-2">신고 건수</th>
+                <th className="px-3 py-2">{dictionary.result.statisticRank}</th>
+                <th className="px-3 py-2">{dictionary.result.statisticProductName}</th>
+                <th className="px-3 py-2">{dictionary.result.statisticCount}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -2186,7 +2186,7 @@ function HsNavigationStatsSection({ rows }: { rows: CustomsHsCodeNavigationItem[
           </table>
         </div>
       ) : (
-        <EmptySectionState>표시할 신고 품명 통계가 없습니다.</EmptySectionState>
+        <EmptySectionState>{dictionary.result.statisticEmpty}</EmptySectionState>
       )}
     </div>
   );
@@ -2268,10 +2268,12 @@ function HsSupplementGuidancePanel({
 }
 
 function ExportDomesticDiagnosisSection({
+  dictionary,
   results,
   destinationCountry,
   originCountry
 }: {
+  dictionary: HsDirectDictionary;
   results: ExportDiagnosisResult[];
   destinationCountry: string;
   originCountry: string;
@@ -2279,7 +2281,7 @@ function ExportDomesticDiagnosisSection({
   if (!results.length) {
     return (
       <div className="mt-5 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-        조회기준일에 표시할 수 있는 한국 수출요건 데이터가 없습니다.
+        {dictionary.exportDomestic.noKoreaExportData}
       </div>
     );
   }
@@ -2288,17 +2290,17 @@ function ExportDomesticDiagnosisSection({
     <div className="mt-5 grid gap-4">
       {results.map((result) => (
         <article className="overflow-hidden rounded-md border border-slate-200" key={result.hskCode}>
-          <div className="bg-blue-700 px-3 py-2 text-sm font-semibold text-white">한국 수출 기준 조회 결과</div>
+          <div className="bg-blue-700 px-3 py-2 text-sm font-semibold text-white">{dictionary.exportDomestic.hskResultTitle}</div>
           <dl className="grid text-sm sm:grid-cols-[140px_1fr_140px_1fr]">
             <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">HSK</dt>
             <dd className="border-b border-slate-200 px-3 py-2 font-mono font-semibold text-slate-950">{formatHsCode(result.hskCode)}</dd>
             <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">HS6</dt>
             <dd className="border-b border-slate-200 px-3 py-2 font-mono text-slate-700">{formatHsCode(result.hs6)}</dd>
-            <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">품명</dt>
+            <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.exportDomestic.productName}</dt>
             <dd className="border-b border-slate-200 px-3 py-2 sm:col-span-3">{result.productName}</dd>
-            <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">목적국</dt>
+            <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.exportDomestic.destinationCountry}</dt>
             <dd className="border-b border-slate-200 px-3 py-2">{exportCountryLabel(destinationCountry)}</dd>
-            <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">조회기준일</dt>
+            <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.result.basisDatePrefix}</dt>
             <dd className="border-b border-slate-200 px-3 py-2">{result.basisDate}</dd>
           </dl>
 
@@ -2307,7 +2309,7 @@ function ExportDomesticDiagnosisSection({
             <input name="originCountry" type="hidden" value={originCountry} />
             <input name="basisDate" type="hidden" value={result.basisDate} />
             <label className="grid gap-1 text-sm font-medium text-slate-700">
-              해외 기준 목적국
+              {dictionary.exportDomestic.destinationLabel}
               <select className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2" defaultValue={destinationCountry} name="destinationCountry">
                 {destinationCountryOptions.map((country) => (
                   <option key={country.code} value={country.code}>
@@ -2317,26 +2319,26 @@ function ExportDomesticDiagnosisSection({
               </select>
             </label>
             <div className="text-xs leading-5 text-slate-500">
-              선택한 목적국의 HS CODE, 현지 품명, 관세율, 내국세, 수입요건 화면으로 이동합니다.
+              {dictionary.exportDomestic.destinationHelp}
             </div>
             <button className="focus-ring inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800" type="submit">
               <ExternalLink aria-hidden="true" size={16} />
-              해외 기준 결과 확인하기
+              {dictionary.exportDomestic.showDestinationResult}
             </button>
           </form>
 
           <section className="border-t border-slate-200">
-            <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">수출요건</div>
+            <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">{dictionary.exportDomestic.exportRequirement}</div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[900px] text-left text-sm">
                 <thead className="border-y border-slate-200 text-xs font-semibold text-slate-500">
                   <tr>
-                    <th className="px-3 py-2">구분</th>
-                    <th className="px-3 py-2">요건명</th>
-                    <th className="px-3 py-2">법령</th>
-                    <th className="px-3 py-2">기관</th>
-                    <th className="px-3 py-2">내용</th>
-                    <th className="px-3 py-2">요청서류</th>
+                    <th className="px-3 py-2">{dictionary.result.taxType}</th>
+                    <th className="px-3 py-2">{dictionary.exportDomestic.requirementName}</th>
+                    <th className="px-3 py-2">{dictionary.exportDomestic.relatedLaw}</th>
+                    <th className="px-3 py-2">{dictionary.result.agency}</th>
+                    <th className="px-3 py-2">{dictionary.result.content}</th>
+                    <th className="px-3 py-2">{dictionary.exportDomestic.buyerDocuments}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -2351,7 +2353,7 @@ function ExportDomesticDiagnosisSection({
                     </tr>
                   )) : (
                     <tr>
-                      <td className="px-3 py-2 text-slate-600" colSpan={6}>표시 가능한 수출요건 데이터 없음</td>
+                      <td className="px-3 py-2 text-slate-600" colSpan={6}>{dictionary.exportDomestic.noExportRequirementData}</td>
                     </tr>
                   )}
                 </tbody>
@@ -2360,17 +2362,17 @@ function ExportDomesticDiagnosisSection({
           </section>
 
           <section className="border-t border-slate-200">
-            <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">전략물자 / 수출통제</div>
+            <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">{dictionary.exportDomestic.exportControl}</div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[860px] text-left text-sm">
                 <thead className="border-y border-slate-200 text-xs font-semibold text-slate-500">
                   <tr>
-                    <th className="px-3 py-2">분류</th>
-                    <th className="px-3 py-2">키워드</th>
-                    <th className="px-3 py-2">조건</th>
-                    <th className="px-3 py-2">자가판정</th>
-                    <th className="px-3 py-2">전문판정</th>
-                    <th className="px-3 py-2">허가</th>
+                    <th className="px-3 py-2">{dictionary.exportDomestic.category}</th>
+                    <th className="px-3 py-2">{dictionary.exportDomestic.keyword}</th>
+                    <th className="px-3 py-2">{dictionary.exportDomestic.condition}</th>
+                    <th className="px-3 py-2">{dictionary.exportDomestic.selfClassification}</th>
+                    <th className="px-3 py-2">{dictionary.exportDomestic.expertClassification}</th>
+                    <th className="px-3 py-2">{dictionary.exportDomestic.license}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -2379,13 +2381,13 @@ function ExportDomesticDiagnosisSection({
                       <td className="px-3 py-2 text-slate-700">{control.category}</td>
                       <td className="px-3 py-2 font-medium text-slate-900">{control.keyword}</td>
                       <td className="px-3 py-2 leading-6 text-slate-700">{control.specCondition}</td>
-                      <td className="px-3 py-2 text-slate-700">{control.selfClassificationNeeded ? "필요 가능성 있음" : "-"}</td>
-                      <td className="px-3 py-2 text-slate-700">{control.expertClassificationNeeded ? "필요 가능성 있음" : "-"}</td>
+                      <td className="px-3 py-2 text-slate-700">{control.selfClassificationNeeded ? dictionary.exportDomestic.reviewPossibility : "-"}</td>
+                      <td className="px-3 py-2 text-slate-700">{control.expertClassificationNeeded ? dictionary.exportDomestic.reviewPossibility : "-"}</td>
                       <td className="px-3 py-2 text-slate-700">{control.licenseType ?? "-"}</td>
                     </tr>
                   )) : (
                     <tr>
-                      <td className="px-3 py-2 text-slate-600" colSpan={6}>표시 가능한 수출통제 데이터 없음</td>
+                      <td className="px-3 py-2 text-slate-600" colSpan={6}>{dictionary.exportDomestic.noExportControlData}</td>
                     </tr>
                   )}
                 </tbody>
@@ -2394,15 +2396,15 @@ function ExportDomesticDiagnosisSection({
           </section>
 
           <section className="border-t border-slate-200">
-            <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">FTA C/O 및 원산지증빙</div>
+            <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">{dictionary.exportDomestic.ftaCo}</div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[760px] text-left text-sm">
                 <thead className="border-y border-slate-200 text-xs font-semibold text-slate-500">
                   <tr>
-                    <th className="px-3 py-2">협정</th>
-                    <th className="px-3 py-2">발급 가능성</th>
-                    <th className="px-3 py-2">발급방식</th>
-                    <th className="px-3 py-2">원산지증빙</th>
+                    <th className="px-3 py-2">{dictionary.destination.agreementRate}</th>
+                    <th className="px-3 py-2">{dictionary.exportDomestic.availablePossibility}</th>
+                    <th className="px-3 py-2">{dictionary.exportDomestic.issueMethod}</th>
+                    <th className="px-3 py-2">{dictionary.exportDomestic.originEvidence}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -2415,7 +2417,7 @@ function ExportDomesticDiagnosisSection({
                     </tr>
                   )) : (
                     <tr>
-                      <td className="px-3 py-2 text-slate-600" colSpan={4}>표시 가능한 FTA C/O 데이터 없음</td>
+                      <td className="px-3 py-2 text-slate-600" colSpan={4}>{dictionary.exportDomestic.noFtaCoData}</td>
                     </tr>
                   )}
                 </tbody>
@@ -3048,6 +3050,7 @@ export async function HsDirectLookupPanel({
         {showDomesticExportResults && hasQuery ? (
           <ExportDomesticDiagnosisSection
             destinationCountry={selectedDestinationCountry}
+            dictionary={dictionary}
             originCountry={selectedOriginCountry}
             results={exportDomesticResults}
           />
@@ -3329,16 +3332,18 @@ export async function HsDirectLookupPanel({
                       </dd>
                       <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.result.koreanName}</dt>
                       <dd className="border-b border-slate-200 px-3 py-2">{result.koreanName}</dd>
-                      <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">영문</dt>
+                      <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.result.englishName}</dt>
                       <dd className="border-b border-slate-200 px-3 py-2">{displayValue(result.englishName)}</dd>
                       <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.result.unit}</dt>
-                      <dd className="border-b border-slate-200 px-3 py-2">수량 {displayValue(result.quantityUnit)} / 중량 {displayValue(result.weightUnit)}</dd>
+                      <dd className="border-b border-slate-200 px-3 py-2">
+                        {dictionary.result.quantityUnit} {displayValue(result.quantityUnit)} / {dictionary.result.weightUnit} {displayValue(result.weightUnit)}
+                      </dd>
                       <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.result.originMarking}</dt>
                       <dd className="border-b border-slate-200 px-3 py-2">
                         <OriginMarkingLinks hskCode={result.hskCode} itemName={result.koreanName} originMarking={result.originMarking} />
                       </dd>
                       <dt className="bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.result.basisDate}</dt>
-                      <dd className="px-3 py-2">조회기준일 {result.basisDate}</dd>
+                      <dd className="px-3 py-2">{dictionary.result.basisDatePrefix} {result.basisDate}</dd>
                     </dl>
 
                     <ImportTariffCountryFilter
@@ -3347,7 +3352,7 @@ export async function HsDirectLookupPanel({
                     />
                   </section>
 
-                <InternalTaxSection rows={internalTaxCodesByHsk.get(result.hskCode) ?? []} />
+                <InternalTaxSection dictionary={dictionary} rows={internalTaxCodesByHsk.get(result.hskCode) ?? []} />
 
                 <div className="border-t border-slate-200">
                   <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">{dictionary.result.standardProduct}</div>
@@ -3356,8 +3361,8 @@ export async function HsDirectLookupPanel({
                       <table className="w-full min-w-[720px] text-left text-sm">
                         <thead className="border-y border-slate-200 text-xs font-semibold text-slate-500">
                           <tr>
-                            <th className="px-3 py-2">표준품명</th>
-                            <th className="px-3 py-2">필수규격</th>
+                            <th className="px-3 py-2">{dictionary.result.standardProductName}</th>
+                            <th className="px-3 py-2">{dictionary.result.requiredSpec}</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -3382,11 +3387,11 @@ export async function HsDirectLookupPanel({
                         <table className="w-full min-w-[860px] text-left text-sm">
                           <thead className="border-y border-slate-200 text-xs font-semibold text-slate-500">
                             <tr>
-                              <th className="px-3 py-2">성격</th>
-                              <th className="px-3 py-2">요건</th>
-                              <th className="px-3 py-2">법령</th>
-                              <th className="px-3 py-2">기관</th>
-                              <th className="px-3 py-2">상세</th>
+                              <th className="px-3 py-2">{dictionary.result.requirementKind}</th>
+                              <th className="px-3 py-2">{dictionary.result.requirement}</th>
+                              <th className="px-3 py-2">{dictionary.result.law}</th>
+                              <th className="px-3 py-2">{dictionary.result.agency}</th>
+                              <th className="px-3 py-2">{dictionary.result.playbook}</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100">
@@ -3405,18 +3410,18 @@ export async function HsDirectLookupPanel({
                                 </td>
                                 <td className="px-3 py-2 text-slate-700">{item.relatedLaw}</td>
                                 <td className="px-3 py-2 text-slate-700"><AgencyCell agencies={item.agencies} /></td>
-                                <td className="px-3 py-2"><PlaybookStatusBadge hasPlaybook={Boolean(item.playbook)} /></td>
+                                <td className="px-3 py-2"><PlaybookStatusBadge dictionary={dictionary} hasPlaybook={Boolean(item.playbook)} /></td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
                       </div>
                     ) : (
-                      <EmptySectionState>세관장확인대상 수입요건은 조회되지 않았습니다. 다만 통합공고, 개별법령, 표시·인증·유통규제 의무가 존재할 수 있습니다.</EmptySectionState>
+                      <EmptySectionState>{dictionary.result.importRequirementEmpty}</EmptySectionState>
                     )}
                 </div>
 
-                <HsNavigationStatsSection rows={hsNavigationStatsByHsk.get(result.hskCode) ?? []} />
+                <HsNavigationStatsSection dictionary={dictionary} rows={hsNavigationStatsByHsk.get(result.hskCode) ?? []} />
 
                 <div className="px-3 pb-3">
                   <SourceFooter basisDate={result.basisDate} showVersion={false} sourceName={result.sourceName} sourceVersion={result.sourceVersion} />

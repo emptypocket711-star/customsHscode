@@ -232,6 +232,34 @@
 - `npm test`
 - `npm run build`
 
+### HS 통합조회 다국어 3차
+
+- 수입 10자리 상세 화면의 품목 기본정보, 내국세, 표준품명, 수입요건, 신고품명 통계 섹션 chrome을 `hs-direct` dictionary로 추가 분리했다.
+- 세율, 공식 품명, 요건명, 법령명, 기관명, 신고품명 통계값은 원문 데이터로 유지한다.
+- 수입요건 빈 상태는 “요건 없음”으로 단정하지 않고 통합공고·개별법령·표시·인증·유통규제 가능성을 계속 안내한다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test -- lib/i18n/hs-direct.test.ts`
+- `npm test`
+- `npm run build`
+
+### HS 통합조회 다국어 4차
+
+- 한국 수출 기준 조회 결과의 기본정보, 목적국 연결 폼, 수출요건, 전략물자/수출통제, FTA C/O 섹션 chrome을 dictionary로 분리했다.
+- 수출통제 결과는 계속 예비 스크리닝으로만 표시하며 “필요 가능성 있음” 수준의 표현을 유지한다.
+- 수출요건명, 법령명, 기관명, 전략물자 키워드, 원산지증빙 값은 데이터 원문으로 유지한다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test -- lib/i18n/hs-direct.test.ts`
+- `npm test`
+- `npm run build`
+
 2026-05-25 기준 전체 테스트 결과:
 
 - 52 test files passed
