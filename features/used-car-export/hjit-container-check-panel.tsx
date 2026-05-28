@@ -13,17 +13,15 @@ const initialState: HjitContainerLookupState = { status: "idle" };
 
 async function downloadReceiptImage({
   containerNo,
-  html,
   terminalCode
 }: {
   containerNo: string;
-  html: string;
   terminalCode?: string;
 }) {
   const response = await fetch("/api/external/container-receipt", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ containerNo, html, terminalCode })
+    body: JSON.stringify({ containerNo, terminalCode })
   });
   if (!response.ok) throw new Error(await response.text());
   const blob = await response.blob();
@@ -226,7 +224,6 @@ export function HjitContainerCheckPanel() {
                     try {
                       await downloadReceiptImage({
                         containerNo: state.containerNo ?? "",
-                        html: state.html ?? "",
                         terminalCode: state.terminalCode
                       });
                     } catch (error) {

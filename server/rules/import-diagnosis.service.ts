@@ -8,6 +8,7 @@ import {
 } from "@/features/import-diagnosis/mock-import-data";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import { diagnoseImportFromSupabase } from "@/server/repositories/import-diagnosis.repository";
+import { allowLegalMockFallback } from "@/server/rules/legal-mock-policy";
 
 export type ImportDiagnosisInput = {
   hskCode: string;
@@ -174,7 +175,7 @@ export async function getImportDiagnosis(input: ImportDiagnosisInput): Promise<I
     const supabase = await createSupabaseServerClient();
     return await diagnoseImportFromSupabase(supabase, input);
   } catch {
-    return diagnoseImport(input);
+    return allowLegalMockFallback() ? diagnoseImport(input) : null;
   }
 }
 

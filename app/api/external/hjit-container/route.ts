@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireAuthenticatedApiRoute } from "@/server/auth/api-route-auth";
 
 function normalizeContainerNo(value: string | null) {
   return (value ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -15,7 +16,16 @@ function escapeHtml(value: string) {
 
 type TerminalCode = "hjit" | "snct" | "ifpc" | "ict" | "bnct" | "pctc" | "pnct";
 
-export function GET(request: Request) {
+export async function GET(request: Request) {
+  const auth = await requireAuthenticatedApiRoute(request, {
+    scope: "external-terminal-helper",
+    limit: Number(process.env.TERMINAL_HELPER_RATE_LIMIT_PER_MINUTE || 30),
+    windowMs: 60_000
+  });
+  if (!auth.allowed) {
+    return new NextResponse(auth.message, { status: auth.status });
+  }
+
   const url = new URL(request.url);
   const containerNo = normalizeContainerNo(url.searchParams.get("containerNo"));
   const requestedTerminal = url.searchParams.get("terminal");

@@ -6,8 +6,9 @@ import { listPublishedAppNotices } from "@/server/repositories/app-notice.reposi
 import { listUserHsFavorites } from "@/server/repositories/hs-favorite.repository";
 import { listUserHsLookupHistory } from "@/server/repositories/hs-lookup-history.repository";
 
-async function listDashboardCargoWatches(): Promise<CargoWatchListItem[]> {
-  const supabase = await createSupabaseServerClient();
+async function listDashboardCargoWatches(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>
+): Promise<CargoWatchListItem[]> {
   const { data, error } = await supabase
     .from("cargo_watch_requests")
     .select("id,cargo_management_no,master_bl_no,house_bl_no,bl_year,target_status,notify_email,status,last_status,last_checked_at,created_at")
@@ -34,19 +35,12 @@ async function listDashboardCargoWatches(): Promise<CargoWatchListItem[]> {
 
 export default async function DashboardPage() {
   const basisDate = getSeoulDateString();
+  const supabase = hasSupabaseEnv() ? await createSupabaseServerClient() : null;
   const [cargoWatches, favorites, lookupHistory, notices] = await Promise.all([
-    hasSupabaseEnv()
-      ? listDashboardCargoWatches().catch(() => [])
-      : Promise.resolve([]),
-    hasSupabaseEnv()
-      ? createSupabaseServerClient().then((supabase) => listUserHsFavorites(supabase, 5)).catch(() => [])
-      : Promise.resolve([]),
-    hasSupabaseEnv()
-      ? createSupabaseServerClient().then((supabase) => listUserHsLookupHistory(supabase, 5)).catch(() => [])
-      : Promise.resolve([]),
-    hasSupabaseEnv()
-      ? createSupabaseServerClient().then((supabase) => listPublishedAppNotices(supabase, 5)).catch(() => [])
-      : Promise.resolve([])
+    supabase ? listDashboardCargoWatches(supabase).catch(() => []) : Promise.resolve([]),
+    supabase ? listUserHsFavorites(supabase, 5).catch(() => []) : Promise.resolve([]),
+    supabase ? listUserHsLookupHistory(supabase, 5).catch(() => []) : Promise.resolve([]),
+    supabase ? listPublishedAppNotices(supabase, 5).catch(() => []) : Promise.resolve([])
   ]);
 
   return <DashboardHome basisDate={basisDate} cargoWatches={cargoWatches} favorites={favorites} lookupHistory={lookupHistory} notices={notices} />;

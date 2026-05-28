@@ -6,7 +6,7 @@ import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/serve
 import { isDeveloperEmail } from "@/server/auth/developer";
 import { validatePersonalActiveSession } from "@/server/auth/session-policy";
 
-async function getCurrentUser() {
+async function getCurrentAccessState() {
   if (!hasSupabaseEnv()) return null;
 
   try {
@@ -14,33 +14,29 @@ async function getCurrentUser() {
     const {
       data: { user }
     } = await supabase.auth.getUser();
-    return user;
+
+    if (!user) return null;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("account_type,full_name,onboarding_completed_at")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    return { user, profile: profile ?? null };
   } catch {
     return null;
   }
 }
 
-async function getProfileAccessState(userId: string) {
-  if (!hasSupabaseEnv()) return null;
-
-  const supabase = await createSupabaseServerClient();
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("account_type,full_name,onboarding_completed_at")
-    .eq("id", userId)
-    .maybeSingle();
-
-  return profile ?? null;
-}
-
 export default async function AppLayout({ children }: { children: ReactNode }) {
-  const user = await getCurrentUser();
+  const access = await getCurrentAccessState();
 
-  if (!user) {
+  if (!access?.user) {
     redirect("/login");
   }
 
-  const profile = await getProfileAccessState(user.id);
+  const { user, profile } = access;
   if (!profile?.onboarding_completed_at) {
     redirect("/auth/complete-signup");
   }

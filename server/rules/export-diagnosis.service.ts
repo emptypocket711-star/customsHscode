@@ -12,6 +12,7 @@ import {
   findExportDestinationTariffs,
   type ExportDestinationTariffItem
 } from "@/server/repositories/export-destination-tariff.repository";
+import { allowLegalMockFallback } from "@/server/rules/legal-mock-policy";
 
 export type ExportDiagnosisInput = {
   hskCode: string;
@@ -182,10 +183,19 @@ export function diagnoseExport(input: ExportDiagnosisInput): ExportDiagnosisResu
 }
 
 export async function getExportDiagnosis(input: ExportDiagnosisInput): Promise<ExportDiagnosisResult | null> {
+  const legalMockAllowed = allowLegalMockFallback();
+  if (hasSupabaseEnv() && !legalMockAllowed) {
+    return null;
+  }
+
   const mockResult = diagnoseExport(input);
   if (!mockResult) return null;
 
-  if (!hasSupabaseEnv() || !input.destinationCountry) {
+  if (!hasSupabaseEnv()) {
+    return mockResult;
+  }
+
+  if (!input.destinationCountry) {
     return mockResult;
   }
 
@@ -202,7 +212,7 @@ export async function getExportDiagnosis(input: ExportDiagnosisInput): Promise<E
       destinationTariffs: tariffs.length ? tariffs : mockResult.destinationTariffs
     };
   } catch {
-    return mockResult;
+    return legalMockAllowed ? mockResult : null;
   }
 }
 

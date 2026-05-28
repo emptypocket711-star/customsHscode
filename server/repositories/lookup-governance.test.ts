@@ -173,6 +173,8 @@ describe("lookup governance guards", () => {
   it("keeps expensive public routes behind rate limits", () => {
     const proxy = read("proxy.ts");
     const rateLimit = read("lib/rate-limit.ts");
+    const containerReceiptRoute = read("app/api/external/container-receipt/route.ts");
+    const terminalHelperRoute = read("app/api/external/hjit-container/route.ts");
 
     for (const path of ["/login", "/auth", "/hs", "/documents", "/duty-estimator"]) {
       expect(proxy, `${path} must be covered by proxy rate limiting`).toContain(path);
@@ -182,6 +184,22 @@ describe("lookup governance guards", () => {
     expect(rateLimit).toContain("RATE_LIMIT_ENABLED");
     expect(proxy).toContain("X-RateLimit-Remaining");
     expect(proxy).toContain("status: 429");
+    expect(containerReceiptRoute).toContain("requireAuthenticatedApiRoute");
+    expect(containerReceiptRoute).toContain("external-container-receipt");
+    expect(containerReceiptRoute).toContain("허용된 터미널 조회 화면만 반입계로 출력할 수 있습니다.");
+    expect(terminalHelperRoute).toContain("requireAuthenticatedApiRoute");
+    expect(terminalHelperRoute).toContain("external-terminal-helper");
+  });
+
+  it("does not fall back to mock legal diagnosis after a Supabase failure in production", () => {
+    const mockPolicy = read("server/rules/legal-mock-policy.ts");
+    const importDiagnosis = read("server/rules/import-diagnosis.service.ts");
+    const exportDiagnosis = read("server/rules/export-diagnosis.service.ts");
+
+    expect(mockPolicy).toContain("ALLOW_LEGAL_MOCK_FALLBACK");
+    expect(mockPolicy).toContain('process.env.NODE_ENV !== "production"');
+    expect(importDiagnosis).toContain("allowLegalMockFallback() ? diagnoseImport(input) : null");
+    expect(exportDiagnosis).toContain("hasSupabaseEnv() && !legalMockAllowed");
   });
 
   it("keeps recent user-data policies company scoped and service-role only where needed", () => {

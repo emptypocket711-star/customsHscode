@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { Browser, Page } from "playwright-core";
+import { requireAuthenticatedApiRoute } from "@/server/auth/api-route-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -45,6 +46,10 @@ async function captureLiveTerminal(page: Page, request: Request, terminalCode: T
   const helperUrl = new URL("/api/external/hjit-container", origin);
   helperUrl.searchParams.set("terminal", terminalCode);
   helperUrl.searchParams.set("containerNo", containerNo);
+  const cookieHeader = request.headers.get("cookie");
+  if (cookieHeader) {
+    await page.setExtraHTTPHeaders({ cookie: cookieHeader });
+  }
   await page.goto(helperUrl.toString(), {
     waitUntil: "networkidle",
     timeout: 30000
@@ -70,6 +75,15 @@ async function launchChromium(): Promise<Browser> {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireAuthenticatedApiRoute(request, {
+    scope: "external-container-receipt",
+    limit: Number(process.env.CONTAINER_RECEIPT_RATE_LIMIT_PER_MINUTE || 8),
+    windowMs: 60_000
+  });
+  if (!auth.allowed) {
+    return new NextResponse(auth.message, { status: auth.status });
+  }
+
   let payload: { containerNo?: unknown; html?: unknown; terminalCode?: unknown };
   try {
     payload = await request.json();
@@ -78,15 +92,14 @@ export async function POST(request: Request) {
   }
 
   const containerNo = normalizeContainerNo(payload.containerNo);
-  const html = typeof payload.html === "string" ? payload.html : "";
   const terminalCode = normalizeTerminalCode(payload.terminalCode);
 
   if (!/^[A-Z]{4}[0-9]{7}$/.test(containerNo)) {
     return new NextResponse("컨테이너 번호 형식이 올바르지 않습니다.", { status: 400 });
   }
 
-  if (!terminalCode && (!html || html.length > 2_000_000)) {
-    return new NextResponse("캡처할 원문 조회 화면이 없습니다.", { status: 400 });
+  if (!terminalCode) {
+    return new NextResponse("허용된 터미널 조회 화면만 반입계로 출력할 수 있습니다.", { status: 400 });
   }
 
   let browser: Awaited<ReturnType<typeof launchChromium>>;
@@ -103,11 +116,7 @@ export async function POST(request: Request) {
       deviceScaleFactor: 1
     });
     try {
-      if (terminalCode) {
-        await captureLiveTerminal(page, request, terminalCode, containerNo);
-      } else {
-        await page.setContent(html, { waitUntil: "networkidle", timeout: 15000 });
-      }
+      await captureLiveTerminal(page, request, terminalCode, containerNo);
     } catch (error) {
       const detail = error instanceof Error ? error.message : "unknown";
       return new NextResponse(`터미널 원문 화면을 불러오지 못했습니다. ${detail}`, { status: 502 });
