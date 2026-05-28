@@ -30,3 +30,7 @@ export {
   getDutyEstimatorDictionary,
   type DutyEstimatorDictionary
 } from "./duty-estimator";
+export {
+  getEntryDictionary,
+  type EntryDictionary
+} from "./entry";

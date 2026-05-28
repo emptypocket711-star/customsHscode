@@ -275,6 +275,20 @@
 - `npm test`
 - `npm run build`
 
+### 진입 화면 다국어 1차
+
+- `/entry` 조회 시작 화면의 제목, 설명, 주요 업무 카드 4개를 `entry` dictionary로 분리했다.
+- 화면마다 같은 workflow 순서가 유지되도록 dictionary 테스트를 추가했다.
+- 각 카드의 링크와 아이콘은 기존 구조를 유지하고, 표시 chrome만 locale별로 전환한다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test -- lib/i18n/entry.test.ts`
+- `npm test`
+- `npm run build`
+
 2026-05-25 기준 전체 테스트 결과:
 
 - 52 test files passed

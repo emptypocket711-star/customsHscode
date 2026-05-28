@@ -2,24 +2,43 @@ import Link from "next/link";
 import { ArrowRight, Calculator, Globe2, PackageSearch, Search } from "lucide-react";
 import { PageHeading } from "@/components/page-heading";
 import { Card, CardBody } from "@/components/ui/card";
+import { getEntryDictionary } from "@/lib/i18n";
+import { getRequestLocale, resolveUserLocale } from "@/lib/i18n/server";
+import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 
-const entries = [
-  { href: "/hs/direct", title: "통합 조회", description: "HS CODE 또는 품명으로 품목번호, 관세율, 수입요건", icon: Search },
-  { href: "/diagnosis/export", title: "수출·상대국 세율", description: "목적국 관세율, FTA C/O, 수출요건", icon: Globe2 },
-  { href: "/cargo", title: "적하목록 조회", description: "화물 진행 상태 조회와 상태 도달 알림", icon: PackageSearch },
-  { href: "/duty-estimator", title: "예상 납세액 계산", description: "물품가격, 환율, 관세율, 내국세 기준 납세액", icon: Calculator }
-];
+const entryIcons = {
+  cargo: PackageSearch,
+  direct: Search,
+  duty: Calculator,
+  export: Globe2
+};
 
-export default function EntryPage() {
+export default async function EntryPage() {
+  const requestLocale = await getRequestLocale();
+  let locale = requestLocale;
+
+  if (hasSupabaseEnv()) {
+    try {
+      const supabase = await createSupabaseServerClient();
+      const user = (await supabase.auth.getUser()).data.user;
+      locale = user?.id ? await resolveUserLocale(user.id) : requestLocale;
+    } catch {
+      locale = requestLocale;
+    }
+  }
+
+  const dictionary = getEntryDictionary(locale);
+
   return (
     <>
       <PageHeading
-        title="조회 시작"
-        description="조회 유형을 선택하세요."
+        title={dictionary.title}
+        description={dictionary.description}
       />
       <div className="grid gap-4 md:grid-cols-2">
-        {entries.map((entry) => {
-          const Icon = entry.icon;
+        {dictionary.entries.map((entry) => {
+          const Icon = entryIcons[entry.key];
+
           return (
             <Link className="focus-ring rounded-lg" href={entry.href} key={entry.href}>
               <Card className="h-full transition hover:border-blue-300 hover:shadow-md">
