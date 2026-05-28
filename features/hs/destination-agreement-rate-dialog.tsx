@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { DestinationAgreementRateDisplayItem } from "@/features/hs/export-destination-tariff-display";
 
 type DestinationAgreementRateDialogProps = {
@@ -32,6 +32,11 @@ function AgreementRateDetailList({ items }: { items: DestinationAgreementRateDis
 
 export function DestinationAgreementRateDialog({ items, label }: DestinationAgreementRateDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (open) dialogRef.current?.showModal();
+  }, [open]);
 
   if (!items.length) return <span>-</span>;
 
@@ -39,18 +44,22 @@ export function DestinationAgreementRateDialog({ items, label }: DestinationAgre
     <>
       <button
         className="focus-ring rounded text-left font-medium text-blue-700 underline-offset-2 hover:underline"
-        onClick={() => dialogRef.current?.showModal()}
+        onClick={() => setOpen(true)}
         type="button"
       >
         {label}
       </button>
-      <dialog className="w-[min(820px,calc(100vw-32px))] rounded-lg border border-slate-200 p-0 shadow-2xl backdrop:bg-slate-950/45" ref={dialogRef}>
+      {open ? <dialog
+        className="w-[min(820px,calc(100vw-32px))] rounded-lg border border-slate-200 p-0 shadow-2xl backdrop:bg-slate-950/45"
+        onCancel={() => setOpen(false)}
+        ref={dialogRef}
+      >
         <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
           <h2 className="text-sm font-semibold text-slate-950">협정세율 상세</h2>
           <button
             aria-label="닫기"
             className="focus-ring grid size-8 place-items-center rounded-md text-slate-700 hover:bg-slate-100"
-            onClick={() => dialogRef.current?.close()}
+            onClick={() => setOpen(false)}
             type="button"
           >
             <X aria-hidden="true" size={18} />
@@ -59,7 +68,7 @@ export function DestinationAgreementRateDialog({ items, label }: DestinationAgre
         <div className="grid gap-3 p-4 text-sm">
           <AgreementRateDetailList items={items} />
         </div>
-      </dialog>
+      </dialog> : null}
     </>
   );
 }

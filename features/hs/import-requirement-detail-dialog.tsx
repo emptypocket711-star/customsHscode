@@ -2,7 +2,7 @@
 
 import { Clipboard, X } from "lucide-react";
 import type { ReactNode } from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type ImportRequirementDetailDialogProps = {
   type: string;
@@ -186,7 +186,12 @@ function AgenciesPanel({ agencies }: { agencies: ImportRequirementDetailDialogPr
 
 export function ImportRequirementDetailDialog({ type, name, relatedLaw, agencies, procedureSummary, playbook }: ImportRequirementDetailDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<RequirementDetailTab>("summary");
+
+  useEffect(() => {
+    if (open) dialogRef.current?.showModal();
+  }, [open]);
 
   async function copyRequestTemplate() {
     const text = playbook?.customerRequestTemplate?.trim();
@@ -198,18 +203,22 @@ export function ImportRequirementDetailDialog({ type, name, relatedLaw, agencies
     <>
       <button
         className="focus-ring rounded text-left font-semibold text-blue-700 underline-offset-2 hover:underline"
-        onClick={() => dialogRef.current?.showModal()}
+        onClick={() => setOpen(true)}
         type="button"
       >
         {name}
       </button>
-      <dialog className="w-[min(920px,calc(100vw-32px))] rounded-lg border border-slate-200 p-0 shadow-2xl backdrop:bg-slate-950/45" ref={dialogRef}>
+      {open ? <dialog
+        className="w-[min(920px,calc(100vw-32px))] rounded-lg border border-slate-200 p-0 shadow-2xl backdrop:bg-slate-950/45"
+        onCancel={() => setOpen(false)}
+        ref={dialogRef}
+      >
         <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
           <h2 className="text-sm font-semibold text-slate-950">{name}</h2>
           <button
             aria-label="닫기"
             className="focus-ring grid size-8 place-items-center rounded-md text-slate-700 hover:bg-slate-100"
-            onClick={() => dialogRef.current?.close()}
+            onClick={() => setOpen(false)}
             type="button"
           >
             <X aria-hidden="true" size={18} />
@@ -325,7 +334,7 @@ export function ImportRequirementDetailDialog({ type, name, relatedLaw, agencies
             ) : null}
           </div>
         </div>
-      </dialog>
+      </dialog> : null}
     </>
   );
 }
