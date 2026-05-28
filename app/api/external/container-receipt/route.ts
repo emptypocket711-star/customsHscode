@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import chromiumServerless from "@sparticuz/chromium";
-import { chromium, type Page } from "playwright";
+import type { Browser, Page } from "playwright-core";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -53,15 +52,20 @@ async function captureLiveTerminal(page: Page, request: Request, terminalCode: T
   await page.waitForTimeout(3500);
 }
 
-async function launchChromium() {
+async function launchChromium(): Promise<Browser> {
   if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    const [{ chromium }, chromiumServerless] = await Promise.all([
+      import("playwright-core"),
+      import("@sparticuz/chromium")
+    ]);
     return chromium.launch({
-      args: chromiumServerless.args,
-      executablePath: await chromiumServerless.executablePath(),
+      args: chromiumServerless.default.args,
+      executablePath: await chromiumServerless.default.executablePath(),
       headless: true
     });
   }
 
+  const { chromium } = await import("playwright");
   return chromium.launch({ headless: true });
 }
 
