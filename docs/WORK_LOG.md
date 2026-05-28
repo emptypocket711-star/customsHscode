@@ -403,3 +403,18 @@
 - `npm run lint`
 - `npm test`
 - `npm run build`
+
+### 적하목록 조회 다국어 1차
+
+- `/cargo` 페이지 제목, 조회 폼, 현재 상태 요약, 진행 이력, 감시 등록, 내 알림 감시 UI chrome을 `cargo` dictionary로 분리했다.
+- 감시 목표 상태 라벨은 한국어, 영어, 중국어 화면에서 각각 표시되도록 매핑했다.
+- 관세청 응답 메시지, 진행 상태 원문, 화물 이벤트 데이터는 원문 신뢰도를 위해 자동 번역하지 않는다.
+- Cargo dictionary 누락과 영어권 단정 표현을 방지하는 테스트를 추가했다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm test -- lib/i18n/cargo.test.ts`
+- `npm run build`

@@ -1,6 +1,8 @@
 import { PageHeading } from "@/components/page-heading";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { CargoTrackingPanel, type CargoWatchListItem } from "@/features/cargo/cargo-tracking-panel";
+import { getCargoDictionary } from "@/lib/i18n";
+import { getRequestLocale, resolveUserLocale } from "@/lib/i18n/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 async function loadCargoWatches(): Promise<CargoWatchListItem[]> {
   const supabase = await createSupabaseServerClient();
@@ -29,6 +31,7 @@ async function loadCargoWatches(): Promise<CargoWatchListItem[]> {
 
 export default async function CargoPage() {
   const supabase = await createSupabaseServerClient();
+  const requestLocale = await getRequestLocale();
   const [
     {
       data: { user }
@@ -38,14 +41,16 @@ export default async function CargoPage() {
     supabase.auth.getUser(),
     loadCargoWatches()
   ]);
+  const locale = user?.id ? await resolveUserLocale(user.id) : requestLocale;
+  const dictionary = getCargoDictionary(locale);
 
   return (
     <>
       <PageHeading
-        title="적하목록 조회"
-        description="화물통관진행정보를 조회하고 원하는 상태가 확인되면 이메일 알림을 받을 수 있습니다."
+        title={dictionary.page.title}
+        description={dictionary.page.description}
       />
-      <CargoTrackingPanel defaultNotifyEmail={user?.email ?? null} watches={watches} />
+      <CargoTrackingPanel defaultNotifyEmail={user?.email ?? null} dictionary={dictionary} watches={watches} />
     </>
   );
 }

@@ -38,3 +38,7 @@ export {
   getTradeNewsDictionary,
   type TradeNewsDictionary
 } from "./trade-news";
+export {
+  getCargoDictionary,
+  type CargoDictionary
+} from "./cargo";
