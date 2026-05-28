@@ -228,6 +228,14 @@
 
 - `npm run typecheck`
 - `npm run lint`
+- `npm test`
+- `npm test -- lib/i18n/used-car-export.test.ts`
+- `npm run build`
+- `npm run lint`
+- `npm test`
+- `npm test -- lib/i18n/used-car-export.test.ts`
+- `npm run build`
+- `npm run lint`
 - `npm test -- lib/i18n/hs-direct.test.ts`
 - `npm test`
 - `npm run build`
@@ -417,4 +425,19 @@
 - `npm run lint`
 - `npm test`
 - `npm test -- lib/i18n/cargo.test.ts`
+- `npm run build`
+
+### 중고차 수출 화면 다국어 1차
+
+- `/used-car-export` 개요, 제원정보 조회, 컨테이너 반입 확인 페이지의 제목, 탭, 조회 폼, 결과 영역, 안내 문구 UI chrome을 `used-car-export` dictionary로 분리했다.
+- 제원조회와 컨테이너 조회의 외부 사이트 응답값, 터미널명, 원문 데이터는 자동 번역하지 않고 그대로 표시한다.
+- 반입계 이미지 파일명 접미사와 출력 진행 문구도 locale별로 분리했다.
+- Used-car export dictionary 누락 방지 테스트를 추가했다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm test -- lib/i18n/used-car-export.test.ts`
 - `npm run build`

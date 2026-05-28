@@ -1,16 +1,38 @@
 import { PageHeading } from "@/components/page-heading";
 import { UsedCarExportTabs } from "@/features/used-car-export/used-car-export-tabs";
 import { VehicleSpecLookupPanel } from "@/features/vehicle-spec/vehicle-spec-lookup-panel";
+import { getUsedCarExportDictionary } from "@/lib/i18n";
+import { getRequestLocale, resolveUserLocale } from "@/lib/i18n/server";
+import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 
-export default function UsedCarExportVehicleSpecPage() {
+async function resolveUsedCarExportDictionary() {
+  const requestLocale = await getRequestLocale();
+  let locale = requestLocale;
+
+  if (hasSupabaseEnv()) {
+    try {
+      const supabase = await createSupabaseServerClient();
+      const user = (await supabase.auth.getUser()).data.user;
+      locale = user?.id ? await resolveUserLocale(user.id) : requestLocale;
+    } catch {
+      locale = requestLocale;
+    }
+  }
+
+  return getUsedCarExportDictionary(locale);
+}
+
+export default async function UsedCarExportVehicleSpecPage() {
+  const dictionary = await resolveUsedCarExportDictionary();
+
   return (
     <div className="grid gap-5">
       <PageHeading
-        title="제원정보 조회"
-        description="제원관리번호로 자동차 제원 정보를 조회합니다. 조회 결과는 CyberTS 원문 화면과 함께 확인할 수 있습니다."
+        title={dictionary.vehicleSpec.pageTitle}
+        description={dictionary.vehicleSpec.pageDescription}
       />
-      <UsedCarExportTabs />
-      <VehicleSpecLookupPanel />
+      <UsedCarExportTabs dictionary={dictionary} />
+      <VehicleSpecLookupPanel dictionary={dictionary} />
     </div>
   );
 }

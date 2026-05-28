@@ -3,16 +3,16 @@
 import { Car, Container, LayoutGrid } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { UsedCarExportDictionary } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
-const tabs = [
-  { href: "/used-car-export", label: "개요", icon: LayoutGrid },
-  { href: "/used-car-export/vehicle-spec", label: "제원정보 조회", icon: Car },
-  { href: "/used-car-export/container-check", label: "컨테이너 반입 확인", icon: Container }
-];
-
-export function UsedCarExportTabs() {
+export function UsedCarExportTabs({ dictionary }: { dictionary: UsedCarExportDictionary }) {
   const pathname = usePathname();
+  const tabs = [
+    { href: "/used-car-export", label: dictionary.tabs.overview, icon: LayoutGrid },
+    { href: "/used-car-export/vehicle-spec", label: dictionary.tabs.vehicleSpec, icon: Car },
+    { href: "/used-car-export/container-check", label: dictionary.tabs.containerCheck, icon: Container }
+  ];
 
   return (
     <nav className="flex flex-wrap gap-2 rounded-lg border border-slate-200 bg-white p-2 shadow-sm">

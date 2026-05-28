@@ -8,14 +8,17 @@ import {
   lookupHjitContainerAction,
   type HjitContainerLookupState
 } from "@/server/actions/container-terminal.actions";
+import type { UsedCarExportDictionary } from "@/lib/i18n";
 
 const initialState: HjitContainerLookupState = { status: "idle" };
 
 async function downloadReceiptImage({
   containerNo,
+  receiptFileSuffix,
   terminalCode
 }: {
   containerNo: string;
+  receiptFileSuffix: string;
   terminalCode?: string;
 }) {
   const response = await fetch("/api/external/container-receipt", {
@@ -28,7 +31,7 @@ async function downloadReceiptImage({
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `${containerNo}_반입계.png`;
+  link.download = `${containerNo}_${receiptFileSuffix}.png`;
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -51,8 +54,10 @@ function SummaryTable({ rows }: { rows: Array<{ label: string; value: string }> 
 }
 
 function TrackingTable({
+  dictionary,
   rows
 }: {
+  dictionary: UsedCarExportDictionary;
   rows: Array<{
     carCode: string;
     statusTime: string;
@@ -69,11 +74,11 @@ function TrackingTable({
       <table className="w-full min-w-[720px] text-left text-sm">
         <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
           <tr>
-            <th className="px-3 py-2">상태</th>
-            <th className="px-3 py-2">일시</th>
-            <th className="px-3 py-2">터미널</th>
-            <th className="px-3 py-2">컨테이너</th>
-            <th className="px-3 py-2">차량</th>
+            <th className="px-3 py-2">{dictionary.container.trackingTable.status}</th>
+            <th className="px-3 py-2">{dictionary.container.trackingTable.datetime}</th>
+            <th className="px-3 py-2">{dictionary.container.trackingTable.terminal}</th>
+            <th className="px-3 py-2">{dictionary.container.trackingTable.container}</th>
+            <th className="px-3 py-2">{dictionary.container.trackingTable.car}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
@@ -93,11 +98,13 @@ function TrackingTable({
 }
 
 function ResultModal({
+  dictionary,
   html,
   onClose,
   sourceUrl,
   terminalName
 }: {
+  dictionary: UsedCarExportDictionary;
   html: string;
   onClose: () => void;
   sourceUrl?: string;
@@ -108,8 +115,8 @@ function ResultModal({
       <div className="mx-auto grid h-full w-full max-w-6xl grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-lg bg-white shadow-2xl">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
           <div>
-            <p className="text-sm font-semibold text-slate-950">{terminalName ?? "터미널"} 원문 조회 화면</p>
-            <p className="text-xs text-slate-500">외부 터미널 조회 결과를 읽기 전용으로 표시합니다.</p>
+            <p className="text-sm font-semibold text-slate-950">{dictionary.container.modalTitle(terminalName)}</p>
+            <p className="text-xs text-slate-500">{dictionary.container.externalReadOnly}</p>
           </div>
           <div className="flex items-center gap-2">
             {sourceUrl ? (
@@ -119,7 +126,7 @@ function ResultModal({
                 rel="noreferrer"
                 target="_blank"
               >
-                원사이트 열기
+                {dictionary.common.openOriginal}
                 <ExternalLink aria-hidden="true" size={14} />
               </a>
             ) : null}
@@ -129,7 +136,7 @@ function ResultModal({
               type="button"
             >
               <X aria-hidden="true" size={18} />
-              <span className="sr-only">닫기</span>
+              <span className="sr-only">{dictionary.common.close}</span>
             </button>
           </div>
         </div>
@@ -137,14 +144,14 @@ function ResultModal({
           className="h-full w-full bg-white"
           sandbox=""
           srcDoc={html}
-          title="한진인천컨테이너터미널 컨테이너 조회 결과"
+          title={dictionary.container.modalTitle(terminalName)}
         />
       </div>
     </div>
   );
 }
 
-export function HjitContainerCheckPanel() {
+export function HjitContainerCheckPanel({ dictionary }: { dictionary: UsedCarExportDictionary }) {
   const [state, action, pending] = useActionState(lookupHjitContainerAction, initialState);
   const [clientError, setClientError] = useState("");
   const [rawHtmlOpen, setRawHtmlOpen] = useState(false);
@@ -177,9 +184,9 @@ export function HjitContainerCheckPanel() {
     <div className="grid gap-5">
       <Card>
         <CardHeader
-          title="컨테이너 반입 확인"
-          description="컨테이너 번호를 입력하면 운송현황을 먼저 확인하고 터미널 조회 결과를 화면에 표시합니다."
-          action={<Badge tone="info">운송현황 + 터미널</Badge>}
+          title={dictionary.container.cardTitle}
+          description={dictionary.container.cardDescription}
+          action={<Badge tone="info">{dictionary.container.trackingBadge}</Badge>}
         />
         <CardBody>
           <form
@@ -196,12 +203,12 @@ export function HjitContainerCheckPanel() {
               }
 
               event.preventDefault();
-              setClientError("컨테이너 번호를 입력해 주세요.");
+              setClientError(dictionary.container.missingInput);
               window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
             }}
           >
             <label className="grid gap-1 text-sm font-medium text-slate-700">
-              컨테이너 번호
+              {dictionary.container.inputLabel}
               <input
                 autoFocus
                 className="focus-ring h-11 rounded-md border border-slate-300 px-3 text-sm font-semibold uppercase tracking-wide"
@@ -217,7 +224,7 @@ export function HjitContainerCheckPanel() {
                 type="submit"
               >
                 {pending ? <Loader2 aria-hidden="true" className="animate-spin" size={18} /> : <Search aria-hidden="true" size={18} />}
-                {pending ? "조회 중" : "조회"}
+                {pending ? dictionary.common.lookupPending : dictionary.common.lookup}
               </button>
               {state.html ? (
                 <button
@@ -226,7 +233,7 @@ export function HjitContainerCheckPanel() {
                   type="button"
                 >
                   <Container aria-hidden="true" size={17} />
-                  원문 화면 보기
+                  {dictionary.common.openOriginal}
                 </button>
               ) : null}
               {state.status === "success" && state.containerNo && state.html ? (
@@ -241,11 +248,12 @@ export function HjitContainerCheckPanel() {
                     try {
                       await downloadReceiptImage({
                         containerNo: state.containerNo ?? "",
+                        receiptFileSuffix: dictionary.container.receiptFileSuffix,
                         terminalCode: state.terminalCode
                       });
-                      setReceiptMessage("반입계 이미지 다운로드를 시작했습니다.");
+                      setReceiptMessage(dictionary.container.downloadSuccess);
                     } catch (error) {
-                      setClientError(error instanceof Error ? error.message : "반입계 이미지를 생성하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+                      setClientError(error instanceof Error ? error.message : dictionary.container.receiptUnknownError);
                     } finally {
                       setReceiptPending(false);
                       window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
@@ -254,7 +262,7 @@ export function HjitContainerCheckPanel() {
                   type="button"
                 >
                   {receiptPending ? <Loader2 aria-hidden="true" className="animate-spin" size={17} /> : <Download aria-hidden="true" size={17} />}
-                  {receiptPending ? `출력 생성 중${receiptElapsedSeconds ? ` ${receiptElapsedSeconds}초` : ""}` : "반입계 출력"}
+                  {receiptPending ? dictionary.container.receiptPending(receiptElapsedSeconds) : dictionary.container.receipt}
                 </button>
               ) : null}
               {state.sourceUrl ? (
@@ -264,17 +272,17 @@ export function HjitContainerCheckPanel() {
                   rel="noreferrer"
                   target="_blank"
                 >
-                  원사이트 열기
+                  {dictionary.common.openOriginal}
                   <ExternalLink aria-hidden="true" size={16} />
                 </a>
               ) : null}
               <p className="text-xs text-slate-500">
-                현재는 한진인천, 선광신, 인천컨테이너터미널, 인천항국제페리부두, BNCT, 평택컨테이너터미널, 평택동방아이포트 확인을 지원합니다.
+                {dictionary.container.currentSupport}
               </p>
             </div>
             {pending ? (
               <div className="rounded-md border border-blue-100 bg-blue-50 p-3 text-sm text-blue-800">
-                터미널 조회 화면을 불러오고 있습니다.
+                {dictionary.container.pendingMessage}
               </div>
             ) : null}
             {message ? (
@@ -305,16 +313,16 @@ export function HjitContainerCheckPanel() {
       {state.status === "success" ? (
         <Card>
           <CardHeader
-            title="조회 요약"
-            description={`${state.terminalName ?? "터미널"}에서 내려온 주요 항목입니다.`}
+            title={dictionary.container.resultTitle}
+            description={dictionary.container.resultDescription(state.terminalName)}
             action={state.containerNo ? <Badge tone="success">{state.containerNo}</Badge> : undefined}
           />
           <CardBody className="grid gap-4">
-            <TrackingTable rows={state.trackingRows ?? []} />
+            <TrackingTable dictionary={dictionary} rows={state.trackingRows ?? []} />
             <SummaryTable rows={state.summary ?? []} />
             <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600">
-              <p>상단 이력은 운송현황 조회 결과의 최신 순서입니다.</p>
-              <p>현재 결과는 연결된 터미널 원문 조회 화면을 기준으로 표시합니다.</p>
+              <p>{dictionary.container.summaryFirstLine}</p>
+              <p>{dictionary.container.summarySecondLine}</p>
             </div>
           </CardBody>
         </Card>
@@ -323,6 +331,7 @@ export function HjitContainerCheckPanel() {
       {modalOpen && state.html ? (
         <ResultModal
           html={state.html}
+          dictionary={dictionary}
           onClose={() => setRawHtmlOpen(false)}
           sourceUrl={state.sourceUrl}
           terminalName={state.terminalName}
