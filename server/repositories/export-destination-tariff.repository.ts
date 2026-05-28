@@ -240,19 +240,35 @@ export async function findExportDestinationTariffs(
   }
 
   if (shouldSearchAllCountries) {
-    const targetCountries = destinationCountryOptions.filter((country) => country.code !== "ALL");
-    const perCountryLimit = Math.max(4, Math.ceil((input.limit ?? 80) / Math.max(targetCountries.length, 1)));
-    const rows = await Promise.all(
-      targetCountries.map((country) =>
-        findExportDestinationTariffs(supabase, {
-          ...input,
-          destinationCountry: country.code,
-          limit: perCountryLimit
-        }).catch(() => [])
-      )
-    );
+    const targetCountries = destinationCountryOptions
+      .filter((country) => country.code !== "ALL")
+      .flatMap((country) => countryCodeAliases(country.code));
+    const uniqueCountries = Array.from(new Set(targetCountries));
+    const resultLimit = input.limit ?? 80;
+    const queryLimit = Math.min(Math.max(resultLimit * 4, uniqueCountries.length * 3), 500);
+    let query = supabase
+      .from("export_destination_tariff_rates")
+      .select("country_code, tariff_year, destination_hs_code, english_name, korean_name, unit, base_rate_text, agreement_rates, source_name, source_version")
+      .in("country_code", uniqueCountries)
+      .lte("effective_from", input.basisDate)
+      .or(`effective_to.is.null,effective_to.gte.${input.basisDate}`)
+      .eq("status", "published")
+      .order("destination_hs_code", { ascending: true })
+      .limit(queryLimit);
 
-    return sortExportDestinationTariffs(rows.flat()).slice(0, input.limit ?? 80);
+    if (normalized.length <= 6) {
+      query = query.like("destination_hs_code", `${normalized}%`);
+    } else {
+      query = query.like("destination_hs_code", `${hs6}%`);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw new Error(error.message);
+
+    return sortExportDestinationTariffs(
+      ((data ?? []) as ExportDestinationTariffRow[]).map((row) => mapExportDestinationTariffRow(row, input.basisDate, input.hskCode))
+    ).slice(0, resultLimit);
   }
 
   let query = supabase
