@@ -34,3 +34,7 @@ export {
   getEntryDictionary,
   type EntryDictionary
 } from "./entry";
+export {
+  getTradeNewsDictionary,
+  type TradeNewsDictionary
+} from "./trade-news";

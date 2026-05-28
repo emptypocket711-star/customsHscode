@@ -289,6 +289,20 @@
 - `npm test`
 - `npm run build`
 
+### 무역 뉴스 다국어 1차
+
+- `/trade-news` 페이지 제목, 설명, hero, 국가 필터, 카테고리 카드, 빈 상태, 원문 열기 버튼 chrome을 `trade-news` dictionary로 분리했다.
+- 뉴스 제목, 원문 URL, 출처명, 국가명 등 수집 데이터는 자동 번역하지 않는다.
+- WTO와 일반 뉴스의 기본 요약 fallback만 locale별 문구로 표시한다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test -- lib/i18n/trade-news.test.ts`
+- `npm test`
+- `npm run build`
+
 2026-05-25 기준 전체 테스트 결과:
 
 - 52 test files passed

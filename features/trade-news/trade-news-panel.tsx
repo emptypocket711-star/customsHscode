@@ -6,16 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { CountryComboboxField } from "@/features/hs/country-combobox-field";
 import { destinationCountryOptions, exportCountryLabel } from "@/features/export-diagnosis/country-options";
+import type { TradeNewsDictionary } from "@/lib/i18n";
 import type { TradeNewsCategory, TradeNewsItem } from "@/server/services/trade-news.service";
 
-const tradeNewsCategories: Array<{ key: TradeNewsCategory; label: string; description: string }> = [
-  { key: "customs", label: "관세/통관", description: "관세청 보도자료와 통관·원산지·품목분류 관련 소식" },
-  { key: "market", label: "해외시장/통상", description: "KOTRA 해외시장뉴스, 통상·규제, 공급망 동향" },
-  { key: "government", label: "정부 정책", description: "정부 보도자료 중 무역 실무자가 확인할 만한 발표" },
-  { key: "industry", label: "산업/통상 정책", description: "산업통상부 보도자료와 통상·FTA·공급망 정책" },
-  { key: "global", label: "국제통상", description: "WTO 등 국제기구의 무역 규범·분쟁·통상 뉴스" },
-  { key: "auxiliary", label: "보조 뉴스", description: "뉴스 검색 API 등 보조 검색 소스" }
-];
+const tradeNewsCategories: TradeNewsCategory[] = ["customs", "market", "government", "industry", "global", "auxiliary"];
 
 function formatDate(value: string | null) {
   if (!value) return "-";
@@ -61,36 +55,36 @@ function matchesCountry(item: TradeNewsItem, countryCode: string) {
   return tokens.some((token) => haystack.includes(token.toLowerCase()));
 }
 
-function sourceTypeLabel(type: TradeNewsItem["sourceType"]) {
-  if (type === "rss") return "RSS";
-  if (type === "official-page") return "공식 페이지";
-  if (type === "openapi") return "공공데이터 API";
-  if (type === "paid-api") return "유료 API";
-  return "연동 예정";
+function sourceTypeLabel(type: TradeNewsItem["sourceType"], dictionary: TradeNewsDictionary) {
+  if (type === "rss") return dictionary.card.sourceTypes.rss;
+  if (type === "official-page") return dictionary.card.sourceTypes["official-page"];
+  if (type === "openapi") return dictionary.card.sourceTypes.openapi;
+  if (type === "paid-api") return dictionary.card.sourceTypes["paid-api"];
+  return dictionary.card.sourceTypes.future;
 }
 
 function hasHangul(value: string) {
   return /[가-힣]/.test(value);
 }
 
-function cardSummary(item: TradeNewsItem) {
+function cardSummary(item: TradeNewsItem, dictionary: TradeNewsDictionary) {
   const summary = item.summary?.trim();
   if (summary && hasHangul(summary)) return summary;
 
   if (item.source === "WTO") {
-    return "WTO에서 발표한 국제통상 관련 소식입니다. 통상 규범, 협정, 분쟁, 회원국 조치와 관련된 내용일 수 있어 원문 확인이 필요합니다.";
+    return dictionary.card.wtoSummary;
   }
 
-  return "해당 출처에서 수집한 무역 관련 소식입니다. 제목과 출처를 기준으로 먼저 검토한 뒤 원문에서 세부 내용을 확인해 주세요.";
+  return dictionary.card.fallbackSummary;
 }
 
-function NewsCard({ item }: { item: TradeNewsItem }) {
-  const summary = cardSummary(item);
+function NewsCard({ dictionary, item }: { dictionary: TradeNewsDictionary; item: TradeNewsItem }) {
+  const summary = cardSummary(item, dictionary);
 
   return (
     <article className="flex min-h-[240px] flex-col rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md">
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <Badge tone={item.status === "live" ? "info" : "neutral"}>{item.status === "live" ? "수집" : "대기"}</Badge>
+        <Badge tone={item.status === "live" ? "info" : "neutral"}>{item.status === "live" ? dictionary.card.collected : dictionary.card.pending}</Badge>
         {item.countryName ? <Badge tone="neutral">{item.countryName}</Badge> : null}
         <span className="text-xs font-medium text-slate-500">{formatDate(item.publishedAt)}</span>
       </div>
@@ -101,12 +95,12 @@ function NewsCard({ item }: { item: TradeNewsItem }) {
       <div className="mt-4 border-t border-slate-100 pt-3">
         <dl className="grid gap-1.5 text-xs text-slate-500">
           <div className="flex items-center justify-between gap-3">
-            <dt>출처</dt>
+            <dt>{dictionary.card.source}</dt>
             <dd className="truncate font-semibold text-slate-700">{item.source}</dd>
           </div>
           <div className="flex items-center justify-between gap-3">
-            <dt>수집 방식</dt>
-            <dd className="font-semibold text-slate-700">{sourceTypeLabel(item.sourceType)}</dd>
+            <dt>{dictionary.card.sourceMethod}</dt>
+            <dd className="font-semibold text-slate-700">{sourceTypeLabel(item.sourceType, dictionary)}</dd>
           </div>
         </dl>
         <a
@@ -115,7 +109,7 @@ function NewsCard({ item }: { item: TradeNewsItem }) {
           rel="noreferrer"
           target="_blank"
         >
-          원문 열기
+          {dictionary.card.openOriginal}
           <ExternalLink aria-hidden="true" size={14} />
         </a>
       </div>
@@ -123,13 +117,13 @@ function NewsCard({ item }: { item: TradeNewsItem }) {
   );
 }
 
-export function TradeNewsPanel({ items }: { items: TradeNewsItem[] }) {
+export function TradeNewsPanel({ dictionary, items }: { dictionary: TradeNewsDictionary; items: TradeNewsItem[] }) {
   const [selectedCountry, setSelectedCountry] = useState("ALL");
   const filteredItems = useMemo(
     () => items.filter((item) => matchesCountry(item, selectedCountry)),
     [items, selectedCountry]
   );
-  const selectedCountryLabel = selectedCountry === "ALL" ? "모든 국가" : countryNameFromLabel(selectedCountry);
+  const selectedCountryLabel = selectedCountry === "ALL" ? dictionary.card.allCountries : countryNameFromLabel(selectedCountry);
 
   return (
     <div className="grid gap-5">
@@ -138,17 +132,17 @@ export function TradeNewsPanel({ items }: { items: TradeNewsItem[] }) {
           <div>
             <div className="flex items-center gap-2 text-sm font-semibold text-blue-700">
               <Newspaper aria-hidden="true" size={16} />
-              무역 뉴스
+              {dictionary.hero.eyebrow}
             </div>
-            <h2 className="mt-2 text-xl font-semibold text-slate-950">국가별 주요 무역 이슈를 카드로 확인합니다.</h2>
+            <h2 className="mt-2 text-xl font-semibold text-slate-950">{dictionary.hero.title}</h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              국가를 선택하면 해당 국가명이 포함된 KOTRA·정부·국제통상 글만 모아 보여줍니다. 원문을 열기 전 제목과 짧은 요약을 먼저 확인할 수 있습니다.
+              {dictionary.hero.lead}
             </p>
           </div>
           <CountryComboboxField
             defaultValue="ALL"
             direction="import"
-            label="국가 필터"
+            label={dictionary.hero.countryFilter}
             name="tradeNewsCountry"
             onChange={setSelectedCountry}
           />
@@ -157,24 +151,25 @@ export function TradeNewsPanel({ items }: { items: TradeNewsItem[] }) {
 
       <div className="grid gap-4">
         {tradeNewsCategories.map((category) => {
-          const rows = categoryItems(filteredItems, category.key);
+          const rows = categoryItems(filteredItems, category);
+          const categoryCopy = dictionary.categories[category];
 
           return (
-            <Card key={category.key}>
+            <Card key={category}>
               <CardHeader
-                title={category.label}
-                description={`${category.description} · ${selectedCountryLabel} 기준 ${rows.length}건`}
+                title={categoryCopy.label}
+                description={`${categoryCopy.description} · ${selectedCountryLabel} ${rows.length}${dictionary.card.itemsSuffix}`}
               />
               <CardBody>
                 {rows.length ? (
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {rows.map((item) => (
-                      <NewsCard item={item} key={item.id} />
+                      <NewsCard dictionary={dictionary} item={item} key={item.id} />
                     ))}
                   </div>
                 ) : (
                   <div className="rounded-md border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500">
-                    선택한 국가와 연결된 글이 없습니다.
+                    {dictionary.card.empty}
                   </div>
                 )}
               </CardBody>
