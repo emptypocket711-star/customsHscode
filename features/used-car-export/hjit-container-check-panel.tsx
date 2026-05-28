@@ -201,7 +201,7 @@ export function HjitContainerCheckPanel() {
                 </a>
               ) : null}
               <p className="text-xs text-slate-500">
-                현재는 한진인천, 선광신, 인천컨테이너터미널, 인천항국제페리부두, BNCT, 평택컨테이너터미널 확인을 지원합니다.
+                현재는 한진인천, 선광신, 인천컨테이너터미널, 인천항국제페리부두, BNCT, 평택컨테이너터미널, 평택동방아이포트 확인을 지원합니다.
               </p>
             </div>
             {pending ? (

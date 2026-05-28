@@ -12,7 +12,7 @@ export type HjitContainerLookupState = {
   trackingRows?: EtransTrackingRow[];
 };
 
-type TerminalCode = "hjit" | "snct" | "ifpc" | "ict" | "bnct" | "pctc";
+type TerminalCode = "hjit" | "snct" | "ifpc" | "ict" | "bnct" | "pctc" | "pnct";
 
 type TerminalLookupResult = {
   terminalCode: TerminalCode;
@@ -28,6 +28,7 @@ const ifpcContainerInquiryUrl = "https://www.ifpc.co.kr/INFO/infoservice/index.h
 const ictContainerInquiryUrl = "https://service.psa-ict.co.kr/webpage/general/contInfo.jsp";
 const bnctContainerInquiryUrl = "https://info.bnctkorea.com/esvc/cntr/cntrSrch/search";
 const pctcContainerInquiryUrl = "http://www.pctc21.com/esvc/cntr/info2/data";
+const pnctContainerInquiryUrl = "http://www.pnct.co.kr/infoservice/jsp/main/mainPage_SteveTime.jsp";
 const etransTrackingUrl = "https://etrans.klnet.co.kr/main/searchTracking.do";
 
 export type EtransTrackingRow = {
@@ -310,17 +311,24 @@ function preferredTerminalOrder(row?: EtransTrackingRow): TerminalCode[] {
   const terminalName = row?.terminalName ?? "";
   const terminalCode = row?.terminalCode.toUpperCase() ?? "";
 
+  if (
+    terminalName.includes("평택동방아이포트") ||
+    terminalName.includes("평택항신컨테이너") ||
+    terminalCode.includes("PNCT")
+  ) {
+    return ["pnct", "pctc", "hjit", "snct", "ict", "ifpc", "bnct"];
+  }
   if (terminalName.includes("BNCT") || terminalName.includes("부산신항컨테이너터미널") || terminalCode.includes("BNCT")) {
-    return ["bnct", "hjit", "snct", "ict", "ifpc", "pctc"];
+    return ["bnct", "hjit", "snct", "ict", "ifpc", "pctc", "pnct"];
   }
   if (terminalName.includes("평택컨테이너") || terminalCode.includes("PCTC")) {
-    return ["pctc", "hjit", "snct", "ict", "ifpc", "bnct"];
+    return ["pctc", "pnct", "hjit", "snct", "ict", "ifpc", "bnct"];
   }
-  if (terminalName.includes("인천컨테이너터미널") || terminalCode.includes("ICT")) return ["ict", "hjit", "snct", "ifpc", "bnct", "pctc"];
-  if (terminalName.includes("인천신국제여객") || terminalCode.includes("IFPC")) return ["ifpc", "hjit", "snct", "ict", "bnct", "pctc"];
-  if (terminalName.includes("선광") || terminalCode.includes("SNCT")) return ["snct", "hjit", "ict", "ifpc", "bnct", "pctc"];
-  if (terminalName.includes("한진") || terminalCode.includes("HJIT")) return ["hjit", "snct", "ict", "ifpc", "bnct", "pctc"];
-  return ["hjit", "snct", "ict", "ifpc", "bnct", "pctc"];
+  if (terminalName.includes("인천컨테이너터미널") || terminalCode.includes("ICT")) return ["ict", "hjit", "snct", "ifpc", "bnct", "pctc", "pnct"];
+  if (terminalName.includes("인천신국제여객") || terminalCode.includes("IFPC")) return ["ifpc", "hjit", "snct", "ict", "bnct", "pctc", "pnct"];
+  if (terminalName.includes("선광") || terminalCode.includes("SNCT")) return ["snct", "hjit", "ict", "ifpc", "bnct", "pctc", "pnct"];
+  if (terminalName.includes("한진") || terminalCode.includes("HJIT")) return ["hjit", "snct", "ict", "ifpc", "bnct", "pctc", "pnct"];
+  return ["hjit", "snct", "ict", "ifpc", "bnct", "pctc", "pnct"];
 }
 
 async function lookupHjitTerminal(containerNo: string): Promise<TerminalLookupResult> {
@@ -587,6 +595,46 @@ async function lookupPctcTerminal(containerNo: string): Promise<TerminalLookupRe
   };
 }
 
+function extractPnctSummary(html: string) {
+  const cells = [...html.matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)]
+    .map((cell) => htmlText(cell[1].replace(/<[^>]+>/g, " ")))
+    .filter(Boolean);
+  const missingMessage = cells.find((cell) => cell.includes("찾을 수 없습니다"));
+  if (missingMessage) return [{ label: "조회 결과", value: missingMessage }];
+
+  return cells.slice(0, 12).map((value, index) => ({
+    label: index === 0 ? "조회 결과" : `항목 ${index + 1}`,
+    value
+  }));
+}
+
+async function lookupPnctTerminal(containerNo: string): Promise<TerminalLookupResult> {
+  const url = new URL(pnctContainerInquiryUrl);
+  url.searchParams.set("cntrNo", containerNo);
+
+  const response = await fetch(url, {
+    headers: {
+      "user-agent": "HS Finder container terminal lookup"
+    },
+    cache: "no-store",
+    signal: AbortSignal.timeout(20000)
+  });
+
+  if (!response.ok) throw new Error(`평택동방아이포트 조회에 실패했습니다. (${response.status})`);
+
+  const html = decodeEucKrHtml(await response.arrayBuffer());
+  const summary = extractPnctSummary(html);
+  const hasResult = summary.length > 0 && !summary.some((row) => row.value.includes("찾을 수 없습니다"));
+
+  return {
+    terminalCode: "pnct",
+    terminalName: "평택동방아이포트",
+    html: sanitizeExternalHtml(html, "http://www.pnct.co.kr/infoservice/"),
+    summary,
+    hasResult
+  };
+}
+
 async function lookupKnownTerminals(containerNo: string, order: TerminalCode[], topTrackingRow?: EtransTrackingRow) {
   const errors: string[] = [];
 
@@ -599,6 +647,8 @@ async function lookupKnownTerminals(containerNo: string, order: TerminalCode[], 
         result = await lookupBnctTerminal(containerNo);
       } else if (terminal === "pctc") {
         result = await lookupPctcTerminal(containerNo);
+      } else if (terminal === "pnct") {
+        result = await lookupPnctTerminal(containerNo);
       } else if (terminal === "snct") {
         result = await lookupSunKwangTerminal(containerNo);
       } else if (terminal === "ict") {
