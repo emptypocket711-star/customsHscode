@@ -2,8 +2,7 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
 import { AppSideNav } from "@/components/app-side-nav";
-import { normalizeLocaleOrNull } from "@/lib/i18n";
-import { getRequestLocale } from "@/lib/i18n/server";
+import { resolveUserLocale } from "@/lib/i18n/server";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import { isDeveloperEmail } from "@/server/auth/developer";
 import { validatePersonalActiveSession } from "@/server/auth/session-policy";
@@ -32,7 +31,6 @@ async function getCurrentAccessState() {
 }
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
-  const requestLocale = await getRequestLocale();
   const access = await getCurrentAccessState();
 
   if (!access?.user) {
@@ -43,7 +41,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   if (!profile?.onboarding_completed_at) {
     redirect("/auth/complete-signup");
   }
-  const locale = normalizeLocaleOrNull(profile.preferred_locale) ?? requestLocale;
+  const locale = await resolveUserLocale(user.id);
 
   const sessionCheck = await validatePersonalActiveSession({
     accountType: profile.account_type === "personal" ? "personal" : "company",

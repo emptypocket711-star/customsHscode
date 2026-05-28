@@ -512,3 +512,18 @@
 - `npm test`
 - `npm test -- lib/i18n/documents.test.ts`
 - `npm run build`
+
+### 언어 전환 즉시 반영 수정
+
+- 로그인 후 화면에서 `profiles.preferred_locale`가 locale cookie보다 우선되어 언어 버튼 클릭 직후 기존 언어로 되돌아가던 문제를 수정했다.
+- locale cookie를 런타임 기준값으로 두고, Supabase 프로필 저장값은 cookie가 없을 때만 fallback으로 사용하도록 서버 locale 해석 순서를 정리했다.
+- 언어 변경 server action이 layout cache를 무효화한 뒤 현재 경로로 돌아가도록 해 헤더와 사이드바가 즉시 다시 렌더되게 했다.
+- cookie, profile, Accept-Language 우선순위를 검증하는 `lib/i18n/server.test.ts`를 추가했다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm test -- lib/i18n/server.test.ts lib/i18n/locales.test.ts`
+- `npm run build`

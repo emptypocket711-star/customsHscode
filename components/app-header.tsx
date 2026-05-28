@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Search } from "lucide-react";
+import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import {
@@ -64,7 +65,9 @@ async function updateLocaleAction(formData: FormData) {
   await setRequestLocale(locale);
 
   const headerStore = await headers();
-  redirect(safeReturnPath(headerStore.get("referer")));
+  const returnPath = safeReturnPath(headerStore.get("referer"));
+  revalidatePath("/", "layout");
+  redirect(returnPath);
 }
 
 export async function AppHeader({

@@ -2,20 +2,24 @@ import { cookies, headers } from "next/headers";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import {
   defaultLocale,
-  isAppLocale,
   localeFromAcceptLanguage,
   localeCookieName,
   normalizeLocaleOrNull,
   type AppLocale
 } from "@/lib/i18n/locales";
 
-export async function resolveRequestLocale(): Promise<AppLocale> {
+async function resolveCookieLocale(): Promise<AppLocale | null> {
   const cookieStore = await cookies();
-  const cookieLocale = cookieStore.get(localeCookieName)?.value;
-  if (isAppLocale(cookieLocale)) return cookieLocale;
+  return normalizeLocaleOrNull(cookieStore.get(localeCookieName)?.value);
+}
 
+async function resolveHeaderLocale(): Promise<AppLocale> {
   const headersList = await headers();
   return localeFromAcceptLanguage(headersList.get("accept-language")) ?? defaultLocale;
+}
+
+export async function resolveRequestLocale(): Promise<AppLocale> {
+  return await resolveCookieLocale() ?? await resolveHeaderLocale();
 }
 
 export async function getRequestLocale(): Promise<AppLocale> {
@@ -53,7 +57,10 @@ export async function setRequestLocale(locale: AppLocale) {
 }
 
 export async function resolveUserLocale(userId?: string | null): Promise<AppLocale> {
-  if (!userId || !hasSupabaseEnv()) return resolveRequestLocale();
+  const cookieLocale = await resolveCookieLocale();
+  if (cookieLocale) return cookieLocale;
+
+  if (!userId || !hasSupabaseEnv()) return resolveHeaderLocale();
 
   try {
     const supabase = await createSupabaseServerClient();
@@ -63,12 +70,10 @@ export async function resolveUserLocale(userId?: string | null): Promise<AppLoca
       .eq("id", userId)
       .maybeSingle<{ preferred_locale: string | null }>();
 
-    return normalizeLocaleOrNull(data?.preferred_locale) ?? resolveRequestLocale();
+    return normalizeLocaleOrNull(data?.preferred_locale) ?? await resolveHeaderLocale();
   } catch {
-    return resolveRequestLocale();
+    return resolveHeaderLocale();
   }
-
-  return resolveRequestLocale();
 }
 
 export async function resolveCurrentUserLocale(userId?: string | null): Promise<AppLocale> {
