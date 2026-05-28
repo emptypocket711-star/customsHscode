@@ -3,14 +3,28 @@
 export type HjitContainerLookupState = {
   status: "idle" | "success" | "error";
   message?: string;
+  notice?: string;
   containerNo?: string;
   terminalName?: string;
   sourceUrl?: string;
   html?: string;
   summary?: Array<{ label: string; value: string }>;
+  trackingRows?: EtransTrackingRow[];
 };
 
 const hjitContainerInquiryUrl = "http://59.17.254.10:9130/esvc/inq/ContainerAction.do";
+const etransTrackingUrl = "https://etrans.klnet.co.kr/main/searchTracking.do";
+
+export type EtransTrackingRow = {
+  carCode: string;
+  statusTime: string;
+  terminalName: string;
+  containerNo: string;
+  terminalCode: string;
+  containerStatus: string;
+  statusDate: string;
+  statusName: string;
+};
 
 function stringValue(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -86,6 +100,68 @@ function extractHjitSummary(html: string) {
     .filter((row) => row.value && row.value !== "&nbsp;" && row.value !== "-");
 }
 
+type EtransTrackingApiRow = {
+  CAR_CODE?: string;
+  STATUS_TM?: string;
+  TERMINAL_NAME?: string;
+  CNTR_NO?: string;
+  OUTGATE_CY?: string;
+  CNTR_STATUS?: string;
+  STATUS_DT?: string;
+  STATUS_NM?: string;
+};
+
+type EtransTrackingApiResponse = {
+  dma_tracking?: EtransTrackingApiRow[];
+  rsMsg?: {
+    message?: string;
+    statusCode?: string;
+  };
+};
+
+function mapEtransTrackingRow(row: EtransTrackingApiRow): EtransTrackingRow {
+  return {
+    carCode: row.CAR_CODE ?? "",
+    statusTime: row.STATUS_TM ?? "",
+    terminalName: row.TERMINAL_NAME ?? "",
+    containerNo: row.CNTR_NO ?? "",
+    terminalCode: row.OUTGATE_CY ?? "",
+    containerStatus: row.CNTR_STATUS ?? "",
+    statusDate: row.STATUS_DT ?? "",
+    statusName: row.STATUS_NM ?? ""
+  };
+}
+
+async function lookupEtransTracking(containerNo: string) {
+  const response = await fetch(etransTrackingUrl, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json; charset=UTF-8",
+      "user-agent": "HS Finder eTrans tracking lookup"
+    },
+    body: JSON.stringify({
+      dma_search: {
+        KLNET_ID: "",
+        SEARCH_DATA: containerNo,
+        NOTICE_CNT: ""
+      }
+    }),
+    cache: "no-store",
+    signal: AbortSignal.timeout(15000)
+  });
+
+  if (!response.ok) return [];
+
+  const json = await response.json() as EtransTrackingApiResponse;
+  if (json.rsMsg?.statusCode && json.rsMsg.statusCode !== "S") return [];
+  return (json.dma_tracking ?? []).map(mapEtransTrackingRow);
+}
+
+function topTrackingNotice(row?: EtransTrackingRow) {
+  if (!row) return undefined;
+  return row.statusName.includes("반출") ? "아직 최종 반입지에 반입이 되지 않았습니다. 참고해주세요." : undefined;
+}
+
 export async function lookupHjitContainerAction(
   _previousState: HjitContainerLookupState,
   formData: FormData
@@ -99,6 +175,17 @@ export async function lookupHjitContainerAction(
   if (!/^[A-Z]{4}[0-9]{7}$/.test(containerNo)) {
     return { status: "error", message: "컨테이너 번호는 영문 4자리와 숫자 7자리 형식으로 입력해 주세요." };
   }
+
+  let trackingRows: EtransTrackingRow[] = [];
+  try {
+    trackingRows = await lookupEtransTracking(containerNo);
+  } catch {
+    trackingRows = [];
+  }
+
+  const topTrackingRow = trackingRows[0];
+  const terminalName = topTrackingRow?.terminalName || "한진인천컨테이너터미널";
+  const notice = topTrackingNotice(topTrackingRow);
 
   const body = new URLSearchParams({
     cmd: "ContainerInq",
@@ -133,11 +220,13 @@ export async function lookupHjitContainerAction(
     return {
       status: "success",
       message: summary.length ? "한진인천컨테이너터미널 조회 결과를 불러왔습니다." : "조회 결과 원문을 불러왔습니다. 원문 화면에서 상세 내용을 확인해 주세요.",
+      notice,
       containerNo,
-      terminalName: "한진인천컨테이너터미널",
-      sourceUrl: "http://59.17.254.10:9130/esvc/inq/ContainerAction.do?cmd=ContainerInqView",
+      terminalName,
+      sourceUrl: `/api/external/hjit-container?containerNo=${encodeURIComponent(containerNo)}`,
       html: sanitizeExternalHtml(html),
-      summary
+      summary,
+      trackingRows
     };
   } catch (error) {
     return {

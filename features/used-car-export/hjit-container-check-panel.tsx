@@ -26,6 +26,48 @@ function SummaryTable({ rows }: { rows: Array<{ label: string; value: string }> 
   );
 }
 
+function TrackingTable({
+  rows
+}: {
+  rows: Array<{
+    carCode: string;
+    statusTime: string;
+    terminalName: string;
+    containerNo: string;
+    statusDate: string;
+    statusName: string;
+  }>;
+}) {
+  if (!rows.length) return null;
+
+  return (
+    <div className="overflow-x-auto rounded-md border border-slate-200">
+      <table className="w-full min-w-[720px] text-left text-sm">
+        <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
+          <tr>
+            <th className="px-3 py-2">상태</th>
+            <th className="px-3 py-2">일시</th>
+            <th className="px-3 py-2">터미널</th>
+            <th className="px-3 py-2">컨테이너</th>
+            <th className="px-3 py-2">차량</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {rows.slice(0, 5).map((row, index) => (
+            <tr className={index === 0 ? "bg-blue-50/60" : undefined} key={`${row.statusDate}-${row.statusTime}-${row.statusName}-${index}`}>
+              <td className="px-3 py-2 font-semibold text-slate-950">{row.statusName}</td>
+              <td className="px-3 py-2 text-slate-700">{row.statusDate} {row.statusTime}</td>
+              <td className="px-3 py-2 text-slate-700">{row.terminalName || "-"}</td>
+              <td className="px-3 py-2 font-mono text-slate-700">{row.containerNo}</td>
+              <td className="px-3 py-2 text-slate-700">{row.carCode || "-"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function ResultModal({
   html,
   onClose,
@@ -145,6 +187,17 @@ export function HjitContainerCheckPanel() {
                   원문 팝업 다시 열기
                 </button>
               ) : null}
+              {state.sourceUrl ? (
+                <a
+                  className="focus-ring inline-flex min-h-10 items-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  href={state.sourceUrl}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  원사이트 열기
+                  <ExternalLink aria-hidden="true" size={16} />
+                </a>
+              ) : null}
               <p className="text-xs text-slate-500">현재는 한진인천컨테이너터미널 조회부터 지원합니다.</p>
             </div>
             {pending ? (
@@ -160,6 +213,11 @@ export function HjitContainerCheckPanel() {
                 {message}
               </div>
             ) : null}
+            {state.notice ? (
+              <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-medium text-amber-900">
+                {state.notice}
+              </div>
+            ) : null}
           </form>
         </CardBody>
       </Card>
@@ -172,9 +230,10 @@ export function HjitContainerCheckPanel() {
             action={state.containerNo ? <Badge tone="success">{state.containerNo}</Badge> : undefined}
           />
           <CardBody className="grid gap-4">
+            <TrackingTable rows={state.trackingRows ?? []} />
             <SummaryTable rows={state.summary ?? []} />
             <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600">
-              <p>최종 반입지 자동 판별은 KL-Net 운송현황 통합 검색 연동 후 터미널별로 확장할 예정입니다.</p>
+              <p>상단 이력은 KL-Net 운송현황 통합 정보 검색 결과의 최신 순서입니다.</p>
               <p>현재 결과는 한진인천컨테이너터미널 원문 조회 화면을 기준으로 표시합니다.</p>
             </div>
           </CardBody>
