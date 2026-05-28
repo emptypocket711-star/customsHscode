@@ -52,8 +52,9 @@ import {
   type ExportDestinationTradeRemedyCaseItem
 } from "@/server/repositories/export-destination-import-data.repository";
 import {
-  findInternalTaxCodeMatches,
   findInternalTaxLawRuleMatches,
+  matchInternalTaxCodes,
+  type CustomsStatisticalCodeRecord,
   type InternalTaxCodeMatch
 } from "@/server/repositories/customs-statistical-code.repository";
 import { analyzeProductClarification, type ProductClarificationResult } from "@/server/ai/clarification.service";
@@ -1295,11 +1296,19 @@ async function uncachedDestinationTariffsForResults({
   if (hasSupabaseEnv()) {
     try {
       const supabase = await createSupabaseServerClient();
+      const resultsByHs6 = new Map<string, ExportLookupSource[]>();
+
+      for (const result of results) {
+        const hs6 = result.hs6 || normalizeHsInput(result.hskCode).slice(0, 6);
+        if (!hs6) continue;
+        resultsByHs6.set(hs6, [...(resultsByHs6.get(hs6) ?? []), result]);
+      }
+
       const tariffResults = await Promise.all(
-        results.map(async (result) => [
-          result.hskCode,
+        Array.from(resultsByHs6.entries()).map(async ([hs6, groupedResults]) => [
+          groupedResults,
           await findExportDestinationTariffs(supabase, {
-            hskCode: result.hskCode,
+            hskCode: hs6,
             destinationCountry,
             basisDate,
             limit: destinationCountry === "ALL" ? 120 : 20
@@ -1307,8 +1316,10 @@ async function uncachedDestinationTariffsForResults({
         ] as const)
       );
 
-      for (const [hskCode, tariffs] of tariffResults) {
-        tariffsByHsk.set(hskCode, tariffs);
+      for (const [groupedResults, tariffs] of tariffResults) {
+        for (const result of groupedResults) {
+          tariffsByHsk.set(result.hskCode, tariffs);
+        }
       }
 
       return tariffsByHsk;
@@ -1588,25 +1599,31 @@ async function uncachedInternalTaxCodesForResults({
 
   try {
     const supabase = await createSupabaseServerClient();
+    const { data: statisticalCodeRows, error: statisticalCodeError } = await supabase
+      .from("customs_statistical_codes")
+      .select("code_type, code, korean_name, korean_abbreviation, english_abbreviation, english_note, internal_tax_rate, source_name, source_version, effective_from, effective_to, status")
+      .eq("code_type", "A01")
+      .lte("effective_from", basisDate)
+      .or(`effective_to.is.null,effective_to.gte.${basisDate}`)
+      .eq("status", "published")
+      .order("code");
+
+    if (statisticalCodeError) throw new Error(statisticalCodeError.message);
+
+    const statisticalCodes = (statisticalCodeRows ?? []) as CustomsStatisticalCodeRecord[];
     const codeResults = await Promise.all(
       results.map(async (result) => {
-        const [lawRules, statisticalCodes] = await Promise.all([
-          findInternalTaxLawRuleMatches(supabase, {
-            hskCode: result.hskCode,
-            query: result.koreanName,
-            basisDate,
-            limit: 8
-          }),
-          findInternalTaxCodeMatches(supabase, {
-            query: result.koreanName,
-            basisDate,
-            limit: 5
-          })
-        ]);
+        const lawRules = await findInternalTaxLawRuleMatches(supabase, {
+          hskCode: result.hskCode,
+          query: result.koreanName,
+          basisDate,
+          limit: 8
+        });
+        const statisticalCodeMatches = matchInternalTaxCodes(statisticalCodes, result.koreanName, 5);
 
         return [
           result.hskCode,
-          [...lawRules, ...statisticalCodes]
+          [...lawRules, ...statisticalCodeMatches]
         ] as const;
       })
     );
@@ -2692,10 +2709,10 @@ export async function HsDirectLookupPanel({
       : Promise.resolve(null)
   ]);
   const productCandidateLookupByHsk = new Map(productCandidateLookupResults.map((result) => [result.hskCode, result]));
-  const productCandidateInternalTaxByHskPromise = internalTaxCodesForResults({
+  const productCandidateInternalTaxByHskPromise = lookupDirection === "import" ? internalTaxCodesForResults({
     results: productCandidateLookupResults,
     basisDate: resolvedBasisDate
-  });
+  }) : Promise.resolve(new Map<string, InternalTaxCodeMatch[]>());
   const exportLookupSources: ExportLookupSource[] = shouldLookupProduct && productCandidates.length
     ? productCandidates.map((candidate: HsCandidateRecommendation) => ({
         hskCode: candidate.hskCode,
@@ -2715,7 +2732,8 @@ export async function HsDirectLookupPanel({
     destinationTariffsByHsk,
     internalTaxCodesByHsk,
     hsNavigationStatsByHsk,
-    directDestinationTariffs
+    directDestinationTariffs,
+    favoriteCodes
   ] = await Promise.all([
     productCandidateInternalTaxByHskPromise,
     showDomesticExportResults && hasQuery
@@ -2749,7 +2767,12 @@ export async function HsDirectLookupPanel({
       direction: showDestinationExportResults ? "export" : "import",
       destinationCountry: selectedDestinationCountry,
       basisDate: resolvedBasisDate
-    }) : Promise.resolve([])
+    }) : Promise.resolve([]),
+    shouldLoadImportDetailData && hasSupabaseEnv()
+      ? createSupabaseServerClient()
+        .then((client) => favoriteCodeSet(client, results.map((result) => result.hskCode)))
+        .catch(() => new Set<string>())
+      : Promise.resolve(new Set<string>())
   ]);
   const hs6DestinationTariffs = Array.from(
     new Map(
@@ -2818,6 +2841,7 @@ export async function HsDirectLookupPanel({
     .sort((a, b) => a.hs6.localeCompare(b.hs6));
   const hsPrefixTreeItems = buildHsPrefixTreeItems(results);
   const hs6NavigationLabelByCode = new Map(hs6NavigationItems.map((item) => [item.hs6, item.label]));
+  const hs6NavigationCountByCode = new Map(hs6NavigationItems.map((item) => [item.hs6, item.count]));
   const activeHs6 = normalizedQuery.length === 6 ? normalizedQuery : hs6NavigationItems[0]?.hs6 ?? "";
   const lookupHierarchyPath = results[0]?.hierarchyPath.filter((node) => normalizeHsInput(node.code).length <= normalizedQuery.length) ?? [];
   const supplementGuidance = shouldLookupHs && normalizedQuery.length >= 4 && normalizedQuery.length < 10
@@ -2825,11 +2849,6 @@ export async function HsDirectLookupPanel({
     : shouldLookupProduct && isWeakProductName(searchQuery)
       ? buildProductSupplementGuidance(searchQuery)
       : null;
-  const favoriteCodes = shouldLoadImportDetailData && hasSupabaseEnv()
-    ? await createSupabaseServerClient()
-      .then((client) => favoriteCodeSet(client, results.map((result) => result.hskCode)))
-      .catch(() => new Set<string>())
-    : new Set<string>();
   const favoriteReturnTo = currentHsDirectReturnTo({
     query: searchQuery,
     direction: lookupDirection,
@@ -3139,7 +3158,7 @@ export async function HsDirectLookupPanel({
                       const basicRate = importTariffs.find((tariff) => isBasicTariffLabel(displayImportTariffLabel(tariff, selectedDestinationCountry)))?.rateText ?? "-";
                       const preferentialSummary = preferentialTariffSummary(importTariffs, selectedDestinationCountry);
                       const startsHs6Group = isHsHeadingLookup && result.hs6 !== results[index - 1]?.hs6;
-                      const hs6Count = startsHs6Group ? results.filter((item) => item.hs6 === result.hs6).length : 0;
+                      const hs6Count = startsHs6Group ? hs6NavigationCountByCode.get(result.hs6) ?? 0 : 0;
                       const hs6Label = hs6NavigationLabelByCode.get(result.hs6) ?? result.koreanName;
 
                       return (

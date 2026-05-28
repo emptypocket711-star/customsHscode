@@ -1,7 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { cachedLookup, clearLookupCache, lookupCacheInternals, lookupCacheKey } from "@/server/cache/lookup-cache";
 
 describe("lookup cache", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    clearLookupCache();
+  });
+
   it("builds stable keys regardless of object key order", () => {
     expect(lookupCacheKey("hs", { b: 2, a: 1 })).toBe(lookupCacheKey("hs", { a: 1, b: 2 }));
   });
@@ -59,5 +64,34 @@ describe("lookup cache", () => {
 
     expect(decoded).toBeInstanceOf(Map);
     expect(decoded?.get("3304991000")).toEqual([{ rate: "8%" }]);
+  });
+
+  it("removes expired memory entries before serving a lookup", async () => {
+    clearLookupCache();
+    lookupCacheInternals.cacheStore.set("test:expired", { value: "old", expiresAt: 100 });
+
+    const value = await cachedLookup({
+      key: "test:fresh",
+      ttlMs: 1000,
+      now: 200,
+      load: async () => "fresh"
+    });
+
+    expect(value).toBe("fresh");
+    expect(lookupCacheInternals.cacheStore.has("test:expired")).toBe(false);
+  });
+
+  it("caps memory entries to avoid unbounded growth", async () => {
+    clearLookupCache();
+    vi.stubEnv("LOOKUP_CACHE_MAX_ENTRIES", "2");
+
+    await cachedLookup({ key: "test:first", ttlMs: 1000, load: async () => "first" });
+    await cachedLookup({ key: "test:second", ttlMs: 1000, load: async () => "second" });
+    await cachedLookup({ key: "test:third", ttlMs: 1000, load: async () => "third" });
+
+    expect(lookupCacheInternals.cacheStore.size).toBe(2);
+    expect(lookupCacheInternals.cacheStore.has("test:first")).toBe(false);
+    expect(lookupCacheInternals.cacheStore.has("test:second")).toBe(true);
+    expect(lookupCacheInternals.cacheStore.has("test:third")).toBe(true);
   });
 });

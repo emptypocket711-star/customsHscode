@@ -20,6 +20,11 @@ function shouldLogCacheEvents() {
   return process.env.LOOKUP_CACHE_DEBUG === "1" || process.env.LOOKUP_CACHE_DEBUG === "true";
 }
 
+function lookupCacheMaxEntries() {
+  const parsed = Number(process.env.LOOKUP_CACHE_MAX_ENTRIES ?? 500);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 500;
+}
+
 function cacheNamespace(key: string) {
   return key.split(":", 1)[0] || "lookup";
 }
@@ -27,6 +32,21 @@ function cacheNamespace(key: string) {
 function logCacheEvent(event: "redis-hit" | "memory-hit" | "inflight-hit" | "miss" | "set", key: string) {
   if (!shouldLogCacheEvents()) return;
   console.info("[lookup-cache]", event, { namespace: cacheNamespace(key) });
+}
+
+function pruneMemoryCache(now = Date.now()) {
+  for (const [key, entry] of cacheStore.entries()) {
+    if (entry.expiresAt <= now) {
+      cacheStore.delete(key);
+    }
+  }
+
+  const maxEntries = lookupCacheMaxEntries();
+  while (cacheStore.size > maxEntries) {
+    const oldestKey = cacheStore.keys().next().value as string | undefined;
+    if (!oldestKey) break;
+    cacheStore.delete(oldestKey);
+  }
 }
 
 function stableStringify(value: unknown): string {
@@ -99,10 +119,15 @@ export async function cachedLookup<T>({
     }
   }
 
+  pruneMemoryCache(now);
   const cached = cacheStore.get(key) as CacheEntry<T> | undefined;
   if (cached && cached.expiresAt > now) {
     logCacheEvent("memory-hit", key);
     return cached.value;
+  }
+
+  if (cached) {
+    cacheStore.delete(key);
   }
 
   const inflight = inflightStore.get(key) as Promise<T> | undefined;
@@ -115,6 +140,7 @@ export async function cachedLookup<T>({
   const promise = load()
     .then((value) => {
       cacheStore.set(key, { value, expiresAt: Date.now() + ttlMs });
+      pruneMemoryCache();
       logCacheEvent("set", key);
       if (hasUpstashRestEnv()) {
         const encoded = encodeCacheValue(value);
@@ -144,5 +170,6 @@ export const lookupCacheInternals = {
   inflightStore,
   stableStringify,
   encodeCacheValue,
-  decodeCacheValue
+  decodeCacheValue,
+  pruneMemoryCache
 };
