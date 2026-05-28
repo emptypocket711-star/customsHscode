@@ -2708,6 +2708,7 @@ export async function HsDirectLookupPanel({
   const normalizedQuery = normalizeHsInput(parsed?.success ? parsed.data.hskCode : searchQuery);
   const isHs6Lookup = normalizedQuery.length > 0 && normalizedQuery.length <= 6;
   const isHsHeadingLookup = normalizedQuery.length > 0 && normalizedQuery.length < 6;
+  const shouldLoadImportDetailData = lookupDirection === "import" && !isHs6Lookup && results.length > 0;
   const [
     productCandidateInternalTaxByHsk,
     exportDomesticResults,
@@ -2735,20 +2736,20 @@ export async function HsDirectLookupPanel({
       destinationCountry: selectedDestinationCountry,
       basisDate: resolvedBasisDate
     }),
-    internalTaxCodesForResults({
+    shouldLoadImportDetailData ? internalTaxCodesForResults({
       results,
       basisDate: resolvedBasisDate
-    }),
+    }) : Promise.resolve(new Map<string, InternalTaxCodeMatch[]>()),
     hsCodeNavigationStatsForResults({
       results,
       enabled: normalizedQuery.length > 6
     }),
-    destinationTariffsForDestinationCode({
+    showDestinationExportResults ? destinationTariffsForDestinationCode({
       queryCode: normalizedQuery,
       direction: showDestinationExportResults ? "export" : "import",
       destinationCountry: selectedDestinationCountry,
       basisDate: resolvedBasisDate
-    })
+    }) : Promise.resolve([])
   ]);
   const hs6DestinationTariffs = Array.from(
     new Map(
@@ -2768,17 +2769,24 @@ export async function HsDirectLookupPanel({
       ])
     ).values()
   );
+  const shouldLoadDestinationImportData = showDestinationExportResults && exportDestinationRows.length > 0;
+  const emptyDestinationImportData = {
+    requirementsByKey: new Map<string, ExportDestinationImportRequirementItem[]>(),
+    internalTaxesByKey: new Map<string, ExportDestinationInternalTaxItem[]>(),
+    additionalTariffsByKey: new Map<string, ExportDestinationAdditionalTariffItem[]>(),
+    tradeRemedyCasesByKey: new Map<string, ExportDestinationTradeRemedyCaseItem[]>()
+  };
   const [destinationImportData, destinationCustomsCodesByTariffKey] = await Promise.all([
-    destinationImportDataForTariffs({
+    shouldLoadDestinationImportData ? destinationImportDataForTariffs({
       tariffs: exportDestinationRows,
       basisDate: resolvedBasisDate,
       originCountryCode: selectedOriginCountry,
       selectedDestinationCountry
-    }),
-    destinationCustomsCodesForTariffs({
+    }) : Promise.resolve(emptyDestinationImportData),
+    shouldLoadDestinationImportData ? destinationCustomsCodesForTariffs({
       tariffs: exportDestinationRows,
       basisDate: resolvedBasisDate
-    })
+    }) : Promise.resolve(new Map<string, ExportDestinationCustomsCodeItem[]>())
   ]);
   const selectedDestinationHsCode = normalizeHsInput(destinationHsCode);
   const selectedDestinationRowByParam = selectedDestinationHsCode
@@ -2817,7 +2825,7 @@ export async function HsDirectLookupPanel({
     : shouldLookupProduct && isWeakProductName(searchQuery)
       ? buildProductSupplementGuidance(searchQuery)
       : null;
-  const favoriteCodes = lookupDirection === "import" && results.length && hasSupabaseEnv()
+  const favoriteCodes = shouldLoadImportDetailData && hasSupabaseEnv()
     ? await createSupabaseServerClient()
       .then((client) => favoriteCodeSet(client, results.map((result) => result.hskCode)))
       .catch(() => new Set<string>())
