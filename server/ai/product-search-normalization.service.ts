@@ -5,7 +5,7 @@ import { redactSensitiveText } from "@/server/ai/redaction";
 import { cachedLookup, lookupCacheKey } from "@/server/cache/lookup-cache";
 import { logLookupTelemetry, productInputShape } from "@/server/observability/lookup-telemetry";
 
-const productSearchNormalizationVersion = "product-search-normalization-v14";
+const productSearchNormalizationVersion = "product-search-normalization-v15";
 
 function productInputText(input: ProductHsRecommendationInput) {
   const hsCodeHints = extractHsCodeHintsFromProductInput(input);
@@ -343,12 +343,14 @@ export async function normalizeProductSearchInput(input: ProductHsRecommendation
         ...(needsClarificationFirst ? [] : acronymHints),
         ...contextHints
       ].filter((item, index, items) => items.findIndex((candidate) => candidate.code === item.code) === index).slice(0, 10);
+    const primaryCandidateCode = normalization.primaryCandidate?.code ?? "";
     const prioritizedHsCodes = prioritizePrincipalArticleHsHints({
       productInput: input,
       normalization,
       userProvidedHsCodes,
       candidateHsCodes: [
         ...userProvidedHsCodes,
+        ...(primaryCandidateCode ? [primaryCandidateCode] : []),
         ...(strictClarificationWithoutHsBoundary ? [] : normalization.candidateHsCodes),
         ...(needsClarificationFirst ? [] : acronymHints.map((hint) => hint.code)),
         ...contextHints.map((hint) => hint.code)

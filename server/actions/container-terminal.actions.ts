@@ -33,6 +33,77 @@ const pctcContainerInquiryUrl = "http://www.pctc21.com/esvc/cntr/info2/data";
 const pnctContainerInquiryUrl = "http://www.pnct.co.kr/infoservice/jsp/main/mainPage_SteveTime.jsp";
 const etransTrackingUrl = "https://etrans.klnet.co.kr/main/searchTracking.do";
 
+type ExternalLookupErrorKind = "timeout" | "network" | "http" | "unknown";
+
+class ExternalLookupError extends Error {
+  readonly kind: ExternalLookupErrorKind;
+  readonly status?: number;
+
+  constructor(message: string, kind: ExternalLookupErrorKind, status?: number) {
+    super(message);
+    this.name = "ExternalLookupError";
+    this.kind = kind;
+    this.status = status;
+  }
+}
+
+function classifyExternalLookupError(error: unknown, label: string) {
+  if (error instanceof ExternalLookupError) return error;
+
+  if (error instanceof DOMException && error.name === "TimeoutError") {
+    return new ExternalLookupError(`${label} 응답 시간이 초과되었습니다.`, "timeout");
+  }
+
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    if (error.name === "AbortError" || message.includes("timeout") || message.includes("timed out")) {
+      return new ExternalLookupError(`${label} 응답 시간이 초과되었습니다.`, "timeout");
+    }
+    if (message.includes("fetch failed") || message.includes("econnreset") || message.includes("enotfound") || message.includes("tls")) {
+      return new ExternalLookupError(`${label} 외부 사이트 연결에 실패했습니다.`, "network");
+    }
+    return new ExternalLookupError(error.message || `${label} 조회에 실패했습니다.`, "unknown");
+  }
+
+  return new ExternalLookupError(`${label} 조회에 실패했습니다.`, "unknown");
+}
+
+async function fetchExternalLookup(
+  input: string | URL,
+  init: RequestInit,
+  options: { label: string; timeoutMs: number; retries?: number }
+) {
+  const attempts = Math.max(1, (options.retries ?? 0) + 1);
+  let lastError: ExternalLookupError | null = null;
+
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      const response = await fetch(input, {
+        ...init,
+        cache: "no-store",
+        signal: AbortSignal.timeout(options.timeoutMs)
+      });
+
+      if (!response.ok) {
+        throw new ExternalLookupError(`${options.label} 응답 오류가 발생했습니다. (${response.status})`, "http", response.status);
+      }
+
+      return response;
+    } catch (error) {
+      lastError = classifyExternalLookupError(error, options.label);
+      if (lastError.kind === "http" || attempt === attempts - 1) break;
+    }
+  }
+
+  throw lastError ?? new ExternalLookupError(`${options.label} 조회에 실패했습니다.`, "unknown");
+}
+
+function externalLookupFailureMessage(error: unknown, fallback = "외부 조회에 실패했습니다.") {
+  if (error instanceof ExternalLookupError) return error.message;
+  if (error instanceof Error) return error.message || fallback;
+  return fallback;
+}
+
 export type EtransTrackingRow = {
   carCode: string;
   statusTime: string;
@@ -310,7 +381,7 @@ function mapEtransTrackingRow(row: EtransTrackingApiRow): EtransTrackingRow {
 }
 
 async function lookupEtransTracking(containerNo: string) {
-  const response = await fetch(etransTrackingUrl, {
+  const response = await fetchExternalLookup(etransTrackingUrl, {
     method: "POST",
     headers: {
       "content-type": "application/json; charset=UTF-8",
@@ -323,11 +394,7 @@ async function lookupEtransTracking(containerNo: string) {
         NOTICE_CNT: ""
       }
     }),
-    cache: "no-store",
-    signal: AbortSignal.timeout(15000)
-  });
-
-  if (!response.ok) return [];
+  }, { label: "운송현황 통합 조회", timeoutMs: 15000, retries: 1 });
 
   const json = await response.json() as EtransTrackingApiResponse;
   if (json.rsMsg?.statusCode && json.rsMsg.statusCode !== "S") return [];
@@ -376,18 +443,14 @@ async function lookupHjitTerminal(containerNo: string): Promise<TerminalLookupRe
     contPoint: ""
   });
 
-  const response = await fetch(hjitContainerInquiryUrl, {
+  const response = await fetchExternalLookup(hjitContainerInquiryUrl, {
     method: "POST",
     headers: {
       "content-type": "application/x-www-form-urlencoded",
       "user-agent": "HS Finder container terminal lookup"
     },
-    body,
-    cache: "no-store",
-    signal: AbortSignal.timeout(20000)
-  });
-
-  if (!response.ok) throw new Error(`한진인천컨테이너터미널 조회에 실패했습니다. (${response.status})`);
+    body
+  }, { label: "한진인천컨테이너터미널 조회", timeoutMs: 20000, retries: 1 });
 
   const html = decodeHtml(await response.arrayBuffer());
   const summary = extractHjitSummary(html);
@@ -410,18 +473,14 @@ async function lookupSunKwangTerminal(containerNo: string): Promise<TerminalLook
     cntrNo: containerNo
   });
 
-  const response = await fetch(snctContainerInquiryUrl, {
+  const response = await fetchExternalLookup(snctContainerInquiryUrl, {
     method: "POST",
     headers: {
       "content-type": "application/x-www-form-urlencoded",
       "user-agent": "HS Finder container terminal lookup"
     },
-    body,
-    cache: "no-store",
-    signal: AbortSignal.timeout(20000)
-  });
-
-  if (!response.ok) throw new Error(`선광신컨테이너터미널 조회에 실패했습니다. (${response.status})`);
+    body
+  }, { label: "선광신컨테이너터미널 조회", timeoutMs: 20000, retries: 1 });
 
   const html = decodeEucKrHtml(await response.arrayBuffer());
   const summary = extractSunKwangSummary(html);
@@ -443,18 +502,14 @@ async function lookupIctTerminal(containerNo: string): Promise<TerminalLookupRes
     contNo: containerNo
   });
 
-  const response = await fetch(ictContainerInquiryUrl, {
+  const response = await fetchExternalLookup(ictContainerInquiryUrl, {
     method: "POST",
     headers: {
       "content-type": "application/x-www-form-urlencoded",
       "user-agent": "HS Finder container terminal lookup"
     },
-    body,
-    cache: "no-store",
-    signal: AbortSignal.timeout(20000)
-  });
-
-  if (!response.ok) throw new Error(`인천컨테이너터미널 조회에 실패했습니다. (${response.status})`);
+    body
+  }, { label: "인천컨테이너터미널 조회", timeoutMs: 20000, retries: 1 });
 
   const html = decodeEucKrHtml(await response.arrayBuffer());
   const summary = extractIctSummary(html);
@@ -528,19 +583,16 @@ function ifpcContainerXml(containerNo: string, sqlId: string, dup = "") {
 }
 
 async function fetchIfpcNexacro(path: string, body: string, cookie?: string) {
-  const response = await fetch(`${ifpcNexacroUrl}${path}`, {
+  const response = await fetchExternalLookup(`${ifpcNexacroUrl}${path}`, {
     method: "POST",
     headers: {
       "content-type": "text/xml; charset=UTF-8",
       "user-agent": "HS Finder container terminal lookup",
       ...(cookie ? { cookie } : {})
     },
-    body,
-    cache: "no-store",
-    signal: AbortSignal.timeout(20000)
-  });
+    body
+  }, { label: "인천항국제페리부두 조회", timeoutMs: 20000, retries: 1 });
 
-  if (!response.ok) throw new Error(`인천항국제페리부두 조회에 실패했습니다. (${response.status})`);
   return {
     cookie: response.headers.get("set-cookie")?.split(";")[0] ?? cookie ?? "",
     text: await response.text()
@@ -630,16 +682,12 @@ async function lookupBnctTerminal(containerNo: string): Promise<TerminalLookupRe
   const url = new URL(bnctContainerInquiryUrl);
   url.searchParams.set("CNTR_NO", containerNo);
 
-  const response = await fetch(url, {
+  const response = await fetchExternalLookup(url, {
     headers: {
       accept: "application/json",
       "user-agent": "HS Finder container terminal lookup"
-    },
-    cache: "no-store",
-    signal: AbortSignal.timeout(20000)
-  });
-
-  if (!response.ok) throw new Error(`BNCT 조회에 실패했습니다. (${response.status})`);
+    }
+  }, { label: "BNCT 조회", timeoutMs: 20000, retries: 1 });
 
   const json = await response.json() as BnctContainerResponse;
   const info = json.cntrInfo?.find((item) => recordValue(item, ["CNTR_NO"]).toUpperCase() === containerNo)
@@ -682,16 +730,12 @@ async function lookupPctcTerminal(containerNo: string): Promise<TerminalLookupRe
   url.searchParams.set("vesselVoyage", "");
   url.searchParams.set("CNTR_UID", "");
 
-  const response = await fetch(url, {
+  const response = await fetchExternalLookup(url, {
     headers: {
       accept: "application/json",
       "user-agent": "HS Finder container terminal lookup"
-    },
-    cache: "no-store",
-    signal: AbortSignal.timeout(20000)
-  });
-
-  if (!response.ok) throw new Error(`평택컨테이너터미널 조회에 실패했습니다. (${response.status})`);
+    }
+  }, { label: "평택컨테이너터미널 조회", timeoutMs: 20000, retries: 1 });
 
   const json = await response.json() as PctcContainerResponse;
   const info = json.info;
@@ -741,15 +785,11 @@ async function lookupPnctTerminal(containerNo: string): Promise<TerminalLookupRe
   const url = new URL(pnctContainerInquiryUrl);
   url.searchParams.set("cntrNo", containerNo);
 
-  const response = await fetch(url, {
+  const response = await fetchExternalLookup(url, {
     headers: {
       "user-agent": "HS Finder container terminal lookup"
-    },
-    cache: "no-store",
-    signal: AbortSignal.timeout(20000)
-  });
-
-  if (!response.ok) throw new Error(`평택동방아이포트 조회에 실패했습니다. (${response.status})`);
+    }
+  }, { label: "평택동방아이포트 조회", timeoutMs: 20000, retries: 1 });
 
   const html = decodeEucKrHtml(await response.arrayBuffer());
   const summary = extractPnctSummary(html);
@@ -789,7 +829,7 @@ async function lookupKnownTerminals(containerNo: string, order: TerminalCode[], 
       if (result.hasResult) return result;
       errors.push(`${result.terminalName}: 조회 결과 없음`);
     } catch (error) {
-      errors.push(error instanceof Error ? error.message : `${terminal} 조회 실패`);
+      errors.push(externalLookupFailureMessage(error, `${terminal} 조회 실패`));
     }
   }
 
@@ -811,14 +851,18 @@ export async function lookupHjitContainerAction(
   }
 
   let trackingRows: EtransTrackingRow[] = [];
+  let trackingLookupNotice: string | undefined;
   try {
     trackingRows = await lookupEtransTracking(containerNo);
-  } catch {
+  } catch (error) {
     trackingRows = [];
+    trackingLookupNotice = externalLookupFailureMessage(error, "운송현황 통합 조회에 실패했습니다.");
   }
 
   const topTrackingRow = trackingRows[0];
-  const notice = topTrackingNotice(topTrackingRow) ?? noEtransResultNotice(trackingRows);
+  const notice = [trackingLookupNotice, topTrackingNotice(topTrackingRow) ?? (trackingLookupNotice ? undefined : noEtransResultNotice(trackingRows))]
+    .filter(Boolean)
+    .join(" ");
   const terminalOrder = preferredTerminalOrder(topTrackingRow);
 
   try {
