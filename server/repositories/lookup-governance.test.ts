@@ -178,7 +178,7 @@ describe("lookup governance guards", () => {
     const containerReceiptRoute = read("app/api/external/container-receipt/route.ts");
     const terminalHelperRoute = read("app/api/external/hjit-container/route.ts");
 
-    for (const path of ["/login", "/auth", "/hs", "/documents", "/duty-estimator"]) {
+    for (const path of ["/login", "/auth", "/hs", "/documents", "/duty-estimator", "/cargo", "/used-car-export"]) {
       expect(proxy, `${path} must be covered by proxy rate limiting`).toContain(path);
     }
 

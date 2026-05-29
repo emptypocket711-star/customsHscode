@@ -23,6 +23,14 @@ function limitForPath(pathname: string) {
     return { scope: "duty", limit: 90, windowMs: 60_000 };
   }
 
+  if (pathname.startsWith("/cargo")) {
+    return { scope: "cargo", limit: 80, windowMs: 60_000 };
+  }
+
+  if (pathname.startsWith("/used-car-export")) {
+    return { scope: "used-car-export", limit: 60, windowMs: 60_000 };
+  }
+
   return null;
 }
 
@@ -63,5 +71,13 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/auth/:path*", "/login", "/hs/:path*", "/documents/:path*", "/duty-estimator/:path*"]
+  matcher: [
+    "/auth/:path*",
+    "/login",
+    "/hs/:path*",
+    "/documents/:path*",
+    "/duty-estimator/:path*",
+    "/cargo/:path*",
+    "/used-car-export/:path*"
+  ]
 };

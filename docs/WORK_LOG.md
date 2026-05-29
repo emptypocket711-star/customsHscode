@@ -581,3 +581,15 @@
 - `npm run typecheck`
 - `npm run lint`
 - `npm test -- server/services/cargo-status-classifier.test.ts`
+
+### 외부 조회 화면 rate limit 보강
+
+- 관세청 API001 적하목록 조회로 이어지는 `/cargo`와 터미널 외부 조회·반입계 출력으로 이어지는 `/used-car-export`를 proxy rate limit 대상에 추가했다.
+- 인증 API route 자체의 제한은 유지하되, 화면 진입 단에서도 반복 요청을 줄여 외부 사이트/API 호출 비용과 서버 부하를 낮춘다.
+- governance 테스트에 두 경로가 rate limit 대상에서 빠지지 않도록 고정했다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test -- server/repositories/lookup-governance.test.ts`
