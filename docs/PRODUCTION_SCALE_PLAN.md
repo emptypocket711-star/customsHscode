@@ -164,7 +164,7 @@ For product-name search at scale, add `pg_trgm` indexes on Korean and English na
 
 Implemented MVP fallback:
 
-- `proxy.ts` applies per-IP route limits to `/hs`, `/documents`, and `/duty-estimator`.
+- `proxy.ts` applies per-IP route limits to `/hs`, `/documents`, `/duty-estimator`, `/cargo`, and `/used-car-export`.
 - The default is active in production and disabled in local development unless `RATE_LIMIT_ENABLED=true`.
 - If Upstash REST environment variables are configured, counters are shared across server instances.
 - Without Upstash, the store is in-memory, so it is a per-instance safety guard only.
