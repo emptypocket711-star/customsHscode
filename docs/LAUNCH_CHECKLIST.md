@@ -21,6 +21,7 @@
 ## 환경변수
 
 - `.env.local`은 Git에 올리지 않는다.
+- 배포 전 `npm run health:env`로 필수 환경변수 누락이 없는지 확인한다.
 - Vercel 환경변수에 Supabase URL, anon key, service role key, OpenAI API key, 관세청 API key를 직접 등록한다.
 - service role key는 서버 전용 코드에서만 사용한다.
 - 클라이언트 로그에 API key, 인보이스 원문, 개인정보, 원문 파일 경로를 남기지 않는다.
@@ -46,6 +47,7 @@
 
 ## 배포 전 검증
 
+- `npm run health`
 - `npm run typecheck`
 - `npm run lint`
 - `npm test`
@@ -58,4 +60,5 @@
 - 수동 확인: 일반 사용자는 문서 업로드 기능 대신 준비 중 안내만 볼 수 있고, 개발자만 내부 테스트 패널에 접근할 수 있다.
 - AI 출력이 품목분류나 법령 적용을 확정 표현하지 않는지 확인한다.
 - 수입/수출 모드가 서로 다른 화면과 데이터 범위를 쓰는지 확인한다.
+- 배포 후 `npm run smoke:production -- https://hsfinder.co.kr`로 로그인 가드와 핵심 route 상태를 확인한다.
 - 배포 절차는 [DEPLOYMENT_RUNBOOK.md](./DEPLOYMENT_RUNBOOK.md)를 따른다.

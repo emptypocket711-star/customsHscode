@@ -202,6 +202,12 @@ export function getEnvironmentHealthGroups(): EnvironmentHealthGroup[] {
       description: "무역뉴스 페이지에서 공공데이터 기반 원문과 요약 카드를 가져오는 설정입니다.",
       items: [
         envItem({
+          key: "KOTRA_OPENAPI_SERVICE_KEY",
+          label: "KOTRA 공통 OpenAPI key",
+          description: "KOTRA 해외시장뉴스, 미국 글로벌 이슈, 무역사기 사례 API에 공통으로 사용할 수 있는 인증키입니다.",
+          required: false
+        }),
+        envItem({
           key: "KOTRA_OVERSEAS_MARKET_NEWS_SERVICE_KEY",
           label: "KOTRA 해외시장뉴스 key",
           description: "KOTRA 해외시장뉴스 API 조회에 사용하는 공공데이터포털 인증키입니다.",
@@ -217,6 +223,18 @@ export function getEnvironmentHealthGroups(): EnvironmentHealthGroup[] {
           key: "KOTRA_OVERSEAS_MARKET_NEWS_ENDPOINT",
           label: "KOTRA 해외시장뉴스 endpoint",
           description: "KOTRA 해외시장뉴스 API endpoint path override입니다.",
+          required: false
+        }),
+        envItem({
+          key: "KOTRA_USA_GLOBAL_ISSUE_URL",
+          label: "KOTRA 미국 글로벌 이슈 URL",
+          description: "미국 글로벌 이슈 모니터링 API URL override입니다.",
+          required: false
+        }),
+        envItem({
+          key: "KOTRA_TRADE_FRAUD_CASE_URL",
+          label: "KOTRA 무역사기 사례 URL",
+          description: "무역사기 사례 API URL override입니다.",
           required: false
         }),
         envItem({

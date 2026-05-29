@@ -76,6 +76,12 @@ API012 관세환율도 같은 `38010` 포트를 사용하므로 운영에서는 
 - `CUSTOMS_API_EXCHANGE_RATE_RELAY_URL`
 - `CUSTOMS_API_EXCHANGE_RATE_RELAY_TOKEN`
 
+배포 전 로컬에서 필수 환경변수와 운영 DB 스키마를 함께 점검한다. 키 원문은 출력하지 않는다.
+
+```bash
+npm run health
+```
+
 ## 3. 접근 제어
 
 - 첫 화면은 `/login`으로 진입한다.

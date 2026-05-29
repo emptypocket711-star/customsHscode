@@ -15,7 +15,7 @@ npm run health:env
 - Supabase URL, anon key, service role key
 - AI 품명검색 provider, OpenAI key, model
 - 관세청 OpenAPI, relay, 장치장 key
-- KOTRA 무역뉴스 API
+- KOTRA 공통 OpenAPI key와 무역뉴스 API URL
 - Resend 알림 메일과 background job secret
 - route rate limit, 반입계 출력, 터미널 helper, 차량 제원조회 제한값
 

@@ -49,9 +49,12 @@ const groups = [
   {
     title: "External data and news",
     items: [
+      ["KOTRA_OPENAPI_SERVICE_KEY", false],
       ["KOTRA_OVERSEAS_MARKET_NEWS_SERVICE_KEY", false],
       ["KOTRA_OVERSEAS_MARKET_NEWS_URL", false],
       ["KOTRA_OVERSEAS_MARKET_NEWS_ENDPOINT", false],
+      ["KOTRA_USA_GLOBAL_ISSUE_URL", false],
+      ["KOTRA_TRADE_FRAUD_CASE_URL", false],
       ["PUBLIC_DATA_REQUEST_TIMEOUT_MS", false]
     ]
   },
