@@ -15,6 +15,10 @@
     "ops:vercel:logs": "vercel logs hsfinder.co.kr --limit 50",
     "ops:vercel:env": "vercel env ls",
     "ops:vercel:deployments": "vercel ls",
+    "ops:job:cargo-watch": "node scripts/run_protected_job.mjs cargo-watch",
+    "ops:job:exchange-rates": "node scripts/run_protected_job.mjs exchange-rates",
+    "ops:job:trade-news": "node scripts/run_protected_job.mjs trade-news",
+    "ops:job:background": "node scripts/run_protected_job.mjs run",
     "db:generate-api018": "python3 scripts/generate_customs_hs_code_search_seed.py",
     "db:refresh-dashboard-metrics": "psql \"$DATABASE_URL\" -f scripts/refresh_dashboard_metrics.sql",
     "db:apply-lookup-seeds": "scripts/apply_lookup_seed_bundle.sh"

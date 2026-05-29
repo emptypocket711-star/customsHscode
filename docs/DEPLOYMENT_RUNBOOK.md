@@ -119,6 +119,21 @@ vercel inspect <deployment-url>
 
 KOTRA 해외시장뉴스 URL은 정상 이름 `KOTRA_OVERSEAS_MARKET_NEWS_URL`을 사용한다. 과거 오타 값 `OTRA_OVERSEAS_MARKET_NEWS_URL`은 코드에서 fallback으로만 호환한다.
 
+보호된 운영 job을 수동 실행할 때는 로컬 셸에 `JOB_WORKER_SECRET` 또는 `CRON_SECRET`을 넣고 실행한다. 비밀값은 커밋하지 않는다.
+
+```bash
+JOB_WORKER_SECRET='...' npm run ops:job:cargo-watch
+JOB_WORKER_SECRET='...' npm run ops:job:exchange-rates
+JOB_WORKER_SECRET='...' npm run ops:job:trade-news
+JOB_WORKER_SECRET='...' npm run ops:job:background
+```
+
+`OPERATIONS_BASE_URL`을 지정하면 다른 배포 URL에도 호출할 수 있다.
+
+```bash
+OPERATIONS_BASE_URL='https://customs-hscode-....vercel.app' JOB_WORKER_SECRET='...' npm run ops:job:trade-news
+```
+
 ## 6. 롤백
 
 - Vercel 배포 목록에서 직전 성공 배포로 rollback한다.
