@@ -56,6 +56,7 @@ export type CargoDictionary = {
   status: {
     active: string;
     cancelled: string;
+    checking: string;
     error: string;
     matched: string;
     paused: string;
@@ -148,6 +149,7 @@ const dictionaries = {
     status: {
       active: "감시중",
       cancelled: "감시 해제",
+      checking: "확인중",
       error: "오류",
       matched: "메일 발송 완료",
       paused: "일시중지"
@@ -238,6 +240,7 @@ const dictionaries = {
     status: {
       active: "Watching",
       cancelled: "Cancelled",
+      checking: "Checking",
       error: "Error",
       matched: "Email sent",
       paused: "Paused"
@@ -328,6 +331,7 @@ const dictionaries = {
     status: {
       active: "监控中",
       cancelled: "已解除",
+      checking: "检查中",
       error: "错误",
       matched: "邮件已发送",
       paused: "暂停"

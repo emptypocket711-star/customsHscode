@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { requireDeveloperRole } from "@/server/auth/role-guard";
 import { getEnvironmentHealthGroups, type EnvironmentHealthItem } from "@/server/operations/environment-health.service";
+import { getProductionSchemaHealthReport } from "@/server/operations/schema-health.service";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import {
   isLookupTelemetryIssue,
@@ -74,13 +75,18 @@ export default async function OperationsHealthPage() {
   }
 
   const groups = getEnvironmentHealthGroups();
-  const lookupTelemetryEvents = await loadLookupTelemetryEvents();
+  const [lookupTelemetryEvents, schemaHealthReport] = await Promise.all([
+    loadLookupTelemetryEvents(),
+    getProductionSchemaHealthReport()
+  ]);
   const lookupIssueCount = lookupTelemetryEvents.filter(isLookupTelemetryIssue).length;
   const lookupSuccessCount = lookupTelemetryEvents.length - lookupIssueCount;
   const zeroResultCount = lookupTelemetryEvents.filter((event) => event.resultCount === 0).length;
   const items = groups.flatMap((group) => group.items);
   const missingRequiredCount = items.filter((item) => item.status === "missing").length;
   const configuredCount = items.filter((item) => item.status === "ok").length;
+  const schemaStatusTone = schemaHealthReport.status === "ok" ? "success" : "warning";
+  const schemaStatusLabel = schemaHealthReport.status === "ok" ? "정상" : schemaHealthReport.status === "warn" ? "주의" : "차단";
 
   return (
     <div className="grid gap-5">
@@ -115,6 +121,66 @@ export default async function OperationsHealthPage() {
           </CardBody>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader
+          title="운영 DB 스키마 점검"
+          description="현재 migration 파일 기준으로 운영 Supabase의 테이블, 컬럼, RPC/function, RLS 상태를 대조합니다."
+          action={<Badge tone={schemaStatusTone}>{schemaStatusLabel}</Badge>}
+        />
+        <CardBody className="p-0">
+          <div className="grid gap-2 border-b border-slate-200 bg-slate-50 p-3 text-sm md:grid-cols-4">
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">테이블</p>
+              <p className="mt-1 font-semibold text-slate-950">{schemaHealthReport.summary.actualTables}/{schemaHealthReport.summary.expectedTables}</p>
+            </div>
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">컬럼 점검</p>
+              <p className="mt-1 font-semibold text-slate-950">{schemaHealthReport.summary.expectedColumns}</p>
+            </div>
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">RPC/function</p>
+              <p className="mt-1 font-semibold text-slate-950">{schemaHealthReport.summary.actualFunctions}/{schemaHealthReport.summary.expectedFunctions}</p>
+            </div>
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">문제</p>
+              <p className={schemaHealthReport.summary.blockerCount > 0 ? "mt-1 font-semibold text-red-700" : "mt-1 font-semibold text-emerald-700"}>
+                차단 {schemaHealthReport.summary.blockerCount} / 주의 {schemaHealthReport.summary.warnCount}
+              </p>
+            </div>
+          </div>
+          {schemaHealthReport.issues.length ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-[920px] text-left text-sm">
+                <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
+                  <tr>
+                    <th className="px-5 py-3">등급</th>
+                    <th className="px-5 py-3">대상</th>
+                    <th className="px-5 py-3">내용</th>
+                    <th className="px-5 py-3">관련 migration</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {schemaHealthReport.issues.map((issue) => (
+                    <tr key={`${issue.type}-${issue.objectName}`}>
+                      <td className="px-5 py-4">
+                        <Badge tone="warning">{issue.severity === "blocker" ? "차단" : "주의"}</Badge>
+                      </td>
+                      <td className="px-5 py-4 font-mono text-xs text-slate-800">{issue.objectName}</td>
+                      <td className="px-5 py-4 text-slate-700">{issue.message}</td>
+                      <td className="px-5 py-4 font-mono text-xs text-slate-500">{issue.file}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="p-5 text-sm text-emerald-700">
+              운영 DB 스키마가 현재 migration 기준과 일치합니다. 최근 점검: {formatDate(schemaHealthReport.checkedAt)}
+            </div>
+          )}
+        </CardBody>
+      </Card>
 
       <Card>
         <CardHeader

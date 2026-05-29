@@ -48,7 +48,7 @@ export type CargoWatchListItem = {
 };
 
 function ActiveWatchRows({ dictionary, watches }: { dictionary: CargoDictionary; watches: CargoWatchListItem[] }) {
-  const activeWatches = watches.filter((watch) => watch.status === "active");
+  const activeWatches = watches.filter((watch) => watch.status === "active" || watch.status === "checking");
   if (!activeWatches.length) return null;
 
   return (
@@ -89,6 +89,7 @@ function ActiveWatchRows({ dictionary, watches }: { dictionary: CargoDictionary;
 
 function cargoWatchStatusLabel(status: string, dictionary: CargoDictionary) {
   if (status === "active") return dictionary.status.active;
+  if (status === "checking") return dictionary.status.checking;
   if (status === "matched") return dictionary.status.matched;
   if (status === "cancelled") return dictionary.status.cancelled;
   if (status === "paused") return dictionary.status.paused;
