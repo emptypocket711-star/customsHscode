@@ -14,6 +14,20 @@ type TerminalCode = "hjit" | "snct" | "ifpc" | "ict" | "bnct" | "pctc" | "pnct";
 
 const receiptViewport = { width: 1680, height: 1050 };
 
+type ReceiptReadinessState = Awaited<ReturnType<typeof receiptReadiness>>;
+
+class ReceiptScreenNotReadyError extends Error {
+  readonly readiness: ReceiptReadinessState;
+  readonly minPopulatedFields: number;
+
+  constructor(message: string, readiness: ReceiptReadinessState, minPopulatedFields: number) {
+    super(message);
+    this.name = "ReceiptScreenNotReadyError";
+    this.readiness = readiness;
+    this.minPopulatedFields = minPopulatedFields;
+  }
+}
+
 function normalizeTerminalCode(value: unknown): TerminalCode | "" {
   return value === "hjit" || value === "snct" || value === "ifpc" || value === "ict" || value === "bnct" || value === "pctc" || value === "pnct"
     ? value
@@ -119,13 +133,47 @@ async function waitForReceiptScreenReady(
     await page.waitForTimeout(1000);
   }
 
-  throw new Error([
+  throw new ReceiptScreenNotReadyError([
     "터미널 조회 화면이 아직 캡처 가능한 상태가 아닙니다.",
     lastReady.isHelperPage ? "조회 이동 안내 화면에 머물러 있습니다." : "",
     lastReady.hasLoadingOverlay ? "외부 사이트 로딩 화면이 남아 있습니다." : "",
     !lastReady.hasContainerNo ? "조회 화면에서 컨테이너 번호를 확인하지 못했습니다." : "",
     lastReady.populatedFieldCount < minPopulatedFields ? "조회 상세 필드가 아직 채워지지 않았습니다." : ""
-  ].filter(Boolean).join(" "));
+  ].filter(Boolean).join(" "), lastReady, minPopulatedFields);
+}
+
+function terminalCaptureFailure(error: unknown) {
+  if (error instanceof ReceiptScreenNotReadyError) {
+    if (error.readiness.isHelperPage) {
+      return {
+        code: "terminal_helper_page_stalled",
+        message: "터미널 조회 화면으로 이동하지 못했습니다. 원사이트 열기로 직접 조회해 주세요."
+      };
+    }
+    if (error.readiness.hasLoadingOverlay) {
+      return {
+        code: "terminal_loading_not_settled",
+        message: "터미널 조회 화면의 로딩이 끝나지 않았습니다. 잠시 후 다시 시도해 주세요."
+      };
+    }
+    if (!error.readiness.hasContainerNo) {
+      return {
+        code: "terminal_container_not_confirmed",
+        message: "터미널 조회 화면에서 컨테이너 번호를 확인하지 못했습니다. 컨테이너 번호와 터미널을 확인해 주세요."
+      };
+    }
+    if (error.readiness.populatedFieldCount < error.minPopulatedFields) {
+      return {
+        code: "terminal_detail_not_populated",
+        message: "터미널 상세 정보가 아직 채워지지 않았습니다. 잠시 후 다시 시도해 주세요."
+      };
+    }
+  }
+
+  return {
+    code: "terminal_capture_failed",
+    message: "터미널 원문 화면을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요."
+  };
 }
 
 async function captureLiveTerminal(page: Page, request: Request, terminalCode: TerminalCode, containerNo: string) {
@@ -241,15 +289,17 @@ export async function POST(request: Request) {
     try {
       await captureLiveTerminal(page, request, terminalCode, containerNo);
     } catch (error) {
+      const failure = terminalCaptureFailure(error);
       console.warn("[container-receipt] terminal capture failed", {
         terminalCode,
+        code: failure.code,
         containerNo,
         message: error instanceof Error ? error.message : "unknown"
       });
       return externalIntegrationErrorResponse({
-        code: "terminal_capture_failed",
+        code: failure.code,
         level: "external_unavailable",
-        message: "터미널 원문 화면을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.",
+        message: failure.message,
         status: 502
       });
     }

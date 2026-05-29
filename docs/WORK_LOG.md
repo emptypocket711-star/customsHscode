@@ -721,3 +721,14 @@
 - `npm test -- server/observability/lookup-telemetry.test.ts server/rules/hs-candidate.service.test.ts`
 - `npm run typecheck`
 - `npm run lint`
+
+### 반입계 출력 실패 원인 분류 보강
+
+- 반입계 출력 중 터미널 화면이 캡처 가능한 상태가 아닐 때 원인을 세분화했다.
+- helper 화면 정체, 외부 사이트 로딩 미종료, 컨테이너 번호 미확인, 상세 필드 미채움 상태를 각각 다른 오류 코드와 사용자 문구로 반환한다.
+- 서버 로그에도 터미널 코드와 원인 코드를 함께 남겨 운영에서 반복 실패 유형을 구분할 수 있게 했다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
