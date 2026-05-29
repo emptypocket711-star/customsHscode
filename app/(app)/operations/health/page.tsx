@@ -19,6 +19,11 @@ const dateFormatter = new Intl.DateTimeFormat("ko-KR", {
   timeStyle: "medium",
   timeZone: "Asia/Seoul"
 });
+const dayFormatter = new Intl.DateTimeFormat("ko-KR", {
+  month: "2-digit",
+  day: "2-digit",
+  timeZone: "Asia/Seoul"
+});
 
 function statusLabel(status: EnvironmentHealthItem["status"]) {
   if (status === "ok") return "정상";
@@ -118,6 +123,37 @@ function formatCandidateCounts(event: LookupTelemetryEvent) {
   return { hs4, hs6, hsk10, finalHs6, finalHsk10 };
 }
 
+function summarizeLookupTelemetryByDay(events: LookupTelemetryEvent[]) {
+  const rows = new Map<string, {
+    day: string;
+    total: number;
+    issues: number;
+    zeroResults: number;
+    gptFailures: number;
+    hs6Only: number;
+  }>();
+
+  for (const event of events) {
+    const day = dayFormatter.format(new Date(event.createdAt));
+    const current = rows.get(day) ?? {
+      day,
+      total: 0,
+      issues: 0,
+      zeroResults: 0,
+      gptFailures: 0,
+      hs6Only: 0
+    };
+    current.total += 1;
+    current.issues += isLookupTelemetryIssue(event) ? 1 : 0;
+    current.zeroResults += event.resultCount === 0 ? 1 : 0;
+    current.gptFailures += payloadString(event.payload, "normalizationStatus") === "failed" ? 1 : 0;
+    current.hs6Only += payloadString(event.payload, "candidateQualityType") === "hs6_only_provisional" ? 1 : 0;
+    rows.set(day, current);
+  }
+
+  return [...rows.values()].slice(0, 5);
+}
+
 async function loadLookupTelemetryEvents() {
   if (!hasSupabaseEnv()) return [];
 
@@ -142,6 +178,7 @@ export default async function OperationsHealthPage() {
   const zeroResultCount = lookupTelemetryEvents.filter((event) => event.resultCount === 0).length;
   const lookupDiagnosisSummary = summarizeLookupTelemetryDiagnostics(lookupTelemetryEvents);
   const lookupIssueSummary = lookupDiagnosisSummary.filter((item) => item.issueCount > 0).slice(0, 4);
+  const lookupDailySummary = summarizeLookupTelemetryByDay(lookupTelemetryEvents);
   const items = groups.flatMap((group) => group.items);
   const missingRequiredCount = items.filter((item) => item.status === "missing").length;
   const configuredCount = items.filter((item) => item.status === "ok").length;
@@ -274,6 +311,23 @@ export default async function OperationsHealthPage() {
                         <Badge tone="warning">{summary.issueCount}건</Badge>
                       </div>
                       <p className="mt-1 text-xs leading-5 text-amber-900">{summary.action}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              {lookupDailySummary.length ? (
+                <div className="grid gap-2 border-b border-slate-200 bg-slate-50 p-3 text-sm md:grid-cols-5">
+                  {lookupDailySummary.map((summary) => (
+                    <div className="rounded-md border border-slate-200 bg-white px-3 py-2" key={summary.day}>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs font-semibold text-slate-500">{summary.day}</p>
+                        <Badge tone={summary.issues > 0 ? "warning" : "success"}>{summary.issues}건 점검</Badge>
+                      </div>
+                      <p className="mt-2 text-xs leading-5 text-slate-600">
+                        전체 {summary.total} · 무결과 {summary.zeroResults}
+                        <br />
+                        GPT 실패 {summary.gptFailures} · HS6 예비 {summary.hs6Only}
+                      </p>
                     </div>
                   ))}
                 </div>
