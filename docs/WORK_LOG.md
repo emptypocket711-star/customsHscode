@@ -698,3 +698,14 @@
 - `npm test -- server/rules/hs-candidate.service.test.ts`
 - `npm run typecheck`
 - `npm run lint`
+
+### 대시보드 이동 진행 표시 보강
+
+- 대시보드의 해외 HS 검색 탭, 업무 바로가기 카드, 최근 조회, 즐겨찾기, 적하목록 감시 목록 이동에 전역 진행 표시 라벨을 추가했다.
+- 예상납세액 계산기에서 HS CODE 조회 화면으로 이동하는 버튼에도 진행 표시 라벨을 추가했다.
+- 사용자가 카드나 목록을 클릭했을 때 결과 화면이 열리기 전까지 작업 중 상태를 더 명확히 볼 수 있게 했다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`

@@ -134,7 +134,7 @@ export function DashboardWorkflowLinks({ locale }: { locale: AppLocale }) {
         {selectedLinks.map((workflow) => {
           const Icon = iconById[workflow.id] ?? FileSearch;
           return (
-            <Link className="focus-ring group grid min-h-[132px] gap-3 rounded-lg border border-[var(--border-subtle)] bg-white p-4 transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md" href={workflow.href} key={workflow.href}>
+            <Link className="focus-ring group grid min-h-[132px] gap-3 rounded-lg border border-[var(--border-subtle)] bg-white p-4 transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md" data-navigation-progress={dictionary.items[workflow.id].title} href={workflow.href} key={workflow.href}>
               <span className={`grid size-10 place-items-center rounded-md ring-1 ${toneClass(workflow.tone)}`}>
                 <Icon aria-hidden="true" size={19} />
               </span>

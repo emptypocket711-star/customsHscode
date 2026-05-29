@@ -218,7 +218,7 @@ export function DutyEstimatorPanel({ dictionary }: { dictionary: DutyEstimatorDi
                     {dictionary.form.hskLookup}
                   </button>
                 ) : (
-                  <Link className="focus-ring inline-flex items-center justify-center gap-2 self-end rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" href={lookupHref}>
+                  <Link className="focus-ring inline-flex items-center justify-center gap-2 self-end rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" data-navigation-progress={dictionary.form.hskLookup} href={lookupHref}>
                     <Search aria-hidden="true" size={17} />
                     {dictionary.form.hskLookup}
                   </Link>

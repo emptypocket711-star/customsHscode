@@ -96,7 +96,7 @@ export function DashboardHome({
             <div className="flex gap-6 border-b border-[var(--border-subtle)] text-sm font-semibold text-[var(--text-secondary)]">
               <span className="border-b-2 border-blue-700 px-2 pb-3 text-blue-700">{dictionary.lookup.hsDirect}</span>
               <span className="px-2 pb-3">{dictionary.lookup.productAi}</span>
-              <Link className="px-2 pb-3 hover:text-blue-700" href="/hs/overseas">{dictionary.lookup.overseasHs}</Link>
+              <Link className="px-2 pb-3 hover:text-blue-700" data-navigation-progress={dictionary.lookup.overseasHs} href="/hs/overseas">{dictionary.lookup.overseasHs}</Link>
             </div>
             <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(280px,1fr)_160px_220px_120px] lg:items-end">
               <label className="grid min-w-0 gap-1.5">
@@ -212,7 +212,7 @@ function DashboardListCard({
       </div>
       <div className="divide-y divide-[var(--border-subtle)] px-4">
         {items.length ? items.map((item) => (
-          <Link className="focus-ring flex items-center justify-between gap-3 py-3 text-sm" href={item.href} key={`${item.title}-${item.subtitle}`}>
+          <Link className="focus-ring flex items-center justify-between gap-3 py-3 text-sm" data-navigation-progress={item.title} href={item.href} key={`${item.title}-${item.subtitle}`}>
             <span className="min-w-0">
               <span className="block font-mono font-semibold text-blue-700">{item.title}</span>
               <span className="mt-0.5 block truncate text-xs text-[var(--text-secondary)]">{item.subtitle}</span>
