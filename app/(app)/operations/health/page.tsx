@@ -62,6 +62,62 @@ function payloadValue(payload: Record<string, unknown>, key: string) {
   return typeof value === "boolean" ? (value ? "Y" : "N") : String(value);
 }
 
+function payloadNumber(payload: Record<string, unknown>, key: string) {
+  const value = payload[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function payloadString(payload: Record<string, unknown>, key: string) {
+  const value = payload[key];
+  return typeof value === "string" && value.trim() ? value : null;
+}
+
+function normalizationStatusLabel(status: string | null) {
+  if (status === "success") return "GPT 응답";
+  if (status === "failed") return "GPT 실패";
+  if (status === "skipped") return "GPT 미사용";
+  return status ?? "-";
+}
+
+function normalizationStatusTone(status: string | null) {
+  if (status === "success") return "success";
+  if (status === "failed") return "warning";
+  return "neutral";
+}
+
+function candidateQualityLabel(value: string | null) {
+  const labels: Record<string, string> = {
+    hsk10_candidates: "10자리 후보",
+    hs6_only_provisional: "HS6 예비",
+    non_hsk10_candidates: "10자리 미확장",
+    no_candidates: "후보 없음"
+  };
+
+  return value ? labels[value] ?? value : "-";
+}
+
+function lookupBasisLabel(value: string | null) {
+  const labels: Record<string, string> = {
+    ai_normalized: "GPT 판단",
+    ai_hint: "GPT 힌트",
+    official: "공식 후보",
+    fuzzy: "보정 검색",
+    local: "로컬 후보"
+  };
+
+  return value ? labels[value] ?? value : "-";
+}
+
+function formatCandidateCounts(event: LookupTelemetryEvent) {
+  const hs4 = payloadNumber(event.payload, "normalizationHs4Count") ?? 0;
+  const hs6 = payloadNumber(event.payload, "normalizationHs6Count") ?? 0;
+  const hsk10 = payloadNumber(event.payload, "normalizationHsk10Count") ?? 0;
+  const finalHs6 = payloadNumber(event.payload, "finalHs6Count") ?? 0;
+  const finalHsk10 = payloadNumber(event.payload, "finalHsk10Count") ?? 0;
+
+  return { hs4, hs6, hsk10, finalHs6, finalHsk10 };
+}
+
 async function loadLookupTelemetryEvents() {
   if (!hasSupabaseEnv()) return [];
 
@@ -223,7 +279,7 @@ export default async function OperationsHealthPage() {
                 </div>
               ) : null}
               <div className="overflow-x-auto">
-                <table className="min-w-[1120px] text-left text-sm">
+                <table className="min-w-[1320px] text-left text-sm">
                   <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
                     <tr>
                       <th className="px-5 py-3">시간</th>
@@ -231,45 +287,72 @@ export default async function OperationsHealthPage() {
                       <th className="px-5 py-3">상태</th>
                       <th className="px-5 py-3">결과</th>
                       <th className="px-5 py-3">진단</th>
+                      <th className="px-5 py-3">GPT 단계</th>
+                      <th className="px-5 py-3">후보 품질</th>
                       <th className="px-5 py-3">입력 형태</th>
                       <th className="px-5 py-3">처리</th>
                       <th className="px-5 py-3">오류</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {lookupTelemetryEvents.map((event) => (
-                      <tr key={event.id} className={isLookupTelemetryIssue(event) ? "bg-amber-50/45" : undefined}>
-                        <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-600">{formatDate(event.createdAt)}</td>
-                        <td className="px-5 py-4">
-                          <p className="font-semibold text-slate-950">{eventLabel(event.eventType)}</p>
-                          <p className="mt-1 font-mono text-xs text-slate-500">{event.sourceMode ?? payloadValue(event.payload, "provider")}</p>
-                        </td>
-                        <td className="px-5 py-4">
-                          <Badge tone={eventTone(event)}>{telemetryStatusLabel(event.status)}</Badge>
-                        </td>
-                        <td className="whitespace-nowrap px-5 py-4 text-slate-700">
-                          <span className="font-semibold text-slate-950">{event.resultCount ?? payloadValue(event.payload, "candidateCount")}</span>
-                          <span className="ml-1 text-xs text-slate-500">건</span>
-                        </td>
-                        <td className="px-5 py-4">
-                          <p className="font-semibold text-slate-800">{classifyLookupTelemetryIssue(event)}</p>
-                          <p className="mt-1 text-xs text-slate-500">
-                            AI {payloadValue(event.payload, "normalizationCandidateCount")} · 공식 {payloadValue(event.payload, "officialCandidateCount")} · 보조 {payloadValue(event.payload, "aiHintCount")}
-                          </p>
-                        </td>
-                        <td className="px-5 py-4 text-xs leading-5 text-slate-600">
-                          길이 {payloadValue(event.payload, "productNameLength")} / 토큰 {payloadValue(event.payload, "tokenCount")}
-                          <br />
-                          한글 {payloadValue(event.payload, "hasHangul")} · 영문 {payloadValue(event.payload, "hasLatin")} · 숫자 {payloadValue(event.payload, "hasDigits")}
-                        </td>
-                        <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-600">
-                          {event.durationMs ?? payloadValue(event.payload, "durationMs")}ms
-                        </td>
-                        <td className="max-w-[240px] px-5 py-4 text-xs font-medium text-slate-600">
-                          {event.errorType ?? payloadValue(event.payload, "errorType")}
-                        </td>
-                      </tr>
-                    ))}
+                    {lookupTelemetryEvents.map((event) => {
+                      const counts = formatCandidateCounts(event);
+                      const normalizationStatus = payloadString(event.payload, "normalizationStatus");
+                      const normalizationErrorType = payloadString(event.payload, "normalizationErrorType");
+                      const candidateQualityType = payloadString(event.payload, "candidateQualityType");
+                      const topLookupBasis = payloadString(event.payload, "topLookupBasis");
+                      const topHsLevel = payloadValue(event.payload, "topHsLevel");
+
+                      return (
+                        <tr key={event.id} className={isLookupTelemetryIssue(event) ? "bg-amber-50/45" : undefined}>
+                          <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-600">{formatDate(event.createdAt)}</td>
+                          <td className="px-5 py-4">
+                            <p className="font-semibold text-slate-950">{eventLabel(event.eventType)}</p>
+                            <p className="mt-1 font-mono text-xs text-slate-500">{event.sourceMode ?? payloadValue(event.payload, "provider")}</p>
+                          </td>
+                          <td className="px-5 py-4">
+                            <Badge tone={eventTone(event)}>{telemetryStatusLabel(event.status)}</Badge>
+                          </td>
+                          <td className="whitespace-nowrap px-5 py-4 text-slate-700">
+                            <span className="font-semibold text-slate-950">{event.resultCount ?? payloadValue(event.payload, "candidateCount")}</span>
+                            <span className="ml-1 text-xs text-slate-500">건</span>
+                          </td>
+                          <td className="px-5 py-4">
+                            <p className="font-semibold text-slate-800">{classifyLookupTelemetryIssue(event)}</p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              AI {payloadValue(event.payload, "normalizationCandidateCount")} · 공식 {payloadValue(event.payload, "officialCandidateCount")} · 보조 {payloadValue(event.payload, "aiHintCount")}
+                            </p>
+                          </td>
+                          <td className="px-5 py-4 text-xs leading-5 text-slate-600">
+                            <Badge tone={normalizationStatusTone(normalizationStatus)}>{normalizationStatusLabel(normalizationStatus)}</Badge>
+                            <p className="mt-2">
+                              HS4 {counts.hs4} · HS6 {counts.hs6} · 10자리 {counts.hsk10}
+                            </p>
+                            {normalizationErrorType ? (
+                              <p className="mt-1 font-medium text-amber-700">{normalizationErrorType}</p>
+                            ) : null}
+                          </td>
+                          <td className="px-5 py-4 text-xs leading-5 text-slate-600">
+                            <p className="font-semibold text-slate-800">{candidateQualityLabel(candidateQualityType)}</p>
+                            <p className="mt-1">최종 HS6 {counts.finalHs6} · 10자리 {counts.finalHsk10}</p>
+                            <p className="mt-1">
+                              1순위 {lookupBasisLabel(topLookupBasis)} · HS{topHsLevel}
+                            </p>
+                          </td>
+                          <td className="px-5 py-4 text-xs leading-5 text-slate-600">
+                            길이 {payloadValue(event.payload, "productNameLength")} / 토큰 {payloadValue(event.payload, "tokenCount")}
+                            <br />
+                            한글 {payloadValue(event.payload, "hasHangul")} · 영문 {payloadValue(event.payload, "hasLatin")} · 숫자 {payloadValue(event.payload, "hasDigits")}
+                          </td>
+                          <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-600">
+                            {event.durationMs ?? payloadValue(event.payload, "durationMs")}ms
+                          </td>
+                          <td className="max-w-[240px] px-5 py-4 text-xs font-medium text-slate-600">
+                            {event.errorType ?? payloadValue(event.payload, "errorType")}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

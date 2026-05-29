@@ -669,3 +669,14 @@
 검증:
 
 - `npm test -- server/observability/lookup-telemetry.test.ts server/rules/hs-candidate.service.test.ts`
+
+### 운영 조회 품질 로그 표시 보강
+
+- 개발자 운영 점검 화면의 최근 조회 품질 로그에 GPT 단계와 후보 품질 컬럼을 추가했다.
+- GPT 호출 성공/실패/미사용 상태, GPT 후보의 HS4/HS6/10자리 개수, 최종 HS6/10자리 개수를 원문 품명 없이 확인할 수 있게 했다.
+- 1순위 후보가 GPT 판단인지, 공식 후보인지, 어느 HS 레벨인지 표시해 품명 검색 실패 원인을 더 빠르게 분리할 수 있게 했다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
