@@ -744,3 +744,15 @@
 검증:
 
 - 문서 변경만 수행
+
+### 운영 점검 백그라운드 작업 상태 추가
+
+- `background_jobs` 최근 작업을 운영 점검 화면에 표시하도록 했다.
+- 대기, 실행 중, 재시도 대기, 최종 실패 건수를 요약하고 최근 작업의 유형, 상태, 시도 횟수, 다음 실행 시간, 오류 문구를 볼 수 있게 했다.
+- 새 테이블을 추가하지 않고 기존 `background_jobs` RLS 정책을 사용한다.
+
+검증:
+
+- `npm test -- server/repositories/background-job.repository.test.ts`
+- `npm run typecheck`
+- `npm run lint`

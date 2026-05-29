@@ -7,6 +7,11 @@ import { getEnvironmentHealthGroups, type EnvironmentHealthItem } from "@/server
 import { getProductionSchemaHealthReport } from "@/server/operations/schema-health.service";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import {
+  listRecentBackgroundJobOperations,
+  summarizeBackgroundJobOperations,
+  type BackgroundJobOperationsItem
+} from "@/server/repositories/background-job.repository";
+import {
   classifyLookupTelemetryIssue,
   isLookupTelemetryIssue,
   listRecentLookupTelemetryEvents,
@@ -55,6 +60,25 @@ function telemetryStatusLabel(status: string | null) {
   if (status === "fallback") return "Fallback";
   if (status === "error") return "오류";
   return status ?? "-";
+}
+
+function backgroundJobStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    queued: "대기",
+    running: "실행 중",
+    succeeded: "성공",
+    failed: "재시도 대기",
+    canceled: "취소",
+    dead: "최종 실패"
+  };
+
+  return labels[status] ?? status;
+}
+
+function backgroundJobStatusTone(status: string) {
+  if (status === "succeeded") return "success";
+  if (status === "failed" || status === "dead") return "warning";
+  return "neutral";
 }
 
 function eventTone(event: LookupTelemetryEvent) {
@@ -215,6 +239,13 @@ async function loadLookupTelemetryEvents() {
   return listRecentLookupTelemetryEvents(supabase, 30).catch(() => []);
 }
 
+async function loadBackgroundJobOperations() {
+  if (!hasSupabaseEnv()) return [];
+
+  const supabase = await createSupabaseServerClient();
+  return listRecentBackgroundJobOperations(supabase, 20).catch(() => []);
+}
+
 export default async function OperationsHealthPage() {
   const guard = await requireDeveloperRole();
 
@@ -223,8 +254,9 @@ export default async function OperationsHealthPage() {
   }
 
   const groups = getEnvironmentHealthGroups();
-  const [lookupTelemetryEvents, schemaHealthReport] = await Promise.all([
+  const [lookupTelemetryEvents, backgroundJobs, schemaHealthReport] = await Promise.all([
     loadLookupTelemetryEvents(),
+    loadBackgroundJobOperations(),
     getProductionSchemaHealthReport()
   ]);
   const lookupIssueCount = lookupTelemetryEvents.filter(isLookupTelemetryIssue).length;
@@ -234,6 +266,7 @@ export default async function OperationsHealthPage() {
   const lookupIssueSummary = lookupDiagnosisSummary.filter((item) => item.issueCount > 0).slice(0, 4);
   const lookupDailySummary = summarizeLookupTelemetryByDay(lookupTelemetryEvents);
   const lookupRouteSummary = summarizeLookupTelemetryByRoute(lookupTelemetryEvents);
+  const backgroundJobSummary = summarizeBackgroundJobOperations(backgroundJobs);
   const items = groups.flatMap((group) => group.items);
   const missingRequiredCount = items.filter((item) => item.status === "missing").length;
   const configuredCount = items.filter((item) => item.status === "ok").length;
@@ -329,6 +362,75 @@ export default async function OperationsHealthPage() {
           ) : (
             <div className="p-5 text-sm text-emerald-700">
               운영 DB 스키마가 현재 migration 기준과 일치합니다. 최근 점검: {formatDate(schemaHealthReport.checkedAt)}
+            </div>
+          )}
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="백그라운드 작업 상태"
+          description="문서 추출, 소스 수집, 보고서 생성처럼 웹 요청에서 분리되는 작업의 최근 상태를 확인합니다."
+          action={<Badge tone={backgroundJobSummary.dead > 0 || backgroundJobSummary.failed > 0 ? "warning" : "success"}>점검 대상 {backgroundJobSummary.failed + backgroundJobSummary.dead}건</Badge>}
+        />
+        <CardBody className="p-0">
+          <div className="grid gap-2 border-b border-slate-200 bg-slate-50 p-3 text-sm md:grid-cols-5">
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">최근 작업</p>
+              <p className="mt-1 font-semibold text-slate-950">{backgroundJobSummary.total}건</p>
+            </div>
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">대기</p>
+              <p className="mt-1 font-semibold text-slate-950">{backgroundJobSummary.queued}건</p>
+            </div>
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">실행 중</p>
+              <p className="mt-1 font-semibold text-blue-700">{backgroundJobSummary.running}건</p>
+            </div>
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">재시도 대기</p>
+              <p className="mt-1 font-semibold text-amber-700">{backgroundJobSummary.retryWaiting}건</p>
+            </div>
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">최종 실패</p>
+              <p className={backgroundJobSummary.dead > 0 ? "mt-1 font-semibold text-red-700" : "mt-1 font-semibold text-emerald-700"}>{backgroundJobSummary.dead}건</p>
+            </div>
+          </div>
+          {backgroundJobs.length ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-[960px] text-left text-sm">
+                <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
+                  <tr>
+                    <th className="px-5 py-3">수정 시간</th>
+                    <th className="px-5 py-3">작업</th>
+                    <th className="px-5 py-3">상태</th>
+                    <th className="px-5 py-3">시도</th>
+                    <th className="px-5 py-3">다음 실행</th>
+                    <th className="px-5 py-3">오류</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {backgroundJobs.map((job: BackgroundJobOperationsItem) => (
+                    <tr key={job.id} className={job.status === "dead" || job.status === "failed" ? "bg-amber-50/45" : undefined}>
+                      <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-600">{formatDate(job.updatedAt)}</td>
+                      <td className="px-5 py-4">
+                        <p className="font-semibold text-slate-950">{job.jobType}</p>
+                        <p className="mt-1 font-mono text-xs text-slate-500">{job.id}</p>
+                      </td>
+                      <td className="px-5 py-4">
+                        <Badge tone={backgroundJobStatusTone(job.status)}>{backgroundJobStatusLabel(job.status)}</Badge>
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-4 text-slate-700">{job.attempts}/{job.maxAttempts}</td>
+                      <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-600">{formatDate(job.availableAt)}</td>
+                      <td className="max-w-[360px] truncate px-5 py-4 text-xs font-medium text-slate-600">{job.errorMessage ?? "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="p-5 text-sm text-slate-600">
+              최근 백그라운드 작업이 없습니다. `BACKGROUND_JOBS_ENABLED=true`와 worker/cron 설정 후 작업 이력이 표시됩니다.
             </div>
           )}
         </CardBody>

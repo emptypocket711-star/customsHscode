@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   claimBackgroundJobsRpcName,
   createDocumentExtractionJobPayload,
-  isBackgroundQueueEnabled
+  isBackgroundQueueEnabled,
+  summarizeBackgroundJobOperations,
+  type BackgroundJobOperationsItem
 } from "@/server/repositories/background-job.repository";
 
 describe("background job repository helpers", () => {
@@ -36,5 +38,33 @@ describe("background job repository helpers", () => {
     process.env.BACKGROUND_JOBS_ENABLED = "true";
     expect(isBackgroundQueueEnabled()).toBe(true);
     process.env.BACKGROUND_JOBS_ENABLED = original;
+  });
+
+  it("summarizes failed and retry-waiting jobs for operations", () => {
+    const future = new Date(Date.now() + 60_000).toISOString();
+    const past = new Date(Date.now() - 60_000).toISOString();
+    const base = {
+      id: "00000000-0000-0000-0000-000000000001",
+      jobType: "document_extraction",
+      attempts: 0,
+      maxAttempts: 3,
+      errorMessage: null,
+      createdAt: past,
+      updatedAt: past
+    } satisfies Omit<BackgroundJobOperationsItem, "status" | "availableAt">;
+
+    expect(summarizeBackgroundJobOperations([
+      { ...base, id: "00000000-0000-0000-0000-000000000001", status: "queued", availableAt: past },
+      { ...base, id: "00000000-0000-0000-0000-000000000002", status: "running", availableAt: past },
+      { ...base, id: "00000000-0000-0000-0000-000000000003", status: "failed", attempts: 1, availableAt: future },
+      { ...base, id: "00000000-0000-0000-0000-000000000004", status: "dead", attempts: 3, availableAt: past }
+    ])).toMatchObject({
+      total: 4,
+      queued: 1,
+      running: 1,
+      failed: 1,
+      retryWaiting: 1,
+      dead: 1
+    });
   });
 });
