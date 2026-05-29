@@ -332,7 +332,8 @@ async function loadKotraOverseasMarketNews() {
 
   const endpoint = envValue(
     "KOTRA_OVERSEAS_MARKET_NEWS_URL",
-    "KOTRA_OVERSEAS_MARKET_NEWS_ENDPOINT"
+    "KOTRA_OVERSEAS_MARKET_NEWS_ENDPOINT",
+    "OTRA_OVERSEAS_MARKET_NEWS_URL"
   ) || "https://apis.data.go.kr/B410001/kotra_overseasMarketNews/ovseaMrktNews/ovseaMrktNews";
   const payload = await fetchJson(buildPublicDataApiUrl(endpoint, serviceKey, { pageNo: "1", numOfRows: "12", search8: "Y" }));
   if (!payload) return [];
@@ -488,3 +489,7 @@ export async function loadTradeNewsItems() {
 
   return loadLiveTradeNewsItems();
 }
+
+export const tradeNewsServiceInternals = {
+  envValue
+};
