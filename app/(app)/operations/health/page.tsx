@@ -77,6 +77,15 @@ function payloadString(payload: Record<string, unknown>, key: string) {
   return typeof value === "string" && value.trim() ? value : null;
 }
 
+function formatPercent(part: number, total: number) {
+  if (total <= 0) return "0%";
+  return `${Math.round((part / total) * 100)}%`;
+}
+
+function formatMs(value: number | null) {
+  return value === null ? "-" : `${Math.round(value)}ms`;
+}
+
 function normalizationStatusLabel(status: string | null) {
   if (status === "success") return "GPT 응답";
   if (status === "failed") return "GPT 실패";
@@ -154,6 +163,51 @@ function summarizeLookupTelemetryByDay(events: LookupTelemetryEvent[]) {
   return [...rows.values()].slice(0, 5);
 }
 
+function summarizeLookupTelemetryByRoute(events: LookupTelemetryEvent[]) {
+  const rows = new Map<string, {
+    route: string;
+    total: number;
+    issues: number;
+    durationTotal: number;
+    durationCount: number;
+    maxDuration: number | null;
+  }>();
+
+  for (const event of events) {
+    const route = event.route ?? event.eventType;
+    const current = rows.get(route) ?? {
+      route,
+      total: 0,
+      issues: 0,
+      durationTotal: 0,
+      durationCount: 0,
+      maxDuration: null
+    };
+    const duration = event.durationMs ?? payloadNumber(event.payload, "durationMs");
+    current.total += 1;
+    current.issues += isLookupTelemetryIssue(event) ? 1 : 0;
+    if (duration !== null) {
+      current.durationTotal += duration;
+      current.durationCount += 1;
+      current.maxDuration = current.maxDuration === null ? duration : Math.max(current.maxDuration, duration);
+    }
+    rows.set(route, current);
+  }
+
+  return [...rows.values()].map((row) => ({
+    route: row.route,
+    total: row.total,
+    issues: row.issues,
+    failureRate: formatPercent(row.issues, row.total),
+    averageDurationMs: row.durationCount > 0 ? row.durationTotal / row.durationCount : null,
+    maxDurationMs: row.maxDuration
+  })).sort((a, b) => {
+    if (b.issues !== a.issues) return b.issues - a.issues;
+    if (b.total !== a.total) return b.total - a.total;
+    return a.route.localeCompare(b.route);
+  }).slice(0, 6);
+}
+
 async function loadLookupTelemetryEvents() {
   if (!hasSupabaseEnv()) return [];
 
@@ -179,6 +233,7 @@ export default async function OperationsHealthPage() {
   const lookupDiagnosisSummary = summarizeLookupTelemetryDiagnostics(lookupTelemetryEvents);
   const lookupIssueSummary = lookupDiagnosisSummary.filter((item) => item.issueCount > 0).slice(0, 4);
   const lookupDailySummary = summarizeLookupTelemetryByDay(lookupTelemetryEvents);
+  const lookupRouteSummary = summarizeLookupTelemetryByRoute(lookupTelemetryEvents);
   const items = groups.flatMap((group) => group.items);
   const missingRequiredCount = items.filter((item) => item.status === "missing").length;
   const configuredCount = items.filter((item) => item.status === "ok").length;
@@ -330,6 +385,26 @@ export default async function OperationsHealthPage() {
                       </p>
                     </div>
                   ))}
+                </div>
+              ) : null}
+              {lookupRouteSummary.length ? (
+                <div className="border-b border-slate-200 bg-white p-3">
+                  <p className="mb-2 text-xs font-semibold text-slate-500">경로별 실패율·응답시간</p>
+                  <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                    {lookupRouteSummary.map((summary) => (
+                      <div className="rounded-md border border-slate-200 px-3 py-2 text-sm" key={summary.route}>
+                        <div className="flex items-start justify-between gap-3">
+                          <p className="font-mono text-xs font-semibold text-slate-800">{summary.route}</p>
+                          <Badge tone={summary.issues > 0 ? "warning" : "success"}>{summary.failureRate}</Badge>
+                        </div>
+                        <p className="mt-2 text-xs leading-5 text-slate-600">
+                          전체 {summary.total} · 점검 {summary.issues}
+                          <br />
+                          평균 {formatMs(summary.averageDurationMs)} · 최대 {formatMs(summary.maxDurationMs)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ) : null}
               <div className="overflow-x-auto">

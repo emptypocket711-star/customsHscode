@@ -369,6 +369,7 @@ export async function normalizeProductSearchInput(input: ProductHsRecommendation
 
     logLookupTelemetry("product_search_normalized", {
       ...productInputShape(input),
+      route: "hs_product_ai",
       status: "success",
       provider: provider.name,
       model: provider.model,
@@ -389,6 +390,7 @@ export async function normalizeProductSearchInput(input: ProductHsRecommendation
   } catch (error) {
     logLookupTelemetry("product_search_normalized", {
       ...productInputShape(input),
+      route: "hs_product_ai",
       status: "error",
       provider: provider.name,
       model: provider.model,

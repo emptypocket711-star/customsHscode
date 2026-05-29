@@ -1237,6 +1237,7 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
     ), normalization, { keepAmbiguousAlternatives: shouldKeepAiAlternatives });
     logLookupTelemetry("product_candidates_recommended", {
       ...productInputShape(input),
+      route: "hs_product_ai",
       status: "success",
       sourceMode: "mock",
       durationMs: Date.now() - startedAt,
@@ -1255,6 +1256,7 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
     if (normalization && isBareProductCodeInput(input.productName) && normalization.webSources.length === 0 && !hasOfficialDataLookupHint(normalization)) {
       logLookupTelemetry("product_candidates_recommended", {
         ...productInputShape(input),
+        route: "hs_product_ai",
         status: "success",
         sourceMode: "supabase",
         durationMs: Date.now() - startedAt,
@@ -1295,6 +1297,7 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
     })), normalization, { keepAmbiguousAlternatives: shouldKeepAiAlternatives });
     logLookupTelemetry("product_candidates_recommended", {
       ...productInputShape(input),
+      route: "hs_product_ai",
       status: "success",
       sourceMode: "supabase",
       durationMs: Date.now() - startedAt,
@@ -1310,6 +1313,7 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
     if (isBareProductCodeInput(input.productName) && augmentedInput.productName !== input.productName && !hasOfficialDataLookupHint(normalization)) {
       logLookupTelemetry("product_candidates_recommended", {
         ...productInputShape(input),
+        route: "hs_product_ai",
         status: "fallback",
         sourceMode: "mock_after_supabase_error",
         durationMs: Date.now() - startedAt,
@@ -1337,6 +1341,7 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
     })), normalization, { keepAmbiguousAlternatives: shouldKeepAiAlternatives });
     logLookupTelemetry("product_candidates_recommended", {
       ...productInputShape(input),
+      route: "hs_product_ai",
       status: "fallback",
       sourceMode: "mock_after_supabase_error",
       durationMs: Date.now() - startedAt,

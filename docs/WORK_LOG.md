@@ -709,3 +709,15 @@
 
 - `npm run typecheck`
 - `npm run lint`
+
+### 운영 조회 로그 경로별 요약 추가
+
+- 품명 AI 정규화와 후보 생성 telemetry에 `hs_product_ai` route를 남기도록 했다.
+- 개발자 운영 점검 화면에 경로별 전체 건수, 점검 대상 건수, 실패율, 평균/최대 응답시간 요약을 추가했다.
+- 기존 로그에 route가 없는 경우에도 이벤트 유형 기준으로 묶어 과거 기록을 볼 수 있게 했다.
+
+검증:
+
+- `npm test -- server/observability/lookup-telemetry.test.ts server/rules/hs-candidate.service.test.ts`
+- `npm run typecheck`
+- `npm run lint`
