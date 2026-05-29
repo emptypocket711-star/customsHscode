@@ -23,6 +23,11 @@
   - 환경변수 반영을 위해 production 재배포를 실행했고 `https://hsfinder.co.kr` alias 준비 상태를 확인했다.
   - 로컬 셸에 `CRON_SECRET`이 없어 `ops:job:exchange-rates` 수동 실행은 하지 못했다.
 
+- API012 관세환율 캐시를 로컬에서 즉시 갱신할 수 있는 `ops:exchange-rates:refresh-local` 스크립트를 추가했다.
+  - `.env.local`의 API012 key와 Supabase service role을 사용하며, 출력에는 API key를 남기지 않는다.
+  - `2026-05-29` 기준 수동 실행 결과 현재 환율 적용일 `2026-05-24`, 차주 후보 적용일 `2026-05-31` 환율을 수입/수출 각 58건씩 저장했다.
+  - 검증: 스크립트 실행, typecheck, lint, exchange-rate action/cache 테스트 통과.
+
 ## 2026-05-26
 
 ### 런칭 전 조회 UX 정리

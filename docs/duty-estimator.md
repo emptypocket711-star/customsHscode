@@ -75,6 +75,14 @@ HS 조회 화면의 `납세액 계산` 버튼은 다음 값을 넘긴다.
 - API012 수집 성공 시 응답 metadata를 `legal_source_snapshots`에 `exchange_rate` source snapshot으로 저장하고 snapshot id를 계산기 화면과 복사 텍스트에 표시한다.
 - 저장되는 값은 source name, redacted source URL, source version, effective date, retrieved timestamp, checksum이다. API 키, 물품가격, 운임, 보험료 등 사용자 계산 입력값은 저장하지 않는다.
 
+로컬에서 즉시 환율 캐시를 갱신해야 하면 `.env.local`의 API012 key와 Supabase service role을 사용해 아래 명령을 실행한다.
+
+```bash
+npm run ops:exchange-rates:refresh-local -- 2026-05-29
+```
+
+날짜를 생략하면 Asia/Seoul 기준 오늘 날짜와 차주 후보 적용일을 함께 조회한다. 출력에는 API key를 남기지 않고 요청일, 적용일, 저장 건수만 표시한다.
+
 ## 남은 작업
 
 실제 내국세 자료가 들어오면 다음 순서로 확장한다.
