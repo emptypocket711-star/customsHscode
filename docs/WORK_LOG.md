@@ -593,3 +593,15 @@
 - `npm run typecheck`
 - `npm run lint`
 - `npm test -- server/repositories/lookup-governance.test.ts`
+
+### 운영 점검 relay 환경변수 표시 보강
+
+- 개발자 운영 점검 화면의 관세청 OpenAPI 섹션에 API001 적하목록 relay URL/token, API012 관세환율 relay URL/token, API005 장치장 key를 추가했다.
+- 운영 보호 섹션에 반입계 출력 API rate limit 설정값을 추가해 외부 터미널 캡처 기능의 제한값을 한 화면에서 확인할 수 있게 했다.
+- token/key/secret/password 계열 값은 기존처럼 원문을 표시하지 않고 `설정됨`만 표시한다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test -- server/operations/environment-health.service.test.ts`

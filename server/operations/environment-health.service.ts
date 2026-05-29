@@ -136,6 +136,18 @@ export function getEnvironmentHealthGroups(): EnvironmentHealthGroup[] {
           required: false
         }),
         envItem({
+          key: "CUSTOMS_API_EXCHANGE_RATE_RELAY_URL",
+          label: "API012 relay URL",
+          description: "Vercel에서 관세청 38010 포트 직접 호출이 실패할 때 사용하는 관세환율 relay endpoint입니다.",
+          required: false
+        }),
+        envItem({
+          key: "CUSTOMS_API_EXCHANGE_RATE_RELAY_TOKEN",
+          label: "API012 relay token",
+          description: "관세환율 relay 호출을 보호하는 서버 전용 토큰입니다. 없으면 cargo relay token을 fallback으로 사용합니다.",
+          required: false
+        }),
+        envItem({
           key: "CUSTOMS_API_STATS_CODE_SERVICE_KEY",
           label: "API019 통계부호 key",
           description: "통계부호 자료 수집에 사용합니다.",
@@ -145,6 +157,24 @@ export function getEnvironmentHealthGroups(): EnvironmentHealthGroup[] {
           key: "CUSTOMS_API_CARGO_PROGRESS_SERVICE_KEY",
           label: "API001 화물통관진행 key",
           description: "적하목록 조회와 상태 알림 감시에 사용합니다.",
+          required: false
+        }),
+        envItem({
+          key: "CUSTOMS_API_CARGO_PROGRESS_RELAY_URL",
+          label: "API001 relay URL",
+          description: "Vercel에서 관세청 38010 포트 직접 호출이 실패할 때 사용하는 적하목록 relay endpoint입니다.",
+          required: false
+        }),
+        envItem({
+          key: "CUSTOMS_API_CARGO_PROGRESS_RELAY_TOKEN",
+          label: "API001 relay token",
+          description: "적하목록 relay 호출을 보호하는 서버 전용 토큰입니다.",
+          required: false
+        }),
+        envItem({
+          key: "CUSTOMS_API_SHED_INFO_SERVICE_KEY",
+          label: "API005 장치장 key",
+          description: "CY/CFS 반입 구분용 장치장 데이터를 갱신할 때 사용합니다.",
           required: false
         })
       ]
@@ -223,6 +253,12 @@ export function getEnvironmentHealthGroups(): EnvironmentHealthGroup[] {
           key: "JOB_WORKER_SECRET",
           label: "Background job secret",
           description: "배치 작업 API를 보호하는 서버 전용 토큰입니다.",
+          required: false
+        }),
+        envItem({
+          key: "CONTAINER_RECEIPT_RATE_LIMIT_PER_MINUTE",
+          label: "반입계 출력 rate limit",
+          description: "터미널 원문 화면 캡처 API의 분당 호출 제한입니다.",
           required: false
         })
       ]
