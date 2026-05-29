@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { Browser, Page } from "playwright-core";
 import { requireAuthenticatedApiRoute } from "@/server/auth/api-route-auth";
+import { externalIntegrationErrorResponse } from "@/server/services/external-integration-error";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -173,25 +174,49 @@ export async function POST(request: Request) {
     windowMs: 60_000
   });
   if (!auth.allowed) {
-    return new NextResponse(auth.message, { status: auth.status });
+    return externalIntegrationErrorResponse({
+      code: auth.status === 429 ? "rate_limited" : "auth_required",
+      level: auth.status === 429 ? "temporary" : "input",
+      message: auth.message,
+      retryable: auth.status === 429,
+      status: auth.status
+    });
   }
 
   let payload: { containerNo?: unknown; html?: unknown; terminalCode?: unknown };
   try {
     payload = await request.json();
   } catch {
-    return new NextResponse("잘못된 요청입니다.", { status: 400 });
+    return externalIntegrationErrorResponse({
+      code: "bad_request",
+      level: "input",
+      message: "잘못된 요청입니다.",
+      retryable: false,
+      status: 400
+    });
   }
 
   const containerNo = normalizeContainerNo(payload.containerNo);
   const terminalCode = normalizeTerminalCode(payload.terminalCode);
 
   if (!/^[A-Z]{4}[0-9]{7}$/.test(containerNo)) {
-    return new NextResponse("컨테이너 번호 형식이 올바르지 않습니다.", { status: 400 });
+    return externalIntegrationErrorResponse({
+      code: "invalid_container_no",
+      level: "input",
+      message: "컨테이너 번호 형식이 올바르지 않습니다.",
+      retryable: false,
+      status: 400
+    });
   }
 
   if (!terminalCode) {
-    return new NextResponse("허용된 터미널 조회 화면만 반입계로 출력할 수 있습니다.", { status: 400 });
+    return externalIntegrationErrorResponse({
+      code: "unsupported_terminal",
+      level: "configuration",
+      message: "허용된 터미널 조회 화면만 반입계로 출력할 수 있습니다.",
+      retryable: false,
+      status: 400
+    });
   }
 
   let browser: Awaited<ReturnType<typeof launchChromium>>;
@@ -199,7 +224,13 @@ export async function POST(request: Request) {
     browser = await launchChromium();
   } catch (error) {
     console.warn("[container-receipt] browser launch failed", { message: error instanceof Error ? error.message : "unknown" });
-    return new NextResponse("반입계 출력 브라우저를 실행하지 못했습니다. 잠시 후 다시 시도해 주세요.", { status: 500 });
+    return externalIntegrationErrorResponse({
+      code: "browser_launch_failed",
+      level: "configuration",
+      message: "반입계 출력 브라우저를 실행하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+      retryable: false,
+      status: 500
+    });
   }
 
   try {
@@ -215,7 +246,12 @@ export async function POST(request: Request) {
         containerNo,
         message: error instanceof Error ? error.message : "unknown"
       });
-      return new NextResponse("터미널 원문 화면을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.", { status: 502 });
+      return externalIntegrationErrorResponse({
+        code: "terminal_capture_failed",
+        level: "external_unavailable",
+        message: "터미널 원문 화면을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.",
+        status: 502
+      });
     }
     await page.emulateMedia({ media: "screen" });
     await page.setViewportSize(receiptViewport);

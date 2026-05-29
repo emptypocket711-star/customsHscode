@@ -24,6 +24,29 @@ function receiptPendingText(dictionary: UsedCarExportDictionary, elapsedSeconds:
     : `${dictionary.container.receiptPending} ${elapsedSeconds}${dictionary.container.receiptPendingSecondsSuffix}`;
 }
 
+type ExternalIntegrationErrorBody = {
+  code?: string;
+  level?: string;
+  message?: string;
+  ok?: false;
+  requestId?: string;
+  retryable?: boolean;
+};
+
+async function readExternalErrorMessage(response: Response) {
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (contentType.includes("application/json")) {
+    const body = await response.json().catch(() => null) as ExternalIntegrationErrorBody | null;
+    if (body?.message) {
+      return body.requestId ? `${body.message} (요청 ID: ${body.requestId})` : body.message;
+    }
+  }
+
+  const text = await response.text().catch(() => "");
+  return text || "외부 조회 중 오류가 발생했습니다.";
+}
+
 async function downloadReceiptImage({
   containerNo,
   receiptFileSuffix,
@@ -38,7 +61,7 @@ async function downloadReceiptImage({
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ containerNo, terminalCode })
   });
-  if (!response.ok) throw new Error(await response.text());
+  if (!response.ok) throw new Error(await readExternalErrorMessage(response));
   const blob = await response.blob();
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");

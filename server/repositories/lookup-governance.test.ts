@@ -188,6 +188,7 @@ describe("lookup governance guards", () => {
     expect(proxy).toContain("status: 429");
     expect(containerReceiptRoute).toContain("requireAuthenticatedApiRoute");
     expect(containerReceiptRoute).toContain("external-container-receipt");
+    expect(containerReceiptRoute).toContain("externalIntegrationErrorResponse");
     expect(containerReceiptRoute).toContain("허용된 터미널 조회 화면만 반입계로 출력할 수 있습니다.");
     expect(terminalHelperRoute).toContain("requireAuthenticatedApiRoute");
     expect(terminalHelperRoute).toContain("external-terminal-helper");
