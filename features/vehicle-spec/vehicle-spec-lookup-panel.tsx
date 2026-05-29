@@ -12,6 +12,10 @@ import type { UsedCarExportDictionary } from "@/lib/i18n";
 
 const initialState: VehicleSpecLookupActionState = { status: "idle" };
 
+function formatTemplate(template: string, values: Record<string, string>) {
+  return Object.entries(values).reduce((text, [key, value]) => text.replaceAll(`{${key}}`, value), template);
+}
+
 function StatusMessage({ state, clientError }: { state: VehicleSpecLookupActionState; clientError: string }) {
   const message = clientError || state.message;
   if (!message) return null;
@@ -129,7 +133,7 @@ export function VehicleSpecLookupPanel({ dictionary }: { dictionary: UsedCarExpo
         <Card>
           <CardHeader
             title={dictionary.vehicleSpec.resultTitle}
-            description={dictionary.vehicleSpec.resultDescription(result.snapshot.sourceName)}
+            description={formatTemplate(dictionary.vehicleSpec.resultDescription, { sourceName: result.snapshot.sourceName })}
             action={<Badge tone="success">{result.specManageNo}</Badge>}
           />
           <CardBody className="grid gap-4">

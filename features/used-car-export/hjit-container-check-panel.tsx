@@ -12,6 +12,18 @@ import type { UsedCarExportDictionary } from "@/lib/i18n";
 
 const initialState: HjitContainerLookupState = { status: "idle" };
 
+function formatTemplate(template: string, values: Record<string, string>) {
+  return Object.entries(values).reduce((text, [key, value]) => text.replaceAll(`{${key}}`, value), template);
+}
+
+function receiptPendingText(dictionary: UsedCarExportDictionary, elapsedSeconds: number) {
+  if (!elapsedSeconds) return dictionary.container.receiptPending;
+
+  return dictionary.container.receiptPendingSecondsSuffix === "s"
+    ? `${dictionary.container.receiptPending} ${elapsedSeconds}${dictionary.container.receiptPendingSecondsSuffix}`
+    : `${dictionary.container.receiptPending} ${elapsedSeconds}${dictionary.container.receiptPendingSecondsSuffix}`;
+}
+
 async function downloadReceiptImage({
   containerNo,
   receiptFileSuffix,
@@ -110,12 +122,14 @@ function ResultModal({
   sourceUrl?: string;
   terminalName?: string;
 }) {
+  const title = formatTemplate(dictionary.container.modalTitle, { terminalName: terminalName || dictionary.container.terminalFallback });
+
   return (
     <div className="fixed inset-0 z-50 grid bg-slate-950/60 p-3 sm:p-6">
       <div className="mx-auto grid h-full w-full max-w-6xl grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-lg bg-white shadow-2xl">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
           <div>
-            <p className="text-sm font-semibold text-slate-950">{dictionary.container.modalTitle(terminalName)}</p>
+            <p className="text-sm font-semibold text-slate-950">{title}</p>
             <p className="text-xs text-slate-500">{dictionary.container.externalReadOnly}</p>
           </div>
           <div className="flex items-center gap-2">
@@ -144,7 +158,7 @@ function ResultModal({
           className="h-full w-full bg-white"
           sandbox=""
           srcDoc={html}
-          title={dictionary.container.modalTitle(terminalName)}
+          title={title}
         />
       </div>
     </div>
@@ -262,7 +276,7 @@ export function HjitContainerCheckPanel({ dictionary }: { dictionary: UsedCarExp
                   type="button"
                 >
                   {receiptPending ? <Loader2 aria-hidden="true" className="animate-spin" size={17} /> : <Download aria-hidden="true" size={17} />}
-                  {receiptPending ? dictionary.container.receiptPending(receiptElapsedSeconds) : dictionary.container.receipt}
+                  {receiptPending ? receiptPendingText(dictionary, receiptElapsedSeconds) : dictionary.container.receipt}
                 </button>
               ) : null}
               {state.sourceUrl ? (
@@ -314,7 +328,7 @@ export function HjitContainerCheckPanel({ dictionary }: { dictionary: UsedCarExp
         <Card>
           <CardHeader
             title={dictionary.container.resultTitle}
-            description={dictionary.container.resultDescription(state.terminalName)}
+            description={formatTemplate(dictionary.container.resultDescription, { terminalName: state.terminalName || dictionary.container.terminalFallback })}
             action={state.containerNo ? <Badge tone="success">{state.containerNo}</Badge> : undefined}
           />
           <CardBody className="grid gap-4">

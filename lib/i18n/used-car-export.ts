@@ -30,7 +30,7 @@ export type UsedCarExportDictionary = {
     rangeDescription: string;
     rangeItems: string[];
     rangeTitle: string;
-    resultDescription: (sourceName: string) => string;
+    resultDescription: string;
     resultTitle: string;
     source: string;
     sourceOpen: string;
@@ -46,15 +46,16 @@ export type UsedCarExportDictionary = {
     externalReadOnly: string;
     inputLabel: string;
     missingInput: string;
-    modalTitle: (terminalName?: string) => string;
+    modalTitle: string;
     pageDescription: string;
     pageTitle: string;
     pendingMessage: string;
     receipt: string;
     receiptFileSuffix: string;
-    receiptPending: (elapsedSeconds: number) => string;
+    receiptPending: string;
+    receiptPendingSecondsSuffix: string;
     receiptUnknownError: string;
-    resultDescription: (terminalName?: string) => string;
+    resultDescription: string;
     resultTitle: string;
     summaryFirstLine: string;
     summarySecondLine: string;
@@ -115,7 +116,7 @@ const dictionaries = {
         "외부 사이트의 보안 정책이나 화면 구조 변경에 따라 조회가 제한될 수 있습니다."
       ],
       rangeTitle: "조회 범위",
-      resultDescription: (sourceName) => `${sourceName}에서 조회한 자동차 제원 정보입니다.`,
+      resultDescription: "{sourceName}에서 조회한 자동차 제원 정보입니다.",
       resultTitle: "조회 결과",
       retrievedAt: "조회시각",
       source: "출처",
@@ -130,15 +131,16 @@ const dictionaries = {
       externalReadOnly: "외부 터미널 조회 결과를 읽기 전용으로 표시합니다.",
       inputLabel: "컨테이너 번호",
       missingInput: "컨테이너 번호를 입력해 주세요.",
-      modalTitle: (terminalName) => `${terminalName ?? "터미널"} 원문 조회 화면`,
+      modalTitle: "{terminalName} 원문 조회 화면",
       pageDescription: "컨테이너 번호로 터미널 반입 정보를 조회하고 원문 화면을 팝업으로 확인합니다.",
       pageTitle: "컨테이너 반입 확인",
       pendingMessage: "터미널 조회 화면을 불러오고 있습니다.",
       receipt: "반입계 출력",
       receiptFileSuffix: "반입계",
-      receiptPending: (elapsedSeconds) => `출력 생성 중${elapsedSeconds ? ` ${elapsedSeconds}초` : ""}`,
+      receiptPending: "출력 생성 중",
+      receiptPendingSecondsSuffix: "초",
       receiptUnknownError: "반입계 이미지를 생성하지 못했습니다. 잠시 후 다시 시도해 주세요.",
-      resultDescription: (terminalName) => `${terminalName ?? "터미널"}에서 내려온 주요 항목입니다.`,
+      resultDescription: "{terminalName}에서 내려온 주요 항목입니다.",
       resultTitle: "조회 요약",
       summaryFirstLine: "상단 이력은 운송현황 조회 결과의 최신 순서입니다.",
       summarySecondLine: "현재 결과는 연결된 터미널 원문 조회 화면을 기준으로 표시합니다.",
@@ -197,7 +199,7 @@ const dictionaries = {
         "Lookup may be limited if the external site changes its security policy or screen structure."
       ],
       rangeTitle: "Lookup scope",
-      resultDescription: (sourceName) => `Vehicle specification data looked up from ${sourceName}.`,
+      resultDescription: "Vehicle specification data looked up from {sourceName}.",
       resultTitle: "Lookup result",
       retrievedAt: "Retrieved at",
       source: "Source",
@@ -212,15 +214,16 @@ const dictionaries = {
       externalReadOnly: "Displays the external terminal lookup result in read-only mode.",
       inputLabel: "Container no.",
       missingInput: "Enter a container number.",
-      modalTitle: (terminalName) => `${terminalName ?? "Terminal"} source lookup screen`,
+      modalTitle: "{terminalName} source lookup screen",
       pageDescription: "Lookup terminal gate-in information by container number and review the source screen in a popup.",
       pageTitle: "Container Gate-in",
       pendingMessage: "Loading the terminal lookup screen.",
       receipt: "Download receipt",
       receiptFileSuffix: "gate-in-receipt",
-      receiptPending: (elapsedSeconds) => `Generating receipt${elapsedSeconds ? ` ${elapsedSeconds}s` : ""}`,
+      receiptPending: "Generating receipt",
+      receiptPendingSecondsSuffix: "s",
       receiptUnknownError: "Could not generate the receipt image. Try again shortly.",
-      resultDescription: (terminalName) => `Key fields returned from ${terminalName ?? "terminal"}.`,
+      resultDescription: "Key fields returned from {terminalName}.",
       resultTitle: "Lookup summary",
       summaryFirstLine: "The top history rows are shown in latest-first order from transport status lookup.",
       summarySecondLine: "The current result is displayed from the linked terminal source lookup screen.",
@@ -279,7 +282,7 @@ const dictionaries = {
         "外部网站安全政策或页面结构变更时，查询可能受到限制。"
       ],
       rangeTitle: "查询范围",
-      resultDescription: (sourceName) => `从${sourceName}查询到的车辆规格信息。`,
+      resultDescription: "从{sourceName}查询到的车辆规格信息。",
       resultTitle: "查询结果",
       retrievedAt: "查询时间",
       source: "来源",
@@ -294,15 +297,16 @@ const dictionaries = {
       externalReadOnly: "以只读方式显示外部码头查询结果。",
       inputLabel: "集装箱编号",
       missingInput: "请输入集装箱编号。",
-      modalTitle: (terminalName) => `${terminalName ?? "码头"}原文查询页面`,
+      modalTitle: "{terminalName}原文查询页面",
       pageDescription: "通过集装箱编号查询码头入场信息，并在弹窗中查看原文页面。",
       pageTitle: "集装箱入场确认",
       pendingMessage: "正在加载码头查询页面。",
       receipt: "下载入场凭证",
       receiptFileSuffix: "入场凭证",
-      receiptPending: (elapsedSeconds) => `正在生成凭证${elapsedSeconds ? ` ${elapsedSeconds}秒` : ""}`,
+      receiptPending: "正在生成凭证",
+      receiptPendingSecondsSuffix: "秒",
       receiptUnknownError: "无法生成入场凭证图片。请稍后再试。",
-      resultDescription: (terminalName) => `${terminalName ?? "码头"}返回的主要项目。`,
+      resultDescription: "{terminalName}返回的主要项目。",
       resultTitle: "查询摘要",
       summaryFirstLine: "上方履历按运输状态查询结果的最新顺序显示。",
       summarySecondLine: "当前结果基于已连接码头的原文查询页面显示。",
