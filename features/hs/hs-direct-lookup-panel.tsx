@@ -9,7 +9,7 @@ import { countryCodeAliases, destinationCountryOptions, exportCountryLabel, expo
 import { mockExportDestinationTariffRates } from "@/features/export-diagnosis/mock-export-data";
 import { CountryComboboxField } from "@/features/hs/country-combobox-field";
 import { DestinationCountryPicker } from "@/features/hs/destination-country-picker";
-import { HsCopySummaryButton } from "@/features/hs/hs-copy-summary-button";
+import { HsCopySummaryButton, type HsCopyGuideLanguage, type HsCopyGuideVariant, type HsCopySummaryTexts } from "@/features/hs/hs-copy-summary-button";
 import { destinationAgreementRateDisplayItems, destinationDisplayAgreementRates, destinationDisplayBaseRate } from "@/features/hs/export-destination-tariff-display";
 import { DestinationAgreementRateDialog } from "@/features/hs/destination-agreement-rate-dialog";
 import { displayImportTariffLabel, filterImportTariffsForCountry, importTariffApplicationPriority, isCommonImportTariff } from "@/features/hs/import-tariff-display";
@@ -399,42 +399,201 @@ function requirementRequestHints(requirements: GroupedImportRequirement[], limit
   return Array.from(hints);
 }
 
-function appendRequirementCopyLines(lines: string[], requirements: GroupedImportRequirement[]) {
-  lines.push("수입요건");
+const copyGuideLabels: Record<HsCopyGuideLanguage, {
+  appliedDutyRate: string;
+  additionalTariff: string;
+  adCvd: string;
+  candidateIntroDetailed: string;
+  candidateIntroSingleDetailed: string;
+  hsCode: string;
+  hsPath: string;
+  importRequirements: string;
+  internalTax: string;
+  noDestinationInternalTax: string;
+  noImportRequirements: string;
+  noImportRequirementsCaution: string;
+  noOriginMarking: string;
+  noOriginMarkingCaution: string;
+  noTariffData: string;
+  originMarking: string;
+  originMarkingCondition: string;
+  originMarkingMethod: string;
+  originMarkingTarget: string;
+  productCodeHelp: string;
+  productDetailReview: string;
+  productInfoInsufficient: string;
+  productInfoInsufficientDetail: string;
+  productName: string;
+  requestHints: string;
+  requirementsNeedReview: string;
+  standardVat: string;
+  ftaRate: string;
+}> = {
+  ko: {
+    appliedDutyRate: "적용 관세율",
+    additionalTariff: "추가관세",
+    adCvd: "AD/CVD",
+    candidateIntroDetailed: "예상 가능한 내역은 아래와 같습니다. 정확한 제품 설명, 사진, 카탈로그, 재질/구성, 용도, 모델명, 장착 대상 정보를 주시면 다시 확인하겠습니다.",
+    candidateIntroSingleDetailed: "일반적인 제품 설명 기준으로 우선 검토 가능한 내역은 아래와 같습니다. 정확한 제품 설명, 사진, 카탈로그, 재질/구성, 용도, 모델명, 장착 대상 정보를 주시면 다시 확인하겠습니다.",
+    hsCode: "HS CODE",
+    hsPath: "HS CODE 경로",
+    importRequirements: "수입요건",
+    internalTax: "내국세",
+    noDestinationInternalTax: "표시할 수입국 내국세 데이터가 없습니다.",
+    noImportRequirements: "세관장확인대상 수입요건은 조회되지 않았습니다.",
+    noImportRequirementsCaution: "다만 통합공고, 개별법령, 표시·인증·유통규제 의무가 존재할 수 있으므로 제품 상세자료 기준 확인이 필요합니다.",
+    noOriginMarking: "원산지표시대상으로 조회되는 항목은 확인되지 않았습니다.",
+    noOriginMarkingCaution: "다만 표시방법, 개별법령, 거래조건에 따라 별도 표시·증빙 의무가 존재할 수 있으므로 제품 상세자료 기준 확인이 필요합니다.",
+    noTariffData: "표시할 관세율 데이터가 없습니다.",
+    originMarking: "원산지 표시",
+    originMarkingCondition: "조건",
+    originMarkingMethod: "표시방법",
+    originMarkingTarget: "원산지표시대상(Y)",
+    productCodeHelp: "제품코드나 모델명만 있는 경우 제조사 카탈로그, 제품 URL, 사양서, 사진 중 하나를 함께 보내 주세요.",
+    productDetailReview: "정확한 정보를 주시면 해당 내용 기준으로 다시 확인하겠습니다.",
+    productInfoInsufficient: "현재 제공된 품명만으로는 HS CODE 후보를 충분히 특정하기 어렵습니다.",
+    productInfoInsufficientDetail: "아래 정보가 보완되면 HS CODE 후보, 관세율, 내국세, 수입요건을 다시 확인하겠습니다.",
+    productName: "품명",
+    requestHints: "확인 요청자료",
+    requirementsNeedReview: "수입요건 해당 여부와 제출서류는 제품 상세자료 확인 후 검토가 필요합니다.",
+    standardVat: "부가세 : 10%",
+    ftaRate: "FTA 관세율"
+  },
+  en: {
+    appliedDutyRate: "Applicable duty rate",
+    additionalTariff: "Additional tariff",
+    adCvd: "AD/CVD",
+    candidateIntroDetailed: "Possible HS candidates are listed below. Please provide the exact product description, photo, catalog, material/composition, use, model name, and mounting/installation target for a further review.",
+    candidateIntroSingleDetailed: "Based on the general product description, the following item may be reviewed first. Please provide the exact product description, photo, catalog, material/composition, use, model name, and mounting/installation target for a further review.",
+    hsCode: "HS code",
+    hsPath: "HS code path",
+    importRequirements: "Import requirements",
+    internalTax: "Internal taxes",
+    noDestinationInternalTax: "No destination-country internal tax data is available.",
+    noImportRequirements: "No customs-confirmation import requirement was found in the current lookup.",
+    noImportRequirementsCaution: "However, integrated notices, individual laws, labeling, certification, or distribution obligations may still apply and should be reviewed based on detailed product data.",
+    noOriginMarking: "No origin marking target item was found in the current lookup.",
+    noOriginMarkingCaution: "However, marking method, individual laws, and transaction conditions may still require separate marking or evidence review.",
+    noTariffData: "No tariff data is available for display.",
+    originMarking: "Origin marking",
+    originMarkingCondition: "Condition",
+    originMarkingMethod: "Marking method",
+    originMarkingTarget: "Origin marking target (Y)",
+    productCodeHelp: "If only a product code or model name is available, please also provide a manufacturer catalog, product URL, specification sheet, or photo.",
+    productDetailReview: "Once accurate information is provided, the item can be reviewed again based on those details.",
+    productInfoInsufficient: "The provided product name is not enough to narrow down an HS code candidate.",
+    productInfoInsufficientDetail: "If the information below is provided, HS candidates, duty rates, internal taxes, and import requirements can be reviewed again.",
+    productName: "Product",
+    requestHints: "Information/documents to request",
+    requirementsNeedReview: "Applicability and required documents should be reviewed after checking detailed product information.",
+    standardVat: "VAT: 10%",
+    ftaRate: "FTA preferential rate"
+  },
+  zh: {
+    appliedDutyRate: "适用关税税率",
+    additionalTariff: "附加关税",
+    adCvd: "反倾销/反补贴",
+    candidateIntroDetailed: "以下为可能的 HS 编码候选。请提供准确的产品说明、照片、目录、材质/成分、用途、型号、安装或使用对象后再确认。",
+    candidateIntroSingleDetailed: "根据一般产品说明，可优先参考以下候选。请提供准确的产品说明、照片、目录、材质/成分、用途、型号、安装或使用对象后再确认。",
+    hsCode: "HS 编码",
+    hsPath: "HS 编码路径",
+    importRequirements: "进口要求",
+    internalTax: "国内税/内国税",
+    noDestinationInternalTax: "暂无可显示的进口国国内税数据。",
+    noImportRequirements: "当前查询未发现海关确认对象进口要求。",
+    noImportRequirementsCaution: "但综合公告、个别法规、标签、认证或流通监管义务仍可能适用，应根据产品详细资料确认。",
+    noOriginMarking: "当前查询未发现原产地标示对象。",
+    noOriginMarkingCaution: "但标示方法、个别法规、交易条件可能仍要求另行标示或提供证明。",
+    noTariffData: "暂无可显示的关税数据。",
+    originMarking: "原产地标示",
+    originMarkingCondition: "条件",
+    originMarkingMethod: "标示方法",
+    originMarkingTarget: "原产地标示对象(Y)",
+    productCodeHelp: "如果只有产品代码或型号，请同时提供制造商目录、产品链接、规格书或照片。",
+    productDetailReview: "提供准确信息后，可根据该资料重新确认。",
+    productInfoInsufficient: "仅凭当前产品名称，难以充分确定 HS 编码候选。",
+    productInfoInsufficientDetail: "补充以下资料后，可重新确认 HS 候选、关税、国内税和进口要求。",
+    productName: "产品名称",
+    requestHints: "需确认/请求的资料",
+    requirementsNeedReview: "进口要求适用性和提交资料需根据产品详细资料进一步确认。",
+    standardVat: "增值税: 10%",
+    ftaRate: "FTA 优惠税率"
+  }
+};
+
+function copyLabels(language: HsCopyGuideLanguage) {
+  return copyGuideLabels[language];
+}
+
+function buildCopyTextSet(builder: (language: HsCopyGuideLanguage, variant: HsCopyGuideVariant) => string): HsCopySummaryTexts {
+  return {
+    ko: {
+      brief: builder("ko", "brief"),
+      detailed: builder("ko", "detailed")
+    },
+    en: {
+      brief: builder("en", "brief"),
+      detailed: builder("en", "detailed")
+    },
+    zh: {
+      brief: builder("zh", "brief"),
+      detailed: builder("zh", "detailed")
+    }
+  };
+}
+
+function appendRequirementCopyLines(
+  lines: string[],
+  requirements: GroupedImportRequirement[],
+  language: HsCopyGuideLanguage,
+  variant: HsCopyGuideVariant
+) {
+  const labels = copyLabels(language);
+
+  lines.push(labels.importRequirements);
 
   if (requirements.length) {
     for (const requirement of requirements) {
       lines.push(`- ${requirement.name} (${requirement.relatedLaw})`);
     }
 
+    if (variant === "brief") return;
+
     const requestHints = requirementRequestHints(requirements);
     if (requestHints.length) {
       lines.push("");
-      lines.push("확인 요청자료");
+      lines.push(labels.requestHints);
       for (const hint of requestHints) {
         lines.push(`- ${hint}`);
       }
     }
 
-    lines.push("수입요건 해당 여부와 제출서류는 제품 상세자료 확인 후 검토가 필요합니다.");
+    lines.push(labels.requirementsNeedReview);
   } else {
-    lines.push("세관장확인대상 수입요건은 조회되지 않았습니다.");
-    lines.push("다만 통합공고, 개별법령, 표시·인증·유통규제 의무가 존재할 수 있으므로 제품 상세자료 기준 확인이 필요합니다.");
+    lines.push(labels.noImportRequirements);
+    if (variant === "detailed") lines.push(labels.noImportRequirementsCaution);
   }
 }
 
-function appendOriginMarkingCopyLines(lines: string[], originMarking: HsDirectLookupResult["originMarking"] | null | undefined) {
-  lines.push("원산지 표시");
+function appendOriginMarkingCopyLines(
+  lines: string[],
+  originMarking: HsDirectLookupResult["originMarking"] | null | undefined,
+  language: HsCopyGuideLanguage,
+  variant: HsCopyGuideVariant
+) {
+  const labels = copyLabels(language);
+
+  lines.push(labels.originMarking);
 
   if (!originMarking?.isTarget) {
-    lines.push("원산지표시대상으로 조회되는 항목은 확인되지 않았습니다.");
-    lines.push("다만 표시방법, 개별법령, 거래조건에 따라 별도 표시·증빙 의무가 존재할 수 있으므로 제품 상세자료 기준 확인이 필요합니다.");
+    lines.push(labels.noOriginMarking);
+    if (variant === "detailed") lines.push(labels.noOriginMarkingCaution);
     return;
   }
 
-  const method = originMarking.method?.methodSummary ? ` / 표시방법 : ${originMarking.method.methodSummary}` : "";
-  const condition = originMarking.conditionText ? ` / 조건 : ${originMarking.conditionText}` : "";
-  lines.push(`원산지표시대상(Y)${method}${condition}`);
+  const method = originMarking.method?.methodSummary ? ` / ${labels.originMarkingMethod}: ${originMarking.method.methodSummary}` : "";
+  const condition = originMarking.conditionText ? ` / ${labels.originMarkingCondition}: ${originMarking.conditionText}` : "";
+  lines.push(`${labels.originMarkingTarget}${method}${condition}`);
 }
 
 function isBasicTariffLabel(label: string) {
@@ -500,7 +659,7 @@ function baselineCopyTariff<T extends { rateType: string; label: string; rateTex
     ?? lowestTariff(tariffs.filter((tariff) => isCommonImportTariff(tariff)));
 }
 
-function hsCopySummaryText({
+function hsCopySummaryTexts({
   result,
   displayTariffs,
   internalTaxRows,
@@ -528,29 +687,48 @@ function hsCopySummaryText({
   const commonTariff = baselineCopyTariff(displayTariffs, countryCode);
   const ftaTariffs = countryCode === "ALL" ? [] : displayTariffs.filter((tariff) => isFtaTariffRate(tariff.rateType));
   const groupedRequirements = groupedImportRequirements(importRequirements);
-  const lines = [
-    `${result.koreanName} / ${formatHsCode(result.hskCode)}`,
-    `적용 관세율 : ${commonTariff ? tariffSummaryText(commonTariff, countryCode) : "-"}`
-  ];
 
-  if (ftaTariffs.length) {
-    lines.push(`FTA 관세율 : ${ftaTariffs.map((tariff) => tariffSummaryText(tariff, countryCode)).join(" / ")}`);
-  }
+  return buildCopyTextSet((language, variant) => {
+    const labels = copyLabels(language);
+    const lines = [
+      `${labels.productName} / ${labels.hsCode}`,
+      `${result.koreanName} / ${formatHsCode(result.hskCode)}`
+    ];
 
-  lines.push("내국세");
-  if (internalTaxRows.length) {
-    for (const row of internalTaxRows) {
-      const basis = [row.lawName, row.articleRef, row.matchBasis].filter(Boolean).join(" / ");
-      lines.push(`${row.name} : ${row.rateText}${basis ? ` (${basis})` : ""}`);
+    if (variant === "brief") {
+      lines.push(labels.importRequirements);
+      if (groupedRequirements.length) {
+        for (const requirement of groupedRequirements) {
+          lines.push(`- ${requirement.name} (${requirement.relatedLaw})`);
+        }
+      } else {
+        lines.push(labels.noImportRequirements);
+      }
+      return lines.join("\n");
     }
-  } else {
-    lines.push("부가세 : 10%");
-  }
 
-  appendRequirementCopyLines(lines, groupedRequirements);
-  appendOriginMarkingCopyLines(lines, result.originMarking);
+    lines.push("");
+    lines.push(`${labels.appliedDutyRate} : ${commonTariff ? tariffSummaryText(commonTariff, countryCode) : "-"}`);
 
-  return lines.join("\n");
+    if (ftaTariffs.length) {
+      lines.push(`${labels.ftaRate} : ${ftaTariffs.map((tariff) => tariffSummaryText(tariff, countryCode)).join(" / ")}`);
+    }
+
+    lines.push(labels.internalTax);
+    if (internalTaxRows.length) {
+      for (const row of internalTaxRows) {
+        const basis = [row.lawName, row.articleRef, row.matchBasis].filter(Boolean).join(" / ");
+        lines.push(`${row.name} : ${row.rateText}${basis ? ` (${basis})` : ""}`);
+      }
+    } else {
+      lines.push(labels.standardVat);
+    }
+
+    appendRequirementCopyLines(lines, groupedRequirements, language, variant);
+    appendOriginMarkingCopyLines(lines, result.originMarking, language, variant);
+
+    return lines.join("\n");
+  });
 }
 
 function hierarchyLevelLabel(level: HsHierarchyNode["level"]) {
@@ -596,7 +774,7 @@ function productCandidateEvidenceText(candidate: HsCandidateRecommendation) {
     : "입력 품명과 제품 단서를 기준으로 구성한 HS 후보입니다";
 }
 
-function productCandidateCopySummaryText({
+function productCandidateCopySummaryTexts({
   productName,
   candidates,
   lookupByHsk,
@@ -617,67 +795,80 @@ function productCandidateCopySummaryText({
       ...candidates.flatMap((candidate) => candidate.requiredQuestions)
     ])
   ).slice(0, 8);
-  const lines = [
-    clarification?.summary ?? `품명 "${productName}"만으로는 정확한 HS CODE를 특정하기 어렵습니다.`,
-    "아래 정보가 부족하여 제품 용도와 구성에 따라 다른 세번이 적용될 수 있습니다."
-  ];
 
-  if (missingQuestions.length) {
-    lines.push("");
-    lines.push("추가로 확인이 필요한 정보");
-    for (const question of missingQuestions) {
-      lines.push(`- ${question}`);
-    }
-  }
+  return buildCopyTextSet((language, variant) => {
+    const labels = copyLabels(language);
+    const lines = [
+      clarification?.summary ?? `${labels.productName} "${productName}" - ${labels.productInfoInsufficient}`,
+      variant === "brief" ? labels.productInfoInsufficient : labels.productInfoInsufficientDetail
+    ];
 
-  lines.push("");
-  lines.push(candidates.length === 1
-    ? "일반적인 제품 설명 기준으로 우선 검토 가능한 내역은 아래와 같습니다. 정확한 제품 설명, 사진, 카탈로그, 재질/구성, 용도, 모델명, 장착 대상 정보를 주시면 다시 확인하겠습니다."
-    : "예상 가능한 내역은 아래와 같습니다. 정확한 제품 설명, 사진, 카탈로그, 재질/구성, 용도, 모델명, 장착 대상 정보를 주시면 다시 확인하겠습니다."
-  );
-
-  candidates.forEach((candidate, index) => {
-    const lookup = lookupByHsk.get(candidate.hskCode);
-    const displayTariffs = lookup ? filterImportTariffsForCountry(lookup.tariffPreviews, countryCode) : [];
-    const commonTariff = baselineCopyTariff(displayTariffs, countryCode);
-    const ftaTariffs = countryCode === "ALL" ? [] : displayTariffs.filter((tariff) => isFtaTariffRate(tariff.rateType));
-    const internalTaxes = internalTaxByHsk.get(candidate.hskCode) ?? [];
-    const requirements = groupedImportRequirements(lookup?.importRequirements ?? []);
-    const hierarchyLines = productCandidateHierarchyLines(candidate, lookup);
-
-    lines.push("");
-    lines.push(`${index + 1}. ${candidate.koreanName}`);
-    lines.push(`HS CODE : ${formatHsCode(candidate.hskCode)}`);
-    if (hierarchyLines.length) {
-      lines.push("HS CODE 경로");
-      for (const line of hierarchyLines) {
-        lines.push(`- ${line}`);
+    if (variant === "detailed" && missingQuestions.length) {
+      lines.push("");
+      lines.push(labels.requestHints);
+      for (const question of missingQuestions) {
+        lines.push(`- ${question}`);
       }
     }
-    lines.push(`적용 관세율 : ${commonTariff ? tariffSummaryText(commonTariff, countryCode) : "표시할 관세율 데이터가 없습니다"}`);
 
-    if (ftaTariffs.length) {
-      lines.push(`FTA 관세율 : ${ftaTariffs.map((tariff) => tariffSummaryText(tariff, countryCode)).join(" / ")}`);
+    if (variant === "detailed") {
+      lines.push("");
+      lines.push(candidates.length === 1 ? labels.candidateIntroSingleDetailed : labels.candidateIntroDetailed);
     }
 
-    lines.push("내국세");
-    if (internalTaxes.length) {
-      for (const row of internalTaxes) {
-        const basis = [row.lawName, row.articleRef, row.matchBasis].filter(Boolean).join(" / ");
-        lines.push(`${row.name} : ${row.rateText}${basis ? ` (${basis})` : ""}`);
+    candidates.forEach((candidate, index) => {
+      const lookup = lookupByHsk.get(candidate.hskCode);
+      const displayTariffs = lookup ? filterImportTariffsForCountry(lookup.tariffPreviews, countryCode) : [];
+      const commonTariff = baselineCopyTariff(displayTariffs, countryCode);
+      const ftaTariffs = countryCode === "ALL" ? [] : displayTariffs.filter((tariff) => isFtaTariffRate(tariff.rateType));
+      const internalTaxes = internalTaxByHsk.get(candidate.hskCode) ?? [];
+      const requirements = groupedImportRequirements(lookup?.importRequirements ?? []);
+      const hierarchyLines = productCandidateHierarchyLines(candidate, lookup);
+
+      lines.push("");
+      lines.push(`${index + 1}. ${candidate.koreanName}`);
+      lines.push(`${labels.hsCode} : ${formatHsCode(candidate.hskCode)}`);
+      lines.push(labels.importRequirements);
+      if (requirements.length) {
+        for (const requirement of requirements) {
+          lines.push(`- ${requirement.name} (${requirement.relatedLaw})`);
+        }
+      } else {
+        lines.push(labels.noImportRequirements);
       }
-    } else {
-      lines.push("부가세 : 10%");
-    }
 
-    appendRequirementCopyLines(lines, requirements);
-    appendOriginMarkingCopyLines(lines, lookup?.originMarking);
+      if (variant === "brief") return;
+
+      if (hierarchyLines.length) {
+        lines.push(labels.hsPath);
+        for (const line of hierarchyLines) {
+          lines.push(`- ${line}`);
+        }
+      }
+      lines.push(`${labels.appliedDutyRate} : ${commonTariff ? tariffSummaryText(commonTariff, countryCode) : labels.noTariffData}`);
+
+      if (ftaTariffs.length) {
+        lines.push(`${labels.ftaRate} : ${ftaTariffs.map((tariff) => tariffSummaryText(tariff, countryCode)).join(" / ")}`);
+      }
+
+      lines.push(labels.internalTax);
+      if (internalTaxes.length) {
+        for (const row of internalTaxes) {
+          const basis = [row.lawName, row.articleRef, row.matchBasis].filter(Boolean).join(" / ");
+          lines.push(`${row.name} : ${row.rateText}${basis ? ` (${basis})` : ""}`);
+        }
+      } else {
+        lines.push(labels.standardVat);
+      }
+
+      appendOriginMarkingCopyLines(lines, lookup?.originMarking, language, variant);
+    });
+
+    return lines.join("\n");
   });
-
-  return lines.join("\n");
 }
 
-function productNoResultCopySummaryText({
+function productNoResultCopySummaryTexts({
   productName,
   clarification
 }: {
@@ -695,18 +886,26 @@ function productNoResultCopySummaryText({
       "제조사, 모델명, 제품 사진 또는 상세 설명"
     ];
 
-  return [
-    `문의 품명 : ${productName}`,
-    "",
-    "현재 제공된 품명만으로는 HS CODE 후보를 충분히 특정하기 어렵습니다.",
-    "아래 정보가 보완되면 HS CODE 후보, 관세율, 내국세, 수입요건을 다시 확인하겠습니다.",
-    "",
-    "추가로 필요한 정보",
-    ...questions.slice(0, 8).map((question, index) => `${index + 1}. ${question}`),
-    "",
-    "제품코드나 모델명만 있는 경우 제조사 카탈로그, 제품 URL, 사양서, 사진 중 하나를 함께 보내 주세요.",
-    "정확한 정보를 주시면 해당 내용 기준으로 다시 확인하겠습니다."
-  ].join("\n");
+  return buildCopyTextSet((language, variant) => {
+    const labels = copyLabels(language);
+    const lines = [
+      `${labels.productName} : ${productName}`,
+      "",
+      labels.productInfoInsufficient,
+      labels.productInfoInsufficientDetail
+    ];
+
+    if (variant === "brief") return lines.join("\n");
+
+    lines.push("");
+    lines.push(labels.requestHints);
+    lines.push(...questions.slice(0, 8).map((question, index) => `${index + 1}. ${question}`));
+    lines.push("");
+    lines.push(labels.productCodeHelp);
+    lines.push(labels.productDetailReview);
+
+    return lines.join("\n");
+  });
 }
 
 function displayValue(value?: string | null) {
@@ -1895,7 +2094,7 @@ function DestinationCountryResultTable({
   );
 }
 
-function destinationCopySummaryText({
+function destinationCopySummaryTexts({
   row,
   productName,
   agreementRateLabel,
@@ -1912,43 +2111,50 @@ function destinationCopySummaryText({
   additionalTariffs: ExportDestinationAdditionalTariffItem[];
   tradeRemedyCases: ExportDestinationTradeRemedyCaseItem[];
 }) {
-  const lines = [
-    `${productName} / ${formatHsCode(row.destinationHsCode)}`,
-    `적용 관세율 : ${destinationDisplayBaseRate(row)}`
-  ];
+  return buildCopyTextSet((language, variant) => {
+    const labels = copyLabels(language);
+    const lines = [
+      `${labels.productName} / ${labels.hsCode}`,
+      `${productName} / ${formatHsCode(row.destinationHsCode)}`,
+      labels.importRequirements
+    ];
 
-  if (agreementRateLabel !== "-") {
-    lines.push(`FTA 관세율 : ${agreementRateLabel}`);
-  }
-
-  if (additionalTariffs.length) {
-    lines.push(`추가관세 : ${additionalTariffs.map((tariff) => `${tariff.tariffProgram} ${tariff.rateText ?? "-"}`).join(" / ")}`);
-  }
-
-  if (tradeRemedyCases.length) {
-    lines.push(`AD/CVD : ${tradeRemedyCases.map((item) => `${item.caseNumber} ${item.rateText ?? "-"}`).join(" / ")}`);
-  }
-
-  lines.push("내국세");
-  if (internalTaxes.length) {
-    for (const tax of internalTaxes) {
-      lines.push(`${destinationInternalTaxText(tax)}${tax.basis ? ` / ${tax.basis}` : ""}`);
+    if (requirements.length) {
+      for (const requirement of requirements) {
+        lines.push(`- ${requirement.requirementName}${requirement.agency ? ` / ${requirement.agency}` : ""}`);
+      }
+    } else {
+      lines.push(labels.noImportRequirements);
     }
-  } else {
-    lines.push("표시할 수입국 내국세 데이터가 없습니다");
-  }
 
-  lines.push("수입요건");
-  if (requirements.length) {
-    for (const requirement of requirements) {
-      lines.push(`- ${requirement.requirementName}${requirement.agency ? ` / ${requirement.agency}` : ""}`);
+    if (variant === "brief") return lines.join("\n");
+
+    lines.push("");
+    lines.push(`${labels.appliedDutyRate} : ${destinationDisplayBaseRate(row)}`);
+
+    if (agreementRateLabel !== "-") {
+      lines.push(`${labels.ftaRate} : ${agreementRateLabel}`);
     }
-  } else {
-    lines.push("조회된 수입요건 데이터가 없습니다.");
-    lines.push("다만 통합공고, 개별법령, 표시·인증·유통규제 의무가 존재할 수 있으므로 제품 상세자료 기준 확인이 필요합니다.");
-  }
 
-  return lines.join("\n");
+    if (additionalTariffs.length) {
+      lines.push(`${labels.additionalTariff} : ${additionalTariffs.map((tariff) => `${tariff.tariffProgram} ${tariff.rateText ?? "-"}`).join(" / ")}`);
+    }
+
+    if (tradeRemedyCases.length) {
+      lines.push(`${labels.adCvd} : ${tradeRemedyCases.map((item) => `${item.caseNumber} ${item.rateText ?? "-"}`).join(" / ")}`);
+    }
+
+    lines.push(labels.internalTax);
+    if (internalTaxes.length) {
+      for (const tax of internalTaxes) {
+        lines.push(`${destinationInternalTaxText(tax)}${tax.basis ? ` / ${tax.basis}` : ""}`);
+      }
+    } else {
+      lines.push(labels.noDestinationInternalTax);
+    }
+
+    return lines.join("\n");
+  });
 }
 
 function DestinationInternalTaxSummary({ rows }: { rows: ExportDestinationInternalTaxItem[] }) {
@@ -2002,7 +2208,7 @@ function DestinationCountryDetailPage({
       <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-900 px-3 py-2 text-sm font-semibold text-white">
         <span>{dictionary.destination.destinationHsDetail}</span>
         <HsCopySummaryButton
-          text={destinationCopySummaryText({
+          texts={destinationCopySummaryTexts({
             row,
             productName,
             agreementRateLabel,
@@ -2533,7 +2739,7 @@ function ProductNoResultPanel({
             {clarification?.summary ?? "입력한 품명만으로는 표시 가능한 HS 후보를 만들기 어렵습니다. 제품코드, 약어, 짧은 품명은 실제 제품 정보 보완이 필요할 수 있습니다."}
           </p>
         </div>
-        <HsCopySummaryButton text={productNoResultCopySummaryText({ productName, clarification })} />
+        <HsCopySummaryButton texts={productNoResultCopySummaryTexts({ productName, clarification })} />
       </div>
       <div className="grid gap-3 p-3 lg:grid-cols-[1fr_0.8fr]">
         <div className="rounded-md border border-amber-100 bg-white p-3">
@@ -2956,7 +3162,7 @@ export async function HsDirectLookupPanel({
               <span>{dictionary.product.productResult}</span>
               {lookupDirection === "import" ? (
                 <HsCopySummaryButton
-                  text={productCandidateCopySummaryText({
+                  texts={productCandidateCopySummaryTexts({
                     productName: searchQuery,
                     candidates: productCandidates,
                     lookupByHsk: productCandidateLookupByHsk,
@@ -3312,7 +3518,7 @@ export async function HsDirectLookupPanel({
                           {dictionary.result.dutyEstimate}
                         </Link>
                         <HsCopySummaryButton
-                          text={hsCopySummaryText({
+                          texts={hsCopySummaryTexts({
                             result,
                             displayTariffs: filterImportTariffsForCountry(result.tariffPreviews, selectedDestinationCountry),
                             internalTaxRows: internalTaxCodesByHsk.get(result.hskCode) ?? [],

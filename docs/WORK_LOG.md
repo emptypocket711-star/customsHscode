@@ -527,3 +527,17 @@
 - `npm test`
 - `npm test -- lib/i18n/server.test.ts lib/i18n/locales.test.ts`
 - `npm run build`
+
+### HS 조회 복사 안내 옵션 추가
+
+- HS 10자리 상세, 품명 AI 후보, 후보 없음 안내, 해외 HS 상세의 클립보드 복사 버튼에 안내 언어 선택(한국어/영어/중국어)과 분량 선택(짧게/상세)을 추가했다.
+- 짧은 버전은 품명/HS CODE와 어떤 요건이 있는지까지만 복사하고, 상세 버전은 기존처럼 관세율, FTA, 내국세, 수입요건 보완자료, 원산지 표시 안내까지 포함한다.
+- 여러 복사 버튼이 한 화면에 있어도 `select` label/id가 충돌하지 않도록 `useId` 기반으로 정리했다.
+- 원천 데이터인 품명, 법령명, 요건명은 번역하지 않고 안내 문장만 선택 언어를 따르게 했다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test -- lib/i18n/hs-direct.test.ts`
+- `npm run build`
