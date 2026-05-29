@@ -33,17 +33,32 @@ async function captureIfpc(page: Page, containerNo: string) {
   });
   const input = page.locator("input[id$='edt_cycCntrno_input']").first();
   await input.waitFor({ timeout: 15000 });
+  await input.click();
   await input.fill(containerNo);
-  await page.mouse.click(1160, 72);
-  await waitForReceiptScreenReady(page, containerNo, { requireContainerText: false });
+  const findButton = page.locator("div[id$='btn_find']").first();
+  await findButton.waitFor({ timeout: 10000 });
+  await findButton.click();
+  await waitForReceiptScreenReady(page, containerNo, {
+    minPopulatedFields: 4,
+    requireContainerText: true,
+    timeoutMs: 20_000
+  });
 }
 
 async function receiptReadiness(page: Page, containerNo: string) {
   return page.evaluate((targetContainerNo) => {
     const bodyText = document.body?.innerText?.replace(/\s+/g, " ").trim() ?? "";
+    const inputValues = Array.from(document.querySelectorAll("input"))
+      .map((input) => input.value?.trim() ?? "")
+      .filter(Boolean);
     const readyState = document.readyState;
     const isHelperPage = /조회 화면으로 이동합니다|조회 화면 열기/.test(bodyText);
-    const hasContainerNo = bodyText.toUpperCase().includes(targetContainerNo);
+    const hasContainerNo = bodyText.toUpperCase().includes(targetContainerNo)
+      || inputValues.some((value) => value.toUpperCase().includes(targetContainerNo));
+    const populatedFieldCount = inputValues
+      .filter((value) => value.toUpperCase() !== targetContainerNo)
+      .filter((value) => value.toLowerCase() !== "guest")
+      .length;
     const hasUsefulText = bodyText.length > 220;
     const hasTable = document.querySelectorAll("table, [role='table'], .grid, .x-grid").length > 0;
 
@@ -51,6 +66,7 @@ async function receiptReadiness(page: Page, containerNo: string) {
       readyState,
       isHelperPage,
       hasContainerNo,
+      populatedFieldCount,
       hasUsefulText,
       hasTable,
       url: window.location.href
@@ -61,9 +77,10 @@ async function receiptReadiness(page: Page, containerNo: string) {
 async function waitForReceiptScreenReady(
   page: Page,
   containerNo: string,
-  options: { timeoutMs?: number; requireContainerText?: boolean } = {}
+  options: { timeoutMs?: number; requireContainerText?: boolean; minPopulatedFields?: number } = {}
 ) {
   const timeoutMs = options.timeoutMs ?? 15_000;
+  const minPopulatedFields = options.minPopulatedFields ?? 0;
   const startedAt = Date.now();
   let lastReady = await receiptReadiness(page, containerNo);
 
@@ -72,12 +89,13 @@ async function waitForReceiptScreenReady(
     const documentLoaded = lastReady.readyState === "interactive" || lastReady.readyState === "complete";
     const terminalScreenVisible = !lastReady.isHelperPage && lastReady.hasUsefulText;
     const containerMatched = options.requireContainerText === false || lastReady.hasContainerNo;
+    const fieldsPopulated = lastReady.populatedFieldCount >= minPopulatedFields;
 
-    if (documentLoaded && terminalScreenVisible && containerMatched) {
+    if (documentLoaded && terminalScreenVisible && containerMatched && fieldsPopulated) {
       return lastReady;
     }
 
-    if (documentLoaded && terminalScreenVisible && lastReady.hasTable && Date.now() - startedAt > 4_000) {
+    if (documentLoaded && terminalScreenVisible && lastReady.hasTable && fieldsPopulated && Date.now() - startedAt > 4_000) {
       return lastReady;
     }
 
