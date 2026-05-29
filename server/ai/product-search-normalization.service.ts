@@ -374,6 +374,12 @@ export async function normalizeProductSearchInput(input: ProductHsRecommendation
       model: provider.model,
       durationMs: Date.now() - startedAt,
       candidateCount: result.candidateHsCodes.length,
+      candidateReasonCount: result.candidateHsCodeReasons.length,
+      classificationState: result.classificationState ?? null,
+      certainty: result.certainty ?? null,
+      displayMode: result.displayMode ?? null,
+      hasPrimaryCandidate: Boolean(result.primaryCandidate),
+      missingQuestionCount: result.missingQuestions.length,
       searchTermCount: result.searchTerms.length,
       webSourceCount: result.webSources.length,
       userHsHintCount: userProvidedHsCodes.length

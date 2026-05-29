@@ -7,6 +7,7 @@ import { getEnvironmentHealthGroups, type EnvironmentHealthItem } from "@/server
 import { getProductionSchemaHealthReport } from "@/server/operations/schema-health.service";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import {
+  classifyLookupTelemetryIssue,
   isLookupTelemetryIssue,
   listRecentLookupTelemetryEvents,
   type LookupTelemetryEvent
@@ -206,13 +207,14 @@ export default async function OperationsHealthPage() {
                 </div>
               </div>
               <div className="overflow-x-auto">
-                <table className="min-w-[980px] text-left text-sm">
+                <table className="min-w-[1120px] text-left text-sm">
                   <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
                     <tr>
                       <th className="px-5 py-3">시간</th>
                       <th className="px-5 py-3">이벤트</th>
                       <th className="px-5 py-3">상태</th>
                       <th className="px-5 py-3">결과</th>
+                      <th className="px-5 py-3">진단</th>
                       <th className="px-5 py-3">입력 형태</th>
                       <th className="px-5 py-3">처리</th>
                       <th className="px-5 py-3">오류</th>
@@ -232,6 +234,12 @@ export default async function OperationsHealthPage() {
                         <td className="whitespace-nowrap px-5 py-4 text-slate-700">
                           <span className="font-semibold text-slate-950">{event.resultCount ?? payloadValue(event.payload, "candidateCount")}</span>
                           <span className="ml-1 text-xs text-slate-500">건</span>
+                        </td>
+                        <td className="px-5 py-4">
+                          <p className="font-semibold text-slate-800">{classifyLookupTelemetryIssue(event)}</p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            AI {payloadValue(event.payload, "normalizationCandidateCount")} · 공식 {payloadValue(event.payload, "officialCandidateCount")} · 보조 {payloadValue(event.payload, "aiHintCount")}
+                          </p>
                         </td>
                         <td className="px-5 py-4 text-xs leading-5 text-slate-600">
                           길이 {payloadValue(event.payload, "productNameLength")} / 토큰 {payloadValue(event.payload, "tokenCount")}

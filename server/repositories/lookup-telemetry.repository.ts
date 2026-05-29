@@ -60,3 +60,40 @@ export function isLookupTelemetryIssue(event: LookupTelemetryEvent) {
     || event.resultCount === 0
     || Boolean(event.errorType);
 }
+
+function numericPayloadValue(payload: Record<string, unknown>, key: string) {
+  const value = payload[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function booleanPayloadValue(payload: Record<string, unknown>, key: string) {
+  const value = payload[key];
+  return typeof value === "boolean" ? value : false;
+}
+
+export function classifyLookupTelemetryIssue(event: LookupTelemetryEvent) {
+  if (event.status === "error" || event.errorType) return "오류";
+  if (booleanPayloadValue(event.payload, "bareProductCodeWithoutSource")) return "제품코드 식별 실패";
+  if (event.status === "fallback") return "Fallback 처리";
+
+  const resultCount = event.resultCount ?? numericPayloadValue(event.payload, "resultCount");
+  const candidateCount = numericPayloadValue(event.payload, "candidateCount");
+  const normalizationCandidateCount = numericPayloadValue(event.payload, "normalizationCandidateCount");
+  const aiHintCount = numericPayloadValue(event.payload, "aiHintCount");
+  const officialCandidateCount = numericPayloadValue(event.payload, "officialCandidateCount");
+  const hasNormalization = booleanPayloadValue(event.payload, "hasNormalization");
+
+  if (event.eventType === "product_search_normalized" && candidateCount === 0) {
+    return "GPT 후보 없음";
+  }
+
+  if (event.eventType === "product_candidates_recommended" && resultCount === 0) {
+    if (hasNormalization && (normalizationCandidateCount ?? 0) > 0 && (aiHintCount ?? 0) === 0 && (officialCandidateCount ?? 0) === 0) {
+      return "GPT 후보 후처리 확인";
+    }
+    if ((normalizationCandidateCount ?? 0) === 0) return "GPT 후보 없음";
+    return "최종 후보 0건";
+  }
+
+  return isLookupTelemetryIssue(event) ? "확인 필요" : "정상";
+}

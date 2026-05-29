@@ -957,6 +957,20 @@ async function normalizedProductSearch(input: ProductHsRecommendationInput): Pro
   };
 }
 
+function productNormalizationTelemetryShape(normalization: AiProductSearchNormalizationResult | null) {
+  return {
+    hasNormalization: Boolean(normalization),
+    classificationState: normalization?.classificationState ?? null,
+    certainty: normalization?.certainty ?? null,
+    displayMode: normalization?.displayMode ?? null,
+    hasPrimaryCandidate: Boolean(normalization?.primaryCandidate),
+    missingQuestionCount: normalization?.missingQuestions.length ?? 0,
+    searchTermCount: normalization?.searchTerms.length ?? 0,
+    webSourceCount: normalization?.webSources.length ?? 0,
+    normalizationCandidateCount: normalizeAiHsCodeHints(normalization).length
+  };
+}
+
 function mapAmbiguousCandidateFromHsRecord(
   hsRecord: HsMasterSearchRow,
   ruleCandidate: (typeof ambiguousProductRules)[number]["candidates"][number],
@@ -1170,7 +1184,7 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       aiHintCount: aiHintCandidates.length,
       officialCandidateCount: baseCandidates.length,
       fallbackCandidateCount: fallbackCandidates.length,
-      normalizationCandidateCount: normalizeAiHsCodeHints(normalization).length
+      ...productNormalizationTelemetryShape(normalization)
     });
     return candidates;
   }
@@ -1186,7 +1200,7 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
         resultCount: 0,
         aiHintCount: 0,
         officialCandidateCount: 0,
-        normalizationCandidateCount: normalizeAiHsCodeHints(normalization).length,
+        ...productNormalizationTelemetryShape(normalization),
         bareProductCodeWithoutSource: true
       });
       return [];
@@ -1226,7 +1240,7 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       aiHintCount: aiHintCandidates.length,
       officialCandidateCount: officialHsMasterCandidates.length,
       fallbackCandidateCount: fallbackCandidates.length,
-      normalizationCandidateCount: normalizeAiHsCodeHints(normalization).length
+      ...productNormalizationTelemetryShape(normalization)
     });
     return candidates;
   } catch {
@@ -1239,7 +1253,7 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
         resultCount: 0,
         aiHintCount: 0,
         officialCandidateCount: 0,
-        normalizationCandidateCount: normalizeAiHsCodeHints(normalization).length,
+        ...productNormalizationTelemetryShape(normalization),
         bareProductCodeWithoutSource: true
       });
       return [];
@@ -1266,7 +1280,7 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       aiHintCount: aiHintCandidates.length,
       officialCandidateCount: mockOfficialCandidates.length,
       fallbackCandidateCount: fallbackCandidates.length,
-      normalizationCandidateCount: normalizeAiHsCodeHints(normalization).length
+      ...productNormalizationTelemetryShape(normalization)
     });
     return candidates;
   }
