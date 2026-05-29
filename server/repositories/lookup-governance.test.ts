@@ -190,6 +190,10 @@ describe("lookup governance guards", () => {
     expect(containerReceiptRoute).toContain("external-container-receipt");
     expect(containerReceiptRoute).toContain("externalIntegrationErrorResponse");
     expect(containerReceiptRoute).toContain("허용된 터미널 조회 화면만 반입계로 출력할 수 있습니다.");
+    expect(containerReceiptRoute).toContain("terminal_helper_page_stalled");
+    expect(containerReceiptRoute).toContain("terminal_loading_not_settled");
+    expect(containerReceiptRoute).toContain("terminal_container_not_confirmed");
+    expect(containerReceiptRoute).toContain("terminal_detail_not_populated");
     expect(terminalHelperRoute).toContain("requireAuthenticatedApiRoute");
     expect(terminalHelperRoute).toContain("external-terminal-helper");
     expect(terminalHelperRoute).toContain("externalIntegrationErrorResponse");
