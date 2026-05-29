@@ -951,6 +951,12 @@ function productNoResultCopySummaryTexts({
       labels.productInfoInsufficientDetail
     ];
 
+    if (clarification?.suggestedCandidateCodes.length) {
+      lines.push("");
+      lines.push("예비 검토 가능한 HS 방향");
+      lines.push(...clarification.suggestedCandidateCodes.slice(0, 6).map((code, index) => `${index + 1}. ${formatHsCode(code)}`));
+    }
+
     if (variant === "brief") return lines.join("\n");
 
     lines.push("");
@@ -2825,10 +2831,18 @@ function AiClarificationPanel({
 
 function ProductNoResultPanel({
   productName,
-  clarification
+  clarification,
+  basisDate,
+  direction,
+  destinationCountry,
+  originCountry
 }: {
   productName: string;
   clarification: ProductClarificationResult | null;
+  basisDate: string;
+  direction: "import" | "export";
+  destinationCountry: string;
+  originCountry: string;
 }) {
   const questions = clarification?.missingQuestions.length
     ? clarification.missingQuestions
@@ -2840,19 +2854,23 @@ function ProductNoResultPanel({
       "작동 방식, 기능, 사양서 또는 카탈로그 URL",
       "제조사, 모델명, 제품 사진 또는 상세 설명"
     ];
+  const suggestedCodes = clarification?.suggestedCandidateCodes.slice(0, 6) ?? [];
+  const hasSuggestedCodes = suggestedCodes.length > 0;
 
   return (
     <section className="mt-4 overflow-hidden rounded-md border border-amber-200 bg-amber-50">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200 px-3 py-2">
         <div>
-          <h2 className="text-sm font-semibold text-amber-950">HS CODE 특정 정보 부족</h2>
+          <h2 className="text-sm font-semibold text-amber-950">
+            {hasSuggestedCodes ? "예비 HS 방향 확인 필요" : "HS CODE 특정 정보 부족"}
+          </h2>
           <p className="mt-1 text-xs leading-5 text-amber-900">
             {clarification?.summary ?? "입력한 품명만으로는 표시 가능한 HS 후보를 만들기 어렵습니다. 제품코드, 약어, 짧은 품명은 실제 제품 정보 보완이 필요할 수 있습니다."}
           </p>
         </div>
         <HsCopySummaryButton texts={productNoResultCopySummaryTexts({ productName, clarification })} />
       </div>
-      <div className="grid gap-3 p-3 lg:grid-cols-[1fr_0.8fr]">
+      <div className="grid gap-3 p-3 lg:grid-cols-[1fr_0.85fr]">
         <div className="rounded-md border border-amber-100 bg-white p-3">
           <p className="text-xs font-semibold text-amber-900">보완 요청 항목</p>
           <ol className="mt-2 grid gap-2">
@@ -2864,14 +2882,43 @@ function ProductNoResultPanel({
             ))}
           </ol>
         </div>
-        <div className="rounded-md border border-amber-100 bg-white p-3 text-sm leading-6 text-slate-700">
-          <p className="font-semibold text-slate-900">제품코드 또는 모델명 검색 시</p>
-          <p className="mt-2">
-            제조사명, 제품 URL, 카탈로그, 사진, 사양서 중 하나가 있으면 실제 제품군을 더 좁힐 수 있습니다.
-          </p>
-          <p className="mt-2">
-            해외 HS CODE나 6자리 HS CODE를 알고 있다면 품명과 함께 입력하면 해당 코드가 강한 조회 단서로 사용됩니다.
-          </p>
+        <div className="grid gap-3">
+          {hasSuggestedCodes ? (
+            <div className="rounded-md border border-amber-100 bg-white p-3">
+              <p className="text-xs font-semibold text-amber-900">AI가 제시한 예비 방향</p>
+              <div className="mt-2 grid gap-2">
+                {suggestedCodes.map((code) => (
+                  <Link
+                    className="flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm hover:border-blue-200 hover:bg-blue-50"
+                    data-navigation-progress="예비 HS 조회"
+                    href={hsLookupHref({
+                      hskCode: code,
+                      basisDate,
+                      direction,
+                      destinationCountry,
+                      originCountry
+                    })}
+                    key={code}
+                  >
+                    <span className="font-mono font-semibold text-blue-700">{formatHsCode(code)}</span>
+                    <span className="text-xs font-medium text-slate-500">조회</span>
+                  </Link>
+                ))}
+              </div>
+              <p className="mt-2 text-xs leading-5 text-slate-600">
+                위 코드는 확정 세번이 아니라 조회를 이어가기 위한 예비 방향입니다. 상세 화면에서 하위 10자리와 수입요건을 다시 확인하세요.
+              </p>
+            </div>
+          ) : null}
+          <div className="rounded-md border border-amber-100 bg-white p-3 text-sm leading-6 text-slate-700">
+            <p className="font-semibold text-slate-900">제품코드 또는 모델명 검색 시</p>
+            <p className="mt-2">
+              제조사명, 제품 URL, 카탈로그, 사진, 사양서 중 하나가 있으면 실제 제품군을 더 좁힐 수 있습니다.
+            </p>
+            <p className="mt-2">
+              해외 HS CODE나 6자리 HS CODE를 알고 있다면 품명과 함께 입력하면 해당 코드가 강한 조회 단서로 사용됩니다.
+            </p>
+          </div>
         </div>
       </div>
     </section>
@@ -3244,7 +3291,14 @@ export async function HsDirectLookupPanel({
         ) : null}
 
         {shouldLookupProduct && productCandidates.length === 0 ? (
-          <ProductNoResultPanel productName={searchQuery} clarification={aiClarification} />
+          <ProductNoResultPanel
+            basisDate={resolvedBasisDate}
+            clarification={aiClarification}
+            destinationCountry={selectedDestinationCountry}
+            direction={lookupDirection}
+            originCountry={selectedOriginCountry}
+            productName={searchQuery}
+          />
         ) : null}
 
         {supplementGuidance ? (

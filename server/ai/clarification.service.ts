@@ -50,19 +50,30 @@ export async function analyzeProductClarification(input: ProductClarificationInp
       modelName: input.modelName,
       basisDate: input.basisDate
     }).catch(() => null);
+    const suggestedCandidateCodes = normalization?.candidateHsCodes.slice(0, 6) ?? [];
 
-    if (normalization?.classificationState === "needs_clarification" || normalization?.displayMode === "needs_more_info") {
+    if (
+      normalization
+      && (normalization.classificationState === "needs_clarification"
+        || normalization.displayMode === "needs_more_info"
+        || suggestedCandidateCodes.length > 0)
+    ) {
+      const hasProvisionalDirection = suggestedCandidateCodes.length > 0;
       return {
         provider: normalization.provider,
         model: normalization.model,
-        confidence: normalization.certainty === "medium" ? "medium" : "low",
-        summary: normalization.userMessage ?? "HS CODE 특정에 필요한 정보가 부족합니다. 아래 조건을 보완하면 세번 후보를 좁힐 수 있습니다.",
+        confidence: normalization.certainty === "high" ? "medium" : normalization.certainty === "medium" ? "medium" : "low",
+        summary: normalization.userMessage ?? (hasProvisionalDirection
+          ? "AI가 우선 검토할 HS 방향은 제시했지만, 현재 데이터에서 바로 표시할 수 있는 10자리 후보로 확장되지 않았습니다."
+          : "HS CODE 특정에 필요한 정보가 부족합니다. 아래 조건을 보완하면 세번 후보를 좁힐 수 있습니다."),
         missingQuestions: normalization.missingQuestions.length
           ? normalization.missingQuestions
           : ["제품의 용도, 재질, 구성, 완제품/부분품 여부 확인이 필요합니다."],
-        suggestedCandidateCodes: [],
+        suggestedCandidateCodes,
         riskNotes: [
-          "입력 정보만으로 세번을 특정하지 않고, 분류에 필요한 조건을 먼저 확인합니다.",
+          hasProvisionalDirection
+            ? "표시된 코드는 예비 검토 방향이며, 국가별 10자리 세번 확정에는 하위 품목 확인이 필요합니다."
+            : "입력 정보만으로 세번을 특정하지 않고, 분류에 필요한 조건을 먼저 확인합니다.",
           "보완 정보가 입력되면 가장 유력한 HS 후보를 다시 조회합니다."
         ],
         redaction: redacted.redactionCounts,

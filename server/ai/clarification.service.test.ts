@@ -58,6 +58,19 @@ describe("analyzeProductClarification", () => {
     expect(result.suggestedCandidateCodes).toEqual(["3304991000"]);
     expect(result.missingQuestions.length).toBeGreaterThan(0);
   });
+
+  it("keeps provisional GPT HS directions when official candidate expansion is empty", async () => {
+    const result = await analyzeProductClarification({
+      productName: "printer black and white",
+      basisDate: "2026-05-24",
+      officialCandidates: []
+    });
+
+    expect(result.provider).toBe("mock");
+    expect(result.allowedCandidateCodes).toEqual([]);
+    expect(result.suggestedCandidateCodes).toContain("844332");
+    expect(result.riskNotes.join(" ")).toContain("예비 검토 방향");
+  });
 });
 
 describe("normalizeProductSearchInput", () => {

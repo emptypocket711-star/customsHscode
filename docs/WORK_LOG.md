@@ -680,3 +680,15 @@
 
 - `npm run typecheck`
 - `npm run lint`
+
+### 품명 검색 무결과 화면 보강
+
+- GPT가 HS4/HS6 예비 방향을 제시했지만 공식 후보 확장 결과가 비어 있는 경우, 예비 HS 방향을 결과 없음 화면에 표시하도록 했다.
+- 예비 코드는 확정 세번이 아니라 이어서 조회할 수 있는 방향으로 안내하고, 클릭 시 해당 HS 조회 화면으로 이동하게 했다.
+- 클립보드 안내문에도 예비 검토 가능한 HS 방향을 포함해 업체 보완 요청 시 활용할 수 있게 했다.
+
+검증:
+
+- `npm test -- server/ai/clarification.service.test.ts`
+- `npm run typecheck`
+- `npm run lint`
