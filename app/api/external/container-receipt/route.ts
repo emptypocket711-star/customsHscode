@@ -118,7 +118,13 @@ async function waitForReceiptScreenReady(
     await page.waitForTimeout(1000);
   }
 
-  return lastReady;
+  throw new Error([
+    "터미널 조회 화면이 아직 캡처 가능한 상태가 아닙니다.",
+    lastReady.isHelperPage ? "조회 이동 안내 화면에 머물러 있습니다." : "",
+    lastReady.hasLoadingOverlay ? "외부 사이트 로딩 화면이 남아 있습니다." : "",
+    !lastReady.hasContainerNo ? "조회 화면에서 컨테이너 번호를 확인하지 못했습니다." : "",
+    lastReady.populatedFieldCount < minPopulatedFields ? "조회 상세 필드가 아직 채워지지 않았습니다." : ""
+  ].filter(Boolean).join(" "));
 }
 
 async function captureLiveTerminal(page: Page, request: Request, terminalCode: TerminalCode, containerNo: string) {
@@ -139,7 +145,8 @@ async function captureLiveTerminal(page: Page, request: Request, terminalCode: T
     waitUntil: "networkidle",
     timeout: 30000
   });
-  await waitForReceiptScreenReady(page, containerNo);
+  await waitForReceiptScreenReady(page, containerNo, { timeoutMs: 25_000 });
+  await page.waitForTimeout(800);
 }
 
 async function launchChromium(): Promise<Browser> {
