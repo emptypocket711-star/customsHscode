@@ -774,6 +774,19 @@ function productCandidateEvidenceText(candidate: HsCandidateRecommendation) {
     : "입력 품명과 제품 단서를 기준으로 구성한 HS 후보입니다";
 }
 
+function productCandidateCodeLevelLabel(candidate: HsCandidateRecommendation) {
+  const codeLength = normalizeHsInput(candidate.hskCode).length;
+  if (codeLength >= 10) return "10자리 후보";
+  if (codeLength === 8) return "예비 HS8";
+  if (codeLength === 6) return "예비 HS6";
+  if (codeLength === 4) return "예비 HS4";
+  return "예비 HS";
+}
+
+function productCandidateDetailButtonText(candidate: HsCandidateRecommendation) {
+  return normalizeHsInput(candidate.hskCode).length >= 10 ? "상세 조회" : "하위 10자리 후보 보기";
+}
+
 function uniqueProductQuestions(candidates: HsCandidateRecommendation[], clarification?: ProductClarificationResult | null) {
   return Array.from(
     new Set([
@@ -3369,6 +3382,9 @@ export async function HsDirectLookupPanel({
                         </Link>
                       </div>
                       <div className="flex items-center gap-2">
+                        <Badge tone={normalizeHsInput(candidate.hskCode).length >= 10 ? "success" : "warning"}>
+                          {productCandidateCodeLevelLabel(candidate)}
+                        </Badge>
                         <Badge tone={candidate.lookupBasis === "user_hs_hint" ? "info" : candidate.lookupBasis === "ambiguous_abbreviation" ? "warning" : "neutral"}>
                           {productCandidateLookupBasisLabel(candidate)}
                         </Badge>
@@ -3421,7 +3437,7 @@ export async function HsDirectLookupPanel({
                       data-navigation-progress="상세조회"
                       href={detailHref}
                     >
-                      {dictionary.product.detailLookup}
+                      {productCandidateDetailButtonText(candidate)}
                     </Link>
                   </article>
                 );
