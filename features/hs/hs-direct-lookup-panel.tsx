@@ -3691,6 +3691,7 @@ export async function HsDirectLookupPanel({
                         />
                         <Link
                           className="focus-ring inline-flex items-center justify-center rounded-md bg-white/15 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/25"
+                          data-navigation-progress="예상 납세액 계산"
                           href={buildDutyEstimatorHref({
                             hskCode: result.hskCode,
                             basisDate: result.basisDate,
