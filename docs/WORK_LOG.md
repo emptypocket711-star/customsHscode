@@ -569,3 +569,15 @@
 - `npm run lint`
 - `npm test -- lib/i18n/hs-direct.test.ts`
 - `npm run build`
+
+### 적하목록 즉시 종료 감시 상태 정리
+
+- 목표 상태가 이미 지나간 건을 감시 등록할 때 상태 알림 메일 발송 또는 중복 발송 생략으로 즉시 종료되는 경우 `cargo_watch_requests.next_check_at`도 `null`로 저장되도록 정리했다.
+- 기존 cron은 `status = active`만 조회하므로 중복 발송 위험은 없었지만, 종료된 감시 row가 다음 조회 예정 시간을 가진 것처럼 보이지 않게 DB 상태를 명확히 했다.
+- 상태 매칭은 현재 상태뿐 아니라 전체 이벤트 이력 기준으로 유지해, 사용자가 이미 지난 상태값을 선택해도 즉시 감지되는 흐름을 보존했다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test -- server/services/cargo-status-classifier.test.ts`

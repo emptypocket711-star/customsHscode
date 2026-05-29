@@ -525,6 +525,9 @@ export async function createCargoWatchAction(
       }
     }
 
+    const immediateMatchClosed = immediateMatch.matched
+      && (immediateMatch.mailSent || immediateMatch.mailSkippedDuplicate);
+
     const { error } = await supabase
       .from("cargo_watch_requests")
       .insert({
@@ -537,12 +540,12 @@ export async function createCargoWatchAction(
         target_status: parsed.data.targetStatus,
         notify_email: parsed.data.notifyEmail,
         poll_interval_seconds: 300,
-        status: immediateMatch.matched && (immediateMatch.mailSent || immediateMatch.mailSkippedDuplicate) ? "matched" : "active",
+        status: immediateMatchClosed ? "matched" : "active",
         last_status: immediateMatch.lastStatus,
         last_checked_at: immediateMatch.lastStatus ? now : null,
-        next_check_at: now,
-        matched_at: immediateMatch.matched && (immediateMatch.mailSent || immediateMatch.mailSkippedDuplicate) ? now : null,
-        notified_at: immediateMatch.matched && (immediateMatch.mailSent || immediateMatch.mailSkippedDuplicate) ? now : null,
+        next_check_at: immediateMatchClosed ? null : now,
+        matched_at: immediateMatchClosed ? now : null,
+        notified_at: immediateMatchClosed ? now : null,
         management_inspection_notified_at: immediateMatch.managementInspectionMailSent ? now : null,
         management_inspection_value: immediateMatch.managementInspectionValue ?? null,
         last_error: [
