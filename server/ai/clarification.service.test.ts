@@ -98,7 +98,7 @@ describe("normalizeProductSearchInput", () => {
     });
 
     expect(key).toContain("ai-product-normalization");
-    expect(key).toContain("product-search-normalization-v15");
+    expect(key).toContain("product-search-normalization-v16");
     expect(key).toContain("901910");
     expect(key).not.toContain("secret");
     expect(key).not.toContain("ABC-123");
@@ -253,7 +253,9 @@ describe("normalizeProductSearchInput", () => {
     expect(instructions).toContain("If web search is unavailable, inconclusive, or blocked");
     expect(instructions).toContain("Act as a classification interviewer first");
     expect(instructions).toContain("First decide classificationState, certainty, and displayMode");
+    expect(instructions).toContain("Candidate count rule");
     expect(instructions).toContain("Use classificationState=needs_clarification");
+    expect(instructions).toContain("For needs_clarification, still include one primaryCandidate");
     expect(instructions).toContain("Do not force 3 to 8 candidates in high-certainty cases");
     expect(instructions).toContain("Prefer HS6 prefixes");
     expect(instructions).toContain("Return useful HS4/HS6 candidates even when the exact national HS10 may need later official-data expansion");
@@ -262,6 +264,7 @@ describe("normalizeProductSearchInput", () => {
     expect(instructions).toContain("do not prioritize accumulator/battery headings only because the article contains an internal battery");
     expect(instructions).toContain("classify lookup intent by the traded finished article first");
     expect(instructions).toContain("If web search identifies a product but the visible words can reasonably indicate another product family");
+    expect(instructions).toContain("trade names, retail product names, and foreign-language names");
   });
 
   it("parses high-certainty single primary candidates before alternatives", () => {
