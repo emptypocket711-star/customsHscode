@@ -2,6 +2,19 @@
 
 This folder contains helper scripts for local data preparation and operational maintenance.
 
+## Production schema health check
+
+`check-production-schema.mjs` compares the current migration files with the
+target Supabase database. It catches missing tables, columns, RPC/functions, and
+RLS drift before deployment or after manual SQL changes.
+
+```bash
+npm run health:db
+```
+
+The script reads `DATABASE_URL` from the shell or `.env.local`. It does not
+print secrets. Use `--json` for CI or machine-readable output.
+
 ## Official Customs Excel seed
 
 `generate_customs_excel_seed.py` converts downloaded official Customs Excel files from `~/Downloads` into Supabase seed SQL with source metadata, checksums, effective dates, and `staged` status.
