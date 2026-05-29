@@ -2791,7 +2791,11 @@ function AiClarificationPanel({
                   "rounded-md border bg-white px-3 py-2",
                   presentation.tone === "warning" ? "border-amber-100" : "border-blue-100"
                 )} key={code}>
-                  <Link className="font-mono text-sm font-semibold text-blue-700 underline-offset-2 hover:underline" href={href}>
+                  <Link
+                    className="font-mono text-sm font-semibold text-blue-700 underline-offset-2 hover:underline"
+                    data-navigation-progress="상세조회"
+                    href={href}
+                  >
                     {formatHsCode(code)}
                   </Link>
                   <div className="mt-1 text-sm font-medium text-slate-900">{candidate?.koreanName ?? "후보 품명 확인 필요"}</div>
