@@ -302,6 +302,78 @@ describe("recommendHsCandidates", () => {
     expect(candidates[0]?.hskCode).toBe("8471601020");
   });
 
+  it("keeps GPT HS6 candidates for Korean retail product names even without an exact official HSK match", async () => {
+    process.env.AI_PROVIDER = "openai";
+    process.env.OPENAI_API_KEY = "test-key";
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      output_text: JSON.stringify({
+        classificationState: "single_likely_candidate",
+        certainty: "medium",
+        displayMode: "single",
+        correctedProductName: "매실 음료",
+        primaryCandidate: {
+          code: "2202.99",
+          reason: "소매용 비알코올 매실 음료 가능성이 높습니다.",
+          requiredInfo: ["과즙 함량", "희석음료인지 원액인지"]
+        },
+        candidateHsCodes: ["220299"],
+        candidateHsCodeReasons: [
+          { code: "220299", reason: "비알코올 음료 가능성", requiredInfo: ["성분표", "당류·물 첨가 여부"] }
+        ],
+        searchTerms: ["plum beverage", "매실 음료"],
+        koreanTerms: ["매실 음료"],
+        englishTerms: ["plum beverage"],
+        missingQuestions: ["성분표와 표시사항 확인"]
+      })
+    }), { status: 200 })));
+
+    const candidates = await recommendHsCandidatesForProduct({
+      productName: "초록매실",
+      basisDate: "2026-05-21"
+    });
+
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]?.hskCode).toBe("220299");
+    expect(candidates[0]?.lookupBasis).toBe("ai_hs_hint");
+    expect(candidates[0]?.requiredQuestions.join(" ")).toContain("성분표");
+  });
+
+  it("uses GPT product-family interpretation for model-code-like inputs instead of returning empty results", async () => {
+    process.env.AI_PROVIDER = "openai";
+    process.env.OPENAI_API_KEY = "test-key";
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      output_text: JSON.stringify({
+        classificationState: "single_likely_candidate",
+        certainty: "medium",
+        displayMode: "single",
+        correctedProductName: "massage belt apparatus",
+        primaryCandidate: {
+          code: "9019.10",
+          reason: "모델코드와 제품명 단서상 마사지용 기기 가능성이 높습니다.",
+          requiredInfo: ["마사지 기능 여부", "의료기기 표시 여부"]
+        },
+        candidateHsCodes: ["901910"],
+        candidateHsCodeReasons: [
+          { code: "901910", reason: "마사지용 기기 가능성", requiredInfo: ["제품 카탈로그", "기능 설명"] }
+        ],
+        searchTerms: ["massage belt apparatus", "CS-3000"],
+        englishTerms: ["massage belt apparatus"],
+        webSources: [{ title: "Maker product page", url: "https://example.com/cs-3000" }],
+        missingQuestions: ["제품 카탈로그 확인"]
+      })
+    }), { status: 200 })));
+
+    const candidates = await recommendHsCandidatesForProduct({
+      productName: "CS-3000",
+      basisDate: "2026-05-21"
+    });
+
+    expect(candidates.length).toBeGreaterThan(0);
+    expect(candidates[0]?.hs6).toBe("901910");
+    expect(candidates[0]?.lookupBasis).toBe("ai_hs_hint");
+    expect(candidates[0]?.requiredQuestions.join(" ")).toContain("카탈로그");
+  });
+
   it("removes dairy cream candidates when cosmetic skin-care context is present", () => {
     const makeCandidate = (hskCode: string, koreanName: string, confidenceScore: number) => ({
       hskCode,

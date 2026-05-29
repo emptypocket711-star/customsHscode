@@ -690,9 +690,11 @@
 - 중고차 컨테이너 조회 실패 시 시도한 터미널별 결과를 화면에 표시해, 이트랜스 결과 없음과 터미널별 결과 없음/연결 실패를 구분하기 쉽게 했다.
 - 개발자 운영 점검 화면에 최근 조회 품질 로그의 일자별 요약을 추가해 무결과, GPT 실패, HS6 예비 후보 발생 흐름을 빠르게 볼 수 있게 했다.
 - HS 상세 결과에서 예상 납세액 계산기로 이동하는 링크에 전역 진행 표시 라벨을 추가했다.
+- 한글 상품명과 제품코드형 입력에서 GPT가 HS6 예비 후보를 반환하면 공식 10자리 매칭이 없어도 후보가 사라지지 않는 회귀 테스트를 추가했다.
 
 검증:
 
 - `npm test -- server/ai/clarification.service.test.ts`
+- `npm test -- server/rules/hs-candidate.service.test.ts`
 - `npm run typecheck`
 - `npm run lint`
