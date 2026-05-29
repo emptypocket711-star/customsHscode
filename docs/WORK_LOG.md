@@ -605,3 +605,16 @@
 - `npm run typecheck`
 - `npm run lint`
 - `npm test -- server/operations/environment-health.service.test.ts`
+
+### 운영 route 스모크 테스트 추가
+
+- 배포 후 핵심 페이지가 살아있는지 확인하는 `scripts/smoke_production_routes.mjs`와 `npm run smoke:production` 명령을 추가했다.
+- 로그인 쿠키가 없으면 보호 페이지가 로그인으로 막히는지 확인하고, `SMOKE_COOKIE`와 `SMOKE_REQUIRE_AUTHENTICATED=true`를 넣으면 실제 보호 페이지 marker까지 검사한다.
+- 대상은 로그인, 대시보드, HS 직접 조회, 품명 AI 조회, 해외 HS 조회, 예상 납세액, 적하목록, 중고차 수출, 컨테이너 조회, 무역뉴스다.
+- 보호 페이지는 proxy 단계에서 Supabase auth cookie가 없으면 즉시 `/login`으로 보내도록 해, 비로그인 상태에서 무거운 서버 렌더링이나 외부 조회가 먼저 시작되지 않게 했다.
+
+검증:
+
+- `npm run smoke:production -- https://hsfinder.co.kr`
+- `npm run typecheck`
+- `npm run lint`

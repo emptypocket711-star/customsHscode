@@ -6,6 +6,34 @@ function clientIp(request: NextRequest) {
   return forwardedFor || request.headers.get("x-real-ip") || "unknown";
 }
 
+function isProtectedPath(pathname: string) {
+  return [
+    "/billing",
+    "/cargo",
+    "/dashboard",
+    "/diagnosis",
+    "/documents",
+    "/duty-estimator",
+    "/entry",
+    "/hs",
+    "/legal-updates",
+    "/operations",
+    "/reports",
+    "/settings",
+    "/staff",
+    "/trade-news",
+    "/used-car-export",
+    "/vehicle-spec"
+  ].some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
+
+function hasSupabaseAuthCookie(request: NextRequest) {
+  return request.cookies.getAll().some((cookie) => {
+    const name = cookie.name.toLowerCase();
+    return name.startsWith("sb-") && name.includes("auth-token") && Boolean(cookie.value);
+  });
+}
+
 function limitForPath(pathname: string) {
   if (pathname === "/login" || pathname.startsWith("/auth")) {
     return { scope: "auth", limit: 40, windowMs: 60_000 };
@@ -35,6 +63,10 @@ function limitForPath(pathname: string) {
 }
 
 export async function proxy(request: NextRequest) {
+  if (isProtectedPath(request.nextUrl.pathname) && !hasSupabaseAuthCookie(request)) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
   if (!isRateLimitEnabled()) return NextResponse.next();
 
   const limit = limitForPath(request.nextUrl.pathname);
@@ -77,7 +109,18 @@ export const config = {
     "/hs/:path*",
     "/documents/:path*",
     "/duty-estimator/:path*",
+    "/dashboard/:path*",
     "/cargo/:path*",
-    "/used-car-export/:path*"
+    "/used-car-export/:path*",
+    "/trade-news/:path*",
+    "/billing/:path*",
+    "/diagnosis/:path*",
+    "/entry",
+    "/legal-updates",
+    "/operations/:path*",
+    "/reports/:path*",
+    "/settings/:path*",
+    "/staff/:path*",
+    "/vehicle-spec/:path*"
   ]
 };

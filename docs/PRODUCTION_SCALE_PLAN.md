@@ -222,6 +222,14 @@ npm run loadtest:lookup -- https://your-domain.example
 
 The script exercises import exact HSK lookup, product-name lookup, export destination lookup, and overseas HS lookup. Treat this as an engineering smoke test only; run a larger tool such as k6 or Artillery before public launch.
 
+Use the route smoke test after every production deploy:
+
+```bash
+npm run smoke:production -- https://hsfinder.co.kr
+```
+
+Without `SMOKE_COOKIE`, protected pages are expected to return the login guard. With `SMOKE_COOKIE` and `SMOKE_REQUIRE_AUTHENTICATED=true`, the script validates dashboard, HS lookup, overseas HS, duty estimator, cargo, used-car export, container check, and trade news page markers.
+
 ## Immediate Engineering Backlog
 
 1. Add lookup result cache abstraction.

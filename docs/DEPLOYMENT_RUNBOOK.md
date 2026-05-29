@@ -96,6 +96,20 @@ API012 관세환율도 같은 `38010` 포트를 사용하므로 운영에서는 
 - 개발자 계정의 `/legal-updates`
 - 일반 계정의 `/legal-updates` 접근 차단
 
+자동 스모크 테스트:
+
+```bash
+npm run smoke:production -- https://hsfinder.co.kr
+```
+
+로그인 쿠키 없이 실행하면 보호 페이지가 로그인으로 막히는지 확인한다. 실제 보호 페이지 내용까지 확인하려면 브라우저 개발자도구에서 로그인 세션 쿠키를 복사해 `SMOKE_COOKIE`에 넣고 실행한다. 쿠키 원문은 커밋하거나 로그에 공유하지 않는다.
+
+```bash
+SMOKE_COOKIE='...' \
+SMOKE_REQUIRE_AUTHENTICATED=true \
+npm run smoke:production -- https://hsfinder.co.kr
+```
+
 ## 5. Vercel CLI 운영 확인
 
 로컬 프로젝트는 Vercel 프로젝트 `koo-apps/customs-hscode`에 연결되어 있다. 운영 서버 함수 오류나 환경변수 상태를 확인할 때 아래 명령을 사용한다.

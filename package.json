@@ -8,6 +8,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
+    "smoke:production": "node scripts/smoke_production_routes.mjs",
     "probe:pnct": "node scripts/probe_pnct_container.mjs",
     "loadtest:lookup": "node scripts/load_lookup_routes.mjs",
     "health": "npm run health:db",

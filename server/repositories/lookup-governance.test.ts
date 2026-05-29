@@ -193,6 +193,27 @@ describe("lookup governance guards", () => {
     expect(terminalHelperRoute).toContain("external-terminal-helper");
   });
 
+  it("keeps authenticated app pages behind a fast proxy login guard", () => {
+    const proxy = read("proxy.ts");
+
+    for (const path of [
+      "/dashboard",
+      "/hs",
+      "/duty-estimator",
+      "/cargo",
+      "/used-car-export",
+      "/trade-news",
+      "/operations",
+      "/settings"
+    ]) {
+      expect(proxy, `${path} must be protected before expensive server rendering`).toContain(path);
+    }
+
+    expect(proxy).toContain("isProtectedPath");
+    expect(proxy).toContain("hasSupabaseAuthCookie");
+    expect(proxy).toContain('NextResponse.redirect(new URL("/login"');
+  });
+
   it("does not fall back to mock legal diagnosis after a Supabase failure in production", () => {
     const mockPolicy = read("server/rules/legal-mock-policy.ts");
     const importDiagnosis = read("server/rules/import-diagnosis.service.ts");
