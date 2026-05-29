@@ -12,6 +12,17 @@
   - 후보 근거 문구에서 공식 확정처럼 보일 수 있는 표현을 줄이고 `AI 예비 후보`, `약어/다의어 후보` 등으로 정리했다.
   - 검증: typecheck, lint, 전체 테스트, build 통과.
 
+- `c3e977d` Show progress for AI candidate links
+  - AI 보조 분석 영역의 우선 검토 후보 HS CODE 링크에도 전역 진행 표시가 뜨도록 했다.
+  - 검증: typecheck, lint, HS 후보 테스트 통과.
+
+### 운영 환경
+
+- Vercel Production에 `CUSTOMS_API_EXCHANGE_RATE_RELAY_URL=http://158.247.223.35:8787/exchange-rate`를 추가했다.
+  - API012 관세환율도 관세청 `38010` 포트를 쓰므로, Vercel 직접 호출 대신 Vultr relay를 우선 사용하게 했다.
+  - 환경변수 반영을 위해 production 재배포를 실행했고 `https://hsfinder.co.kr` alias 준비 상태를 확인했다.
+  - 로컬 셸에 `CRON_SECRET`이 없어 `ops:job:exchange-rates` 수동 실행은 하지 못했다.
+
 ## 2026-05-26
 
 ### 런칭 전 조회 UX 정리
