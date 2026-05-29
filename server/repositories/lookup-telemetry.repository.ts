@@ -55,9 +55,12 @@ export async function listRecentLookupTelemetryEvents(supabase: SupabaseClient, 
 }
 
 export function isLookupTelemetryIssue(event: LookupTelemetryEvent) {
+  const candidateCount = numericPayloadValue(event.payload, "candidateCount");
+
   return event.status === "error"
     || event.status === "fallback"
     || event.resultCount === 0
+    || candidateCount === 0
     || Boolean(event.errorType);
 }
 
@@ -96,4 +99,49 @@ export function classifyLookupTelemetryIssue(event: LookupTelemetryEvent) {
   }
 
   return isLookupTelemetryIssue(event) ? "확인 필요" : "정상";
+}
+
+export function lookupTelemetryIssueAction(diagnosis: string) {
+  const actions: Record<string, string> = {
+    "GPT 후보 없음": "프롬프트·모델 응답 확인. 외국어·브랜드·제품코드 입력이면 제품군 추론 지시를 보강합니다.",
+    "GPT 후보 후처리 확인": "GPT가 준 HS 힌트가 후처리에서 사라진 상태입니다. 후보 필터·conflict filter·AI hint 표시 경로를 점검합니다.",
+    "제품코드 식별 실패": "브랜드/모델 코드만 입력된 케이스입니다. 웹 근거가 없으면 제품명·카탈로그·스펙 요청 문구를 강화합니다.",
+    "Fallback 처리": "Supabase 또는 외부 의존 경로 실패입니다. DB 연결, 검색 인덱스, fallback 빈도를 확인합니다.",
+    "최종 후보 0건": "AI 후보와 공식 후보 결합 경로를 확인합니다. HS4/HS6 provisional 후보가 화면에 남는지 점검합니다.",
+    "오류": "서버 오류 로그와 환경변수를 우선 확인합니다.",
+    "확인 필요": "동일 유형 로그가 반복되는지 확인한 뒤 후보 생성 단계별 수치를 비교합니다.",
+    "정상": "추가 조치가 필요 없습니다."
+  };
+
+  return actions[diagnosis] ?? actions["확인 필요"];
+}
+
+export type LookupTelemetryDiagnosisSummary = {
+  diagnosis: string;
+  count: number;
+  issueCount: number;
+  action: string;
+};
+
+export function summarizeLookupTelemetryDiagnostics(events: LookupTelemetryEvent[]): LookupTelemetryDiagnosisSummary[] {
+  const summaries = new Map<string, LookupTelemetryDiagnosisSummary>();
+
+  for (const event of events) {
+    const diagnosis = classifyLookupTelemetryIssue(event);
+    const current = summaries.get(diagnosis) ?? {
+      diagnosis,
+      count: 0,
+      issueCount: 0,
+      action: lookupTelemetryIssueAction(diagnosis)
+    };
+    current.count += 1;
+    current.issueCount += isLookupTelemetryIssue(event) ? 1 : 0;
+    summaries.set(diagnosis, current);
+  }
+
+  return [...summaries.values()].sort((a, b) => {
+    if (b.issueCount !== a.issueCount) return b.issueCount - a.issueCount;
+    if (b.count !== a.count) return b.count - a.count;
+    return a.diagnosis.localeCompare(b.diagnosis);
+  });
 }

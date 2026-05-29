@@ -10,6 +10,7 @@ import {
   classifyLookupTelemetryIssue,
   isLookupTelemetryIssue,
   listRecentLookupTelemetryEvents,
+  summarizeLookupTelemetryDiagnostics,
   type LookupTelemetryEvent
 } from "@/server/repositories/lookup-telemetry.repository";
 
@@ -83,6 +84,8 @@ export default async function OperationsHealthPage() {
   const lookupIssueCount = lookupTelemetryEvents.filter(isLookupTelemetryIssue).length;
   const lookupSuccessCount = lookupTelemetryEvents.length - lookupIssueCount;
   const zeroResultCount = lookupTelemetryEvents.filter((event) => event.resultCount === 0).length;
+  const lookupDiagnosisSummary = summarizeLookupTelemetryDiagnostics(lookupTelemetryEvents);
+  const lookupIssueSummary = lookupDiagnosisSummary.filter((item) => item.issueCount > 0).slice(0, 4);
   const items = groups.flatMap((group) => group.items);
   const missingRequiredCount = items.filter((item) => item.status === "missing").length;
   const configuredCount = items.filter((item) => item.status === "ok").length;
@@ -206,6 +209,19 @@ export default async function OperationsHealthPage() {
                   <p className="mt-1 font-semibold text-slate-950">{zeroResultCount}건</p>
                 </div>
               </div>
+              {lookupIssueSummary.length ? (
+                <div className="grid gap-2 border-b border-slate-200 bg-white p-3 text-sm lg:grid-cols-2">
+                  {lookupIssueSummary.map((summary) => (
+                    <div key={summary.diagnosis} className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="font-semibold text-amber-950">{summary.diagnosis}</p>
+                        <Badge tone="warning">{summary.issueCount}건</Badge>
+                      </div>
+                      <p className="mt-1 text-xs leading-5 text-amber-900">{summary.action}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
               <div className="overflow-x-auto">
                 <table className="min-w-[1120px] text-left text-sm">
                   <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">

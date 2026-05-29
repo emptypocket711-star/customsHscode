@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { productInputShape, sanitizeLookupTelemetryPayload } from "@/server/observability/lookup-telemetry";
-import { classifyLookupTelemetryIssue, type LookupTelemetryEvent } from "@/server/repositories/lookup-telemetry.repository";
+import {
+  classifyLookupTelemetryIssue,
+  lookupTelemetryIssueAction,
+  summarizeLookupTelemetryDiagnostics,
+  type LookupTelemetryEvent
+} from "@/server/repositories/lookup-telemetry.repository";
 
 function telemetryEvent(overrides: Partial<LookupTelemetryEvent>): LookupTelemetryEvent {
   return {
@@ -81,5 +86,35 @@ describe("lookup telemetry", () => {
     expect(classifyLookupTelemetryIssue(telemetryEvent({
       payload: { bareProductCodeWithoutSource: true }
     }))).toBe("제품코드 식별 실패");
+  });
+
+  it("summarizes diagnosis counts with operator actions", () => {
+    const summary = summarizeLookupTelemetryDiagnostics([
+      telemetryEvent({
+        id: "event-1",
+        eventType: "product_search_normalized",
+        resultCount: null,
+        payload: { candidateCount: 0 }
+      }),
+      telemetryEvent({
+        id: "event-2",
+        eventType: "product_search_normalized",
+        resultCount: null,
+        payload: { candidateCount: 0 }
+      }),
+      telemetryEvent({
+        id: "event-3",
+        resultCount: 2,
+        payload: {}
+      })
+    ]);
+
+    expect(summary[0]).toMatchObject({
+      diagnosis: "GPT 후보 없음",
+      count: 2,
+      issueCount: 2,
+      action: lookupTelemetryIssueAction("GPT 후보 없음")
+    });
+    expect(summary.find((item) => item.diagnosis === "정상")?.count).toBe(1);
   });
 });
