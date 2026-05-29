@@ -43,6 +43,7 @@ async function captureIfpc(page: Page, containerNo: string) {
     requireContainerText: true,
     timeoutMs: 20_000
   });
+  await page.waitForTimeout(1500);
 }
 
 async function receiptReadiness(page: Page, containerNo: string) {
@@ -59,6 +60,19 @@ async function receiptReadiness(page: Page, containerNo: string) {
       .filter((value) => value.toUpperCase() !== targetContainerNo)
       .filter((value) => value.toLowerCase() !== "guest")
       .length;
+    const centerElement = document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2);
+    const centerText = centerElement?.textContent?.replace(/\s+/g, " ").trim() ?? "";
+    const hasCenterLoadingOverlay = /Loading|잠시만 기다려 주세요/.test(centerText);
+    const hasVisibleWaitWindow = Array.from(document.querySelectorAll("[id*='waitwindow'], [id*='WaitWindow']"))
+      .some((element) => {
+        const rect = element.getBoundingClientRect();
+        const style = window.getComputedStyle(element);
+        return style.display !== "none"
+          && style.visibility !== "hidden"
+          && Number(style.opacity || "1") !== 0
+          && rect.width > 40
+          && rect.height > 40;
+      });
     const hasUsefulText = bodyText.length > 220;
     const hasTable = document.querySelectorAll("table, [role='table'], .grid, .x-grid").length > 0;
 
@@ -67,6 +81,7 @@ async function receiptReadiness(page: Page, containerNo: string) {
       isHelperPage,
       hasContainerNo,
       populatedFieldCount,
+      hasLoadingOverlay: hasCenterLoadingOverlay || hasVisibleWaitWindow,
       hasUsefulText,
       hasTable,
       url: window.location.href
@@ -90,12 +105,13 @@ async function waitForReceiptScreenReady(
     const terminalScreenVisible = !lastReady.isHelperPage && lastReady.hasUsefulText;
     const containerMatched = options.requireContainerText === false || lastReady.hasContainerNo;
     const fieldsPopulated = lastReady.populatedFieldCount >= minPopulatedFields;
+    const loadingSettled = !lastReady.hasLoadingOverlay;
 
-    if (documentLoaded && terminalScreenVisible && containerMatched && fieldsPopulated) {
+    if (documentLoaded && terminalScreenVisible && containerMatched && fieldsPopulated && loadingSettled) {
       return lastReady;
     }
 
-    if (documentLoaded && terminalScreenVisible && lastReady.hasTable && fieldsPopulated && Date.now() - startedAt > 4_000) {
+    if (documentLoaded && terminalScreenVisible && lastReady.hasTable && fieldsPopulated && loadingSettled && Date.now() - startedAt > 4_000) {
       return lastReady;
     }
 
