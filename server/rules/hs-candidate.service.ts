@@ -80,6 +80,8 @@ type StandardProductNameSearchRow = ProductNameSearchRow & {
 type NormalizedProductSearch = {
   input: ProductHsRecommendationInput;
   normalization: AiProductSearchNormalizationResult | null;
+  normalizationErrorType: string | null;
+  normalizationStatus: "skipped" | "success" | "failed";
 };
 
 function isModelLikeToken(token: string) {
@@ -948,26 +950,50 @@ function shouldUseAiSearchNormalization(input: ProductHsRecommendationInput) {
 }
 
 async function normalizedProductSearch(input: ProductHsRecommendationInput): Promise<NormalizedProductSearch> {
-  if (!shouldUseAiSearchNormalization(input)) return { input, normalization: null };
-  const normalization = await normalizeProductSearchInput(input).catch(() => null);
+  if (!shouldUseAiSearchNormalization(input)) {
+    return { input, normalization: null, normalizationErrorType: null, normalizationStatus: "skipped" };
+  }
+
+  let normalization: AiProductSearchNormalizationResult | null = null;
+  let normalizationErrorType: string | null = null;
+
+  try {
+    normalization = await normalizeProductSearchInput(input);
+  } catch (error) {
+    normalizationErrorType = error instanceof Error ? error.name || "Error" : "unknown";
+  }
+
   const augmentedInput = normalization ? augmentProductInputWithAiTerms(input, normalization) : input;
   return {
     input: augmentedInput.productName !== input.productName ? augmentedInput : input,
-    normalization
+    normalization,
+    normalizationErrorType,
+    normalizationStatus: normalization ? "success" : normalizationErrorType ? "failed" : "skipped"
   };
 }
 
-function productNormalizationTelemetryShape(normalization: AiProductSearchNormalizationResult | null) {
+function productNormalizationTelemetryShape(
+  normalization: AiProductSearchNormalizationResult | null,
+  options: { normalizationErrorType?: string | null; normalizationStatus?: NormalizedProductSearch["normalizationStatus"] } = {}
+) {
+  const candidateHsCodeLengths = normalizeAiHsCodeHints(normalization).map((code) => code.length);
+
   return {
     hasNormalization: Boolean(normalization),
+    normalizationStatus: options.normalizationStatus ?? (normalization ? "success" : "skipped"),
+    normalizationErrorType: options.normalizationErrorType ?? null,
     classificationState: normalization?.classificationState ?? null,
     certainty: normalization?.certainty ?? null,
     displayMode: normalization?.displayMode ?? null,
     hasPrimaryCandidate: Boolean(normalization?.primaryCandidate),
+    primaryCandidateCodeLength: normalization?.primaryCandidate?.code.replace(/[^0-9]/g, "").length ?? null,
     missingQuestionCount: normalization?.missingQuestions.length ?? 0,
     searchTermCount: normalization?.searchTerms.length ?? 0,
     webSourceCount: normalization?.webSources.length ?? 0,
-    normalizationCandidateCount: normalizeAiHsCodeHints(normalization).length
+    normalizationCandidateCount: candidateHsCodeLengths.length,
+    normalizationHs4Count: candidateHsCodeLengths.filter((length) => length === 4).length,
+    normalizationHs6Count: candidateHsCodeLengths.filter((length) => length === 6).length,
+    normalizationHsk10Count: candidateHsCodeLengths.filter((length) => length === 10).length
   };
 }
 
@@ -1181,7 +1207,12 @@ export function recommendHsCandidates(input: ProductHsRecommendationInput): HsCa
 
 export async function recommendHsCandidatesForProduct(input: ProductHsRecommendationInput): Promise<HsCandidateRecommendation[]> {
   const startedAt = Date.now();
-  const { input: augmentedInput, normalization } = await normalizedProductSearch(input);
+  const {
+    input: augmentedInput,
+    normalization,
+    normalizationErrorType,
+    normalizationStatus
+  } = await normalizedProductSearch(input);
   const isAmbiguousAcronym = Boolean(ambiguousRuleForProductName(input.productName));
   const shouldKeepAiAlternatives = isAmbiguousAcronym
     || normalization?.classificationState === "ambiguous_multiple_meanings"
@@ -1214,7 +1245,7 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       officialCandidateCount: baseCandidates.length,
       fallbackCandidateCount: fallbackCandidates.length,
       ...candidateTelemetryShape(candidates),
-      ...productNormalizationTelemetryShape(normalization)
+      ...productNormalizationTelemetryShape(normalization, { normalizationErrorType, normalizationStatus })
     });
     return candidates;
   }
@@ -1231,7 +1262,7 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
         aiHintCount: 0,
         officialCandidateCount: 0,
         ...candidateTelemetryShape([]),
-        ...productNormalizationTelemetryShape(normalization),
+        ...productNormalizationTelemetryShape(normalization, { normalizationErrorType, normalizationStatus }),
         bareProductCodeWithoutSource: true
       });
       return [];
@@ -1272,7 +1303,7 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       officialCandidateCount: officialHsMasterCandidates.length,
       fallbackCandidateCount: fallbackCandidates.length,
       ...candidateTelemetryShape(candidates),
-      ...productNormalizationTelemetryShape(normalization)
+      ...productNormalizationTelemetryShape(normalization, { normalizationErrorType, normalizationStatus })
     });
     return candidates;
   } catch {
@@ -1286,7 +1317,7 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
         aiHintCount: 0,
         officialCandidateCount: 0,
         ...candidateTelemetryShape([]),
-        ...productNormalizationTelemetryShape(normalization),
+        ...productNormalizationTelemetryShape(normalization, { normalizationErrorType, normalizationStatus }),
         bareProductCodeWithoutSource: true
       });
       return [];
@@ -1314,7 +1345,7 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       officialCandidateCount: mockOfficialCandidates.length,
       fallbackCandidateCount: fallbackCandidates.length,
       ...candidateTelemetryShape(candidates),
-      ...productNormalizationTelemetryShape(normalization)
+      ...productNormalizationTelemetryShape(normalization, { normalizationErrorType, normalizationStatus })
     });
     return candidates;
   }

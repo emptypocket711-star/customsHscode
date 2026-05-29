@@ -658,3 +658,14 @@
 
 - `npm test -- server/services/external-integration-error.test.ts server/repositories/lookup-governance.test.ts`
 - `npm test -- server/actions/exchange-rate.actions.test.ts`
+
+### 품명 AI 검색 실패 진단 보강
+
+- 품명 AI 정규화 단계의 상태를 `skipped`, `success`, `failed`로 telemetry에 남기도록 정리했다.
+- GPT가 제시한 후보가 HS4/HS6/HSK10 중 어느 수준인지 개수만 저장해, 원문 품명 없이도 후보 미노출 원인을 추적할 수 있게 했다.
+- 운영 진단 분류에 `GPT 호출 실패`를 추가해 API key, 모델명, quota, timeout 문제와 후보 후처리 문제를 구분하도록 했다.
+- 실패 진단은 원문 품명, 검색어, 이메일을 저장하지 않고 상태값과 숫자만 사용한다.
+
+검증:
+
+- `npm test -- server/observability/lookup-telemetry.test.ts server/rules/hs-candidate.service.test.ts`

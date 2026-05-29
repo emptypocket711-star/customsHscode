@@ -61,6 +61,7 @@ export function isLookupTelemetryIssue(event: LookupTelemetryEvent) {
     || event.status === "fallback"
     || event.resultCount === 0
     || candidateCount === 0
+    || stringPayloadValue(event.payload, "normalizationStatus") === "failed"
     || booleanPayloadValue(event.payload, "onlyProvisionalHs6")
     || stringPayloadValue(event.payload, "candidateQualityType") === "non_hsk10_candidates"
     || stringPayloadValue(event.payload, "candidateQualityType") === "hs6_only_provisional"
@@ -93,9 +94,14 @@ export function classifyLookupTelemetryIssue(event: LookupTelemetryEvent) {
   const aiHintCount = numericPayloadValue(event.payload, "aiHintCount");
   const officialCandidateCount = numericPayloadValue(event.payload, "officialCandidateCount");
   const hasNormalization = booleanPayloadValue(event.payload, "hasNormalization");
+  const normalizationStatus = stringPayloadValue(event.payload, "normalizationStatus");
   const candidateQualityType = stringPayloadValue(event.payload, "candidateQualityType");
   const onlyProvisionalHs6 = booleanPayloadValue(event.payload, "onlyProvisionalHs6");
   const finalHsk10Count = numericPayloadValue(event.payload, "finalHsk10Count");
+
+  if (event.eventType === "product_candidates_recommended" && normalizationStatus === "failed") {
+    return "GPT 호출 실패";
+  }
 
   if (event.eventType === "product_search_normalized" && candidateCount === 0) {
     return "GPT 후보 없음";
@@ -123,6 +129,7 @@ export function classifyLookupTelemetryIssue(event: LookupTelemetryEvent) {
 export function lookupTelemetryIssueAction(diagnosis: string) {
   const actions: Record<string, string> = {
     "GPT 후보 없음": "프롬프트·모델 응답 확인. 외국어·브랜드·제품코드 입력이면 제품군 추론 지시를 보강합니다.",
+    "GPT 호출 실패": "AI provider 환경변수, 모델명, API quota, timeout 여부를 확인합니다. 실패 시 사용자에게 보완 질문 중심 fallback이 남는지 점검합니다.",
     "GPT 후보 후처리 확인": "GPT가 준 HS 힌트가 후처리에서 사라진 상태입니다. 후보 필터·conflict filter·AI hint 표시 경로를 점검합니다.",
     "제품코드 식별 실패": "브랜드/모델 코드만 입력된 케이스입니다. 웹 근거가 없으면 제품명·카탈로그·스펙 요청 문구를 강화합니다.",
     "Fallback 처리": "Supabase 또는 외부 의존 경로 실패입니다. DB 연결, 검색 인덱스, fallback 빈도를 확인합니다.",

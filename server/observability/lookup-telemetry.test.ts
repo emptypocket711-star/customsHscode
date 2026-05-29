@@ -88,6 +88,22 @@ describe("lookup telemetry", () => {
     }))).toBe("제품코드 식별 실패");
 
     expect(classifyLookupTelemetryIssue(telemetryEvent({
+      payload: { normalizationStatus: "failed", normalizationErrorType: "TimeoutError" }
+    }))).toBe("GPT 호출 실패");
+    expect(summarizeLookupTelemetryDiagnostics([
+      telemetryEvent({
+        payload: { normalizationStatus: "failed", normalizationErrorType: "TimeoutError" },
+        resultCount: 1
+      })
+    ])).toEqual([{
+      diagnosis: "GPT 호출 실패",
+      count: 1,
+      issueCount: 1,
+      action: lookupTelemetryIssueAction("GPT 호출 실패")
+    }]);
+
+
+    expect(classifyLookupTelemetryIssue(telemetryEvent({
       resultCount: 1,
       payload: { candidateQualityType: "hs6_only_provisional", onlyProvisionalHs6: true }
     }))).toBe("HS6 예비후보만 표시");
