@@ -93,6 +93,7 @@ const dictionaries = {
         empty: "작동 중인 적하목록 감시가 없습니다.",
         meta: {
           active: "감시중",
+          checking: "확인중",
           matched: "메일 발송 완료",
           cancelled: "감시 해제",
           paused: "일시중지",
@@ -169,6 +170,7 @@ const dictionaries = {
         empty: "No active cargo status watches.",
         meta: {
           active: "Watching",
+          checking: "Checking",
           matched: "Email sent",
           cancelled: "Cancelled",
           paused: "Paused",
@@ -245,6 +247,7 @@ const dictionaries = {
         empty: "没有正在运行的舱单状态监控。",
         meta: {
           active: "监控中",
+          checking: "检查中",
           matched: "邮件已发送",
           cancelled: "已取消",
           paused: "已暂停",

@@ -13,7 +13,7 @@ async function listDashboardCargoWatches(
   const { data, error } = await supabase
     .from("cargo_watch_requests")
     .select("id,cargo_management_no,master_bl_no,house_bl_no,bl_year,target_status,notify_email,status,last_status,last_checked_at,created_at")
-    .in("status", ["active", "error"])
+    .in("status", ["active", "checking", "error"])
     .order("created_at", { ascending: false })
     .limit(5);
 

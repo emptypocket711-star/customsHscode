@@ -151,4 +151,40 @@ describe("cargo status classifier", () => {
       eventStatuses: []
     })).toBe(true);
   });
+
+  it("matches a target status when it already appeared in earlier history", () => {
+    expect(statusMatched({
+      targetStatus: "manifest_submitted",
+      currentStatus: "수입신고수리",
+      eventStatuses: ["적하목록 제출", "입항보고", "하선신고수리", "수입신고", "수입신고수리"]
+    })).toBe(true);
+  });
+
+  it("keeps CY inbound and CFS inbound separate when shed information is available", () => {
+    expect(statusMatched({
+      targetStatus: "cy_inbound",
+      currentStatus: "CFS 반입신고",
+      eventStatuses: ["CFS 반입신고", "반입신고"]
+    })).toBe(false);
+
+    expect(statusMatched({
+      targetStatus: "cfs_inbound",
+      currentStatus: "CFS 반입신고",
+      eventStatuses: ["CFS 반입신고", "반입신고"]
+    })).toBe(true);
+  });
+
+  it("falls back to general inbound only when the user selected broad inbound", () => {
+    expect(statusMatched({
+      targetStatus: "inbound",
+      currentStatus: "CY 반입완료",
+      eventStatuses: ["CY 반입완료", "반입완료"]
+    })).toBe(true);
+
+    expect(statusMatched({
+      targetStatus: "cfs_inbound",
+      currentStatus: "CY 반입완료",
+      eventStatuses: ["CY 반입완료", "반입완료"]
+    })).toBe(false);
+  });
 });

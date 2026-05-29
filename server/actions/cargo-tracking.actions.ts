@@ -567,6 +567,7 @@ export async function createCargoWatchAction(
     if (error) throw error;
 
     revalidatePath("/cargo");
+    revalidatePath("/dashboard");
     if (immediateMatch.matched) {
       return {
         status: immediateMatch.mailSent || immediateMatch.mailSkippedDuplicate ? "success" : "error",
@@ -621,4 +622,5 @@ export async function cancelCargoWatchAction(formData: FormData): Promise<void> 
     .eq("created_by", user.id);
 
   revalidatePath("/cargo");
+  revalidatePath("/dashboard");
 }
