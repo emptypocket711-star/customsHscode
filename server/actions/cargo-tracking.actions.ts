@@ -164,6 +164,29 @@ function cargoNetworkDiagnostic(error: PublicDataFetchError) {
   };
 }
 
+function actionErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) return error.message;
+
+  if (error && typeof error === "object") {
+    const possibleError = error as {
+      code?: unknown;
+      details?: unknown;
+      hint?: unknown;
+      message?: unknown;
+    };
+    const parts = [
+      possibleError.message,
+      possibleError.details,
+      possibleError.hint,
+      possibleError.code
+    ].filter((value): value is string => typeof value === "string" && value.trim().length > 0);
+
+    if (parts.length > 0) return parts.join(" / ");
+  }
+
+  return fallback;
+}
+
 function normalizeCargoWatchValue(value: string | null | undefined) {
   return (value ?? "").trim().toUpperCase();
 }
@@ -497,7 +520,7 @@ export async function createCargoWatchAction(
         }
       } catch (error) {
         console.error("[cargo_watch_immediate_check_failure]", {
-          message: error instanceof Error ? error.message : "unknown"
+          message: actionErrorMessage(error, "unknown")
         });
       }
     }
@@ -564,9 +587,12 @@ export async function createCargoWatchAction(
         : "5분 간격 알림 감시를 등록했습니다."
     };
   } catch (error) {
+    const message = actionErrorMessage(error, "알림 감시를 등록하지 못했습니다.");
+    console.error("[cargo_watch_create_failure]", { message });
+
     return {
       status: "error",
-      message: error instanceof Error ? error.message : "알림 감시를 등록하지 못했습니다."
+      message
     };
   }
 }
