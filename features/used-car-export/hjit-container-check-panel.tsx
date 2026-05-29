@@ -330,6 +330,16 @@ export function HjitContainerCheckPanel({ dictionary }: { dictionary: UsedCarExp
                 {message}
               </div>
             ) : null}
+            {state.status === "error" && state.terminalAttempts?.length ? (
+              <div className="rounded-md border border-slate-200 bg-white p-3 text-xs leading-5 text-slate-600">
+                <p className="font-semibold text-slate-900">터미널별 조회 시도 결과</p>
+                <ul className="mt-2 grid gap-1">
+                  {state.terminalAttempts.map((attempt) => (
+                    <li key={attempt}>- {attempt}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
             {receiptMessage ? (
               <div
                 data-progress-complete="true"

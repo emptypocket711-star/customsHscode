@@ -11,6 +11,7 @@ export type HjitContainerLookupState = {
   html?: string;
   summary?: Array<{ label: string; value: string }>;
   trackingRows?: EtransTrackingRow[];
+  terminalAttempts?: string[];
 };
 
 type TerminalCode = "hjit" | "snct" | "ifpc" | "ict" | "bnct" | "pctc" | "pnct";
@@ -44,6 +45,16 @@ class ExternalLookupError extends Error {
     this.name = "ExternalLookupError";
     this.kind = kind;
     this.status = status;
+  }
+}
+
+class TerminalLookupAttemptsError extends Error {
+  readonly attempts: string[];
+
+  constructor(attempts: string[]) {
+    super(attempts.join(" / ") || "터미널 조회 결과가 없습니다.");
+    this.name = "TerminalLookupAttemptsError";
+    this.attempts = attempts;
   }
 }
 
@@ -833,7 +844,7 @@ async function lookupKnownTerminals(containerNo: string, order: TerminalCode[], 
     }
   }
 
-  throw new Error(errors.join(" / ") || "터미널 조회 결과가 없습니다.");
+  throw new TerminalLookupAttemptsError(errors);
 }
 
 export async function lookupHjitContainerAction(
@@ -885,6 +896,7 @@ export async function lookupHjitContainerAction(
       status: "error",
       notice,
       trackingRows,
+      terminalAttempts: error instanceof TerminalLookupAttemptsError ? error.attempts.slice(0, 8) : undefined,
       message: error instanceof Error ? `터미널 조회에 실패했습니다. ${error.message}` : "터미널 조회에 실패했습니다."
     };
   }
