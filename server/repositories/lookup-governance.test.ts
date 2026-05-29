@@ -192,6 +192,7 @@ describe("lookup governance guards", () => {
     expect(containerReceiptRoute).toContain("허용된 터미널 조회 화면만 반입계로 출력할 수 있습니다.");
     expect(terminalHelperRoute).toContain("requireAuthenticatedApiRoute");
     expect(terminalHelperRoute).toContain("external-terminal-helper");
+    expect(terminalHelperRoute).toContain("externalIntegrationErrorResponse");
   });
 
   it("keeps authenticated app pages behind a fast proxy login guard", () => {

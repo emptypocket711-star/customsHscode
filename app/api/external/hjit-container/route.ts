@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuthenticatedApiRoute } from "@/server/auth/api-route-auth";
+import { externalIntegrationErrorResponse } from "@/server/services/external-integration-error";
 
 function normalizeContainerNo(value: string | null) {
   return (value ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -23,7 +24,13 @@ export async function GET(request: Request) {
     windowMs: 60_000
   });
   if (!auth.allowed) {
-    return new NextResponse(auth.message, { status: auth.status });
+    return externalIntegrationErrorResponse({
+      code: auth.status === 429 ? "rate_limited" : "auth_required",
+      level: auth.status === 429 ? "temporary" : "input",
+      message: auth.message,
+      retryable: auth.status === 429,
+      status: auth.status
+    });
   }
 
   const url = new URL(request.url);
@@ -34,7 +41,13 @@ export async function GET(request: Request) {
     : "hjit";
 
   if (!/^[A-Z]{4}[0-9]{7}$/.test(containerNo)) {
-    return new NextResponse("Invalid container number", { status: 400 });
+    return externalIntegrationErrorResponse({
+      code: "invalid_container_no",
+      level: "input",
+      message: "컨테이너 번호 형식이 올바르지 않습니다.",
+      retryable: false,
+      status: 400
+    });
   }
 
   const safeContainerNo = escapeHtml(containerNo);

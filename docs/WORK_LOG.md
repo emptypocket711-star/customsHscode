@@ -650,6 +650,7 @@
 - 외부 사이트/API 연동 실패를 `input`, `temporary`, `external_unavailable`, `configuration` 등으로 분류하는 공통 JSON 오류 응답 유틸을 추가했다.
 - 반입계 출력 API가 실패할 때 HTML/일반 텍스트 원문 대신 `code`, `level`, `message`, `retryable`, `requestId`를 포함한 안전한 JSON 오류를 반환하도록 바꿨다.
 - 중고차 수출 화면의 반입계 다운로드 버튼은 JSON 오류를 해석해 사용자용 문구와 요청 ID만 표시하도록 정리했다.
+- 터미널 원문 이동 helper API의 인증/입력 오류도 같은 JSON 오류 계약으로 맞췄다.
 - governance 테스트에 반입계 출력 API가 공통 오류 응답을 유지하도록 고정했다.
 
 검증:
