@@ -12,6 +12,9 @@
     "loadtest:lookup": "node scripts/load_lookup_routes.mjs",
     "health": "npm run health:db",
     "health:db": "node scripts/check-production-schema.mjs",
+    "ops:vercel:logs": "vercel logs hsfinder.co.kr --limit 50",
+    "ops:vercel:env": "vercel env ls",
+    "ops:vercel:deployments": "vercel ls",
     "db:generate-api018": "python3 scripts/generate_customs_hs_code_search_seed.py",
     "db:refresh-dashboard-metrics": "psql \"$DATABASE_URL\" -f scripts/refresh_dashboard_metrics.sql",
     "db:apply-lookup-seeds": "scripts/apply_lookup_seed_bundle.sh"
