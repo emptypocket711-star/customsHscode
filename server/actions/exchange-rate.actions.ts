@@ -8,8 +8,11 @@ import {
 } from "@/server/integrations/customs/customs-api";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import { createSupabaseServiceRoleClient, hasSupabaseServiceRoleEnv } from "@/lib/supabase/service-role";
+import { PublicDataFetchError } from "@/server/integrations/public-data/client";
 import { findCachedExchangeRate } from "@/server/repositories/exchange-rate-cache.repository";
 import { recordExchangeRateSourceSnapshot } from "@/server/repositories/exchange-rate-snapshot.repository";
+import type { ExternalIntegrationErrorBody } from "@/server/services/external-integration-error";
+import { publicDataFetchErrorToExternalError } from "@/server/services/external-integration-error";
 
 export type ExchangeRateLookupState = {
   status: "idle" | "success" | "error";
@@ -17,6 +20,12 @@ export type ExchangeRateLookupState = {
   rate?: string;
   currencyCode?: string;
   effectiveFrom?: string | null;
+  diagnostic?: {
+    category: string;
+    endpoint: string;
+    detail: string;
+  };
+  externalError?: ExternalIntegrationErrorBody;
   sourceVersion?: string;
   sourceSnapshotId?: string | null;
 };
@@ -177,6 +186,26 @@ export async function lookupExchangeRateAction(
       sourceSnapshotId
     };
   } catch (error) {
+    if (error instanceof PublicDataFetchError) {
+      const { body, diagnostic } = publicDataFetchErrorToExternalError({
+        error,
+        serviceCode: "API012",
+        serviceName: "관세청 API012"
+      });
+      console.error("[exchange_rate_api_failure]", {
+        ...diagnostic,
+        code: body.code,
+        requestId: body.requestId
+      });
+
+      return {
+        status: "error",
+        message: `${body.message} (요청 ID: ${body.requestId})`,
+        externalError: body,
+        diagnostic
+      };
+    }
+
     return {
       status: "error",
       message: error instanceof Error ? error.message : "관세환율 조회 중 오류가 발생했습니다."

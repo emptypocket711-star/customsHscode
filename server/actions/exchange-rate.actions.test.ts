@@ -5,6 +5,7 @@ import { hasSupabaseEnv, createSupabaseServerClient } from "@/lib/supabase/serve
 import { createSupabaseServiceRoleClient, hasSupabaseServiceRoleEnv } from "@/lib/supabase/service-role";
 import { findCachedExchangeRate } from "@/server/repositories/exchange-rate-cache.repository";
 import { recordExchangeRateSourceSnapshot } from "@/server/repositories/exchange-rate-snapshot.repository";
+import { PublicDataFetchError } from "@/server/integrations/public-data/client";
 
 vi.mock("@/server/integrations/customs/customs-api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/server/integrations/customs/customs-api")>();
@@ -248,6 +249,37 @@ describe("lookupExchangeRateAction", () => {
     expect(result).toEqual({
       status: "error",
       message: "관세환율 API012 키가 설정되지 않았습니다. Vercel 환경변수에 CUSTOMS_API_EXCHANGE_RATE_SERVICE_KEY 값을 등록해 주세요. URL은 미입력 시 기본 UNIPASS API012 endpoint를 사용합니다."
+    });
+  });
+
+  it("maps API012 network failures to a retryable external error", async () => {
+    mockedHasSupabaseServiceRoleEnv.mockReturnValue(false);
+    mockedHasCustomsOpenApiEnv.mockReturnValue(true);
+    mockedFetchCustomsOpenApiSnapshot.mockRejectedValue(new PublicDataFetchError({
+      category: "timeout",
+      endpointHost: "unipass.customs.go.kr",
+      endpointPort: "38010",
+      causeCode: "ETIMEDOUT",
+      causeMessage: "timeout"
+    }));
+
+    const result = await lookupExchangeRateAction({ status: "idle" }, formData({
+      currencyCode: "USD",
+      applyStartDate: "2026-05-24",
+      direction: "import"
+    }));
+
+    expect(result.status).toBe("error");
+    expect(result.message).toContain("관세청 API012 응답 시간이 초과되었습니다.");
+    expect(result.externalError).toMatchObject({
+      code: "api012_timeout",
+      level: "temporary",
+      retryable: true
+    });
+    expect(result.diagnostic).toEqual({
+      category: "timeout",
+      endpoint: "unipass.customs.go.kr:38010",
+      detail: "ETIMEDOUT / timeout"
     });
   });
 });

@@ -277,12 +277,27 @@ export function DutyEstimatorPanel({ dictionary }: { dictionary: DutyEstimatorDi
                       {dictionary.form.applyNextWeekRate}
                     </button>
                     {exchangeRateState.status !== "idle" ? (
-                      <span className={`min-w-0 text-xs leading-5 ${exchangeRateState.status === "success" ? "text-blue-700" : "text-amber-700"}`}>
-                        {exchangeRateState.message}
+                      <span className={`flex min-w-0 flex-wrap items-center gap-2 text-xs leading-5 ${exchangeRateState.status === "success" ? "text-blue-700" : "text-amber-700"}`}>
+                        <span>{exchangeRateState.message}</span>
+                        {exchangeRateState.externalError ? (
+                          <Badge tone={exchangeRateState.externalError.retryable ? "warning" : "neutral"}>
+                            {exchangeRateState.externalError.retryable ? "재시도 가능" : "확인 필요"}
+                          </Badge>
+                        ) : null}
                       </span>
                     ) : null}
                   </form>
                   </div>
+                  {exchangeRateState.diagnostic ? (
+                    <dl className="grid gap-1 rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-950 sm:grid-cols-[6rem_1fr]">
+                      <dt className="font-semibold">진단</dt>
+                      <dd>{exchangeRateState.diagnostic.category}</dd>
+                      <dt className="font-semibold">endpoint</dt>
+                      <dd>{exchangeRateState.diagnostic.endpoint}</dd>
+                      <dt className="font-semibold">detail</dt>
+                      <dd className="break-all">{exchangeRateState.diagnostic.detail}</dd>
+                    </dl>
+                  ) : null}
                   {exchangeRateState.status === "success" && exchangeRateState.effectiveFrom ? (
                     <p className="text-xs text-slate-500">{dictionary.copy.exchangeRateDate} {exchangeRateState.effectiveFrom}</p>
                   ) : null}

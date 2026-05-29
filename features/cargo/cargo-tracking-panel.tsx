@@ -100,11 +100,13 @@ function cargoWatchStatusLabel(status: string, dictionary: CargoDictionary) {
 function StatusMessage({
   dictionary,
   diagnostic,
+  externalError,
   status,
   message
 }: {
   dictionary: CargoDictionary;
   diagnostic?: CargoTrackingActionState["diagnostic"];
+  externalError?: CargoTrackingActionState["externalError"];
   status: "success" | "error" | "idle";
   message?: string;
 }) {
@@ -119,7 +121,14 @@ function StatusMessage({
           : "rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
       }
     >
-      <p>{message}</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <p>{message}</p>
+        {externalError ? (
+          <Badge tone={externalError.retryable ? "warning" : "neutral"}>
+            {externalError.retryable ? "재시도 가능" : "확인 필요"}
+          </Badge>
+        ) : null}
+      </div>
       {diagnostic ? (
         <dl className="mt-2 grid gap-1 rounded border border-amber-200 bg-white/60 p-2 text-xs text-amber-950 sm:grid-cols-[6rem_1fr]">
           <dt className="font-semibold">{dictionary.diagnostic.title}</dt>
@@ -250,7 +259,13 @@ export function CargoTrackingPanel({
                 {dictionary.form.progressLookupPending}
               </div>
             ) : null}
-            <StatusMessage dictionary={dictionary} diagnostic={lookupState.diagnostic} message={lookupClientError || lookupState.message} status={lookupClientError ? "error" : lookupState.status} />
+            <StatusMessage
+              dictionary={dictionary}
+              diagnostic={lookupState.diagnostic}
+              externalError={lookupState.externalError}
+              message={lookupClientError || lookupState.message}
+              status={lookupClientError ? "error" : lookupState.status}
+            />
           </form>
         </CardBody>
       </Card>

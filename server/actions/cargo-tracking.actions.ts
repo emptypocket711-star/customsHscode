@@ -6,6 +6,8 @@ import { buildCargoManagementInspectionEmailText, buildCargoWatchEmailText, carg
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseServiceRoleClient, hasSupabaseServiceRoleEnv } from "@/lib/supabase/service-role";
 import { PublicDataFetchError } from "@/server/integrations/public-data/client";
+import type { ExternalIntegrationErrorBody } from "@/server/services/external-integration-error";
+import { publicDataFetchErrorToExternalError } from "@/server/services/external-integration-error";
 import {
   buildCustomsCargoProgressQuery,
   fetchCustomsCargoProgressSnapshot,
@@ -36,6 +38,7 @@ export type CargoTrackingActionState = {
     endpoint: string;
     detail: string;
   };
+  externalError?: ExternalIntegrationErrorBody;
   result?: CustomsCargoProgressResult;
   snapshot?: {
     sourceName: string;
@@ -134,34 +137,6 @@ async function recordManagementInspectionNotice(input: {
       management_inspection_value: input.managementInspectionValue,
       notified_at: new Date().toISOString()
     }, { onConflict: "notification_key" });
-}
-
-function cargoNetworkFailureMessage(error: PublicDataFetchError) {
-  if (error.category === "timeout") {
-    return "관세청 API001 응답 시간이 초과되었습니다. 잠시 후 다시 조회해 주세요.";
-  }
-  if (error.category === "dns") {
-    return "관세청 API001 서버 주소를 확인하지 못했습니다. 네트워크 또는 DNS 상태를 확인해야 합니다.";
-  }
-  if (error.category === "tls") {
-    return "관세청 API001 보안 연결에 실패했습니다. 서버 인증서 또는 TLS 연결 상태를 확인해야 합니다.";
-  }
-  if (error.category === "outbound_port") {
-    return "관세청 API001 전용 포트 연결에 실패했습니다. 운영 서버에서 UNIPASS 38010 포트 호출이 가능한지 확인해야 합니다.";
-  }
-  if (error.category === "network") {
-    return "관세청 API001 서버 연결에 실패했습니다. 운영 서버의 외부 네트워크 호출 상태를 확인해야 합니다.";
-  }
-  return "관세청 API001 호출 중 알 수 없는 네트워크 오류가 발생했습니다.";
-}
-
-function cargoNetworkDiagnostic(error: PublicDataFetchError) {
-  const endpoint = `${error.endpointHost}:${error.endpointPort}`;
-  return {
-    category: error.category,
-    endpoint,
-    detail: [error.causeCode, error.causeMessage].filter(Boolean).join(" / ") || "세부 원인 없음"
-  };
 }
 
 function actionErrorMessage(error: unknown, fallback: string) {
@@ -267,12 +242,21 @@ export async function lookupCargoProgressAction(
     };
   } catch (error) {
     if (error instanceof PublicDataFetchError) {
-      const diagnostic = cargoNetworkDiagnostic(error);
-      console.error("[cargo_progress_api_failure]", diagnostic);
+      const { body, diagnostic } = publicDataFetchErrorToExternalError({
+        error,
+        serviceCode: "API001",
+        serviceName: "관세청 API001"
+      });
+      console.error("[cargo_progress_api_failure]", {
+        ...diagnostic,
+        code: body.code,
+        requestId: body.requestId
+      });
 
       return {
         status: "error",
-        message: cargoNetworkFailureMessage(error),
+        message: `${body.message} (요청 ID: ${body.requestId})`,
+        externalError: body,
         diagnostic
       };
     }
