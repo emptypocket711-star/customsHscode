@@ -32,7 +32,7 @@ function isFutureEffectiveRate(basisDate: string, effectiveFrom?: string | null)
 }
 
 function nextRateUnavailableMessage(currencyCode: string) {
-  return `${currencyCode} 차주 관세환율은 아직 저장되지 않았습니다. 관세청 고시 후 다시 조회하거나 현재 저장 환율을 적용해 주세요.`;
+  return `${currencyCode} 아직 차주 환율을 가져올 수 없습니다.`;
 }
 
 function cachedRateMessage(input: {
@@ -42,7 +42,7 @@ function cachedRateMessage(input: {
   effectiveFrom: string | null;
 }) {
   if (input.mode === "next") {
-    return `${input.currencyCode} 차주 관세환율을 적용했습니다. 적용일 ${input.effectiveFrom ?? "확인 필요"} 기준입니다.`;
+    return `${input.currencyCode} 다음주 기준 환율입니다. 적용일 ${input.effectiveFrom ?? "확인 필요"} 기준입니다.`;
   }
 
   if (input.effectiveFrom && input.effectiveFrom < input.basisDate) {

@@ -14,43 +14,80 @@ function seoulDateString(date = new Date()) {
   }).format(date);
 }
 
+function dateFromString(dateString: string) {
+  const [year, month, day] = dateString.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+function dateStringFromUtcDate(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function addDays(dateString: string, days: number) {
+  const date = dateFromString(dateString);
+  date.setUTCDate(date.getUTCDate() + days);
+  return dateStringFromUtcDate(date);
+}
+
+function nextWeekRateProbeDate(basisDate: string) {
+  const date = dateFromString(basisDate);
+  const dayOfWeek = date.getUTCDay();
+  const daysUntilSunday = (7 - dayOfWeek) % 7 || 7;
+  return addDays(basisDate, daysUntilSunday);
+}
+
+function exchangeRateQueryDates(basisDate: string) {
+  return Array.from(new Set([basisDate, nextWeekRateProbeDate(basisDate)]));
+}
+
 export async function refreshCustomsExchangeRateCache(basisDate = seoulDateString()) {
   const supabase = createSupabaseServiceRoleClient();
   const directions = ["import", "export"] as const;
+  const queryDates = exchangeRateQueryDates(basisDate);
   const results: Array<{
     direction: "import" | "export";
+    requestedDate: string;
     fetched: number;
     upserted: number;
     effectiveFrom: string | null;
   }> = [];
 
   for (const direction of directions) {
-    const snapshot = await fetchCustomsOpenApiSnapshot("exchange_rate", buildCustomsExchangeRateQuery({
-      applyStartDate: basisDate,
-      direction
-    }), { timeoutMs: 15000 });
-    const rows = parseCustomsExchangeRatesXml(snapshot.rawText).filter((row) => row.direction === direction);
-    const effectiveFrom = rows.find((row) => row.effectiveFrom)?.effectiveFrom ?? basisDate;
-    const sourceSnapshotId = await insertExchangeRateSourceSnapshot(supabase, {
-      snapshot,
-      effectiveFrom
-    });
-    const upserted = await upsertCachedExchangeRates(supabase, {
-      snapshot,
-      sourceSnapshotId,
-      rows
-    });
+    for (const requestedDate of queryDates) {
+      const snapshot = await fetchCustomsOpenApiSnapshot("exchange_rate", buildCustomsExchangeRateQuery({
+        applyStartDate: requestedDate,
+        direction
+      }), { timeoutMs: 15000 });
+      const rows = parseCustomsExchangeRatesXml(snapshot.rawText).filter((row) => row.direction === direction);
+      const effectiveFrom = rows.find((row) => row.effectiveFrom)?.effectiveFrom ?? requestedDate;
+      const sourceSnapshotId = await insertExchangeRateSourceSnapshot(supabase, {
+        snapshot,
+        effectiveFrom
+      });
+      const upserted = await upsertCachedExchangeRates(supabase, {
+        snapshot,
+        sourceSnapshotId,
+        rows
+      });
 
-    results.push({
-      direction,
-      fetched: rows.length,
-      upserted,
-      effectiveFrom
-    });
+      results.push({
+        direction,
+        requestedDate,
+        fetched: rows.length,
+        upserted,
+        effectiveFrom
+      });
+    }
   }
 
   return {
     basisDate,
+    nextWeekProbeDate: queryDates.find((date) => date > basisDate) ?? null,
     results
   };
 }
+
+export const exchangeRateCacheInternals = {
+  exchangeRateQueryDates,
+  nextWeekRateProbeDate
+};

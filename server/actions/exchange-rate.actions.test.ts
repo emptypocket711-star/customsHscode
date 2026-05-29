@@ -102,7 +102,7 @@ describe("lookupExchangeRateAction", () => {
 
     expect(result).toEqual({
       status: "error",
-      message: "USD 차주 관세환율은 아직 저장되지 않았습니다. 관세청 고시 후 다시 조회하거나 현재 저장 환율을 적용해 주세요."
+      message: "USD 아직 차주 환율을 가져올 수 없습니다."
     });
     expect(mockedFetchCustomsOpenApiSnapshot).not.toHaveBeenCalled();
   });
@@ -128,7 +128,7 @@ describe("lookupExchangeRateAction", () => {
 
     expect(result).toEqual({
       status: "success",
-      message: "USD 차주 관세환율을 적용했습니다. 적용일 2026-05-31 기준입니다.",
+      message: "USD 다음주 기준 환율입니다. 적용일 2026-05-31 기준입니다.",
       rate: "1370.20",
       currencyCode: "USD",
       effectiveFrom: "2026-05-31",
@@ -159,7 +159,7 @@ describe("lookupExchangeRateAction", () => {
 
     expect(result).toEqual({
       status: "error",
-      message: "USD 차주 관세환율은 아직 저장되지 않았습니다. 관세청 고시 후 다시 조회하거나 현재 저장 환율을 적용해 주세요."
+      message: "USD 아직 차주 환율을 가져올 수 없습니다."
     });
     expect(mockedFetchCustomsOpenApiSnapshot).not.toHaveBeenCalled();
   });
