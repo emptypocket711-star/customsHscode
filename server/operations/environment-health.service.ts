@@ -198,6 +198,36 @@ export function getEnvironmentHealthGroups(): EnvironmentHealthGroup[] {
       ]
     },
     {
+      title: "무역뉴스",
+      description: "무역뉴스 페이지에서 공공데이터 기반 원문과 요약 카드를 가져오는 설정입니다.",
+      items: [
+        envItem({
+          key: "KOTRA_OVERSEAS_MARKET_NEWS_SERVICE_KEY",
+          label: "KOTRA 해외시장뉴스 key",
+          description: "KOTRA 해외시장뉴스 API 조회에 사용하는 공공데이터포털 인증키입니다.",
+          required: false
+        }),
+        envItem({
+          key: "KOTRA_OVERSEAS_MARKET_NEWS_URL",
+          label: "KOTRA 해외시장뉴스 URL",
+          description: "KOTRA 해외시장뉴스 API base URL override입니다.",
+          required: false
+        }),
+        envItem({
+          key: "KOTRA_OVERSEAS_MARKET_NEWS_ENDPOINT",
+          label: "KOTRA 해외시장뉴스 endpoint",
+          description: "KOTRA 해외시장뉴스 API endpoint path override입니다.",
+          required: false
+        }),
+        envItem({
+          key: "PUBLIC_DATA_REQUEST_TIMEOUT_MS",
+          label: "공공데이터 timeout",
+          description: "공공데이터 API 응답 지연이 뉴스 화면을 오래 막지 않도록 제한하는 시간입니다.",
+          required: false
+        })
+      ]
+    },
+    {
       title: "사업자 검증",
       description: "기업회원 가입 시 사업자등록번호 상태를 서버에서 확인하는 선택 설정입니다.",
       items: [
@@ -259,6 +289,18 @@ export function getEnvironmentHealthGroups(): EnvironmentHealthGroup[] {
           key: "CONTAINER_RECEIPT_RATE_LIMIT_PER_MINUTE",
           label: "반입계 출력 rate limit",
           description: "터미널 원문 화면 캡처 API의 분당 호출 제한입니다.",
+          required: false
+        }),
+        envItem({
+          key: "TERMINAL_HELPER_RATE_LIMIT_PER_MINUTE",
+          label: "터미널 helper rate limit",
+          description: "외부 터미널 원문 화면 이동 helper의 분당 호출 제한입니다.",
+          required: false
+        }),
+        envItem({
+          key: "VEHICLE_SPEC_RATE_LIMIT_PER_MINUTE",
+          label: "차량 제원조회 rate limit",
+          description: "중고차 수출 제원정보 조회의 분당 호출 제한입니다.",
           required: false
         })
       ]

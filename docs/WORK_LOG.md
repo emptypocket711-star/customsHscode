@@ -618,3 +618,17 @@
 - `npm run smoke:production -- https://hsfinder.co.kr`
 - `npm run typecheck`
 - `npm run lint`
+
+### 운영 환경변수 점검 CLI 추가
+
+- `.env.local` 또는 shell 환경변수를 읽어 필수/선택 운영값 설정 여부를 확인하는 `scripts/check-runtime-env.mjs`와 `npm run health:env` 명령을 추가했다.
+- `npm run health`는 환경변수 점검 후 DB 스키마 점검을 이어서 실행하도록 정리했다.
+- 개발자 운영 점검 화면에 KOTRA 무역뉴스, 공공데이터 timeout, 터미널 helper rate limit, 차량 제원조회 rate limit 항목을 추가했다.
+- 키, 토큰, 비밀번호, DB 접속 문자열 원문은 출력하지 않고 `설정됨`으로만 표시한다.
+
+검증:
+
+- `npm run health:env`
+- `npm test -- server/operations/environment-health.service.test.ts`
+- `npm run typecheck`
+- `npm run lint`

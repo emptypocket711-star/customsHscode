@@ -2,6 +2,34 @@
 
 HS Finder 운영 배포 전후에 Supabase 스키마가 현재 코드와 맞는지 확인하는 절차다.
 
+## 환경변수 점검
+
+다음 명령은 `.env.local` 또는 shell 환경변수를 읽어 운영 필수값과 주요 선택값의 설정 여부를 확인한다.
+
+```bash
+npm run health:env
+```
+
+점검 항목:
+
+- Supabase URL, anon key, service role key
+- AI 품명검색 provider, OpenAI key, model
+- 관세청 OpenAPI, relay, 장치장 key
+- KOTRA 무역뉴스 API
+- Resend 알림 메일과 background job secret
+- route rate limit, 반입계 출력, 터미널 helper, 차량 제원조회 제한값
+
+키, 토큰, 비밀번호, DB 접속 문자열 원문은 출력하지 않고 `설정됨`으로만 표시한다.
+필수값 누락은 `BLOCKER`, 선택값 누락은 `WARN`으로 표시한다.
+
+전체 운영 점검은 아래 명령으로 실행한다.
+
+```bash
+npm run health
+```
+
+`health`는 `health:env` 다음 `health:db`를 순서대로 실행한다.
+
 ## DB 스키마 점검
 
 다음 명령은 `supabase/migrations` 기준으로 운영 DB를 검사한다.

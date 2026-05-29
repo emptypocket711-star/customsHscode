@@ -13,6 +13,12 @@ describe("environment health service", () => {
     expect(keys).toContain("CUSTOMS_API_EXCHANGE_RATE_RELAY_TOKEN");
     expect(keys).toContain("CUSTOMS_API_SHED_INFO_SERVICE_KEY");
     expect(keys).toContain("CONTAINER_RECEIPT_RATE_LIMIT_PER_MINUTE");
+    expect(keys).toContain("TERMINAL_HELPER_RATE_LIMIT_PER_MINUTE");
+    expect(keys).toContain("VEHICLE_SPEC_RATE_LIMIT_PER_MINUTE");
+    expect(keys).toContain("KOTRA_OVERSEAS_MARKET_NEWS_SERVICE_KEY");
+    expect(keys).toContain("KOTRA_OVERSEAS_MARKET_NEWS_URL");
+    expect(keys).toContain("KOTRA_OVERSEAS_MARKET_NEWS_ENDPOINT");
+    expect(keys).toContain("PUBLIC_DATA_REQUEST_TIMEOUT_MS");
   });
 
   it("does not expose secret values in previews", () => {
