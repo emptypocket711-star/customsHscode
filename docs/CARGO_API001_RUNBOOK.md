@@ -250,7 +250,7 @@ CUSTOMS_API_STATS_CODE_SERVICE_KEY=API019_통계부호내역조회_키
 
 - Vercel env를 바꾸면 production redeploy가 필요하다.
 - repo push가 Vercel 자동배포와 연결되어 있으면 `git push origin main` 후 production build가 시작된다.
-- 사용자가 “배포는 내가 하랄 때만”이라고 했던 이력이 있으므로, 다음 세션에서는 push/deploy 전에 최신 의사를 확인한다.
+- 2026-05-29 현재 운영 방식은 작업 완료 후 커밋/푸시를 자동 진행하는 것이다. env 변경처럼 재배포가 필요한 작업은 Vercel 배포 상태까지 확인한다.
 
 ## Cron
 
@@ -401,16 +401,19 @@ npm run build
 - `858133f End cargo watch after email delivery`
   - 메일 발송 성공 시에만 감시 종료
   - 메일 실패 시 active 유지 후 재시도
+- `f8f3d82 Clean up closed cargo watch scheduling`
+  - 이미 지나간 목표 상태로 즉시 종료되는 감시 row의 `next_check_at`을 `null`로 저장
+  - 종료된 감시가 다음 조회 예정 시간을 가진 것처럼 보이지 않도록 DB 상태 정리
 
 ## 다음 작업 후보
 
-1. 운영 Vercel에서 API001 relay env 최종 확인
-2. production에서 House B/L 조회 스모크 테스트
-3. production에서 `CY 반입`, `CFS 반입` 감시 등록 테스트
-4. 메일 실패 재시도 케이스 테스트
-5. 감시 중복 등록 방지
-6. 감시 상세 이력 테이블 추가
-7. 대시보드에는 active 감시만 노출할지, 최근 완료 감시도 노출할지 UX 결정
-8. Vultr 방화벽/ufw 최소 설정 및 root password rotation
-9. relay를 `api.hsfinder.co.kr` 같은 HTTPS 도메인으로 전환
-10. relay health check 또는 uptime monitor 추가
+1. production에서 House B/L 조회 스모크 테스트
+2. production에서 `CY 반입`, `CFS 반입` 감시 등록 테스트
+3. 메일 실패 재시도 케이스 테스트
+4. 감시 상세 이력 테이블 추가
+5. 대시보드에는 active 감시만 노출할지, 최근 완료 감시도 노출할지 UX 결정
+6. Vultr 방화벽/ufw 최소 설정 및 root password rotation
+7. relay를 `api.hsfinder.co.kr` 같은 HTTPS 도메인으로 전환
+8. relay health check 또는 uptime monitor 추가
+9. API001 relay latency와 실패율을 운영 화면에 노출
+10. 관리대상검사 Y 알림과 목표 상태 알림을 사용자별 알림 이력 화면에서 분리 표시
