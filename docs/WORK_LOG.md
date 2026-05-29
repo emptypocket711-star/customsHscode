@@ -734,3 +734,13 @@
 - `npm test -- server/repositories/lookup-governance.test.ts`
 - `npm run typecheck`
 - `npm run lint`
+
+### 운영 점검 문서 갱신
+
+- `docs/operations/production-health-check.md`에 개발자 운영 점검 화면에서 확인할 항목을 추가했다.
+- 조회 품질 telemetry, route별 실패율/응답시간, 반입계 출력 실패 코드, production smoke 절차를 문서화했다.
+- 다음 확장 후보를 Vercel/cron/job 실패 이력, rate limit 초과 이벤트, 반입계 실패 집계 중심으로 정리했다.
+
+검증:
+
+- 문서 변경만 수행
