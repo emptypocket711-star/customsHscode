@@ -116,6 +116,15 @@ SMOKE_REQUIRE_AUTHENTICATED=true \
 npm run smoke:production -- https://hsfinder.co.kr
 ```
 
+테스트 계정 이메일/비밀번호를 환경변수로 넣으면 스크립트가 실제 로그인 화면을 통과해 세션 쿠키를 얻은 뒤 보호 페이지를 점검한다. 이메일, 비밀번호, 쿠키 원문은 출력하지 않는다.
+
+```bash
+SMOKE_LOGIN_EMAIL='tester@example.com' \
+SMOKE_LOGIN_PASSWORD='...' \
+SMOKE_REQUIRE_AUTHENTICATED=true \
+npm run smoke:production -- https://hsfinder.co.kr
+```
+
 ## 5. Vercel CLI 운영 확인
 
 로컬 프로젝트는 Vercel 프로젝트 `koo-apps/customs-hscode`에 연결되어 있다. 운영 서버 함수 오류나 환경변수 상태를 확인할 때 아래 명령을 사용한다.

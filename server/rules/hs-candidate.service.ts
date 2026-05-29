@@ -971,6 +971,35 @@ function productNormalizationTelemetryShape(normalization: AiProductSearchNormal
   };
 }
 
+function candidateTelemetryShape(candidates: HsCandidateRecommendation[]) {
+  const codeLengths = candidates.map((candidate) => candidate.hskCode.replace(/\D/g, "").length);
+  const hs6Count = codeLengths.filter((length) => length === 6).length;
+  const hsk10Count = codeLengths.filter((length) => length === 10).length;
+  const topCandidate = candidates[0];
+  const aiHintCount = candidates.filter((candidate) => candidate.lookupBasis === "ai_hs_hint").length;
+  const officialMatchCount = candidates.filter((candidate) => candidate.lookupBasis === "official_name_match" || candidate.lookupBasis === "customs_api").length;
+  const fallbackLikeCount = candidates.filter((candidate) => candidate.lookupBasis === "ai_term_match" || !candidate.lookupBasis).length;
+  const onlyProvisionalHs6 = candidates.length > 0 && hs6Count === candidates.length && aiHintCount === candidates.length;
+
+  return {
+    finalHs6Count: hs6Count,
+    finalHsk10Count: hsk10Count,
+    topLookupBasis: topCandidate?.lookupBasis ?? null,
+    topHsLevel: codeLengths[0] ?? null,
+    finalAiHintCount: aiHintCount,
+    finalOfficialMatchCount: officialMatchCount,
+    finalFallbackLikeCount: fallbackLikeCount,
+    onlyProvisionalHs6,
+    candidateQualityType: onlyProvisionalHs6
+      ? "hs6_only_provisional"
+      : candidates.length === 0
+        ? "empty"
+        : hsk10Count > 0
+          ? "hsk10_available"
+          : "non_hsk10_candidates"
+  };
+}
+
 function mapAmbiguousCandidateFromHsRecord(
   hsRecord: HsMasterSearchRow,
   ruleCandidate: (typeof ambiguousProductRules)[number]["candidates"][number],
@@ -1184,6 +1213,7 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       aiHintCount: aiHintCandidates.length,
       officialCandidateCount: baseCandidates.length,
       fallbackCandidateCount: fallbackCandidates.length,
+      ...candidateTelemetryShape(candidates),
       ...productNormalizationTelemetryShape(normalization)
     });
     return candidates;
@@ -1200,6 +1230,7 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
         resultCount: 0,
         aiHintCount: 0,
         officialCandidateCount: 0,
+        ...candidateTelemetryShape([]),
         ...productNormalizationTelemetryShape(normalization),
         bareProductCodeWithoutSource: true
       });
@@ -1240,6 +1271,7 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       aiHintCount: aiHintCandidates.length,
       officialCandidateCount: officialHsMasterCandidates.length,
       fallbackCandidateCount: fallbackCandidates.length,
+      ...candidateTelemetryShape(candidates),
       ...productNormalizationTelemetryShape(normalization)
     });
     return candidates;
@@ -1253,6 +1285,7 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
         resultCount: 0,
         aiHintCount: 0,
         officialCandidateCount: 0,
+        ...candidateTelemetryShape([]),
         ...productNormalizationTelemetryShape(normalization),
         bareProductCodeWithoutSource: true
       });
@@ -1280,6 +1313,7 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       aiHintCount: aiHintCandidates.length,
       officialCandidateCount: mockOfficialCandidates.length,
       fallbackCandidateCount: fallbackCandidates.length,
+      ...candidateTelemetryShape(candidates),
       ...productNormalizationTelemetryShape(normalization)
     });
     return candidates;

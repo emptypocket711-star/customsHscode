@@ -32,16 +32,16 @@
 
 - route rate limit 추가
 - production smoke test 추가
+- 테스트 계정 로그인 기반 production smoke 지원
 - runtime environment health check 추가
 - production schema health check 추가
 - 보호 페이지 proxy login guard 추가
 
 앞으로 할 항목:
 
-1. 로그인 세션 쿠키가 있는 실제 사용자 smoke flow 추가
-2. 반입계 출력, 적하목록 조회, 관세환율 job의 운영 로그 분류 개선
-3. route별 실패율과 평균 응답시간을 운영 화면에 표시
-4. Vercel/cron/job 실행 실패를 개발자 공지 또는 운영 알림으로 노출
+1. 반입계 출력, 적하목록 조회, 관세환율 job의 운영 로그 분류 개선
+2. route별 실패율과 평균 응답시간을 운영 화면에 표시
+3. Vercel/cron/job 실행 실패를 개발자 공지 또는 운영 알림으로 노출
 
 ### Phase E-1. 품명 AI 검색 품질 고정
 

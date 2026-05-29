@@ -632,3 +632,15 @@
 - `npm test -- server/operations/environment-health.service.test.ts`
 - `npm run typecheck`
 - `npm run lint`
+
+### 로그인 사용자 운영 스모크 보강
+
+- `SMOKE_LOGIN_EMAIL`과 `SMOKE_LOGIN_PASSWORD`를 넣으면 Playwright로 실제 로그인 화면을 통과해 Supabase 세션 쿠키를 얻고 보호 페이지 marker를 검사하도록 `smoke:production`을 확장했다.
+- 기존 `SMOKE_COOKIE` 방식은 유지한다.
+- 인증 정보와 쿠키 원문은 출력하지 않는다.
+
+검증:
+
+- `npm run smoke:production -- https://hsfinder.co.kr`
+- `npm run typecheck`
+- `npm run lint`

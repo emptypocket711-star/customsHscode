@@ -2,8 +2,10 @@
 
 const defaultBaseUrl = process.env.SMOKE_BASE_URL || "http://localhost:3000";
 const timeoutMs = Number(process.env.SMOKE_TIMEOUT_MS || 15000);
-const sessionCookie = process.env.SMOKE_COOKIE || "";
+let sessionCookie = process.env.SMOKE_COOKIE || "";
 const requireAuthenticated = process.env.SMOKE_REQUIRE_AUTHENTICATED === "true";
+const loginEmail = process.env.SMOKE_LOGIN_EMAIL || "";
+const loginPassword = process.env.SMOKE_LOGIN_PASSWORD || "";
 
 const protectedScenarios = [
   {
@@ -98,6 +100,38 @@ function hasMarker(body, marker) {
   return body.toLocaleLowerCase("ko-KR").includes(marker.toLocaleLowerCase("ko-KR"));
 }
 
+async function sessionCookieFromLogin(baseUrl) {
+  if (!loginEmail || !loginPassword) return "";
+
+  let chromium;
+  try {
+    ({ chromium } = await import("playwright"));
+  } catch {
+    throw new Error("SMOKE_LOGIN_EMAIL/SMOKE_LOGIN_PASSWORD를 쓰려면 dev dependency playwright가 설치되어 있어야 합니다.");
+  }
+
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage();
+    const loginUrl = new URL("/login", baseUrl).toString();
+    await page.goto(loginUrl, { waitUntil: "domcontentloaded", timeout: timeoutMs });
+    await page.locator('input[name="email"]').fill(loginEmail, { timeout: timeoutMs });
+    await page.locator('input[name="password"]').fill(loginPassword, { timeout: timeoutMs });
+    await Promise.all([
+      page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: timeoutMs }),
+      page.locator('button[type="submit"]').click()
+    ]);
+
+    const cookies = await page.context().cookies(baseUrl);
+    return cookies
+      .filter((cookie) => cookie.name.startsWith("sb-") || cookie.name === "hs_finder_remember_session")
+      .map((cookie) => `${cookie.name}=${cookie.value}`)
+      .join("; ");
+  } finally {
+    await browser.close();
+  }
+}
+
 async function fetchScenario(baseUrl, scenario, protectedRoute) {
   const url = buildUrl(baseUrl, scenario);
   const controller = new AbortController();
@@ -164,10 +198,15 @@ function printResult(result) {
 
 async function main() {
   const baseUrl = process.argv[2] || defaultBaseUrl;
+  if (!sessionCookie && loginEmail && loginPassword) {
+    sessionCookie = await sessionCookieFromLogin(baseUrl);
+  }
   const results = [];
 
-  for (const scenario of publicScenarios) {
-    results.push(await fetchScenario(baseUrl, scenario, false));
+  if (!sessionCookie) {
+    for (const scenario of publicScenarios) {
+      results.push(await fetchScenario(baseUrl, scenario, false));
+    }
   }
   for (const scenario of protectedScenarios) {
     results.push(await fetchScenario(baseUrl, scenario, true));

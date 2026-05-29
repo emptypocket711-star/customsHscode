@@ -86,6 +86,16 @@ describe("lookup telemetry", () => {
     expect(classifyLookupTelemetryIssue(telemetryEvent({
       payload: { bareProductCodeWithoutSource: true }
     }))).toBe("제품코드 식별 실패");
+
+    expect(classifyLookupTelemetryIssue(telemetryEvent({
+      resultCount: 1,
+      payload: { candidateQualityType: "hs6_only_provisional", onlyProvisionalHs6: true }
+    }))).toBe("HS6 예비후보만 표시");
+
+    expect(classifyLookupTelemetryIssue(telemetryEvent({
+      resultCount: 2,
+      payload: { candidateQualityType: "non_hsk10_candidates", finalHsk10Count: 0 }
+    }))).toBe("10자리 확장 필요");
   });
 
   it("summarizes diagnosis counts with operator actions", () => {

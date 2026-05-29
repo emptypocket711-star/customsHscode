@@ -61,6 +61,9 @@ export function isLookupTelemetryIssue(event: LookupTelemetryEvent) {
     || event.status === "fallback"
     || event.resultCount === 0
     || candidateCount === 0
+    || booleanPayloadValue(event.payload, "onlyProvisionalHs6")
+    || stringPayloadValue(event.payload, "candidateQualityType") === "non_hsk10_candidates"
+    || stringPayloadValue(event.payload, "candidateQualityType") === "hs6_only_provisional"
     || Boolean(event.errorType);
 }
 
@@ -74,6 +77,11 @@ function booleanPayloadValue(payload: Record<string, unknown>, key: string) {
   return typeof value === "boolean" ? value : false;
 }
 
+function stringPayloadValue(payload: Record<string, unknown>, key: string) {
+  const value = payload[key];
+  return typeof value === "string" && value.trim() ? value : null;
+}
+
 export function classifyLookupTelemetryIssue(event: LookupTelemetryEvent) {
   if (event.status === "error" || event.errorType) return "오류";
   if (booleanPayloadValue(event.payload, "bareProductCodeWithoutSource")) return "제품코드 식별 실패";
@@ -85,6 +93,9 @@ export function classifyLookupTelemetryIssue(event: LookupTelemetryEvent) {
   const aiHintCount = numericPayloadValue(event.payload, "aiHintCount");
   const officialCandidateCount = numericPayloadValue(event.payload, "officialCandidateCount");
   const hasNormalization = booleanPayloadValue(event.payload, "hasNormalization");
+  const candidateQualityType = stringPayloadValue(event.payload, "candidateQualityType");
+  const onlyProvisionalHs6 = booleanPayloadValue(event.payload, "onlyProvisionalHs6");
+  const finalHsk10Count = numericPayloadValue(event.payload, "finalHsk10Count");
 
   if (event.eventType === "product_search_normalized" && candidateCount === 0) {
     return "GPT 후보 없음";
@@ -98,6 +109,14 @@ export function classifyLookupTelemetryIssue(event: LookupTelemetryEvent) {
     return "최종 후보 0건";
   }
 
+  if (event.eventType === "product_candidates_recommended" && (onlyProvisionalHs6 || candidateQualityType === "hs6_only_provisional")) {
+    return "HS6 예비후보만 표시";
+  }
+
+  if (event.eventType === "product_candidates_recommended" && resultCount && finalHsk10Count === 0) {
+    return "10자리 확장 필요";
+  }
+
   return isLookupTelemetryIssue(event) ? "확인 필요" : "정상";
 }
 
@@ -108,6 +127,8 @@ export function lookupTelemetryIssueAction(diagnosis: string) {
     "제품코드 식별 실패": "브랜드/모델 코드만 입력된 케이스입니다. 웹 근거가 없으면 제품명·카탈로그·스펙 요청 문구를 강화합니다.",
     "Fallback 처리": "Supabase 또는 외부 의존 경로 실패입니다. DB 연결, 검색 인덱스, fallback 빈도를 확인합니다.",
     "최종 후보 0건": "AI 후보와 공식 후보 결합 경로를 확인합니다. HS4/HS6 provisional 후보가 화면에 남는지 점검합니다.",
+    "HS6 예비후보만 표시": "GPT가 HS6까지는 제시했지만 10자리 확장이 남은 상태입니다. 하위 HSK 선택 UI와 보완 질문을 점검합니다.",
+    "10자리 확장 필요": "후보는 있으나 HSK 10자리 확정 후보가 없습니다. 하위 세번 확장과 사용자 선택 흐름을 확인합니다.",
     "오류": "서버 오류 로그와 환경변수를 우선 확인합니다.",
     "확인 필요": "동일 유형 로그가 반복되는지 확인한 뒤 후보 생성 단계별 수치를 비교합니다.",
     "정상": "추가 조치가 필요 없습니다."
