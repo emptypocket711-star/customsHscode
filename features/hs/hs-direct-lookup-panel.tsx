@@ -754,12 +754,12 @@ function productCandidateHierarchyLines(candidate: HsCandidateRecommendation, lo
 
 function productCandidateLookupBasisLabel(candidate: HsCandidateRecommendation) {
   if (candidate.lookupBasis === "user_hs_hint") return "입력 HS 힌트";
-  if (candidate.lookupBasis === "ai_hs_hint") return "GPT 예비 HS";
-  if (candidate.lookupBasis === "ai_term_match") return "GPT 품명 단서";
-  if (candidate.lookupBasis === "official_name_match") return "품명 단서";
+  if (candidate.lookupBasis === "ai_hs_hint") return "AI 예비 후보";
+  if (candidate.lookupBasis === "ai_term_match") return "AI 품명 단서";
+  if (candidate.lookupBasis === "official_name_match") return "품명/제품 단서";
   if (candidate.lookupBasis === "customs_api") return "저장 HS 데이터";
   if (candidate.lookupBasis === "internal_tax_rule") return "내국세 단서";
-  if (candidate.lookupBasis === "ambiguous_abbreviation") return "약어 후보";
+  if (candidate.lookupBasis === "ambiguous_abbreviation") return "약어/다의어 후보";
   return "후보 검색";
 }
 
@@ -772,6 +772,62 @@ function productCandidateEvidenceText(candidate: HsCandidateRecommendation) {
   return candidate.lookupBasis === "ai_hs_hint"
     ? "AI가 제품 성격을 기준으로 제시한 HS 후보입니다"
     : "입력 품명과 제품 단서를 기준으로 구성한 HS 후보입니다";
+}
+
+function uniqueProductQuestions(candidates: HsCandidateRecommendation[], clarification?: ProductClarificationResult | null) {
+  return Array.from(
+    new Set([
+      ...(clarification?.missingQuestions ?? []),
+      ...candidates.flatMap((candidate) => candidate.requiredQuestions)
+    ].map((question) => question.trim()).filter(Boolean))
+  );
+}
+
+function productSearchPresentationState(candidates: HsCandidateRecommendation[], clarification?: ProductClarificationResult | null) {
+  const primary = candidates[0];
+  const questions = uniqueProductQuestions(candidates, clarification);
+
+  if (!primary) {
+    return {
+      tone: "warning" as const,
+      badge: "추가정보 필요",
+      title: "HS CODE 특정 정보가 부족합니다",
+      description: "입력 품명만으로는 의미가 좁혀지지 않았습니다. 제품의 용도, 재질, 구성, 모델명 중 확인 가능한 정보를 보완해 주세요.",
+      questions
+    };
+  }
+
+  const isLowConfidence = clarification?.confidence === "low" || primary.confidenceScore < 0.72;
+  const hasMultipleDirections = candidates.length > 1;
+  const needsClarification = isLowConfidence || (hasMultipleDirections && questions.length > 0);
+
+  if (needsClarification) {
+    return {
+      tone: "warning" as const,
+      badge: "추가정보 필요",
+      title: "제품 정보 보완 후 좁혀야 합니다",
+      description: "현재 입력값으로 검토 가능한 방향은 만들었지만, 품목을 바로 특정하기에는 조건이 부족합니다. 아래 질문에 답하면 후보를 더 줄일 수 있습니다.",
+      questions
+    };
+  }
+
+  if (hasMultipleDirections) {
+    return {
+      tone: "info" as const,
+      badge: "복수 가능성",
+      title: "의미가 갈릴 수 있는 품명입니다",
+      description: "입력 품명이 여러 제품군으로 해석될 수 있어 복수 후보를 표시했습니다. 실제 기능과 사용처가 확인되면 한 방향으로 좁혀 조회하세요.",
+      questions
+    };
+  }
+
+  return {
+    tone: "info" as const,
+    badge: "가장 유력",
+    title: "가장 유력한 예비 후보입니다",
+    description: "입력 품명 기준으로 우선 검토할 HS 방향을 하나로 정리했습니다. 실제 재질, 용도, 구성 확인 후 하위 세번을 검토하세요.",
+    questions
+  };
 }
 
 function productCandidateCopySummaryTexts({
@@ -2654,32 +2710,74 @@ function AiClarificationPanel({
   originCountry: string;
 }) {
   const candidateByCode = new Map(candidates.map((candidate) => [candidate.hskCode, candidate]));
+  const presentation = productSearchPresentationState(candidates, analysis);
+  const candidateCodes = analysis.suggestedCandidateCodes.length
+    ? analysis.suggestedCandidateCodes
+    : candidates.slice(0, 3).map((candidate) => candidate.hskCode);
 
   return (
-    <section className="mt-5 overflow-hidden rounded-md border border-violet-200 bg-violet-50">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-violet-200 px-3 py-2">
+    <section className={cn(
+      "mt-5 overflow-hidden rounded-md border",
+      presentation.tone === "warning" ? "border-amber-200 bg-amber-50" : "border-blue-200 bg-blue-50"
+    )}>
+      <div className={cn(
+        "flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2",
+        presentation.tone === "warning" ? "border-amber-200" : "border-blue-200"
+      )}>
         <div>
-          <h2 className="text-sm font-semibold text-violet-950">AI 보조 분석</h2>
-          <p className="mt-1 text-xs leading-5 text-violet-800">{analysis.summary}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className={cn(
+              "text-sm font-semibold",
+              presentation.tone === "warning" ? "text-amber-950" : "text-blue-950"
+            )}>{presentation.title}</h2>
+            <Badge tone={presentation.tone}>{presentation.badge}</Badge>
+          </div>
+          <p className={cn(
+            "mt-1 text-xs leading-5",
+            presentation.tone === "warning" ? "text-amber-900" : "text-blue-900"
+          )}>{analysis.summary || presentation.description}</p>
         </div>
-        <Badge tone={analysis.confidence === "low" ? "warning" : "info"}>{analysis.confidence.toUpperCase()}</Badge>
+        <Badge tone={analysis.confidence === "low" ? "warning" : "info"}>
+          {analysis.confidence === "low" ? "검토 필요" : "예비 검토"}
+        </Badge>
       </div>
       <div className="grid gap-4 p-3 lg:grid-cols-[1fr_0.9fr]">
         <div>
-          <p className="text-xs font-semibold text-violet-900">추가 확인 질문</p>
-          <ol className="mt-2 grid gap-2">
-            {analysis.missingQuestions.map((question, index) => (
-              <li className="rounded-md border border-violet-100 bg-white px-3 py-2 text-sm leading-6 text-slate-700" key={question}>
-                <span className="mr-2 font-mono text-xs font-semibold text-violet-700">{index + 1}</span>
-                {question}
-              </li>
-            ))}
-          </ol>
+          <p className={cn(
+            "text-xs font-semibold",
+            presentation.tone === "warning" ? "text-amber-900" : "text-blue-900"
+          )}>보완하면 좋아지는 정보</p>
+          {presentation.questions.length ? (
+            <ol className="mt-2 grid gap-2">
+              {presentation.questions.slice(0, 5).map((question, index) => (
+                <li className={cn(
+                  "rounded-md border bg-white px-3 py-2 text-sm leading-6 text-slate-700",
+                  presentation.tone === "warning" ? "border-amber-100" : "border-blue-100"
+                )} key={question}>
+                  <span className={cn(
+                    "mr-2 font-mono text-xs font-semibold",
+                    presentation.tone === "warning" ? "text-amber-700" : "text-blue-700"
+                  )}>{index + 1}</span>
+                  {question}
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <div className={cn(
+              "mt-2 rounded-md border bg-white px-3 py-2 text-sm leading-6 text-slate-700",
+              presentation.tone === "warning" ? "border-amber-100" : "border-blue-100"
+            )}>
+              현재 입력 기준으로는 우선 검토 후보를 표시할 수 있습니다. 실제 사양서나 용도 확인 후 하위 세번을 검토하세요.
+            </div>
+          )}
         </div>
         <div>
-          <p className="text-xs font-semibold text-violet-900">우선 검토 후보</p>
+          <p className={cn(
+            "text-xs font-semibold",
+            presentation.tone === "warning" ? "text-amber-900" : "text-blue-900"
+          )}>우선 검토 후보</p>
           <div className="mt-2 grid gap-2">
-            {analysis.suggestedCandidateCodes.length ? analysis.suggestedCandidateCodes.map((code) => {
+            {candidateCodes.length ? candidateCodes.map((code) => {
               const candidate = candidateByCode.get(code);
               const href = hsLookupHref({
                 hskCode: code,
@@ -2689,7 +2787,10 @@ function AiClarificationPanel({
                 basisDate: candidate?.basisDate ?? getSeoulDateString()
               });
               return (
-                <div className="rounded-md border border-violet-100 bg-white px-3 py-2" key={code}>
+                <div className={cn(
+                  "rounded-md border bg-white px-3 py-2",
+                  presentation.tone === "warning" ? "border-amber-100" : "border-blue-100"
+                )} key={code}>
                   <Link className="font-mono text-sm font-semibold text-blue-700 underline-offset-2 hover:underline" href={href}>
                     {formatHsCode(code)}
                   </Link>
@@ -2697,12 +2798,18 @@ function AiClarificationPanel({
                 </div>
               );
             }) : (
-              <div className="rounded-md border border-violet-100 bg-white px-3 py-2 text-sm text-slate-600">
+              <div className={cn(
+                "rounded-md border bg-white px-3 py-2 text-sm text-slate-600",
+                presentation.tone === "warning" ? "border-amber-100" : "border-blue-100"
+              )}>
                 입력 정보가 부족하여 우선 검토 후보를 표시할 수 없습니다.
               </div>
             )}
           </div>
-          <p className="mt-3 text-xs font-semibold text-violet-900">주의사항</p>
+          <p className={cn(
+            "mt-3 text-xs font-semibold",
+            presentation.tone === "warning" ? "text-amber-900" : "text-blue-900"
+          )}>주의사항</p>
           <ul className="mt-2 grid gap-1 text-xs leading-5 text-slate-600">
             {analysis.riskNotes.map((note) => <li key={note}>{note}</li>)}
           </ul>
@@ -3174,7 +3281,7 @@ export async function HsDirectLookupPanel({
               ) : null}
             </div>
             <div className="grid gap-3 bg-slate-50 p-3 lg:grid-cols-2">
-              {productCandidates.map((candidate) => {
+              {productCandidates.map((candidate, index) => {
                 const lookup = productCandidateLookupByHsk.get(candidate.hskCode);
                 const hierarchyLines = productCandidateHierarchyLines(candidate, lookup);
                 const detailHref = hsLookupHref({
@@ -3196,7 +3303,9 @@ export async function HsDirectLookupPanel({
                   <article className="rounded-md border border-slate-200 bg-white p-4" key={candidate.hskCode}>
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
-                        <div className="text-xs font-semibold text-slate-500">{dictionary.product.rank(candidate.rank)}</div>
+                        <div className="text-xs font-semibold text-slate-500">
+                          {index === 0 && productCandidates.length === 1 ? "가장 유력한 예비 후보" : dictionary.product.rank(candidate.rank)}
+                        </div>
                         <Link className="mt-1 block font-mono text-lg font-semibold text-blue-700 underline-offset-2 hover:underline" data-navigation-progress="상세조회" href={detailHref}>
                           {formatHsCode(candidate.hskCode)}
                         </Link>
@@ -3235,7 +3344,17 @@ export async function HsDirectLookupPanel({
                       </div>
                       <div>
                         <div className="text-xs font-semibold text-slate-500">{dictionary.product.missingFacts}</div>
-                        <p className="mt-1 leading-6 text-slate-700">{candidate.requiredQuestions.slice(0, 3).join(" / ")}</p>
+                        {candidate.requiredQuestions.length ? (
+                          <ul className="mt-1 grid gap-1 leading-6 text-slate-700">
+                            {candidate.requiredQuestions.slice(0, 3).map((question) => (
+                              <li key={question}>- {question}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="mt-1 leading-6 text-slate-700">
+                            입력 정보 기준으로 우선 후보를 표시했습니다. 실제 사양과 용도 확인 후 하위 세번을 검토하세요.
+                          </p>
+                        )}
                       </div>
                     </div>
 
