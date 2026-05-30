@@ -33,6 +33,7 @@ import {
   buildOperationsIssueActiveFilterLabels,
   buildOperationsIssueResultSummaryMetrics,
   buildOperationsIssueQuickFilterPresets,
+  buildOperationsIssueTriageFocus,
   isUnassignedOperationsIssueOwnerFilter,
   operationsIssueFiltersMatch,
   listRecentOperationsIssueEvents,
@@ -612,6 +613,7 @@ export default async function OperationsHealthPage({
     operationsIssueSummary,
     hasOperationsIssueFilters
   );
+  const operationsIssueTriageFocus = buildOperationsIssueTriageFocus(filteredOperationsIssueEvents);
   const operationsIssueOwnerFilterHelp = isUnassignedOperationsIssueOwnerFilter(issueFilters.assignedToLabel)
     ? "담당자 값이 비어 있는 미해결 이슈만 확인할 때 사용하는 조건입니다."
     : "미지정 입력 시 담당자 없는 이슈만 필터링합니다.";
@@ -1403,6 +1405,47 @@ export default async function OperationsHealthPage({
                 </div>
               ))}
             </div>
+            {operationsIssueTriageFocus ? (
+              <div className={operationsIssueTriageFocus.tone === "warning"
+                ? "rounded-md border border-amber-200 bg-amber-50 px-3 py-2 lg:col-span-6"
+                : "rounded-md border border-blue-200 bg-blue-50 px-3 py-2 lg:col-span-6"}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className={operationsIssueTriageFocus.tone === "warning"
+                      ? "text-xs font-semibold text-amber-800"
+                      : "text-xs font-semibold text-blue-800"}
+                    >
+                      우선 확인 · {operationsIssueTriageFocus.reasonLabel}
+                    </p>
+                    <p className="mt-1 break-words text-sm font-semibold text-slate-950">
+                      {operationsIssueTriageFocus.title}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-slate-600">
+                      담당 {operationsIssueTriageFocus.ownerLabel} · 반복 {operationsIssueTriageFocus.occurrenceCount}건
+                      {operationsIssueTriageFocus.ageLabel ? ` · ${operationsIssueTriageFocus.ageLabel}` : ""}
+                    </p>
+                  </div>
+                  <a
+                    className="rounded-md border border-white/80 bg-white/80 px-3 py-1.5 text-xs font-semibold text-slate-800 transition hover:bg-white"
+                    href={operationsIssueFilterHref(operationsIssueTriageFocus.filters)}
+                  >
+                    같은 기준 보기
+                  </a>
+                </div>
+                <p className="mt-2 text-xs leading-5 text-slate-700">{operationsIssueTriageFocus.actionLabel}</p>
+                <p className="mt-1 break-words font-mono text-[11px] text-slate-500">
+                  {shortOperationsIssueKey(operationsIssueTriageFocus.issueKey)}
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-md border border-emerald-100 bg-emerald-50 px-3 py-2 lg:col-span-6">
+                <p className="text-xs font-semibold text-emerald-800">우선 확인 대상 없음</p>
+                <p className="mt-1 text-xs leading-5 text-emerald-900">
+                  현재 필터 기준 미해결 운영 이슈가 없습니다. 해결·제외 이슈는 처리 사유와 상태 변경 이력 위주로 검토합니다.
+                </p>
+              </div>
+            )}
           </form>
           {filteredOperationsIssueEvents.length ? (
             <div className="overflow-x-auto">

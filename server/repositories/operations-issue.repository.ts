@@ -143,6 +143,19 @@ export type OperationsIssueResultSummaryMetric = {
   tone: "neutral" | "info" | "warning";
 };
 
+export type OperationsIssueTriageFocus = {
+  eventId: string;
+  title: string;
+  issueKey: string;
+  ownerLabel: string;
+  occurrenceCount: number;
+  reasonLabel: string;
+  actionLabel: string;
+  ageLabel: string | null;
+  tone: "warning" | "info";
+  filters: OperationsIssueEventFilters;
+};
+
 export function operationsIssueFiltersMatch(
   current: OperationsIssueEventFilters,
   target: OperationsIssueEventFilters
@@ -442,6 +455,58 @@ export function sortOperationsIssueEventsForTriage(
 
     return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
   });
+}
+
+export function buildOperationsIssueTriageFocus(
+  events: OperationsIssueEventItem[],
+  now = new Date()
+): OperationsIssueTriageFocus | null {
+  const focus = sortOperationsIssueEventsForTriage(events, now).find((event) => event.status === "open");
+  if (!focus) return null;
+
+  const ageStatus = getOpenOperationsIssueAgeStatus(focus, now);
+  const owner = ownerLabel(focus.assignedToLabel);
+  const filters: OperationsIssueEventFilters = {
+    status: "open"
+  };
+
+  let reasonLabel = "미해결";
+  let actionLabel = "원인과 후속 조치를 확인합니다.";
+  let tone: OperationsIssueTriageFocus["tone"] = "info";
+
+  if (focus.severity === "blocker") {
+    reasonLabel = "차단 미해결";
+    actionLabel = "장애 영향과 담당자 배정을 먼저 확인합니다.";
+    filters.severity = "blocker";
+    tone = "warning";
+  } else if (ageStatus?.level === "stale") {
+    reasonLabel = "장기 미해결";
+    actionLabel = "처리 지연 사유와 다음 조치 일정을 확인합니다.";
+    filters.ageLevel = "stale";
+    tone = "warning";
+  } else if (!focus.assignedToLabel?.trim()) {
+    reasonLabel = "담당 미지정";
+    actionLabel = "담당자를 지정하고 처리 메모를 남깁니다.";
+    filters.assignedToLabel = "미지정";
+    tone = "warning";
+  } else if (ageStatus?.level === "watch") {
+    reasonLabel = "지연 확인";
+    actionLabel = "최근 갱신 이후 추가 발생 여부를 확인합니다.";
+    filters.ageLevel = "watch";
+  }
+
+  return {
+    eventId: focus.id,
+    title: focus.title,
+    issueKey: focus.issueKey,
+    ownerLabel: owner,
+    occurrenceCount: focus.occurrenceCount,
+    reasonLabel,
+    actionLabel,
+    ageLabel: ageStatus?.label ?? null,
+    tone,
+    filters
+  };
 }
 
 export function getOperationsIssueStatusChangeSummary(

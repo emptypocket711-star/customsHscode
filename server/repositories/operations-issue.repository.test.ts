@@ -3,6 +3,7 @@ import {
   buildOperationsIssueActiveFilterLabels,
   buildOperationsIssueQuickFilterPresets,
   buildOperationsIssueResultSummaryMetrics,
+  buildOperationsIssueTriageFocus,
   filterOperationsIssueEvents,
   getOpenOperationsIssueAgeStatus,
   getOperationsIssueStatusChangeSummary,
@@ -286,6 +287,80 @@ describe("operations issue repository helpers", () => {
       "resolved-recent",
       "ignored"
     ]);
+  });
+
+  it("builds triage focus from the highest priority open issue", () => {
+    const now = new Date("2026-05-30T00:00:00.000Z");
+
+    expect(buildOperationsIssueTriageFocus([
+      issue({
+        id: "resolved",
+        status: "resolved",
+        severity: "blocker",
+        title: "이미 해결된 차단 이슈"
+      }),
+      issue({
+        id: "stale-warning",
+        status: "open",
+        severity: "warning",
+        title: "장기 미해결 경고",
+        assignedToLabel: "김운영",
+        firstSeenAt: "2026-05-20T00:00:00.000Z",
+        occurrenceCount: 4
+      }),
+      issue({
+        id: "open-blocker",
+        status: "open",
+        severity: "blocker",
+        title: "차단 미해결 이슈",
+        issueKey: "lookup_quality_recurring:blocker",
+        assignedToLabel: null,
+        firstSeenAt: "2026-05-29T00:00:00.000Z",
+        occurrenceCount: 2
+      })
+    ], now)).toEqual({
+      eventId: "open-blocker",
+      title: "차단 미해결 이슈",
+      issueKey: "lookup_quality_recurring:blocker",
+      ownerLabel: "미지정",
+      occurrenceCount: 2,
+      reasonLabel: "차단 미해결",
+      actionLabel: "장애 영향과 담당자 배정을 먼저 확인합니다.",
+      ageLabel: "열림 1일",
+      tone: "warning",
+      filters: { status: "open", severity: "blocker" }
+    });
+  });
+
+  it("falls back to stale and unassigned triage reasons when there is no blocker", () => {
+    const now = new Date("2026-05-30T00:00:00.000Z");
+
+    expect(buildOperationsIssueTriageFocus([
+      issue({
+        id: "stale-warning",
+        status: "open",
+        severity: "warning",
+        assignedToLabel: "김운영",
+        firstSeenAt: "2026-05-20T00:00:00.000Z"
+      })
+    ], now)?.reasonLabel).toBe("장기 미해결");
+
+    expect(buildOperationsIssueTriageFocus([
+      issue({
+        id: "unassigned-warning",
+        status: "open",
+        severity: "warning",
+        assignedToLabel: null,
+        firstSeenAt: "2026-05-29T00:00:00.000Z"
+      })
+    ], now)?.reasonLabel).toBe("담당 미지정");
+
+    expect(buildOperationsIssueTriageFocus([
+      issue({
+        id: "resolved",
+        status: "resolved"
+      })
+    ], now)).toBeNull();
   });
 
   it("summarizes operations issue status change attribution without exposing full actor ids", () => {
