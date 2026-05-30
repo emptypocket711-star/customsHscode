@@ -5,7 +5,7 @@ import { redactSensitiveText } from "@/server/ai/redaction";
 import { cachedLookup, lookupCacheKey } from "@/server/cache/lookup-cache";
 import { logLookupTelemetry, productInputShape } from "@/server/observability/lookup-telemetry";
 
-const productSearchNormalizationVersion = "product-search-normalization-v18";
+const productSearchNormalizationVersion = "product-search-normalization-v19";
 
 function productInputText(input: ProductHsRecommendationInput) {
   const hsCodeHints = extractHsCodeHintsFromProductInput(input);
@@ -317,7 +317,8 @@ export async function normalizeProductSearchInput(input: ProductHsRecommendation
         task: "product_search_normalization",
         basisDate: input.basisDate,
         redactedInput: redacted.redactedText
-      })
+      }),
+      shouldCache: (value) => Boolean(value.primaryCandidate || value.candidateHsCodes.length)
     });
     const needsClarificationFirst = normalization.classificationState === "needs_clarification" || normalization.displayMode === "needs_more_info";
     const strictClarificationWithoutHsBoundary = needsClarificationFirst

@@ -1679,10 +1679,14 @@
 - 이 변경은 품목분류 확정이 아니라 `AI 품명 정규화` 출처의 예비 HS 방향이며, 상세 관세율·요건은 사용자가 후보를 선택해 직접조회로 들어간 뒤 공식 데이터 기준으로 조회한다.
 - 배포 후 실사이트 측정에서 이전에 37초 이상 걸리거나 70초 timeout이 났던 `텀블러`, `가방`은 각각 약 6.5초, 6.3초에 완료 화면과 후보를 표시했다.
 - production telemetry 기준 fast exact 후보 경로는 후보 생성 단계가 약 2.2초로 유지됐고, 결정적 exact 후보가 없는 품명은 `supabase_gpt_only` 경로에서 약 2.0초 안에 후보 없음/추가 정보 필요 상태로 종료됐다.
+- 사용자가 `사탕`처럼 명확한 품명에서 GPT가 후보를 못 내는 문제를 지적해, 품명검색 GPT 지시문을 `"검색품명" HS CODE 알려줘` 중심의 짧은 실무 질문으로 단순화했다.
+- 이후에도 운영에서 `사탕`이 후보 없음으로 끝나는 원인을 확인한 결과, 1차 GPT 호출이 짧은 timeout에 잘리고 fallback성 빈 응답이 캐시되는 구조였다. 1차 GPT는 서버 실행 예산 안에서 충분히 기다리도록 변경하고, GPT 출력은 compact JSON으로 제한했다.
+- 후보와 primaryCandidate가 모두 없는 품명 정규화 결과는 캐시에 저장하지 않도록 해, 일시적인 GPT timeout/fallback 결과가 같은 품명의 이후 검색을 막지 않게 했다.
 - 운영 확장 문서의 품명검색 캐시/타임아웃 설명도 웹 보조가 아닌 GPT API 전용 정책으로 갱신했다.
 
 검증:
 
+- `npm test -- server/ai/clarification.service.test.ts server/cache/lookup-cache.test.ts server/rules/hs-candidate.service.test.ts`
 - `npm test -- server/rules/hs-candidate.service.test.ts server/ai/clarification.service.test.ts server/observability/lookup-telemetry.test.ts lib/i18n/hs-direct.test.ts`
 - `npm run typecheck`
 - `npm run lint`

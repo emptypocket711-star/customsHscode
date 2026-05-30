@@ -102,11 +102,13 @@ export async function cachedLookup<T>({
   key,
   ttlMs,
   load,
+  shouldCache = () => true,
   now = Date.now()
 }: {
   key: string;
   ttlMs: number;
   load: () => Promise<T>;
+  shouldCache?: (value: T) => boolean;
   now?: number;
 }): Promise<T> {
   if (hasUpstashRestEnv()) {
@@ -139,15 +141,17 @@ export async function cachedLookup<T>({
   logCacheEvent("miss", key);
   const promise = load()
     .then((value) => {
-      cacheStore.set(key, { value, expiresAt: Date.now() + ttlMs });
-      pruneMemoryCache();
-      logCacheEvent("set", key);
-      if (hasUpstashRestEnv()) {
-        const encoded = encodeCacheValue(value);
-        if (encoded) {
-          void upstashPipeline([
-            ["SETEX", `lookup:${key}`, Math.max(1, Math.ceil(ttlMs / 1000)), encoded]
-          ]).catch(() => null);
+      if (shouldCache(value)) {
+        cacheStore.set(key, { value, expiresAt: Date.now() + ttlMs });
+        pruneMemoryCache();
+        logCacheEvent("set", key);
+        if (hasUpstashRestEnv()) {
+          const encoded = encodeCacheValue(value);
+          if (encoded) {
+            void upstashPipeline([
+              ["SETEX", `lookup:${key}`, Math.max(1, Math.ceil(ttlMs / 1000)), encoded]
+            ]).catch(() => null);
+          }
         }
       }
       return value;

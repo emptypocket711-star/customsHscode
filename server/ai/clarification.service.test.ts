@@ -111,7 +111,7 @@ describe("normalizeProductSearchInput", () => {
     });
 
     expect(key).toContain("ai-product-normalization");
-    expect(key).toContain("product-search-normalization-v18");
+    expect(key).toContain("product-search-normalization-v19");
     expect(key).toContain("901910");
     expect(key).not.toContain("secret");
     expect(key).not.toContain("ABC-123");
@@ -261,6 +261,8 @@ describe("normalizeProductSearchInput", () => {
     expect(instructions).toContain("\"검색품명\" HS CODE 알려줘");
     expect(instructions).toContain("Korean, Chinese, Japanese, English, or another language");
     expect(instructions).toContain("Use general product knowledge only");
+    expect(instructions).toContain("Keep the answer short");
+    expect(instructions).toContain("candidateHsCodes max 3");
     expect(instructions).toContain("clear common product");
     expect(instructions).toContain("candy/sweets/confectionery");
     expect(instructions).toContain("Do not return an empty candidateHsCodes array only because the exact Korean HSK 10-digit suffix is unknown");
@@ -375,6 +377,34 @@ describe("normalizeProductSearchInput", () => {
     expect(result.candidateHsCodes).toEqual(["1704"]);
     expect(result.primaryCandidate?.code).toBe("1704");
     expect(result.searchTerms).toEqual(expect.arrayContaining(["사탕", "sugar confectionery"]));
+  });
+
+  it("requests compact GPT product-search responses", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        output_text: JSON.stringify({
+          classificationState: "single_likely_candidate",
+          displayMode: "single",
+          correctedProductName: "사탕",
+          primaryCandidate: { code: "1704", reason: "설탕과자류 가능성", requiredInfo: ["코코아 함유 여부"] },
+          searchTerms: ["사탕"],
+          candidateHsCodes: ["1704"],
+          candidateHsCodeReasons: [{ code: "1704", reason: "설탕과자류 가능성", requiredInfo: ["코코아 함유 여부"] }],
+          missingQuestions: ["코코아 함유 여부 확인"]
+        })
+      }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const provider = new OpenAiProvider("test-key");
+    await provider.normalizeProductSearch({
+      task: "product_search_normalization",
+      basisDate: "2026-05-30",
+      redactedInput: "품명: 사탕"
+    });
+
+    const body = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
+    expect(body.max_output_tokens).toBe(900);
+    expect(body.instructions).toContain("Keep the answer short");
   });
 
   it("runs a simple interviewer retry when a successful response still has no HS candidates", async () => {

@@ -58,6 +58,35 @@ describe("lookup cache", () => {
     expect(lookupCacheInternals.inflightStore.size).toBe(0);
   });
 
+  it("can skip caching loaded values while still returning them", async () => {
+    clearLookupCache();
+    let calls = 0;
+
+    const first = await cachedLookup({
+      key: "test:skip",
+      ttlMs: 1000,
+      load: async () => {
+        calls += 1;
+        return "empty";
+      },
+      shouldCache: () => false
+    });
+    const second = await cachedLookup({
+      key: "test:skip",
+      ttlMs: 1000,
+      load: async () => {
+        calls += 1;
+        return "loaded-again";
+      },
+      shouldCache: () => false
+    });
+
+    expect(first).toBe("empty");
+    expect(second).toBe("loaded-again");
+    expect(calls).toBe(2);
+    expect(lookupCacheInternals.cacheStore.has("test:skip")).toBe(false);
+  });
+
   it("encodes and decodes Map values for distributed cache compatibility", () => {
     const encoded = lookupCacheInternals.encodeCacheValue(new Map([["3304991000", [{ rate: "8%" }]]]));
     const decoded = lookupCacheInternals.decodeCacheValue<Map<string, Array<{ rate: string }>>>(encoded);

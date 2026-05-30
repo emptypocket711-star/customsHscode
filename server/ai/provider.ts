@@ -83,10 +83,6 @@ function envNumber(name: string, fallback: number) {
   return Number.isFinite(value) && value > 0 ? value : fallback;
 }
 
-function cappedEnvNumber(name: string, fallback: number, max: number) {
-  return Math.min(envNumber(name, fallback), max);
-}
-
 export class MockAiProvider implements AiProvider {
   name: AiProviderName = "mock";
   model = "mock-clarification-v1";
@@ -358,6 +354,8 @@ function aiProductSearchNormalizationInstructions() {
     "Use the product name and visible context to infer the most likely product family, then return provisional HS lookup hints.",
     "The input may be Korean, Chinese, Japanese, English, or another language. Translate and interpret the product name before producing HS lookup hints.",
     "Use general product knowledge only. Do not use live web search.",
+    "Keep the answer short. Return only the minimum JSON fields requested below, with concise Korean text.",
+    "Limits: candidateHsCodes max 3, candidateHsCodeReasons max 3, searchTerms max 5, koreanTerms max 3, englishTerms max 3, productFamilies max 2, missingQuestions max 3, requiredInfo max 3 per candidate.",
     "If the product name is a clear common product, return one best HS4/HS6 direction immediately. Example: candy/sweets/confectionery should return the sugar confectionery direction unless the input says chocolate, medicine, gum, or another specific product.",
     "Do not return an empty candidateHsCodes array only because the exact Korean HSK 10-digit suffix is unknown. Use HS4/HS6 as provisional lookup hints and put exact 10-digit uncertainty in missingQuestions.",
     "If one product category is clearly dominant, set classificationState=single_likely_candidate, displayMode=single, provide one primaryCandidate, and put that code first in candidateHsCodes.",
@@ -621,8 +619,8 @@ export class OpenAiProvider implements AiProvider {
   private readonly apiKey: string | undefined;
   private readonly timeoutMs = envNumber("OPENAI_TIMEOUT_MS", 15_000);
   private readonly clarificationTimeoutMs = envNumber("OPENAI_CLARIFICATION_TIMEOUT_MS", 2_000);
-  private readonly productSearchTimeoutMs = cappedEnvNumber("OPENAI_PRODUCT_SEARCH_TIMEOUT_MS", 5_000, 5_000);
-  private readonly productSearchRetryTimeoutMs = cappedEnvNumber("OPENAI_PRODUCT_SEARCH_RETRY_TIMEOUT_MS", 2_000, 2_000);
+  private readonly productSearchTimeoutMs = envNumber("OPENAI_PRODUCT_SEARCH_TIMEOUT_MS", 30_000);
+  private readonly productSearchRetryTimeoutMs = envNumber("OPENAI_PRODUCT_SEARCH_RETRY_TIMEOUT_MS", 8_000);
 
   constructor(apiKey = process.env.OPENAI_API_KEY) {
     this.apiKey = apiKey;
@@ -643,21 +641,25 @@ export class OpenAiProvider implements AiProvider {
     if (!this.apiKey) return null;
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    const shouldTimeout = Number.isFinite(timeoutMs) && timeoutMs > 0;
+    const timeout = shouldTimeout ? setTimeout(() => controller.abort(), timeoutMs) : null;
 
     try {
-      const response = await Promise.race([
-        fetch("https://api.openai.com/v1/responses", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${this.apiKey}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(body),
-          signal: controller.signal
-        }),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs))
-      ]);
+      const request = fetch("https://api.openai.com/v1/responses", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${this.apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body),
+        signal: shouldTimeout ? controller.signal : undefined
+      });
+      const response = shouldTimeout
+        ? await Promise.race([
+          request,
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs))
+        ])
+        : await request;
 
       if (response?.ok) return response;
       if (process.env.OPENAI_PRODUCT_SEARCH_DEBUG === "1" || process.env.OPENAI_PRODUCT_SEARCH_DEBUG === "true") {
@@ -672,7 +674,7 @@ export class OpenAiProvider implements AiProvider {
       }
       return null;
     } finally {
-      clearTimeout(timeout);
+      if (timeout) clearTimeout(timeout);
     }
   }
 
@@ -718,7 +720,7 @@ export class OpenAiProvider implements AiProvider {
       this.responseBody(
         prompt,
         aiProductSearchNormalizationInstructions(),
-        2600
+        900
       ),
       this.productSearchTimeoutMs
     );
@@ -770,7 +772,7 @@ export class OpenAiProvider implements AiProvider {
           ].join(" ")
         },
         aiProductSearchNormalizationInstructions(),
-        2600
+        800
       ),
       this.productSearchRetryTimeoutMs
     );
