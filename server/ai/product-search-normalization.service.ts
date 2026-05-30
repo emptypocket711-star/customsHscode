@@ -5,7 +5,7 @@ import { redactSensitiveText } from "@/server/ai/redaction";
 import { cachedLookup, lookupCacheKey } from "@/server/cache/lookup-cache";
 import { logLookupTelemetry, productInputShape } from "@/server/observability/lookup-telemetry";
 
-const productSearchNormalizationVersion = "product-search-normalization-v17";
+const productSearchNormalizationVersion = "product-search-normalization-v18";
 
 function productInputText(input: ProductHsRecommendationInput) {
   const hsCodeHints = extractHsCodeHintsFromProductInput(input);

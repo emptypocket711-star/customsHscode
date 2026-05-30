@@ -720,7 +720,7 @@ export class OpenAiProvider implements AiProvider {
         aiProductSearchNormalizationInstructions(),
         2600
       ),
-      this.productSearchRetryTimeoutMs
+      this.productSearchTimeoutMs
     );
 
     if (!response) return fallback;
@@ -772,7 +772,7 @@ export class OpenAiProvider implements AiProvider {
         aiProductSearchNormalizationInstructions(),
         2600
       ),
-      this.productSearchTimeoutMs
+      this.productSearchRetryTimeoutMs
     );
 
     if (!response) return fallback;
