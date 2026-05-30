@@ -34,6 +34,7 @@ import { defaultLocale, getHsDirectDictionary, type AppLocale, type HsDirectDict
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import { cn, getSeoulDateString } from "@/lib/utils";
 import { cachedLookup, lookupCacheKey } from "@/server/cache/lookup-cache";
+import { logLookupTelemetry } from "@/server/observability/lookup-telemetry";
 import { HsFavoriteToggleButton } from "@/features/hs/hs-favorite-toggle-button";
 import { favoriteCodeSet } from "@/server/repositories/hs-favorite.repository";
 import {
@@ -3502,10 +3503,13 @@ export async function HsDirectLookupPanel({
   const productTimingStartedAt = process.hrtime.bigint();
   const logProductTiming = (step: string, extra: Record<string, unknown> = {}) => {
     if (!shouldLookupProduct) return;
-    console.info("[hs-direct-product-timing]", {
+    logLookupTelemetry("hs_direct_product_render_timing", {
       step,
+      route: "hs_direct",
+      status: "success",
+      sourceMode: "server_render",
       elapsedMs: Number((process.hrtime.bigint() - productTimingStartedAt) / BigInt(1_000_000)),
-      queryLength: searchQuery.length,
+      inputLength: searchQuery.length,
       direction: lookupDirection,
       destinationCountry: selectedDestinationCountry,
       ...extra
