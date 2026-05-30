@@ -1,14 +1,15 @@
-import type { ReactNode } from "react";
+import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export function Card({
   children,
-  className
-}: {
+  className,
+  ...props
+}: ComponentPropsWithoutRef<"section"> & {
   children: ReactNode;
   className?: string;
 }) {
-  return <section className={cn("rounded-lg border border-slate-200 bg-white shadow-sm", className)}>{children}</section>;
+  return <section className={cn("rounded-lg border border-slate-200 bg-white shadow-sm", className)} {...props}>{children}</section>;
 }
 
 export function CardHeader({

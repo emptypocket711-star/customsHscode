@@ -77,6 +77,49 @@ const operationsManualCommands = [
   }
 ];
 
+const operationsSectionLinks = [
+  {
+    href: "#manual-commands",
+    label: "수동 명령",
+    detail: "장애 대응·검증 명령"
+  },
+  {
+    href: "#integrations",
+    label: "외부 연동",
+    detail: "환경변수·호출 경로"
+  },
+  {
+    href: "#schema-health",
+    label: "DB 스키마",
+    detail: "migration drift"
+  },
+  {
+    href: "#retention-health",
+    label: "보존 상태",
+    detail: "정리 후보"
+  },
+  {
+    href: "#background-jobs",
+    label: "작업 큐",
+    detail: "대기·실패 job"
+  },
+  {
+    href: "#worker-runs",
+    label: "worker 실행",
+    detail: "cron 실행 이력"
+  },
+  {
+    href: "#alert-events",
+    label: "운영 알림",
+    detail: "발송·생략·실패"
+  },
+  {
+    href: "#lookup-quality",
+    label: "조회 품질",
+    detail: "무결과·fallback"
+  }
+];
+
 function statusLabel(status: EnvironmentHealthItem["status"]) {
   if (status === "ok") return "정상";
   if (status === "missing") return "필수 누락";
@@ -459,6 +502,27 @@ export default async function OperationsHealthPage() {
 
       <Card>
         <CardHeader
+          title="상세 점검 바로가기"
+          description="요약에서 확인이 필요한 항목을 발견하면 해당 상세 섹션으로 바로 이동합니다."
+        />
+        <CardBody>
+          <nav className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4" aria-label="운영 상세 섹션">
+            {operationsSectionLinks.map((item) => (
+              <a
+                className="rounded-md border border-slate-200 bg-white px-3 py-3 text-sm transition hover:border-blue-200 hover:bg-blue-50"
+                href={item.href}
+                key={item.href}
+              >
+                <span className="font-semibold text-slate-950">{item.label}</span>
+                <span className="mt-1 block text-xs text-slate-500">{item.detail}</span>
+              </a>
+            ))}
+          </nav>
+        </CardBody>
+      </Card>
+
+      <Card id="integrations" className="scroll-mt-6">
+        <CardHeader
           title="외부 연동 준비 상태"
           description="개별 환경변수가 아니라 실제 기능 단위로 호출 경로, 누락값, 운영 주의사항을 확인합니다."
         />
@@ -497,7 +561,7 @@ export default async function OperationsHealthPage() {
         </CardBody>
       </Card>
 
-      <Card>
+      <Card id="schema-health" className="scroll-mt-6">
         <CardHeader
           title="운영 DB 스키마 점검"
           description="현재 migration 파일 기준으로 운영 Supabase의 테이블, 컬럼, RPC/function, RLS 상태를 대조합니다."
@@ -557,7 +621,7 @@ export default async function OperationsHealthPage() {
         </CardBody>
       </Card>
 
-      <Card>
+      <Card id="manual-commands" className="scroll-mt-6">
         <CardHeader
           title="수동 운영 명령"
           description="장애 대응, 정리 작업, 배포 후 검증에 사용하는 보호된 운영 명령입니다. secret 값은 Vercel production 환경변수에서 주입됩니다."
@@ -583,7 +647,7 @@ export default async function OperationsHealthPage() {
         </CardBody>
       </Card>
 
-      <Card>
+      <Card id="retention-health" className="scroll-mt-6">
         <CardHeader
           title="운영 이력 보존 상태"
           description="운영 알림, worker 실행 이력, 완료된 백그라운드 작업의 보존 기간과 정리 후보 건수를 확인합니다."
@@ -646,7 +710,7 @@ export default async function OperationsHealthPage() {
         </CardBody>
       </Card>
 
-      <Card>
+      <Card id="background-jobs" className="scroll-mt-6">
         <CardHeader
           title="백그라운드 작업 상태"
           description="문서 추출, 소스 수집, 보고서 생성처럼 웹 요청에서 분리되는 작업의 최근 상태를 확인합니다."
@@ -715,7 +779,7 @@ export default async function OperationsHealthPage() {
         </CardBody>
       </Card>
 
-      <Card>
+      <Card id="worker-runs" className="scroll-mt-6">
         <CardHeader
           title="백그라운드 worker 실행 이력"
           description="Vercel Cron 또는 수동 실행으로 `/api/jobs/run`이 호출된 시각, 처리 건수, 실패 여부를 확인합니다."
@@ -794,7 +858,7 @@ export default async function OperationsHealthPage() {
         </CardBody>
       </Card>
 
-      <Card>
+      <Card id="alert-events" className="scroll-mt-6">
         <CardHeader
           title="운영 알림 이력"
           description="백그라운드 worker 실패 알림의 발송, throttle 생략, 발송 실패 이력을 확인합니다."
@@ -866,7 +930,7 @@ export default async function OperationsHealthPage() {
         </CardBody>
       </Card>
 
-      <Card>
+      <Card id="lookup-quality" className="scroll-mt-6">
         <CardHeader
           title="최근 조회 품질 로그"
           description="품명 AI 검색과 후보 생성의 실패·무결과·fallback 흐름을 원문 없이 확인합니다. 원문 품명, 이메일, 문서 내용은 저장하지 않습니다."
