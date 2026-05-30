@@ -39,31 +39,35 @@ export function HsCopySummaryButton({
   }
 
   return (
-    <div className="inline-flex flex-wrap items-center justify-end gap-1.5">
+    <div className="inline-flex flex-wrap items-center justify-end gap-2 rounded-md bg-white/10 p-1">
       {texts ? (
         <>
-          <label className="sr-only" htmlFor={languageId}>안내 언어</label>
-          <select
-            className="focus-ring h-8 rounded-md border border-blue-200 bg-white px-2 text-xs font-semibold text-slate-700"
-            id={languageId}
-            onChange={(event) => setLanguage(event.target.value as HsCopyGuideLanguage)}
-            value={language}
-          >
-            {languageOptions.map((option) => (
-              <option key={option.value} value={option.value}>{option.label}</option>
-            ))}
-          </select>
-          <label className="sr-only" htmlFor={variantId}>안내 분량</label>
-          <select
-            className="focus-ring h-8 rounded-md border border-blue-200 bg-white px-2 text-xs font-semibold text-slate-700"
-            id={variantId}
-            onChange={(event) => setVariant(event.target.value as HsCopyGuideVariant)}
-            value={variant}
-          >
-            {variantOptions.map((option) => (
-              <option key={option.value} value={option.value}>{option.label}</option>
-            ))}
-          </select>
+          <div className="inline-flex items-center gap-1.5">
+            <label className="text-[11px] font-semibold text-slate-600" htmlFor={languageId}>안내 언어</label>
+            <select
+              className="focus-ring h-8 rounded-md border border-blue-200 bg-white px-2 text-xs font-semibold text-slate-700"
+              id={languageId}
+              onChange={(event) => setLanguage(event.target.value as HsCopyGuideLanguage)}
+              value={language}
+            >
+              {languageOptions.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="inline-flex items-center gap-1.5">
+            <label className="text-[11px] font-semibold text-slate-600" htmlFor={variantId}>안내 분량</label>
+            <select
+              className="focus-ring h-8 rounded-md border border-blue-200 bg-white px-2 text-xs font-semibold text-slate-700"
+              id={variantId}
+              onChange={(event) => setVariant(event.target.value as HsCopyGuideVariant)}
+              value={variant}
+            >
+              {variantOptions.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
         </>
       ) : null}
       <button

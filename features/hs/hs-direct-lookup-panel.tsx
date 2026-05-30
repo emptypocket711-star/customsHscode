@@ -424,6 +424,7 @@ const copyGuideLabels: Record<HsCopyGuideLanguage, {
   productInfoInsufficient: string;
   productInfoInsufficientDetail: string;
   productName: string;
+  provisionalHsDirections: string;
   requestHints: string;
   requirementsNeedReview: string;
   standardVat: string;
@@ -454,6 +455,7 @@ const copyGuideLabels: Record<HsCopyGuideLanguage, {
     productInfoInsufficient: "현재 제공된 품명만으로는 HS CODE 후보를 충분히 특정하기 어렵습니다.",
     productInfoInsufficientDetail: "아래 정보가 보완되면 HS CODE 후보, 관세율, 내국세, 수입요건을 다시 확인하겠습니다.",
     productName: "품명",
+    provisionalHsDirections: "예비 검토 가능한 HS 방향",
     requestHints: "확인 요청자료",
     requirementsNeedReview: "수입요건 해당 여부와 제출서류는 제품 상세자료 확인 후 검토가 필요합니다.",
     standardVat: "부가세 : 10%",
@@ -484,6 +486,7 @@ const copyGuideLabels: Record<HsCopyGuideLanguage, {
     productInfoInsufficient: "The provided product name is not enough to narrow down an HS code candidate.",
     productInfoInsufficientDetail: "If the information below is provided, HS candidates, duty rates, internal taxes, and import requirements can be reviewed again.",
     productName: "Product",
+    provisionalHsDirections: "Provisional HS directions for review",
     requestHints: "Information/documents to request",
     requirementsNeedReview: "Applicability and required documents should be reviewed after checking detailed product information.",
     standardVat: "VAT: 10%",
@@ -514,6 +517,7 @@ const copyGuideLabels: Record<HsCopyGuideLanguage, {
     productInfoInsufficient: "仅凭当前产品名称，难以充分确定 HS 编码候选。",
     productInfoInsufficientDetail: "补充以下资料后，可重新确认 HS 候选、关税、国内税和进口要求。",
     productName: "产品名称",
+    provisionalHsDirections: "可供初步参考的 HS 方向",
     requestHints: "需确认/请求的资料",
     requirementsNeedReview: "进口要求适用性和提交资料需根据产品详细资料进一步确认。",
     standardVat: "增值税: 10%",
@@ -966,7 +970,7 @@ function productNoResultCopySummaryTexts({
 
     if (clarification?.suggestedCandidateCodes.length) {
       lines.push("");
-      lines.push("예비 검토 가능한 HS 방향");
+      lines.push(labels.provisionalHsDirections);
       lines.push(...clarification.suggestedCandidateCodes.slice(0, 6).map((code, index) => `${index + 1}. ${formatHsCode(code)}`));
     }
 
