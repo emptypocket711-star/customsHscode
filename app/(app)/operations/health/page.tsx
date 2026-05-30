@@ -335,6 +335,10 @@ function operationsIssueResultMetricClassName(tone: "neutral" | "info" | "warnin
   return "rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700";
 }
 
+function shortOperationsIssueKey(issueKey: string) {
+  return issueKey.length > 42 ? `${issueKey.slice(0, 39)}...` : issueKey;
+}
+
 function eventTone(event: LookupTelemetryEvent) {
   return isLookupTelemetryIssue(event) ? "warning" : "success";
 }
@@ -1489,7 +1493,9 @@ export default async function OperationsHealthPage({
                               <p className="mt-1 text-slate-500">상태 변경 -</p>
                             )}
                           </td>
-                          <td className="max-w-[280px] truncate px-5 py-4 font-mono text-xs text-slate-500">{event.issueKey}</td>
+                          <td className="max-w-[280px] px-5 py-4 font-mono text-xs text-slate-500">
+                            <span title={event.issueKey}>{shortOperationsIssueKey(event.issueKey)}</span>
+                          </td>
                           <td className="px-5 py-4">
                             <OperationsIssueStatusForm event={event} />
                           </td>
