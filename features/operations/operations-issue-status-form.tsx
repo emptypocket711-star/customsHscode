@@ -29,15 +29,17 @@ function statusButtonRecommendedInputs(status: OperationsIssueStatus) {
 }
 
 function statusButtonClassName(status: OperationsIssueStatus) {
+  const baseClassName = "min-h-[60px] w-full rounded-md border px-2.5 py-1.5 text-left text-xs font-semibold leading-4 transition disabled:cursor-not-allowed disabled:opacity-60";
+
   if (status === "resolved") {
-    return "rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-left text-xs font-semibold text-emerald-800 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60";
+    return `${baseClassName} border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100`;
   }
 
   if (status === "open") {
-    return "rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-left text-xs font-semibold text-amber-800 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60";
+    return `${baseClassName} border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100`;
   }
 
-  return "rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-left text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60";
+  return `${baseClassName} border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100`;
 }
 
 function statusActionHelp(status: OperationsIssueStatus) {
@@ -48,8 +50,8 @@ function statusActionHelp(status: OperationsIssueStatus) {
 
 function inputStatusClassName(hasValue: boolean) {
   return hasValue
-    ? "rounded-md border border-emerald-100 bg-emerald-50 px-2 py-1 text-emerald-800"
-    : "rounded-md border border-amber-100 bg-amber-50 px-2 py-1 text-amber-800";
+    ? "inline-flex min-h-7 items-center justify-center rounded-md border border-emerald-100 bg-emerald-50 px-2 py-1 text-center text-[11px] leading-4 text-emerald-800"
+    : "inline-flex min-h-7 items-center justify-center rounded-md border border-amber-100 bg-amber-50 px-2 py-1 text-center text-[11px] leading-4 text-amber-800";
 }
 
 function inputStatusLabel(hasValue: boolean) {
@@ -100,17 +102,17 @@ export function OperationsIssueStatusForm({ event, triageFocus }: OperationsIssu
   return (
     <form
       action={formAction}
-      className="grid min-w-[260px] gap-2"
+      className="grid min-w-[260px] max-w-[340px] gap-2"
       onSubmit={() => setLastSubmittedSignature(currentInputSignature)}
     >
       <input name="issueId" type="hidden" value={event.id} />
       {triageFocus ? (
         <div className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs leading-5 text-amber-900">
           <p className="font-semibold">우선 확인 대상 · {triageFocus.reasonLabel}</p>
-          <p className="mt-1">{triageFocus.actionLabel}</p>
+          <p className="mt-1 break-words">{triageFocus.actionLabel}</p>
         </div>
       ) : null}
-      <p className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs leading-5 text-slate-600">
+      <p className="break-words rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs leading-5 text-slate-600">
         {statusActionHelp(primaryNextStatus)}
       </p>
       <label className="grid gap-1 text-xs font-semibold text-slate-600">
@@ -152,24 +154,24 @@ export function OperationsIssueStatusForm({ event, triageFocus }: OperationsIssu
       </label>
       <div className="grid gap-1 rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs">
         <p className="font-semibold text-slate-600">입력 상태</p>
-        <div className="grid gap-1 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-1 sm:grid-cols-3">
           <span className={inputStatusClassName(assignedToLabelReady)}>담당자 {inputStatusLabel(assignedToLabelReady)}</span>
           <span className={inputStatusClassName(operatorNoteReady)}>메모 {inputStatusLabel(operatorNoteReady)}</span>
           <span className={inputStatusClassName(resolutionReasonReady)}>처리 사유 {inputStatusLabel(resolutionReasonReady)}</span>
         </div>
         {state.status === "success" ? (
-          <p className={savedInputsChanged ? "text-amber-700" : "text-emerald-700"}>
+          <p className={savedInputsChanged ? "break-words text-amber-700" : "break-words text-emerald-700"}>
             {savedInputsChanged
               ? "저장 후 입력값이 수정되었습니다. 변경 내용을 반영하려면 다시 저장합니다."
               : "현재 입력값 기준으로 저장 결과를 확인했습니다."}
           </p>
         ) : assignedToLabelReady && operatorNoteReady && resolutionReasonReady ? (
-          <p className="text-emerald-700">처리 근거 입력 상태를 확인했습니다.</p>
+          <p className="break-words text-emerald-700">처리 근거 입력 상태를 확인했습니다.</p>
         ) : (
-          <p className="text-amber-700">미입력 항목은 저장은 가능하지만 담당자 인계와 사후 검토 품질이 낮아질 수 있습니다.</p>
+          <p className="break-words text-amber-700">미입력 항목은 저장은 가능하지만 담당자 인계와 사후 검토 품질이 낮아질 수 있습니다.</p>
         )}
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         {nextStatuses.map((status) => (
           <button
             className={statusButtonClassName(status)}
@@ -195,7 +197,7 @@ export function OperationsIssueStatusForm({ event, triageFocus }: OperationsIssu
             {state.message}
           </p>
           {state.status === "success" && state.nextStep ? (
-            <p className="rounded-md border border-blue-100 bg-blue-50 px-2 py-1 text-xs leading-5 text-blue-800">
+            <p className="break-words rounded-md border border-blue-100 bg-blue-50 px-2 py-1 text-xs leading-5 text-blue-800">
               {state.nextStep}
             </p>
           ) : null}
