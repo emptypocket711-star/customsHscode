@@ -478,6 +478,14 @@
 - 운영 이슈 상단 의사결정 흐름 운영 반영:
   - production 배포 `customs-hscode-ct5me5fri-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` alias 연결과 production smoke 10개 경로 통과를 확인했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+- 운영 이슈 빈 상태 행동 유도를 정리했다.
+  - 이전 작업은 목록 상단에서 우선 확인, 담당 분배, 목록 좁히기, 현재 목록 기준 순서로 처리 대상을 고르게 하는 의사결정 흐름 정리이고, 이번 작업은 필터 결과 0건, 전체 미해결 0건, 저장된 운영 이슈 0건 상태에서 다음 행동을 다르게 안내하는 빈 상태 정리다.
+  - 우선 확인 대상 없음 카드는 현재 조치 우선순위만 안내하고, 빈 목록 영역은 조건 해제, 미해결 전체 보기, 닫힌 이슈 근거 확인, 운영 이슈 동기화 job 확인을 상태별로 안내한다.
+  - 전체 미해결 이슈가 없을 때는 미해결 전체 보기 링크를 숨겨 불필요한 이동을 줄였다.
+  - 저장 데이터, RLS, 상태 변경 권한 구조는 바꾸지 않았다.
+- 운영 이슈 빈 상태 행동 유도 운영 반영:
+  - production 배포 `customs-hscode-m3wwk59hl-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` alias 연결과 production smoke 10개 경로 통과를 확인했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
