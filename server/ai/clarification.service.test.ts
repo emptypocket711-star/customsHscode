@@ -263,7 +263,7 @@ describe("normalizeProductSearchInput", () => {
     expect(instructions).toContain("Do not return an empty candidateHsCodes array only because the exact Korean HSK 10-digit suffix is unknown");
     expect(instructions).toContain("brand name, trade name, product line, model name, SKU, catalog number");
     expect(instructions).toContain("brand or product line plus a generic product phrase");
-    expect(instructions).toContain("If web search is unavailable, inconclusive, or blocked");
+    expect(instructions).toContain("do not rely on live web search");
     expect(instructions).toContain("Act as a classification interviewer first");
     expect(instructions).toContain("First decide classificationState, certainty, and displayMode");
     expect(instructions).toContain("Candidate count rule");
@@ -276,7 +276,7 @@ describe("normalizeProductSearchInput", () => {
     expect(instructions).toContain("Do not use needs_clarification just because the exact national HS10 is uncertain");
     expect(instructions).toContain("do not prioritize accumulator/battery headings only because the article contains an internal battery");
     expect(instructions).toContain("classify lookup intent by the traded finished article first");
-    expect(instructions).toContain("If web search identifies a product but the visible words can reasonably indicate another product family");
+    expect(instructions).toContain("Do not use live web search for product-name normalization");
     expect(instructions).toContain("trade names, retail product names, and foreign-language names");
   });
 
@@ -317,9 +317,8 @@ describe("normalizeProductSearchInput", () => {
     expect(parsed.candidateHsCodes).toContain("910212");
   });
 
-  it("retries brand-name product normalization without web search when the web request fails", async () => {
+  it("normalizes product searches through GPT API without enabling web search tools", async () => {
     const fetchMock = vi.fn()
-      .mockResolvedValueOnce(new Response("bad web tool", { status: 400 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({
         output_text: JSON.stringify({
           correctedProductName: "smart watch",
@@ -344,9 +343,8 @@ describe("normalizeProductSearchInput", () => {
       redactedInput: "품명: 애플워치"
     });
 
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string).tools).toBeDefined();
-    expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string).tools).toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string).tools).toBeUndefined();
     expect(result.candidateHsCodes).toEqual(["851762", "910212", "852589"]);
     expect(result.searchTerms).toEqual(expect.arrayContaining(["smart watch", "스마트워치"]));
   });
@@ -599,14 +597,8 @@ describe("OpenAI provider parsing", () => {
   });
 
   it("uses supported reasoning effort values for gpt-5 Responses API calls", () => {
-    expect(aiProviderInternals.reasoningEffortForResponses("gpt-5.4-mini", false)).toBe("none");
-    expect(aiProviderInternals.reasoningEffortForResponses("gpt-5.4-mini", true)).toBe("low");
-    expect(aiProviderInternals.reasoningEffortForResponses("gpt-4.1-mini", false)).toBeNull();
+    expect(aiProviderInternals.reasoningEffortForResponses("gpt-5.4-mini")).toBe("none");
+    expect(aiProviderInternals.reasoningEffortForResponses("gpt-4.1-mini")).toBeNull();
   });
 
-  it("keeps web-assisted product search calls above the minimum response window", () => {
-    expect(aiProviderInternals.productSearchRequestTimeoutMs(3000, true)).toBe(12000);
-    expect(aiProviderInternals.productSearchRequestTimeoutMs(3000, false)).toBe(3000);
-    expect(aiProviderInternals.productSearchRequestTimeoutMs(30000, true)).toBe(30000);
-  });
 });

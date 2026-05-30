@@ -73,18 +73,14 @@ function isWeakInput(input: string) {
   return normalized.length < 8 || weakTerms.some((term) => normalized === term || normalized.includes(` ${term} `));
 }
 
-function reasoningEffortForResponses(model: string, webSearch: boolean) {
+function reasoningEffortForResponses(model: string) {
   if (!model.startsWith("gpt-5")) return null;
-  return webSearch ? "low" : "none";
+  return "none";
 }
 
 function envNumber(name: string, fallback: number) {
   const value = Number(process.env[name]);
   return Number.isFinite(value) && value > 0 ? value : fallback;
-}
-
-function productSearchRequestTimeoutMs(configuredTimeoutMs: number, webSearch: boolean) {
-  return webSearch ? Math.max(configuredTimeoutMs, 12_000) : configuredTimeoutMs;
 }
 
 export class MockAiProvider implements AiProvider {
@@ -358,7 +354,7 @@ function aiProductSearchNormalizationInstructions() {
     "The input may be Korean, Chinese, Japanese, English, or another language. Translate and interpret the product name before producing HS lookup hints.",
     "For Korean, Chinese, Japanese, Cyrillic, or mixed-language product names, first infer the product family in Korean and English, then provide provisional HS4/HS6 lookup hints whenever the product family is recognizable.",
     "Do not return an empty candidateHsCodes array only because the exact Korean HSK 10-digit suffix is unknown. Use HS4/HS6 as provisional lookup hints and put the exact 10-digit uncertainty in missingQuestions.",
-    "If the input appears to be a brand name, trade name, product line, model name, SKU, catalog number, or non-descriptive short name, use web evidence when available to identify the underlying product type before choosing HS candidates.",
+    "If the input appears to be a brand name, trade name, product line, model name, SKU, catalog number, or non-descriptive short name, use general product knowledge and the visible words only; do not rely on live web search.",
     "When the input contains a brand or product line plus a generic product phrase, treat the brand as secondary and classify lookup intent by the generic product phrase, principal function, use, and composition.",
     "Act as a classification interviewer first, not a candidate-list generator.",
     "First decide classificationState, certainty, and displayMode.",
@@ -382,14 +378,13 @@ function aiProductSearchNormalizationInstructions() {
     "If the input is incomplete because branch facts are missing and those facts can change the HS4/HS6 boundary, set classificationState=needs_clarification, certainty=low or medium, displayMode=needs_more_info, and ask branch questions. If one broad HS4/HS6 direction remains useful, include it as provisional candidateHsCodes; if the branch can change the chapter or heading completely, leave primaryCandidate null and candidateHsCodes empty.",
     "Do not use needs_clarification just because the exact national HS10 is uncertain. If HS4/HS6 is still reasonably inferable, use single_likely_candidate or ambiguous_multiple_meanings and provide HS4/HS6 candidateHsCodes.",
     "When the input includes typos, model numbers, abbreviations, or short trade names, infer likely product families and provide broad lookup hints that can surface candidates from official HS data.",
-    "If web search is available and the input appears to be a model number, SKU, catalog number, or product code, use web search to identify the underlying product type before producing search terms.",
-    "If web search is unavailable, inconclusive, or blocked, still use general product knowledge and the visible words to infer provisional HS4/HS6 lookup hints instead of returning an empty candidate list.",
-    "When web search cannot identify the product code, return broad terms from the visible tokens and ask the user to provide product name, catalog page, photo, or specification sheet.",
-    "If web search identifies a product but the visible words can reasonably indicate another product family, include both families as competing lookup hints and ask the user to confirm which product it is.",
+    "Do not use live web search for product-name normalization. If the visible words are insufficient, infer broad provisional HS4/HS6 lookup hints only when reasonable and ask the user to provide product name, catalog page, photo, or specification sheet.",
+    "When a model number, SKU, catalog number, product code, or trade name cannot be identified from the visible words alone, return broad terms from the visible tokens and ask the user for product category, use, material, catalog page, photo, or specification sheet.",
+    "If the visible words can reasonably indicate multiple product families, include those families as competing lookup hints and ask the user to confirm which product it is.",
     "For trade names, retail product names, and foreign-language names, infer the consumer product category first. If the category is recognizable, return the closest HS4/HS6 direction even when the brand itself is not in official HS data.",
-    "For beverage trade names, distinguish pure fruit juice of HS 2009 from water/sugar-based non-alcoholic beverages of HS 2202. If web evidence shows a retail drink such as a diluted fruit-flavored beverage, prioritize HS 2202 and keep HS 2009 as a conditional alternative only when it is pure juice.",
+    "For beverage trade names, distinguish pure fruit juice of HS 2009 from water/sugar-based non-alcoholic beverages of HS 2202. Without product composition evidence, ask whether it is pure juice or a diluted/sweetened beverage.",
     "For apparel, workwear, protective clothing, vests, waistcoats, safety vests, reflective vests, and uniforms, do not jump to a narrow fiber-specific HS10 unless the input states the fiber. First separate Chapter 61 knitted/crocheted apparel from Chapter 62 non-knitted woven apparel, then ask for fabric construction, fiber composition, gender/unisex use, coating, and safety/PPE function. For work/safety vests, include Chapter 62 woven other garments and Chapter 61 knitted vest alternatives when unclear.",
-    "Treat likely misspellings such as lazer/laser cautiously. For laser belt or lazer belt, include therapy/massage apparatus and optical/laser-device lookup hints unless web evidence clearly proves a different product.",
+    "Treat likely misspellings such as lazer/laser cautiously. For laser belt or lazer belt, include therapy/massage apparatus and optical/laser-device lookup hints unless the visible product context clearly proves a different product.",
     "Classify lookup intent by the finished article, principal function, and use before material. Do not suggest headings merely because a material word appears in the description.",
     "For rechargeable finished articles, do not prioritize accumulator/battery headings only because the article contains an internal battery. Use battery headings only when the traded good is the battery, cell, module, pack, or spare battery itself.",
     "For any finished article that contains a component, classify lookup intent by the traded finished article first. Component, material, accessory, spare-part, and battery headings should be secondary unless the input explicitly says the traded good is that component or replacement part.",
@@ -653,21 +648,14 @@ export class OpenAiProvider implements AiProvider {
     this.apiKey = apiKey;
   }
 
-  private responseBody(input: unknown, instructions: string, maxOutputTokens: number, options?: { webSearch?: boolean }) {
-    const webSearch = options?.webSearch ?? false;
-
+  private responseBody(input: unknown, instructions: string, maxOutputTokens: number) {
     return {
       model: this.model,
       instructions,
       input: typeof input === "string" ? input : JSON.stringify(input),
       store: false,
       max_output_tokens: maxOutputTokens,
-      ...(reasoningEffortForResponses(this.model, webSearch) ? { reasoning: { effort: reasoningEffortForResponses(this.model, webSearch) } } : {}),
-      ...(webSearch ? {
-        tools: [{ type: "web_search" }],
-        tool_choice: "auto",
-        include: ["web_search_call.action.sources"]
-      } : {})
+      ...(reasoningEffortForResponses(this.model) ? { reasoning: { effort: reasoningEffortForResponses(this.model) } } : {})
     };
   }
 
@@ -708,27 +696,6 @@ export class OpenAiProvider implements AiProvider {
     }
   }
 
-  private shouldUseWebSearchForProductSearch(prompt: AiProductSearchNormalizationPrompt) {
-    if (process.env.OPENAI_PRODUCT_SEARCH_WEB_ENABLED === "0" || process.env.OPENAI_PRODUCT_SEARCH_WEB_ENABLED === "false") {
-      return false;
-    }
-
-    const text = prompt.redactedInput.toLowerCase();
-    const compact = text.replace(/[^a-z0-9-]/g, " ");
-    const tokens = compact.split(/\s+/).filter(Boolean);
-    const modelLikeToken = tokens.some((token) =>
-      token.length >= 4
-      && /[a-z]/.test(token)
-      && /[0-9]/.test(token)
-      && !/^\d{4,10}$/.test(token)
-    );
-    const catalogPattern = /\b(model|sku|part\s*no|p\/n|제품코드|모델명|품번)\b/i.test(text);
-    const shortTradeName = text.replace(/^품명:\s*/i, "").trim().length <= 40;
-    const nonLatinName = /[\u3131-\u318e\uac00-\ud7a3\u3040-\u30ff\u3400-\u9fff]/.test(text);
-
-    return modelLikeToken || catalogPattern || shortTradeName || nonLatinName;
-  }
-
   async clarify(prompt: AiClarificationPrompt): Promise<AiClarificationResult> {
     if (!this.apiKey) {
       return new MockAiProvider().clarify(prompt);
@@ -767,38 +734,18 @@ export class OpenAiProvider implements AiProvider {
     };
 
     if (!this.apiKey) return fallback;
-    const useWebSearch = this.shouldUseWebSearchForProductSearch(prompt);
-
     const response = await this.requestResponsesApi(
       this.responseBody(
         prompt,
         aiProductSearchNormalizationInstructions(),
-        2600,
-        { webSearch: useWebSearch }
+        2600
       ),
-      productSearchRequestTimeoutMs(this.productSearchTimeoutMs, useWebSearch)
+      this.productSearchTimeoutMs
     );
 
-    const noWebResponse = !response && useWebSearch
-      ? await this.requestResponsesApi(
-        this.responseBody(
-          {
-            ...prompt,
-            webSearchFallback: true,
-            fallbackInstruction: "Web search was unavailable. Use general product knowledge and visible product words to return provisional HS4/HS6 lookup hints. Do not return an empty candidate list for recognizable brand or trade names."
-          },
-          aiProductSearchNormalizationInstructions(),
-          2600,
-          { webSearch: false }
-        ),
-        this.productSearchTimeoutMs
-      )
-      : null;
+    if (!response) return fallback;
 
-    const effectiveResponse = response ?? noWebResponse;
-    if (!effectiveResponse) return fallback;
-
-    const payload = await effectiveResponse.json() as unknown;
+    const payload = await response.json() as unknown;
     const outputText = outputTextFromOpenAiResponse(payload);
     if (process.env.OPENAI_PRODUCT_SEARCH_DEBUG === "1" || process.env.OPENAI_PRODUCT_SEARCH_DEBUG === "true") {
       console.info("[openai-product-search]", {
@@ -808,11 +755,8 @@ export class OpenAiProvider implements AiProvider {
     }
     const parsed = parseAiProductSearchNormalizationJson(outputText, fallback);
     const responseWebSources = webSourcesFromOpenAiResponse(payload);
-    const parsedWithWebFallback = parsed.candidateHsCodes.length || !useWebSearch
+    const parsedWithRetry = parsed.candidateHsCodes.length
       ? parsed
-      : await this.retryProductSearchWithoutWeb(prompt, fallback);
-    const parsedWithRetry = parsedWithWebFallback.candidateHsCodes.length
-      ? parsedWithWebFallback
       : await this.retryProductSearchAsSimpleInterviewer(prompt, fallback);
 
     return {
@@ -827,29 +771,6 @@ export class OpenAiProvider implements AiProvider {
     };
   }
 
-  private async retryProductSearchWithoutWeb(
-    prompt: AiProductSearchNormalizationPrompt,
-    fallback: AiProductSearchNormalizationResult
-  ) {
-    const response = await this.requestResponsesApi(
-      this.responseBody(
-        {
-          ...prompt,
-          webSearchFallback: true,
-          fallbackInstruction: "The previous normalization produced no HS candidates. Use general product knowledge and visible product words to return 3 to 8 provisional HS4/HS6 lookup hints, missing questions, and Korean/English search terms. Do not final-confirm classification."
-        },
-        aiProductSearchNormalizationInstructions(),
-        2600,
-        { webSearch: false }
-      ),
-      this.productSearchTimeoutMs
-    );
-
-    if (!response) return fallback;
-    const payload = await response.json() as unknown;
-    return parseAiProductSearchNormalizationJson(outputTextFromOpenAiResponse(payload), fallback);
-  }
-
   private async retryProductSearchAsSimpleInterviewer(
     prompt: AiProductSearchNormalizationPrompt,
     fallback: AiProductSearchNormalizationResult
@@ -860,7 +781,7 @@ export class OpenAiProvider implements AiProvider {
           ...prompt,
           fallbackInstruction: [
             "Answer the practical question: 이 품명 HS CODE가 뭘까?",
-            "Use general product knowledge if web search or exact product identification is unavailable.",
+            "Use general product knowledge when exact product identification is unavailable.",
             "If one product category is clearly dominant, return one primaryCandidate and one candidateHsCodes item.",
             "If one broad HS4/HS6 is clearly useful, return it as the first candidateHsCodes item.",
             "If exact classification needs facts, keep the code provisional and put the facts in missingQuestions.",
@@ -869,8 +790,7 @@ export class OpenAiProvider implements AiProvider {
           ].join(" ")
         },
         aiProductSearchNormalizationInstructions(),
-        2600,
-        { webSearch: false }
+        2600
       ),
       this.productSearchTimeoutMs
     );
@@ -899,6 +819,5 @@ export const aiProviderInternals = {
   webSourcesFromOpenAiResponse,
   parseAiClarificationJson,
   parseAiProductSearchNormalizationJson,
-  reasoningEffortForResponses,
-  productSearchRequestTimeoutMs
+  reasoningEffortForResponses
 };

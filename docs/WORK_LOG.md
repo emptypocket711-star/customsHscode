@@ -1663,3 +1663,19 @@
 - Alias: `https://hsfinder.co.kr`
 - `vercel env run -e production -- npm run health:db`
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
+
+### 품명검색 GPT API 전용 전환
+
+- 이전 작업은 품명검색 결과 생성 중 진행바가 오래 남는 UI 상태를 보정한 것이고, 이번 작업은 느린 원인으로 확인된 OpenAI 웹 검색 도구 호출 경로를 제거한 것이다.
+- 품명검색 OpenAI Responses API 요청에서 `web_search` 도구를 붙이는 조건과 웹 실패 후 재시도 분기를 삭제했다.
+- 모델명, SKU, 짧은 한글 품명, 외국어 품명도 모두 GPT API 일반 응답만 사용한다.
+- 제품이 visible input만으로 식별되지 않으면 웹 검색을 하지 않고 제품 category, use, material, catalog, photo, specification 추가 입력을 요청하도록 프롬프트를 정리했다.
+- 운영 확장 문서의 품명검색 캐시/타임아웃 설명도 웹 보조가 아닌 GPT API 전용 정책으로 갱신했다.
+
+검증:
+
+- `npm test -- server/ai/clarification.service.test.ts server/rules/hs-candidate.service.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `git diff --check`
