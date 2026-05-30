@@ -126,6 +126,39 @@ export type BackgroundJobRunSummary = {
   latestStatus: "succeeded" | "failed" | null;
 };
 
+export type OperationsAlertEventItem = {
+  id: string;
+  alertType: string;
+  alertKey: string;
+  status: "sent" | "skipped" | "failed";
+  recipient: string | null;
+  providerId: string | null;
+  reason: string | null;
+  message: string | null;
+  createdAt: string;
+};
+
+type OperationsAlertEventRow = {
+  id: string;
+  alert_type: string;
+  alert_key: string;
+  status: "sent" | "skipped" | "failed";
+  recipient: string | null;
+  provider_id: string | null;
+  reason: string | null;
+  message: string | null;
+  created_at: string;
+};
+
+export type OperationsAlertEventSummary = {
+  total: number;
+  sent: number;
+  skipped: number;
+  failed: number;
+  latestAlertAt: string | null;
+  latestStatus: "sent" | "skipped" | "failed" | null;
+};
+
 export type EnqueueBackgroundJobInput = {
   companyId: string;
   createdBy: string;
@@ -443,6 +476,34 @@ export async function listRecentBackgroundJobRuns(
   return ((data ?? []) as BackgroundJobRunRow[]).map(mapBackgroundJobRunRow);
 }
 
+function mapOperationsAlertEventRow(row: OperationsAlertEventRow): OperationsAlertEventItem {
+  return {
+    id: row.id,
+    alertType: row.alert_type,
+    alertKey: row.alert_key,
+    status: row.status,
+    recipient: row.recipient,
+    providerId: row.provider_id,
+    reason: row.reason,
+    message: row.message,
+    createdAt: row.created_at
+  };
+}
+
+export async function listRecentOperationsAlertEvents(
+  supabase: SupabaseClient,
+  limit = 20
+): Promise<OperationsAlertEventItem[]> {
+  const { data, error } = await supabase
+    .from("operations_alert_events")
+    .select("id,alert_type,alert_key,status,recipient,provider_id,reason,message,created_at")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as OperationsAlertEventRow[]).map(mapOperationsAlertEventRow);
+}
+
 export async function listRecentHsBatchLookupJobs(
   supabase: SupabaseClient,
   limit = 10
@@ -504,6 +565,27 @@ export function summarizeBackgroundJobRuns(runs: BackgroundJobRunItem[]): Backgr
     succeededJobs: 0,
     failedJobs: 0,
     latestRunAt: null,
+    latestStatus: null
+  });
+}
+
+export function summarizeOperationsAlertEvents(events: OperationsAlertEventItem[]): OperationsAlertEventSummary {
+  return events.reduce<OperationsAlertEventSummary>((summary, event, index) => {
+    summary.total += 1;
+    if (event.status === "sent") summary.sent += 1;
+    if (event.status === "skipped") summary.skipped += 1;
+    if (event.status === "failed") summary.failed += 1;
+    if (index === 0) {
+      summary.latestAlertAt = event.createdAt;
+      summary.latestStatus = event.status;
+    }
+    return summary;
+  }, {
+    total: 0,
+    sent: 0,
+    skipped: 0,
+    failed: 0,
+    latestAlertAt: null,
     latestStatus: null
   });
 }

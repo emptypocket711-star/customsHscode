@@ -10,9 +10,33 @@ vi.mock("@/server/notifications/email", () => ({
 
 import {
   buildBackgroundJobFailureEmail,
+  getBackgroundJobFailureAlertKey,
   getOperationsAlertEmail,
   sendBackgroundJobFailureAlert
 } from "@/server/operations/background-job-alert.service";
+
+function createSupabaseMock(recentSentAlert: boolean) {
+  const insert = vi.fn().mockResolvedValue({ error: null });
+  const query = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    gte: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockResolvedValue({ data: recentSentAlert ? [{ id: "alert-1" }] : [], error: null })
+  };
+  const supabase = {
+    from: vi.fn((table: string) => {
+      if (table === "operations_alert_events") {
+        return {
+          ...query,
+          insert
+        };
+      }
+      throw new Error(`Unexpected table ${table}`);
+    })
+  };
+
+  return { supabase, insert, query };
+}
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -75,10 +99,79 @@ describe("background job failure alerts", () => {
       outcomes: [{ jobId: "00000000-0000-0000-0000-000000000002", status: "failed", reason: "dead" }]
     });
 
-    expect(result).toEqual({ sent: true, providerId: "email-1" });
+    expect(result).toMatchObject({ sent: true, providerId: "email-1" });
     expect(sendTransactionalEmailMock).toHaveBeenCalledWith(expect.objectContaining({
       to: "ops@example.test",
       subject: expect.stringContaining("백그라운드 worker 실패")
+    }));
+  });
+
+  it("builds a hashed alert key without storing the raw route error", () => {
+    const alertKey = getBackgroundJobFailureAlertKey({
+      workerId: "api-worker-test",
+      claimedCount: 0,
+      succeededCount: 0,
+      failedCount: 1,
+      durationMs: 250,
+      outcomes: [],
+      errorMessage: "sensitive route failure"
+    });
+
+    expect(alertKey).toMatch(/^background_job_failure:route:[a-f0-9]{16}$/);
+    expect(alertKey).not.toContain("sensitive route failure");
+  });
+
+  it("skips duplicate alerts within the throttle window and records the skip", async () => {
+    vi.stubEnv("OPERATIONS_ALERT_EMAIL", "ops@example.test");
+    const { supabase, insert } = createSupabaseMock(true);
+
+    const result = await sendBackgroundJobFailureAlert({
+      workerId: "api-worker-test",
+      claimedCount: 1,
+      succeededCount: 0,
+      failedCount: 1,
+      durationMs: 250,
+      outcomes: [{ jobId: "00000000-0000-0000-0000-000000000002", status: "failed", reason: "dead" }]
+    }, {
+      supabase: supabase as never,
+      throttleWindowMs: 30 * 60 * 1000,
+      now: new Date("2026-05-30T00:00:00.000Z")
+    });
+
+    expect(result).toMatchObject({ sent: false, reason: "throttled" });
+    expect(sendTransactionalEmailMock).not.toHaveBeenCalled();
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({
+      alert_type: "background_job_failure",
+      status: "skipped",
+      reason: "throttled",
+      recipient: "ops@example.test"
+    }));
+  });
+
+  it("records a sent alert event when throttling storage is available", async () => {
+    vi.stubEnv("OPERATIONS_ALERT_EMAIL", "ops@example.test");
+    sendTransactionalEmailMock.mockResolvedValueOnce({ sent: true, providerId: "email-1" });
+    const { supabase, insert } = createSupabaseMock(false);
+
+    const result = await sendBackgroundJobFailureAlert({
+      workerId: "api-worker-test",
+      claimedCount: 1,
+      succeededCount: 0,
+      failedCount: 1,
+      durationMs: 250,
+      outcomes: [{ jobId: "00000000-0000-0000-0000-000000000002", status: "failed", reason: "dead" }]
+    }, {
+      supabase: supabase as never,
+      throttleWindowMs: 30 * 60 * 1000,
+      now: new Date("2026-05-30T00:00:00.000Z")
+    });
+
+    expect(result).toMatchObject({ sent: true, providerId: "email-1" });
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({
+      alert_type: "background_job_failure",
+      status: "sent",
+      provider_id: "email-1",
+      recipient: "ops@example.test"
     }));
   });
 });

@@ -72,6 +72,16 @@
   - worker run `failure-rehearsal-1780112715634`는 `failed`, failed_count 1로 저장되었다.
   - 알림 응답은 `sent: true`로 확인했고, 임시 job row는 스크립트 finally 단계에서 삭제했다.
   - production smoke 10개 경로 모두 통과했다.
+- worker 실패 알림 중복/폭주 방지를 추가했다.
+  - `operations_alert_events` 테이블을 추가해 운영 알림의 발송, throttle 생략, 발송 실패 이력을 남긴다.
+  - 실패 알림은 실패 유형을 해시한 `alert_key` 기준으로 기본 30분 동안 중복 발송을 생략한다.
+  - `OPERATIONS_ALERT_THROTTLE_MINUTES`로 throttle 시간을 조정할 수 있으며, 음수/미설정/비숫자 값은 기본 30분을 사용한다.
+  - 알림 이벤트에는 worker id, 처리 건수, 실패 건수 같은 운영 메타데이터만 저장하고 payload, 문서 원문, invoice 내용은 저장하지 않는다.
+  - 운영 리허설 worker는 반복 검증이 가능하도록 throttle을 우회한다.
+  - 운영 점검 화면에 `운영 알림 이력` 섹션을 추가해 최근 발송, 생략, 발송 실패 상태와 alert key를 확인할 수 있게 했다.
+- 운영 반영:
+  - Supabase production DB에 `20260530003000_operations_alert_events.sql` migration을 적용했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
@@ -84,6 +94,12 @@
 - `npm run build`
 - `vercel env run -e production -- npm run ops:job:background-failure-rehearsal`
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
+- `npm test -- server/operations/background-job-alert.service.test.ts server/repositories/background-job.repository.test.ts`
+- `npm test`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `vercel env run -e production -- npm run health:db`
 - 운영 E2E: 임시 계정 기반 82행 큐 등록 → worker 처리 → 결과 UI/XLSX 버튼 확인
 - `npm test -- server/repositories/background-job.repository.test.ts`
 - `vercel env run -e production -- npm run ops:job:background`

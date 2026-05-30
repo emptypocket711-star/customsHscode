@@ -7,8 +7,10 @@ import {
   listRecentHsBatchLookupJobs,
   summarizeBackgroundJobRuns,
   summarizeBackgroundJobOperations,
+  summarizeOperationsAlertEvents,
   type BackgroundJobRunItem,
-  type BackgroundJobOperationsItem
+  type BackgroundJobOperationsItem,
+  type OperationsAlertEventItem
 } from "@/server/repositories/background-job.repository";
 
 describe("background job repository helpers", () => {
@@ -124,6 +126,44 @@ describe("background job repository helpers", () => {
       failedJobs: 1,
       latestRunAt: "2026-05-30T00:02:00Z",
       latestStatus: "succeeded"
+    });
+  });
+
+  it("summarizes operations alert events for dedupe visibility", () => {
+    const base = {
+      id: "00000000-0000-0000-0000-000000000201",
+      alertType: "background_job_failure",
+      alertKey: "background_job_failure:jobs:test",
+      recipient: "ops@example.test",
+      providerId: null,
+      reason: null,
+      message: null,
+      createdAt: "2026-05-30T00:03:00Z"
+    } satisfies Omit<OperationsAlertEventItem, "status">;
+
+    expect(summarizeOperationsAlertEvents([
+      { ...base, status: "sent", providerId: "email-1" },
+      {
+        ...base,
+        id: "00000000-0000-0000-0000-000000000202",
+        status: "skipped",
+        reason: "throttled",
+        createdAt: "2026-05-30T00:02:00Z"
+      },
+      {
+        ...base,
+        id: "00000000-0000-0000-0000-000000000203",
+        status: "failed",
+        reason: "provider_error",
+        createdAt: "2026-05-30T00:01:00Z"
+      }
+    ])).toEqual({
+      total: 3,
+      sent: 1,
+      skipped: 1,
+      failed: 1,
+      latestAlertAt: "2026-05-30T00:03:00Z",
+      latestStatus: "sent"
     });
   });
 

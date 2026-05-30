@@ -33,6 +33,10 @@ async function handleRun(request: NextRequest) {
 
   const supabase = createSupabaseServiceRoleClient();
   const workerId = request.headers.get("x-worker-id") ?? `api-worker-${process.pid}`;
+  const alertOptions = {
+    supabase,
+    throttleWindowMs: workerId.startsWith("failure-rehearsal-") ? 0 : undefined
+  };
   const startedAt = Date.now();
 
   try {
@@ -67,7 +71,7 @@ async function handleRun(request: NextRequest) {
         failedCount,
         durationMs: Date.now() - startedAt,
         outcomes: result.outcomes
-      }).catch(() => ({ sent: false as const, reason: "alert_error" as const }))
+      }, alertOptions).catch(() => ({ sent: false as const, reason: "alert_error" as const }))
       : { sent: false as const, reason: "no_failure" as const };
 
     return NextResponse.json({ ...result, alert });
@@ -92,7 +96,7 @@ async function handleRun(request: NextRequest) {
       durationMs: Date.now() - startedAt,
       outcomes: [],
       errorMessage: message
-    }).catch(() => ({ sent: false as const, reason: "alert_error" as const }));
+    }, alertOptions).catch(() => ({ sent: false as const, reason: "alert_error" as const }));
 
     return NextResponse.json({ error: message, alert }, { status: 500 });
   }

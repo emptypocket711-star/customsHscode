@@ -12,10 +12,13 @@ import { getProductionSchemaHealthReport } from "@/server/operations/schema-heal
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import {
   listRecentBackgroundJobRuns,
+  listRecentOperationsAlertEvents,
   listRecentBackgroundJobOperations,
   summarizeBackgroundJobRuns,
+  summarizeOperationsAlertEvents,
   summarizeBackgroundJobOperations,
   type BackgroundJobRunItem,
+  type OperationsAlertEventItem,
   type BackgroundJobOperationsItem
 } from "@/server/repositories/background-job.repository";
 import {
@@ -96,6 +99,19 @@ function backgroundJobRunStatusLabel(status: string) {
 
 function backgroundJobRunStatusTone(status: string) {
   return status === "failed" ? "warning" : "success";
+}
+
+function operationsAlertStatusLabel(status: string) {
+  if (status === "sent") return "발송";
+  if (status === "skipped") return "생략";
+  if (status === "failed") return "발송 실패";
+  return status;
+}
+
+function operationsAlertStatusTone(status: string) {
+  if (status === "sent") return "success";
+  if (status === "failed") return "warning";
+  return "neutral";
 }
 
 function eventTone(event: LookupTelemetryEvent) {
@@ -270,6 +286,13 @@ async function loadBackgroundJobRuns() {
   return listRecentBackgroundJobRuns(supabase, 20).catch(() => []);
 }
 
+async function loadOperationsAlertEvents() {
+  if (!hasSupabaseEnv()) return [];
+
+  const supabase = await createSupabaseServerClient();
+  return listRecentOperationsAlertEvents(supabase, 20).catch(() => []);
+}
+
 export default async function OperationsHealthPage() {
   const guard = await requireDeveloperRole();
 
@@ -279,10 +302,11 @@ export default async function OperationsHealthPage() {
 
   const groups = getEnvironmentHealthGroups();
   const integrationHealthItems = getExternalIntegrationHealthItems();
-  const [lookupTelemetryEvents, backgroundJobs, backgroundJobRuns, schemaHealthReport] = await Promise.all([
+  const [lookupTelemetryEvents, backgroundJobs, backgroundJobRuns, operationsAlertEvents, schemaHealthReport] = await Promise.all([
     loadLookupTelemetryEvents(),
     loadBackgroundJobOperations(),
     loadBackgroundJobRuns(),
+    loadOperationsAlertEvents(),
     getProductionSchemaHealthReport()
   ]);
   const lookupIssueCount = lookupTelemetryEvents.filter(isLookupTelemetryIssue).length;
@@ -294,6 +318,7 @@ export default async function OperationsHealthPage() {
   const lookupRouteSummary = summarizeLookupTelemetryByRoute(lookupTelemetryEvents);
   const backgroundJobSummary = summarizeBackgroundJobOperations(backgroundJobs);
   const backgroundJobRunSummary = summarizeBackgroundJobRuns(backgroundJobRuns);
+  const operationsAlertSummary = summarizeOperationsAlertEvents(operationsAlertEvents);
   const items = groups.flatMap((group) => group.items);
   const missingRequiredCount = items.filter((item) => item.status === "missing").length;
   const configuredCount = items.filter((item) => item.status === "ok").length;
@@ -577,6 +602,78 @@ export default async function OperationsHealthPage() {
           ) : (
             <div className="p-5 text-sm text-slate-600">
               아직 worker 실행 이력이 없습니다. `/api/jobs/run` cron 또는 수동 실행 후 표시됩니다.
+            </div>
+          )}
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="운영 알림 이력"
+          description="백그라운드 worker 실패 알림의 발송, throttle 생략, 발송 실패 이력을 확인합니다."
+          action={<Badge tone={operationsAlertSummary.failed > 0 ? "warning" : "success"}>발송 실패 {operationsAlertSummary.failed}건</Badge>}
+        />
+        <CardBody className="p-0">
+          <div className="grid gap-2 border-b border-slate-200 bg-slate-50 p-3 text-sm md:grid-cols-5">
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">최근 알림</p>
+              <p className="mt-1 font-semibold text-slate-950">{operationsAlertSummary.total}건</p>
+            </div>
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">마지막 알림</p>
+              <p className="mt-1 font-semibold text-slate-950">
+                {operationsAlertSummary.latestAlertAt ? formatDate(operationsAlertSummary.latestAlertAt) : "-"}
+              </p>
+            </div>
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">발송</p>
+              <p className="mt-1 font-semibold text-emerald-700">{operationsAlertSummary.sent}건</p>
+            </div>
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">생략</p>
+              <p className="mt-1 font-semibold text-slate-700">{operationsAlertSummary.skipped}건</p>
+            </div>
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">마지막 상태</p>
+              <p className="mt-1">
+                <Badge tone={operationsAlertSummary.latestStatus ? operationsAlertStatusTone(operationsAlertSummary.latestStatus) : "neutral"}>
+                  {operationsAlertSummary.latestStatus ? operationsAlertStatusLabel(operationsAlertSummary.latestStatus) : "-"}
+                </Badge>
+              </p>
+            </div>
+          </div>
+          {operationsAlertEvents.length ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-[980px] text-left text-sm">
+                <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
+                  <tr>
+                    <th className="px-5 py-3">시각</th>
+                    <th className="px-5 py-3">상태</th>
+                    <th className="px-5 py-3">유형</th>
+                    <th className="px-5 py-3">수신자</th>
+                    <th className="px-5 py-3">사유</th>
+                    <th className="px-5 py-3">키</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {operationsAlertEvents.map((event: OperationsAlertEventItem) => (
+                    <tr key={event.id} className={event.status === "failed" ? "bg-amber-50/45" : undefined}>
+                      <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-600">{formatDate(event.createdAt)}</td>
+                      <td className="px-5 py-4">
+                        <Badge tone={operationsAlertStatusTone(event.status)}>{operationsAlertStatusLabel(event.status)}</Badge>
+                      </td>
+                      <td className="px-5 py-4 font-semibold text-slate-800">{event.alertType}</td>
+                      <td className="px-5 py-4 text-xs text-slate-600">{event.recipient ?? "-"}</td>
+                      <td className="max-w-[300px] truncate px-5 py-4 text-xs font-medium text-slate-600">{event.reason ?? event.message ?? event.providerId ?? "-"}</td>
+                      <td className="max-w-[300px] truncate px-5 py-4 font-mono text-xs text-slate-500">{event.alertKey}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="p-5 text-sm text-slate-600">
+              아직 운영 알림 이력이 없습니다. worker 실패 알림 발송 또는 throttle 생략 후 표시됩니다.
             </div>
           )}
         </CardBody>
