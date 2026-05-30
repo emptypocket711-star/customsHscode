@@ -7,6 +7,10 @@ import { createSupabaseServiceRoleClient } from "@/lib/supabase/service-role";
 import { recordAuditLog } from "@/server/audit/account-audit";
 import { isDeveloperEmail } from "@/server/auth/developer";
 import {
+  buildOperationsIssueStatusErrorMessage,
+  buildOperationsIssueStatusSuccessMessage
+} from "@/server/operations/operations-issue-status-message.service";
+import {
   updateOperationsIssueStatus,
   type OperationsIssueStatus
 } from "@/server/repositories/operations-issue.repository";
@@ -27,13 +31,6 @@ const operationsIssueStatusSchema = z.object({
 function stringValue(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" ? value : undefined;
-}
-
-function operationsIssueStatusActionLabel(status: string | undefined) {
-  if (status === "resolved") return "해결 처리";
-  if (status === "ignored") return "제외 처리";
-  if (status === "open") return "다시 열기";
-  return "상태 변경";
 }
 
 async function requireCurrentDeveloper() {
@@ -113,15 +110,14 @@ export async function updateOperationsIssueStatusWithStateAction(
   _previousState: OperationsIssueStatusActionState,
   formData: FormData
 ): Promise<OperationsIssueStatusActionState> {
-  const attemptedActionLabel = operationsIssueStatusActionLabel(stringValue(formData, "status"));
+  const attemptedStatus = stringValue(formData, "status");
 
   try {
     const updated = await updateOperationsIssueStatusFromForm(formData);
-    const actionLabel = operationsIssueStatusActionLabel(updated.status);
 
     return {
       status: "success",
-      message: `운영 이슈 ${actionLabel} 결과를 저장했습니다.`
+      message: buildOperationsIssueStatusSuccessMessage(updated.status)
     };
   } catch (error) {
     const reason = error instanceof z.ZodError
@@ -132,7 +128,7 @@ export async function updateOperationsIssueStatusWithStateAction(
 
     return {
       status: "error",
-      message: `운영 이슈 ${attemptedActionLabel}을 저장하지 못했습니다. ${reason}`
+      message: buildOperationsIssueStatusErrorMessage(attemptedStatus, reason)
     };
   }
 }
