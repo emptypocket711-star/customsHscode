@@ -1210,7 +1210,10 @@ function hsLookupHref({
   direction,
   destinationCountry,
   originCountry,
-  destinationHsCode
+  destinationHsCode,
+  source,
+  sourceCandidateRank,
+  sourceProductName
 }: {
   hskCode: string;
   basisDate: string;
@@ -1218,6 +1221,9 @@ function hsLookupHref({
   destinationCountry: string;
   originCountry?: string;
   destinationHsCode?: string;
+  source?: string;
+  sourceCandidateRank?: number;
+  sourceProductName?: string;
 }) {
   const params = new URLSearchParams({
     query: hskCode,
@@ -1233,6 +1239,10 @@ function hsLookupHref({
   if (originCountry && originCountry !== "ALL") {
     params.set("originCountry", originCountry);
   }
+
+  if (source) params.set("source", source);
+  if (sourceProductName) params.set("sourceProductName", sourceProductName);
+  if (sourceCandidateRank) params.set("sourceCandidateRank", String(sourceCandidateRank));
 
   const path = direction === "export" && destinationHsCode ? "/hs/overseas" : "/hs/direct";
   return `${path}?${params.toString()}`;
@@ -1263,6 +1273,33 @@ function currentHsDirectReturnTo({
   if (destinationHsCode) params.set("destinationHsCode", destinationHsCode);
   if (originCountry && originCountry !== "ALL") params.set("originCountry", originCountry);
   return `/hs/direct?${params.toString()}`;
+}
+
+function ProductSearchSourceBanner({
+  candidateRank,
+  productName
+}: {
+  candidateRank?: string;
+  productName?: string;
+}) {
+  if (!productName) return null;
+
+  return (
+    <section className="mt-4 rounded-md border border-blue-200 bg-blue-50 px-3 py-3 text-sm leading-6 text-blue-950">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="font-semibold">품명검색에서 선택한 AI 예비 후보입니다.</p>
+          <p className="mt-1 text-xs leading-5 text-blue-900">
+            입력 품명 `{productName}` 기준으로 추천된 후보를 상세 조회하고 있습니다. 아래 관세율, FTA, 수입요건, 원산지표시는 이 HS CODE 기준의 예비 조회입니다.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Badge tone="info">품명검색 연결</Badge>
+          {candidateRank ? <Badge tone="neutral">{candidateRank}순위 후보</Badge> : null}
+        </div>
+      </div>
+    </section>
+  );
 }
 
 function HsHierarchyTrail({
@@ -3282,6 +3319,9 @@ export async function HsDirectLookupPanel({
   originCountry,
   destinationHsCode,
   favoriteStatus,
+  source,
+  sourceCandidateRank,
+  sourceProductName,
   defaultDirection = "import",
   exportResultMode = "domestic",
   locale = defaultLocale,
@@ -3296,6 +3336,9 @@ export async function HsDirectLookupPanel({
   originCountry?: string;
   destinationHsCode?: string;
   favoriteStatus?: string;
+  source?: string;
+  sourceCandidateRank?: string;
+  sourceProductName?: string;
   defaultDirection?: "import" | "export";
   exportResultMode?: "domestic" | "destination";
   locale?: AppLocale;
@@ -3516,6 +3559,10 @@ export async function HsDirectLookupPanel({
           </div>
         ) : null}
 
+        {shouldLookupHs && source === "product_search" ? (
+          <ProductSearchSourceBanner candidateRank={sourceCandidateRank} productName={sourceProductName} />
+        ) : null}
+
         {parsed?.success && results.length === 0 && !(lookupDirection === "export" && exportDestinationRows.length) ? (
           <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
             {dictionary.empty.noHsData}
@@ -3589,14 +3636,20 @@ export async function HsDirectLookupPanel({
                   direction: lookupDirection,
                   destinationCountry: selectedDestinationCountry,
                   originCountry: selectedOriginCountry,
-                  basisDate: candidate.basisDate
+                  basisDate: candidate.basisDate,
+                  source: "product_search",
+                  sourceCandidateRank: candidate.rank,
+                  sourceProductName: searchQuery
                 });
                 const hs6Href = hsLookupHref({
                   hskCode: candidate.hs6,
                   direction: lookupDirection,
                   destinationCountry: selectedDestinationCountry,
                   originCountry: selectedOriginCountry,
-                  basisDate: candidate.basisDate
+                  basisDate: candidate.basisDate,
+                  source: "product_search",
+                  sourceCandidateRank: candidate.rank,
+                  sourceProductName: searchQuery
                 });
 
                 return (

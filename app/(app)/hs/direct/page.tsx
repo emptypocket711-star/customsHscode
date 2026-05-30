@@ -18,6 +18,9 @@ export default async function HsDirectPage({
     basisDate?: string;
     destinationHsCode?: string;
     favoriteStatus?: string;
+    source?: string;
+    sourceCandidateRank?: string;
+    sourceProductName?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -67,6 +70,9 @@ export default async function HsDirectPage({
         locale={locale}
         originCountry={params.originCountry}
         query={params.query}
+        source={params.source}
+        sourceCandidateRank={params.sourceCandidateRank}
+        sourceProductName={params.sourceProductName}
       />
     </>
   );
