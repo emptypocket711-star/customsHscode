@@ -1682,6 +1682,8 @@
 - 사용자가 `사탕`처럼 명확한 품명에서 GPT가 후보를 못 내는 문제를 지적해, 품명검색 GPT 지시문을 `"검색품명" HS CODE 알려줘` 중심의 짧은 실무 질문으로 단순화했다.
 - 이후에도 운영에서 `사탕`이 후보 없음으로 끝나는 원인을 확인한 결과, 1차 GPT 호출이 짧은 timeout에 잘리고 fallback성 빈 응답이 캐시되는 구조였다. 1차 GPT는 서버 실행 예산 안에서 충분히 기다리도록 변경하고, GPT 출력은 compact JSON으로 제한했다.
 - 후보와 primaryCandidate가 모두 없는 품명 정규화 결과는 캐시에 저장하지 않도록 해, 일시적인 GPT timeout/fallback 결과가 같은 품명의 이후 검색을 막지 않게 했다.
+- 운영 env를 `OPENAI_PRODUCT_SEARCH_TIMEOUT_MS=30000`, `OPENAI_PRODUCT_SEARCH_RETRY_TIMEOUT_MS=8000`으로 갱신하고 재배포했다.
+- 재배포 후 실사이트 `사탕` 검색은 약 7.6초에 완료 화면과 `HS 1704` 예비 방향을 표시했다. telemetry 기준 GPT 정규화/후보 생성은 약 3.5초였고 `supabase_gpt_only` 경로에서 `ai_hs_hint` 후보 1개가 생성됐다.
 - 운영 확장 문서의 품명검색 캐시/타임아웃 설명도 웹 보조가 아닌 GPT API 전용 정책으로 갱신했다.
 
 검증:
@@ -1693,7 +1695,9 @@
 - `npm run build`
 - `git diff --check`
 - Vercel production deployment: `customs-hscode-b0qj57qk3-koo-apps.vercel.app`
+- Vercel production deployment: `customs-hscode-4a59amfaj-koo-apps.vercel.app`
 - Alias: `https://hsfinder.co.kr`
 - `vercel env run -e production -- npm run health:db`
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 - Playwright 실사이트 검색: `텀블러` 6483ms / 후보 2개, `가방` 6250ms / 후보 1개, `손선풍기` 5844ms / 후보 1개, `핸드크림` 6029ms / 후보 1개
+- Playwright 실사이트 검색: `사탕` 7551ms / `HS 1704`, `초콜릿 사탕` 6685ms / `HS 1704`
