@@ -269,9 +269,22 @@
 - 운영 이슈 처리 피드백 운영 반영:
   - production 배포 `customs-hscode-pf1wqttje-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+- 운영 이슈 처리 결과 요약을 추가했다.
+  - 이전 작업은 버튼 클릭 중 pending/success/error를 보여주는 입력 UX 기능이고, 이번 작업은 닫힌 운영 이슈의 해결·제외 건수와 평균 처리 기간을 보는 결과 집계 기능이다.
+  - 해결·제외 상태 이슈만 집계해 닫힘 건수, 해결 건수, 제외 건수, 평균 처리 기간, 최근 처리 시각을 표시한다.
+  - 평균 처리 기간은 `first_seen_at`부터 `resolved_at`, 상태 변경 시각, 갱신 시각 순 fallback으로 계산한다.
+- 운영 이슈 처리 결과 요약 운영 반영:
+  - production 배포 `customs-hscode-rlaay0bgi-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
+- `npm test -- server/repositories/operations-issue.repository.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `vercel env run -e production -- npm run health:db`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 - `npm test -- server/repositories/operations-issue.repository.test.ts`
 - `npm run typecheck`
 - `npm run lint`
