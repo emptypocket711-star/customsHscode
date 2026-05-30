@@ -390,6 +390,14 @@
 - 운영 이슈 처리 결과 메시지 운영 반영:
   - production 배포 `customs-hscode-awse99yxc-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+- 운영 이슈 처리 결과 메시지 테스트를 추가했다.
+  - 이전 작업은 서버 액션 성공/오류 메시지의 표시 내용을 바꾼 처리 결과 피드백 보강이고, 이번 작업은 해당 메시지 생성 규칙을 순수 서비스로 분리해 단위 테스트로 고정하는 회귀 방지 보강이다.
+  - `operationsIssueStatusActionLabel`, 성공 메시지, 오류 메시지를 상태별로 검증한다.
+  - 오류 메시지는 `해결 처리를`, `제외 처리를`, `다시 열기를`, `상태 변경을`처럼 목적격 조사가 맞게 붙도록 보정했다.
+  - 저장 데이터, RLS, 상태 변경 권한 구조는 바꾸지 않았다.
+- 운영 이슈 처리 결과 메시지 테스트 운영 반영:
+  - production 배포 `customs-hscode-6wu2bc0rv-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
