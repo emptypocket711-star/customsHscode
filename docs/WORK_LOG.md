@@ -1523,3 +1523,23 @@
 - Alias: `https://hsfinder.co.kr`
 - `vercel env run -e production -- npm run health:db`
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
+
+### 품명검색 AI 분석 대기 상태 표시
+
+- 이전 작업은 서버 결과가 나온 뒤 `AI HS 분류 검토 흐름`과 완료 안내를 보여준 것이고, 이번 작업은 검색 버튼을 누른 직후 결과를 기다리는 동안의 대기 상태를 보강한 것이다.
+- `/hs/direct` 검색 폼의 제출 버튼을 클라이언트 컴포넌트로 분리해 제출 중 상태를 감지하게 했다.
+- 입력값이 HS CODE가 아닌 품명 검색일 때만 `AI가 HS 분류 흐름을 검토하고 있습니다.` 패널을 표시한다.
+- 대기 패널은 `제품 의미 해석`, `류·호 후보 검토`, `HSK 후보 정리`, `관세율·요건 연결` 순서로 진행 단계를 보여준다.
+- HS CODE 직접 조회는 기존처럼 일반 조회 흐름을 유지하고, 품명 검색에서만 AI 분석 중 문구가 나온다.
+
+검증:
+
+- `npm test -- lib/i18n/hs-direct.test.ts server/rules/hs-candidate.service.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `git diff --check`
+- Vercel production deployment: `customs-hscode-9chofgjod-koo-apps.vercel.app`
+- Alias: `https://hsfinder.co.kr`
+- `vercel env run -e production -- npm run health:db`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
