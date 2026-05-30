@@ -39,7 +39,14 @@ function cardSummary(item: TradeNewsItem, dictionary: TradeNewsDictionary) {
   if (summary && hasHangul(summary)) return summary;
 
   if (item.source === "WTO") {
-    return dictionary.card.wtoSummary;
+    return summary
+      ? `${dictionary.card.wtoSummary}\n${dictionary.card.originalExcerpt}: ${summary}`
+      : dictionary.card.wtoSummary;
+  }
+
+  if (summary) {
+    const country = item.countryName ? `${item.countryName} · ` : "";
+    return `${dictionary.card.nonKoreanSummaryLead} ${country}${item.source}\n${dictionary.card.originalExcerpt}: ${summary}`;
   }
 
   return dictionary.card.fallbackSummary;
@@ -57,7 +64,7 @@ function NewsCard({ dictionary, item }: { dictionary: TradeNewsDictionary; item:
       </div>
 
       <h3 className="line-clamp-2 text-base font-semibold leading-6 text-slate-950">{item.title}</h3>
-      <p className="mt-3 line-clamp-5 flex-1 text-sm leading-6 text-slate-600">{summary}</p>
+      <p className="mt-3 line-clamp-5 flex-1 whitespace-pre-line text-sm leading-6 text-slate-600">{summary}</p>
 
       <div className="mt-4 border-t border-slate-100 pt-3">
         <dl className="grid gap-1.5 text-xs text-slate-500">

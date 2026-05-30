@@ -794,3 +794,15 @@
 - `npm test -- lib/i18n/used-car-export.test.ts`
 - `npm run typecheck`
 - `npm run lint`
+
+### 무역 뉴스 영문 원문 카드 요약 보강
+
+- 무역 뉴스 카드에서 원문 요약이 영문 등 비한글일 때도 일반 fallback 문구만 나오지 않도록 했다.
+- 원문 제목·출처·국가 기준의 짧은 안내와 원문 발췌를 함께 표시해, 원문을 열기 전 확인 가능한 정보량을 늘렸다.
+- WTO 뉴스는 국제통상 안내 문구에 원문 발췌를 붙여 규범·분쟁·회원국 조치 관련 여부를 더 빨리 볼 수 있게 했다.
+
+검증:
+
+- `npm test -- lib/i18n/trade-news.test.ts`
+- `npm run typecheck`
+- `npm run lint`

@@ -10,6 +10,7 @@ describe("getTradeNewsDictionary", () => {
       expect(dictionary.page.title).toBeTruthy();
       expect(dictionary.hero.countryFilter).toBeTruthy();
       expect(dictionary.card.openOriginal).toBeTruthy();
+      expect(dictionary.card.originalExcerpt).toBeTruthy();
       expect(Object.keys(dictionary.categories).sort()).toEqual(["auxiliary", "customs", "global", "government", "industry", "market"]);
     }
   });

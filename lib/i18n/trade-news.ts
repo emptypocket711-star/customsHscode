@@ -15,6 +15,8 @@ export type TradeNewsDictionary = {
     source: string;
     sourceMethod: string;
     sourceTypes: Record<"future" | "official-page" | "openapi" | "paid-api" | "rss", string>;
+    nonKoreanSummaryLead: string;
+    originalExcerpt: string;
     wtoSummary: string;
     fallbackSummary: string;
   };
@@ -47,6 +49,8 @@ const dictionaries = {
       fallbackSummary: "해당 출처에서 수집한 무역 관련 소식입니다. 제목과 출처를 기준으로 먼저 검토한 뒤 원문에서 세부 내용을 확인해 주세요.",
       itemsSuffix: "건",
       openOriginal: "원문 열기",
+      nonKoreanSummaryLead: "원문 제목과 출처 기준으로 수집한 무역 관련 소식입니다.",
+      originalExcerpt: "원문 발췌",
       pending: "대기",
       source: "출처",
       sourceMethod: "수집 방식",
@@ -86,6 +90,8 @@ const dictionaries = {
       fallbackSummary: "This trade-related item was collected from the listed source. Review the title and source first, then open the original for details.",
       itemsSuffix: "items",
       openOriginal: "Open original",
+      nonKoreanSummaryLead: "This trade-related item was collected based on its original title and source.",
+      originalExcerpt: "Original excerpt",
       pending: "Pending",
       source: "Source",
       sourceMethod: "Collection method",
@@ -125,6 +131,8 @@ const dictionaries = {
       fallbackSummary: "这是从该来源收集的贸易相关消息。请先查看标题和来源，再打开原文确认详细内容。",
       itemsSuffix: "条",
       openOriginal: "打开原文",
+      nonKoreanSummaryLead: "这是根据原文标题和来源收集的贸易相关消息。",
+      originalExcerpt: "原文摘录",
       pending: "待处理",
       source: "来源",
       sourceMethod: "收集方式",
