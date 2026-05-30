@@ -406,6 +406,14 @@
 - 운영 이슈 처리 후속 안내 운영 반영:
   - production 배포 `customs-hscode-g607bg412-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` alias 연결과 production smoke 10개 경로 통과를 확인했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+- 운영 이슈 우선 확인 표시를 추가했다.
+  - 이전 작업은 상태 변경 성공 후 후속 확인 지점을 알려주는 처리 이후 UX 보강이고, 이번 작업은 상태 변경 전에 현재 필터 기준 최우선 미해결 이슈를 목록 상단에서 바로 판단하는 처리 전 triage 보강이다.
+  - 현재 필터 결과에서 우선순위가 가장 높은 미해결 이슈의 사유, 담당자, 반복 횟수, 경과, 다음 조치를 표시한다.
+  - 차단 미해결, 장기 미해결, 담당 미지정, 지연 확인 기준에 따라 같은 기준 보기 링크를 제공한다.
+  - 저장 데이터, RLS, 상태 변경 권한 구조는 바꾸지 않았다.
+- 운영 이슈 우선 확인 표시 운영 반영:
+  - production 배포 `customs-hscode-h1h2t5yxu-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` alias 연결과 production smoke 10개 경로 통과를 확인했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
