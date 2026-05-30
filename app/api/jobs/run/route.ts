@@ -59,18 +59,18 @@ async function handleRun(request: NextRequest) {
       result: result as unknown as Record<string, unknown>
     });
 
-    if (failedCount > 0) {
-      await sendBackgroundJobFailureAlert({
+    const alert = failedCount > 0
+      ? await sendBackgroundJobFailureAlert({
         workerId,
         claimedCount: result.claimed,
         succeededCount,
         failedCount,
         durationMs: Date.now() - startedAt,
         outcomes: result.outcomes
-      }).catch(() => undefined);
-    }
+      }).catch(() => ({ sent: false as const, reason: "alert_error" as const }))
+      : { sent: false as const, reason: "no_failure" as const };
 
-    return NextResponse.json(result);
+    return NextResponse.json({ ...result, alert });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Background worker failed";
     await recordBackgroundJobRun(supabase, {
@@ -84,7 +84,7 @@ async function handleRun(request: NextRequest) {
       result: { error: message }
     }).catch(() => undefined);
 
-    await sendBackgroundJobFailureAlert({
+    const alert = await sendBackgroundJobFailureAlert({
       workerId,
       claimedCount: 0,
       succeededCount: 0,
@@ -92,9 +92,9 @@ async function handleRun(request: NextRequest) {
       durationMs: Date.now() - startedAt,
       outcomes: [],
       errorMessage: message
-    }).catch(() => undefined);
+    }).catch(() => ({ sent: false as const, reason: "alert_error" as const }));
 
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: message, alert }, { status: 500 });
   }
 }
 

@@ -61,6 +61,11 @@
 - 운영 반영:
   - Vercel production에 `OPERATIONS_ALERT_EMAIL`을 추가하고 production을 재배포했다.
   - 재배포 후 `/api/jobs/run` 수동 실행 결과 200 OK, claimed 0건을 확인했다.
+- worker 실패 알림 리허설 도구를 추가했다.
+  - `npm run ops:job:background-failure-rehearsal` 스크립트가 임시 `hs_batch_lookup` 작업을 생성하고 의도적으로 잘못된 payload를 넣어 실패 경로를 검증한다.
+  - 리허설 payload에는 회사/사용자/문서 원문/인보이스 내용이 없고, 검증 후 임시 job row를 삭제한다.
+  - `/api/jobs/run` 응답에 알림 전송 결과를 포함해 운영 리허설에서 `alert.sent === true`를 확인할 수 있게 했다.
+  - `background_job_runs` 이력은 실패 경로 증적으로 남겨 운영 점검 화면에서 확인할 수 있게 했다.
 
 검증:
 
@@ -76,6 +81,10 @@
 - `npm test -- server/repositories/background-job.repository.test.ts`
 - `vercel env run -e production -- npm run ops:job:background`
 - `npm test -- server/operations/background-job-alert.service.test.ts server/operations/environment-health.service.test.ts`
+- `npm test`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
 
 ## 2026-05-29
 
