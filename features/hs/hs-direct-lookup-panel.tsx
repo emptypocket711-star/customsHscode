@@ -3515,9 +3515,11 @@ export async function HsDirectLookupPanel({
       : Promise.resolve([])
   ]);
   const [productCandidateLookupResults, aiClarification] = await Promise.all([
-    productCandidates.length
-      ? Promise.all(productCandidates.map((candidate) => cachedHsDirectLookup(candidate.hskCode, resolvedBasisDate).catch(() => []))).then((rows) => rows.flat())
-      : Promise.resolve([]),
+    shouldLookupProduct
+      ? Promise.resolve([])
+      : productCandidates.length
+        ? Promise.all(productCandidates.map((candidate) => cachedHsDirectLookup(candidate.hskCode, resolvedBasisDate).catch(() => []))).then((rows) => rows.flat())
+        : Promise.resolve([]),
     shouldLookupProduct
       ? analyzeProductClarification({
           productName: searchQuery,
@@ -3527,15 +3529,12 @@ export async function HsDirectLookupPanel({
       : Promise.resolve(null)
   ]);
   const productCandidateLookupByHsk = new Map(productCandidateLookupResults.map((result) => [result.hskCode, result]));
-  const productCandidateInternalTaxByHskPromise = lookupDirection === "import" ? internalTaxCodesForResults({
+  const productCandidateInternalTaxByHskPromise = lookupDirection === "import" && productCandidateLookupResults.length ? internalTaxCodesForResults({
     results: productCandidateLookupResults,
     basisDate: resolvedBasisDate
   }) : Promise.resolve(new Map<string, InternalTaxCodeMatch[]>());
   const exportLookupSources: ExportLookupSource[] = shouldLookupProduct && productCandidates.length
-    ? productCandidates.map((candidate: HsCandidateRecommendation) => ({
-        hskCode: candidate.hskCode,
-        hs6: candidate.hs6
-      }))
+    ? []
     : results.map((result) => ({
       hskCode: result.hskCode,
       hs6: result.hs6
