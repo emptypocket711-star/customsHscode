@@ -452,10 +452,20 @@
 - 운영 이슈 처리 폼 안내 흐름 운영 반영:
   - production 배포 `customs-hscode-1qxzuio1f-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` alias 연결과 production smoke 10개 경로 통과를 확인했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+- 운영 이슈 처리 폼 레이아웃을 안정화했다.
+  - 이전 작업은 성공 후 입력 변경 안내, 버튼 문구 축약, 우선 확인 안내 중복 제거를 함께 묶은 처리 폼 UX 정리이고, 이번 작업은 그 안내들이 테이블 행 폭 안에서 안정적으로 보이도록 버튼, 입력 상태 칩, 긴 안내 문구의 레이아웃 밀도를 정리한 화면 안정화다.
+  - 처리 버튼은 3열 grid와 최소 높이를 사용해 상태별 문구 길이 차이로 높이가 흔들리지 않게 했다.
+  - 입력 상태 칩은 좁은 폭에서는 세로로 쌓이고 넓은 폭에서는 3열로 정렬되도록 했다.
+  - 우선 확인 안내, 상태 처리 안내, 저장 후속 안내, 입력 상태 보조 문구에 줄바꿈 처리를 추가했다.
+  - 저장 데이터, RLS, 상태 변경 권한 구조는 바꾸지 않았다.
+- 운영 이슈 처리 폼 레이아웃 운영 반영:
+  - production 배포 `customs-hscode-8tsffdmvg-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` alias 연결과 production smoke 10개 경로 통과를 확인했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
 - `npm test -- server/repositories/operations-issue.repository.test.ts`
+- `npm test -- server/repositories/operations-issue.repository.test.ts server/operations/operations-issue-status-message.service.test.ts`
 - `npm run typecheck`
 - `npm run lint`
 - `npm run build`
