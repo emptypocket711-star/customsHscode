@@ -443,6 +443,15 @@
 - 운영 이슈 상태별 권장 입력 운영 반영:
   - production 배포 `customs-hscode-4so7qdjzb-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` alias 연결과 production smoke 10개 경로 통과를 확인했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+- 운영 이슈 처리 폼 안내 흐름을 정리했다.
+  - 이전 작업은 해결, 제외, 다시 열기 버튼별 권장 입력 항목을 추가한 단일 안내 보강이고, 이번 작업은 성공 후 입력 변경 안내, 버튼 문구 축약, 우선 확인 안내 중복 제거를 함께 묶은 처리 폼 UX 정리다.
+  - 저장 성공 후 입력값이 다시 수정되면 다시 저장해야 반영된다는 문구를 입력 상태 영역에 표시한다.
+  - 버튼별 권장 입력 문구를 `메모·사유 권장`, `사유 권장`, `담당·메모 권장`으로 축약했다.
+  - 우선 확인 대상 폼 안내는 사유와 다음 조치만 남겨 입력 상태 안내와 중복되지 않게 했다.
+  - 저장 데이터, RLS, 상태 변경 권한 구조는 바꾸지 않았다.
+- 운영 이슈 처리 폼 안내 흐름 운영 반영:
+  - production 배포 `customs-hscode-1qxzuio1f-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` alias 연결과 production smoke 10개 경로 통과를 확인했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
