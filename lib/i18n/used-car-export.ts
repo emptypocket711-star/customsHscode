@@ -52,6 +52,7 @@ export type UsedCarExportDictionary = {
     pendingMessage: string;
     receipt: string;
     receiptFileSuffix: string;
+    receiptFailureGuides: Record<string, string>;
     receiptPending: string;
     receiptPendingSecondsSuffix: string;
     receiptUnknownError: string;
@@ -137,6 +138,13 @@ const dictionaries = {
       pendingMessage: "터미널 조회 화면을 불러오고 있습니다.",
       receipt: "반입계 출력",
       receiptFileSuffix: "반입계",
+      receiptFailureGuides: {
+        terminal_capture_failed: "외부 터미널 화면 구조가 바뀌었거나 일시적으로 응답하지 않을 수 있습니다. 원사이트 열기로 직접 확인해 주세요.",
+        terminal_container_not_confirmed: "터미널 화면에서 입력한 컨테이너 번호가 확인되지 않았습니다. 컨테이너 번호와 터미널 조회 결과를 다시 확인해 주세요.",
+        terminal_detail_not_populated: "조회 화면은 열렸지만 주요 상세 항목이 아직 채워지지 않았습니다. 잠시 후 다시 출력하거나 원사이트에서 직접 확인해 주세요.",
+        terminal_helper_page_stalled: "터미널 helper 화면이 조회 완료 상태로 전환되지 않았습니다. 원사이트 열기로 결과 화면을 먼저 확인해 주세요.",
+        terminal_loading_not_settled: "외부 터미널 화면의 로딩이 끝나지 않았습니다. 몇 초 뒤 다시 시도해 주세요."
+      },
       receiptPending: "출력 생성 중",
       receiptPendingSecondsSuffix: "초",
       receiptUnknownError: "반입계 이미지를 생성하지 못했습니다. 잠시 후 다시 시도해 주세요.",
@@ -220,6 +228,13 @@ const dictionaries = {
       pendingMessage: "Loading the terminal lookup screen.",
       receipt: "Download receipt",
       receiptFileSuffix: "gate-in-receipt",
+      receiptFailureGuides: {
+        terminal_capture_failed: "The external terminal screen may have changed or may be temporarily unavailable. Open the source site and check directly.",
+        terminal_container_not_confirmed: "The terminal screen did not confirm the entered container number. Check the container number and terminal result again.",
+        terminal_detail_not_populated: "The lookup screen opened, but key detail fields were not populated yet. Try again shortly or check the source site.",
+        terminal_helper_page_stalled: "The terminal helper screen did not finish loading the lookup result. Open the source site first and check the result.",
+        terminal_loading_not_settled: "The external terminal screen did not finish loading. Try again in a few seconds."
+      },
       receiptPending: "Generating receipt",
       receiptPendingSecondsSuffix: "s",
       receiptUnknownError: "Could not generate the receipt image. Try again shortly.",
@@ -303,6 +318,13 @@ const dictionaries = {
       pendingMessage: "正在加载码头查询页面。",
       receipt: "下载入场凭证",
       receiptFileSuffix: "入场凭证",
+      receiptFailureGuides: {
+        terminal_capture_failed: "外部码头页面可能已变更或暂时无响应。请打开原网站直接确认。",
+        terminal_container_not_confirmed: "码头页面未确认输入的集装箱编号。请重新确认集装箱编号和码头查询结果。",
+        terminal_detail_not_populated: "查询页面已打开，但主要详细项目尚未加载。请稍后重试或在原网站确认。",
+        terminal_helper_page_stalled: "码头辅助页面未进入查询完成状态。请先打开原网站确认结果。",
+        terminal_loading_not_settled: "外部码头页面加载未完成。请几秒后重试。"
+      },
       receiptPending: "正在生成凭证",
       receiptPendingSecondsSuffix: "秒",
       receiptUnknownError: "无法生成入场凭证图片。请稍后再试。",

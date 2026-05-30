@@ -782,3 +782,15 @@
 - `npm test -- server/operations/environment-health.service.test.ts`
 - `npm run typecheck`
 - `npm run lint`
+
+### 반입계 출력 실패 안내 보강
+
+- 반입계 출력 API가 반환하는 실패 코드별로 사용자 화면에 재시도/원사이트 확인 안내를 함께 표시하도록 했다.
+- 외부 사이트 로딩 미종료, helper 화면 정체, 컨테이너 번호 미확인, 상세 필드 미채움, 일반 캡처 실패를 구분한다.
+- 오류 문구가 여러 줄로 표시되도록 중고차 수출 컨테이너 반입 확인 화면의 오류 박스 표시를 보강했다.
+
+검증:
+
+- `npm test -- lib/i18n/used-car-export.test.ts`
+- `npm run typecheck`
+- `npm run lint`

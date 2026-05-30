@@ -12,6 +12,7 @@ describe("getUsedCarExportDictionary", () => {
       expect(dictionary.tabs.containerCheck).toBeTruthy();
       expect(dictionary.vehicleSpec.inputLabel).toBeTruthy();
       expect(dictionary.container.receipt).toBeTruthy();
+      expect(dictionary.container.receiptFailureGuides.terminal_loading_not_settled).toBeTruthy();
       expect(dictionary.container.trackingTable.terminal).toBeTruthy();
     }
   });

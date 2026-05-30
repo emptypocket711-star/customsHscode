@@ -33,13 +33,19 @@ type ExternalIntegrationErrorBody = {
   retryable?: boolean;
 };
 
-async function readExternalErrorMessage(response: Response) {
+function receiptFailureGuide(dictionary: UsedCarExportDictionary, code?: string) {
+  return code ? dictionary.container.receiptFailureGuides[code] : undefined;
+}
+
+async function readExternalErrorMessage(response: Response, dictionary: UsedCarExportDictionary) {
   const contentType = response.headers.get("content-type") ?? "";
 
   if (contentType.includes("application/json")) {
     const body = await response.json().catch(() => null) as ExternalIntegrationErrorBody | null;
     if (body?.message) {
-      return body.requestId ? `${body.message} (요청 ID: ${body.requestId})` : body.message;
+      const guide = receiptFailureGuide(dictionary, body.code);
+      const requestId = body.requestId ? `요청 ID: ${body.requestId}` : "";
+      return [body.message, guide, requestId].filter(Boolean).join("\n");
     }
   }
 
@@ -49,10 +55,12 @@ async function readExternalErrorMessage(response: Response) {
 
 async function downloadReceiptImage({
   containerNo,
+  dictionary,
   receiptFileSuffix,
   terminalCode
 }: {
   containerNo: string;
+  dictionary: UsedCarExportDictionary;
   receiptFileSuffix: string;
   terminalCode?: string;
 }) {
@@ -61,7 +69,7 @@ async function downloadReceiptImage({
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ containerNo, terminalCode })
   });
-  if (!response.ok) throw new Error(await readExternalErrorMessage(response));
+  if (!response.ok) throw new Error(await readExternalErrorMessage(response, dictionary));
   const blob = await response.blob();
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -285,6 +293,7 @@ export function HjitContainerCheckPanel({ dictionary }: { dictionary: UsedCarExp
                     try {
                       await downloadReceiptImage({
                         containerNo: state.containerNo ?? "",
+                        dictionary,
                         receiptFileSuffix: dictionary.container.receiptFileSuffix,
                         terminalCode: state.terminalCode
                       });
@@ -325,7 +334,7 @@ export function HjitContainerCheckPanel({ dictionary }: { dictionary: UsedCarExp
             {message ? (
               <div
                 data-progress-complete="true"
-                className={isSuccess ? "rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800" : "rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"}
+                className={isSuccess ? "whitespace-pre-line rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800" : "whitespace-pre-line rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"}
               >
                 {message}
               </div>
