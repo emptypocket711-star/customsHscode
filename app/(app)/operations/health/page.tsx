@@ -30,6 +30,7 @@ import {
   filterOperationsIssueEvents,
   getOpenOperationsIssueAgeStatus,
   getOperationsIssueStatusChangeSummary,
+  buildOperationsIssueQuickFilterPresets,
   listRecentOperationsIssueEvents,
   sortOperationsIssueEventsForTriage,
   summarizeOpenOperationsIssuesByOwner,
@@ -37,6 +38,7 @@ import {
   summarizeOperationsIssueEvents,
   type OperationsIssueEventItem,
   type OperationsIssueEventFilters,
+  type OperationsIssueQuickFilterPreset,
   type OperationsIssueSeverity,
   type OperationsIssueStatus
 } from "@/server/repositories/operations-issue.repository";
@@ -262,18 +264,45 @@ function searchParamValue(value: string | string[] | undefined) {
 function parseOperationsIssueFilters(params: {
   issueStatus?: string | string[];
   issueSeverity?: string | string[];
+  issueAge?: string | string[];
   issueOwner?: string | string[];
   issueQuery?: string | string[];
 }): OperationsIssueEventFilters {
   const rawStatus = searchParamValue(params.issueStatus);
   const rawSeverity = searchParamValue(params.issueSeverity);
+  const rawAge = searchParamValue(params.issueAge);
 
   return {
     status: rawStatus === "open" || rawStatus === "resolved" || rawStatus === "ignored" ? rawStatus : "all",
     severity: rawSeverity === "info" || rawSeverity === "warning" || rawSeverity === "blocker" ? rawSeverity : "all",
+    ageLevel: rawAge === "normal" || rawAge === "watch" || rawAge === "stale" ? rawAge : "all",
     assignedToLabel: searchParamValue(params.issueOwner)?.trim() ?? "",
     query: searchParamValue(params.issueQuery)?.trim() ?? ""
   };
+}
+
+function operationsIssueFilterHref(filters: OperationsIssueEventFilters) {
+  const params = new URLSearchParams();
+  if (filters.status && filters.status !== "all") params.set("issueStatus", filters.status);
+  if (filters.severity && filters.severity !== "all") params.set("issueSeverity", filters.severity);
+  if (filters.ageLevel && filters.ageLevel !== "all") params.set("issueAge", filters.ageLevel);
+  if (filters.assignedToLabel) params.set("issueOwner", filters.assignedToLabel);
+  if (filters.query) params.set("issueQuery", filters.query);
+
+  const query = params.toString();
+  return query ? `/operations/health?${query}#issue-events` : "/operations/health#issue-events";
+}
+
+function operationsIssueQuickFilterClassName(preset: OperationsIssueQuickFilterPreset) {
+  if (preset.tone === "warning") {
+    return "rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-left transition hover:bg-amber-100";
+  }
+
+  if (preset.tone === "success") {
+    return "rounded-md border border-emerald-100 bg-emerald-50 px-3 py-2 text-left transition hover:bg-emerald-100";
+  }
+
+  return "rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-left transition hover:bg-slate-100";
 }
 
 function eventTone(event: LookupTelemetryEvent) {
@@ -479,6 +508,7 @@ export default async function OperationsHealthPage({
   searchParams?: Promise<{
     issueStatus?: string | string[];
     issueSeverity?: string | string[];
+    issueAge?: string | string[];
     issueOwner?: string | string[];
     issueQuery?: string | string[];
   }>;
@@ -522,6 +552,7 @@ export default async function OperationsHealthPage({
   const filteredOperationsIssueSummary = summarizeOperationsIssueEvents(filteredOperationsIssueEvents);
   const operationsIssueOwnerSummary = summarizeOpenOperationsIssuesByOwner(operationsIssueEvents).slice(0, 6);
   const operationsIssueResolutionSummary = summarizeOperationsIssueResolutionOutcomes(operationsIssueEvents);
+  const operationsIssueQuickFilterPresets = buildOperationsIssueQuickFilterPresets(operationsIssueEvents);
   const operationsIssueDrilldowns = new Map(operationsIssueEvents.map((issue) => [
     issue.id,
     buildOperationsIssueLookupDrilldown(issue, lookupTelemetryEvents)
@@ -533,6 +564,7 @@ export default async function OperationsHealthPage({
   const hasOperationsIssueFilters = Boolean(
     (issueFilters.status && issueFilters.status !== "all")
       || (issueFilters.severity && issueFilters.severity !== "all")
+      || (issueFilters.ageLevel && issueFilters.ageLevel !== "all")
       || issueFilters.assignedToLabel
       || issueFilters.query
   );
@@ -1155,7 +1187,7 @@ export default async function OperationsHealthPage({
               <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
                 {operationsIssueOwnerSummary.map((owner) => {
                   const ownerFilterUrl = owner.assignedToLabel === "미지정"
-                    ? "/operations/health?issueStatus=open#issue-events"
+                    ? "/operations/health?issueStatus=open&issueOwner=%EB%AF%B8%EC%A7%80%EC%A0%95#issue-events"
                     : `/operations/health?issueStatus=open&issueOwner=${encodeURIComponent(owner.assignedToLabel)}#issue-events`;
                   return (
                     <a
@@ -1189,7 +1221,29 @@ export default async function OperationsHealthPage({
               </div>
             </div>
           ) : null}
-          <form className="grid gap-3 border-b border-slate-200 bg-white p-4 text-sm lg:grid-cols-[1fr_1fr_1fr_1.5fr_auto]" action="/operations/health#issue-events">
+          <div className="border-b border-slate-200 bg-white p-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-sm font-semibold text-slate-950">빠른 필터</p>
+                <p className="mt-1 text-xs text-slate-500">운영자가 자주 보는 처리 대상을 바로 좁혀 봅니다.</p>
+              </div>
+              {hasOperationsIssueFilters ? (
+                <a className="rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100" href="/operations/health#issue-events">
+                  전체 보기
+                </a>
+              ) : null}
+            </div>
+            <div className="grid gap-2 md:grid-cols-5">
+              {operationsIssueQuickFilterPresets.map((preset) => (
+                <a className={operationsIssueQuickFilterClassName(preset)} href={operationsIssueFilterHref(preset.filters)} key={preset.id}>
+                  <span className="block text-xs font-semibold text-slate-600">{preset.label}</span>
+                  <span className="mt-1 block text-lg font-semibold text-slate-950">{preset.count}건</span>
+                  <span className="mt-1 block text-xs leading-5 text-slate-500">{preset.description}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+          <form className="grid gap-3 border-b border-slate-200 bg-white p-4 text-sm lg:grid-cols-[1fr_1fr_1fr_1fr_1.5fr_auto]" action="/operations/health#issue-events">
             <label className="grid gap-1 text-xs font-semibold text-slate-600">
               상태
               <select
@@ -1214,6 +1268,19 @@ export default async function OperationsHealthPage({
                 <option value="blocker">차단</option>
                 <option value="warning">주의</option>
                 <option value="info">정보</option>
+              </select>
+            </label>
+            <label className="grid gap-1 text-xs font-semibold text-slate-600">
+              경과
+              <select
+                className="rounded-md border border-slate-200 bg-white px-2 py-2 text-sm font-normal text-slate-900 outline-none transition focus:border-blue-400"
+                defaultValue={issueFilters.ageLevel ?? "all"}
+                name="issueAge"
+              >
+                <option value="all">전체</option>
+                <option value="stale">장기 미해결</option>
+                <option value="watch">지연 확인</option>
+                <option value="normal">열림</option>
               </select>
             </label>
             <label className="grid gap-1 text-xs font-semibold text-slate-600">
@@ -1244,7 +1311,7 @@ export default async function OperationsHealthPage({
                 </a>
               ) : null}
             </div>
-            <p className="text-xs text-slate-500 lg:col-span-5">
+            <p className="text-xs text-slate-500 lg:col-span-6">
               표시 {filteredOperationsIssueSummary.total}건 / 최근 이슈 {operationsIssueSummary.total}건 · 우선순위순
               {hasOperationsIssueFilters ? " · 필터 적용 중" : ""}
             </p>

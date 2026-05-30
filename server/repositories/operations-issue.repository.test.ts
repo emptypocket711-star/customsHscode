@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildOperationsIssueQuickFilterPresets,
   filterOperationsIssueEvents,
   getOpenOperationsIssueAgeStatus,
   getOperationsIssueStatusChangeSummary,
@@ -92,6 +93,39 @@ describe("operations issue repository helpers", () => {
       assignedToLabel: "박",
       query: "fallback"
     }).map((event) => event.id)).toEqual(["issue-2"]);
+  });
+
+  it("filters operations issues by age level and unassigned owner preset", () => {
+    const now = new Date("2026-05-30T00:00:00.000Z");
+    const events = [
+      issue({
+        id: "stale-unassigned",
+        status: "open",
+        severity: "warning",
+        assignedToLabel: null,
+        firstSeenAt: "2026-05-20T00:00:00.000Z"
+      }),
+      issue({
+        id: "stale-assigned",
+        status: "open",
+        severity: "warning",
+        assignedToLabel: "김운영",
+        firstSeenAt: "2026-05-20T00:00:00.000Z"
+      }),
+      issue({
+        id: "watch-unassigned",
+        status: "open",
+        severity: "warning",
+        assignedToLabel: null,
+        firstSeenAt: "2026-05-27T00:00:00.000Z"
+      })
+    ];
+
+    expect(filterOperationsIssueEvents(events, {
+      status: "open",
+      ageLevel: "stale",
+      assignedToLabel: "미지정"
+    }, now).map((event) => event.id)).toEqual(["stale-unassigned"]);
   });
 
   it("summarizes open operations issues by owner workload", () => {
@@ -296,5 +330,43 @@ describe("operations issue repository helpers", () => {
       averageCloseAgeDays: 2.5,
       latestClosedAt: "2026-05-30T00:00:00.000Z"
     });
+  });
+
+  it("builds quick filter preset counts", () => {
+    const now = new Date("2026-05-30T00:00:00.000Z");
+    const presets = buildOperationsIssueQuickFilterPresets([
+      issue({
+        id: "open-blocker",
+        status: "open",
+        severity: "blocker",
+        assignedToLabel: "김운영",
+        firstSeenAt: "2026-05-29T00:00:00.000Z"
+      }),
+      issue({
+        id: "stale-unassigned",
+        status: "open",
+        severity: "warning",
+        assignedToLabel: null,
+        firstSeenAt: "2026-05-20T00:00:00.000Z"
+      }),
+      issue({
+        id: "resolved",
+        status: "resolved",
+        severity: "warning"
+      }),
+      issue({
+        id: "ignored",
+        status: "ignored",
+        severity: "info"
+      })
+    ], now);
+
+    expect(presets.map((preset) => [preset.id, preset.count])).toEqual([
+      ["open_blockers", 1],
+      ["stale_open", 1],
+      ["unassigned_open", 1],
+      ["resolved", 1],
+      ["ignored", 1]
+    ]);
   });
 });

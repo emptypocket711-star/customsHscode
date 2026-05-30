@@ -87,6 +87,7 @@ export type OperationsIssueEventSummary = {
 export type OperationsIssueEventFilters = {
   status?: OperationsIssueStatus | "all";
   severity?: OperationsIssueSeverity | "all";
+  ageLevel?: OperationsIssueAgeStatus["level"] | "all";
   assignedToLabel?: string;
   query?: string;
 };
@@ -118,6 +119,15 @@ export type OperationsIssueResolutionSummary = {
   ignored: number;
   averageCloseAgeDays: number | null;
   latestClosedAt: string | null;
+};
+
+export type OperationsIssueQuickFilterPreset = {
+  id: "open_blockers" | "stale_open" | "unassigned_open" | "resolved" | "ignored";
+  label: string;
+  description: string;
+  count: number;
+  tone: "warning" | "success" | "neutral";
+  filters: OperationsIssueEventFilters;
 };
 
 const operationsIssueStatusPriority: Record<OperationsIssueStatus, number> = {
@@ -312,17 +322,22 @@ function includesNormalized(value: string | null | undefined, query: string) {
 
 export function filterOperationsIssueEvents(
   events: OperationsIssueEventItem[],
-  filters: OperationsIssueEventFilters
+  filters: OperationsIssueEventFilters,
+  now = new Date()
 ) {
   const status = filters.status && filters.status !== "all" ? filters.status : null;
   const severity = filters.severity && filters.severity !== "all" ? filters.severity : null;
+  const ageLevel = filters.ageLevel && filters.ageLevel !== "all" ? filters.ageLevel : null;
   const assignedToLabel = filters.assignedToLabel?.trim().toLowerCase() ?? "";
   const query = filters.query?.trim().toLowerCase() ?? "";
 
   return events.filter((event) => {
     if (status && event.status !== status) return false;
     if (severity && event.severity !== severity) return false;
-    if (assignedToLabel && !includesNormalized(event.assignedToLabel, assignedToLabel)) return false;
+    if (ageLevel && getOpenOperationsIssueAgeStatus(event, now)?.level !== ageLevel) return false;
+    const filtersUnassigned = assignedToLabel === "__unassigned__" || assignedToLabel === "미지정";
+    if (filtersUnassigned && event.assignedToLabel?.trim()) return false;
+    if (assignedToLabel && !filtersUnassigned && !includesNormalized(event.assignedToLabel, assignedToLabel)) return false;
     if (!query) return true;
 
     return [
@@ -448,6 +463,60 @@ export function summarizeOperationsIssueResolutionOutcomes(
     : null;
 
   return summary;
+}
+
+export function buildOperationsIssueQuickFilterPresets(
+  events: OperationsIssueEventItem[],
+  now = new Date()
+): OperationsIssueQuickFilterPreset[] {
+  const staleOpenCount = events.filter((event) => getOpenOperationsIssueAgeStatus(event, now)?.level === "stale").length;
+  const openBlockerCount = events.filter((event) => event.status === "open" && event.severity === "blocker").length;
+  const unassignedOpenCount = events.filter((event) => event.status === "open" && !event.assignedToLabel?.trim()).length;
+  const resolvedCount = events.filter((event) => event.status === "resolved").length;
+  const ignoredCount = events.filter((event) => event.status === "ignored").length;
+
+  return [
+    {
+      id: "open_blockers",
+      label: "차단 미해결",
+      description: "즉시 처리할 blocker 이슈",
+      count: openBlockerCount,
+      tone: openBlockerCount > 0 ? "warning" : "neutral",
+      filters: { status: "open", severity: "blocker" }
+    },
+    {
+      id: "stale_open",
+      label: "장기 미해결",
+      description: "7일 이상 열린 이슈",
+      count: staleOpenCount,
+      tone: staleOpenCount > 0 ? "warning" : "neutral",
+      filters: { status: "open", ageLevel: "stale" }
+    },
+    {
+      id: "unassigned_open",
+      label: "담당 미지정",
+      description: "담당자 배정이 필요한 이슈",
+      count: unassignedOpenCount,
+      tone: unassignedOpenCount > 0 ? "warning" : "neutral",
+      filters: { status: "open", assignedToLabel: "미지정" }
+    },
+    {
+      id: "resolved",
+      label: "해결됨",
+      description: "처리 완료된 이슈",
+      count: resolvedCount,
+      tone: "success",
+      filters: { status: "resolved" }
+    },
+    {
+      id: "ignored",
+      label: "제외됨",
+      description: "운영 대상에서 제외한 이슈",
+      count: ignoredCount,
+      tone: "neutral",
+      filters: { status: "ignored" }
+    }
+  ];
 }
 
 export function summarizeOpenOperationsIssuesByOwner(
