@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { CountryComboboxField } from "@/features/hs/country-combobox-field";
-import { destinationCountryOptions, exportCountryLabel } from "@/features/export-diagnosis/country-options";
+import { tradeNewsCountryLabel, tradeNewsMatchesCountry } from "@/features/trade-news/trade-news-country-filter";
 import type { TradeNewsDictionary } from "@/lib/i18n";
 import type { TradeNewsCategory, TradeNewsItem } from "@/server/services/trade-news.service";
 
@@ -20,39 +20,6 @@ function formatDate(value: string | null) {
 
 function categoryItems(items: TradeNewsItem[], category: TradeNewsCategory) {
   return items.filter((item) => item.category === category);
-}
-
-function countryNameFromLabel(countryCode: string) {
-  return exportCountryLabel(countryCode).replace(/\s*\([^)]*\)\s*$/, "").trim();
-}
-
-function countryFilterTokens(countryCode: string) {
-  if (countryCode === "ALL") return [];
-  const option = destinationCountryOptions.find((country) => country.code === countryCode || country.alias === countryCode);
-  const countryName = countryNameFromLabel(countryCode);
-
-  return Array.from(new Set([
-    countryName,
-    option?.label,
-    option?.code,
-    option?.alias,
-    countryCode
-  ].filter((value): value is string => Boolean(value && value !== "ALL"))));
-}
-
-function matchesCountry(item: TradeNewsItem, countryCode: string) {
-  if (countryCode === "ALL") return true;
-  const tokens = countryFilterTokens(countryCode);
-  if (!tokens.length) return true;
-
-  const haystack = [
-    item.countryName,
-    item.source,
-    item.title,
-    item.summary
-  ].filter(Boolean).join(" ").toLowerCase();
-
-  return tokens.some((token) => haystack.includes(token.toLowerCase()));
 }
 
 function sourceTypeLabel(type: TradeNewsItem["sourceType"], dictionary: TradeNewsDictionary) {
@@ -120,10 +87,10 @@ function NewsCard({ dictionary, item }: { dictionary: TradeNewsDictionary; item:
 export function TradeNewsPanel({ dictionary, items }: { dictionary: TradeNewsDictionary; items: TradeNewsItem[] }) {
   const [selectedCountry, setSelectedCountry] = useState("ALL");
   const filteredItems = useMemo(
-    () => items.filter((item) => matchesCountry(item, selectedCountry)),
+    () => items.filter((item) => tradeNewsMatchesCountry(item, selectedCountry)),
     [items, selectedCountry]
   );
-  const selectedCountryLabel = selectedCountry === "ALL" ? dictionary.card.allCountries : countryNameFromLabel(selectedCountry);
+  const selectedCountryLabel = selectedCountry === "ALL" ? dictionary.card.allCountries : tradeNewsCountryLabel(selectedCountry);
 
   return (
     <div className="grid gap-5">

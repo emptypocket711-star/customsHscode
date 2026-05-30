@@ -756,3 +756,16 @@
 - `npm test -- server/repositories/background-job.repository.test.ts`
 - `npm run typecheck`
 - `npm run lint`
+
+### 무역 뉴스 국가 필터 보강
+
+- 무역 뉴스 국가 필터 로직을 `features/trade-news/trade-news-country-filter.ts`로 분리했다.
+- KOTRA, WTO, 정부 원문에서 국가명이 영문명, 약칭, EU 표현으로 들어오는 경우도 선택 국가에 매칭되도록 보강했다.
+- 미국 `US` 같은 짧은 약칭이 `customs` 같은 일반 단어 내부에서 오탐되지 않도록 단어 경계 기준으로 매칭한다.
+- EU 회원국을 선택했을 때 유럽연합 관련 기사도 함께 볼 수 있도록 alias 매칭을 유지했다.
+
+검증:
+
+- `npm test -- features/trade-news/trade-news-country-filter.test.ts`
+- `npm run typecheck`
+- `npm run lint`
