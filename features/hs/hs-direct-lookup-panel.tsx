@@ -1,4 +1,4 @@
-import { ChevronDown, ExternalLink, FileText, Folder, Search } from "lucide-react";
+import { CheckCircle2, ChevronDown, ExternalLink, FileText, Folder, Search } from "lucide-react";
 import Link from "next/link";
 import { Fragment } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -890,6 +890,151 @@ function productSearchPresentationState(candidates: HsCandidateRecommendation[],
     description: "입력 품명 기준으로 우선 검토할 HS 방향을 하나로 정리했습니다. 실제 재질, 용도, 구성 확인 후 하위 세번을 검토하세요.",
     questions
   };
+}
+
+type ProductClassificationStep = {
+  title: string;
+  badge: string;
+  description: string;
+  evidence: string[];
+};
+
+function uniqueFormattedCodes(codes: string[]) {
+  return Array.from(new Set(codes.map((code) => normalizeHsInput(code)).filter(Boolean))).map((code) => formatHsCode(code));
+}
+
+function buildProductClassificationSteps({
+  productName,
+  candidates,
+  clarification
+}: {
+  productName: string;
+  candidates: HsCandidateRecommendation[];
+  clarification: ProductClarificationResult | null;
+}): ProductClassificationStep[] {
+  const suggestedCodes = clarification?.suggestedCandidateCodes ?? [];
+  const candidateCodes = candidates.map((candidate) => candidate.hskCode);
+  const hs4Directions = uniqueFormattedCodes([...candidateCodes, ...suggestedCodes].map((code) => normalizeHsInput(code).slice(0, 4)).filter((code) => code.length === 4));
+  const hs6Directions = uniqueFormattedCodes([
+    ...candidates.map((candidate) => candidate.hs6),
+    ...suggestedCodes.map((code) => normalizeHsInput(code).slice(0, 6)).filter((code) => code.length === 6)
+  ]);
+  const topCandidates = candidates.slice(0, 3).map((candidate) => `${formatHsCode(candidate.hskCode)} ${candidate.koreanName}`);
+  const lookupBases = Array.from(new Set(candidates.map(productCandidateLookupBasisLabel)));
+  const missingQuestions = uniqueProductQuestions(candidates, clarification).slice(0, 3);
+
+  return [
+    {
+      title: "1단계. 제품 의미 해석",
+      badge: "품명 분석",
+      description: clarification?.summary || `"${productName}" 입력값에서 제품군, 용도, 재질 단서를 먼저 해석했습니다.`,
+      evidence: missingQuestions.length
+        ? missingQuestions.map((question) => `추가 확인 단서: ${question}`)
+        : ["입력 품명 기준으로 우선 검토할 제품 의미를 정리했습니다."]
+    },
+    {
+      title: "2단계. 류·호 후보 검토",
+      badge: "Chapter/Heading",
+      description: hs4Directions.length || hs6Directions.length
+        ? "제품 의미와 후보 근거를 바탕으로 검토 가능한 HS 류·호 방향을 좁혔습니다."
+        : "아직 류·호 방향을 표시하기에는 제품 정보가 부족합니다.",
+      evidence: [
+        hs4Directions.length ? `HS4 방향: ${hs4Directions.slice(0, 4).join(", ")}` : null,
+        hs6Directions.length ? `HS6 방향: ${hs6Directions.slice(0, 5).join(", ")}` : null,
+        lookupBases.length ? `근거 유형: ${lookupBases.join(", ")}` : null
+      ].filter((item): item is string => Boolean(item))
+    },
+    {
+      title: "3단계. HSK 후보 정리",
+      badge: "후보 산출",
+      description: candidates.length
+        ? `상위 ${candidates.length}개 예비 후보를 정리했습니다. 후보별로 근거와 보완 필요 정보를 함께 확인하세요.`
+        : "표시 가능한 HSK 후보를 만들기 전에 보완 정보가 더 필요합니다.",
+      evidence: topCandidates.length ? topCandidates : ["제품 설명, 사진, 카탈로그, 재질/용도 정보가 보완되면 후보를 다시 좁힐 수 있습니다."]
+    },
+    {
+      title: "4단계. 조회 연결 준비",
+      badge: candidates.length ? "조회 가능" : "보완 후 조회",
+      description: candidates.length
+        ? "선택한 후보를 기준으로 관세율, FTA, 수입요건, 원산지표시 조회로 이어질 수 있습니다."
+        : "보완 정보를 입력한 뒤 다시 검색하면 관세율·수입요건 조회로 연결됩니다.",
+      evidence: candidates.length
+        ? ["후보 카드의 `이 코드로 조회` 또는 `하위 10자리 후보 보기` 버튼으로 상세 조회를 진행하세요."]
+        : ["보완 요청문을 복사해 업체 또는 공급자에게 추가 자료를 요청할 수 있습니다."]
+    }
+  ];
+}
+
+function ProductClassificationFlowPanel({
+  productName,
+  candidates,
+  clarification
+}: {
+  productName: string;
+  candidates: HsCandidateRecommendation[];
+  clarification: ProductClarificationResult | null;
+}) {
+  const steps = buildProductClassificationSteps({ productName, candidates, clarification });
+  const hasCandidates = candidates.length > 0;
+
+  return (
+    <section className="mt-5 overflow-hidden rounded-md border border-blue-200 bg-white">
+      <div className="border-b border-blue-100 bg-blue-50 px-3 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-sm font-semibold text-blue-950">AI HS 분류 검토 흐름</h2>
+              <Badge tone={hasCandidates ? "success" : "warning"}>{hasCandidates ? "예비 분류 완료" : "보완 필요"}</Badge>
+            </div>
+            <p className="mt-1 text-xs leading-5 text-blue-900">
+              AI가 품명을 바로 확정하지 않고 제품 의미, HS 류·호, HSK 후보, 조회 연결 가능성을 순서대로 검토합니다.
+            </p>
+          </div>
+          <div className="rounded-md bg-white px-3 py-2 text-xs font-semibold text-blue-800 ring-1 ring-blue-100">
+            {productName}
+          </div>
+        </div>
+      </div>
+      <div className="grid gap-3 p-3 lg:grid-cols-4">
+        {steps.map((step, index) => (
+          <article className="rounded-md border border-slate-200 bg-slate-50 p-3" key={step.title}>
+            <div className="flex items-center justify-between gap-2">
+              <span className="grid size-7 place-items-center rounded-full bg-blue-700 text-xs font-semibold text-white">{index + 1}</span>
+              <Badge tone="neutral">{step.badge}</Badge>
+            </div>
+            <h3 className="mt-3 text-sm font-semibold text-slate-950">{step.title}</h3>
+            <p className="mt-2 text-xs leading-5 text-slate-600">{step.description}</p>
+            {step.evidence.length ? (
+              <ul className="mt-3 grid gap-1 text-xs leading-5 text-slate-700">
+                {step.evidence.slice(0, 3).map((item) => (
+                  <li className="flex gap-1.5" key={item}>
+                    <span className="mt-2 size-1 shrink-0 rounded-full bg-blue-600" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </article>
+        ))}
+      </div>
+      <div className={cn(
+        "flex flex-wrap items-start gap-2 border-t px-3 py-3 text-sm leading-6",
+        hasCandidates ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-amber-200 bg-amber-50 text-amber-900"
+      )}>
+        <CheckCircle2 aria-hidden="true" className="mt-0.5 shrink-0" size={18} />
+        <div>
+          <p className="font-semibold">
+            {hasCandidates ? "AI 예비 분류가 완료되었습니다." : "AI 예비 분류는 완료됐지만 후보 확정을 위한 정보가 부족합니다."}
+          </p>
+          <p className="text-xs">
+            {hasCandidates
+              ? "아래 후보 중 제품 설명과 가장 가까운 HS CODE를 선택해 관세율과 수입요건을 예비 조회하세요. HSK 확정 전 재확인이 필요합니다."
+              : "아래 보완 항목을 확인한 뒤 품명, 재질, 용도, 모델 정보를 추가해 다시 검색하세요."}
+          </p>
+        </div>
+      </div>
+    </section>
+  );
 }
 
 function productCandidateCopySummaryTexts({
@@ -3357,6 +3502,14 @@ export async function HsDirectLookupPanel({
           </div>
         ) : null}
 
+        {shouldLookupProduct ? (
+          <ProductClassificationFlowPanel
+            candidates={productCandidates}
+            clarification={aiClarification}
+            productName={searchQuery}
+          />
+        ) : null}
+
         {shouldLookupProduct && productCandidates.length === 0 ? (
           <ProductNoResultPanel
             basisDate={resolvedBasisDate}
@@ -3491,7 +3644,7 @@ export async function HsDirectLookupPanel({
                       data-navigation-progress="상세조회"
                       href={detailHref}
                     >
-                      {productCandidateDetailButtonText(candidate)}
+                      {normalizeHsInput(candidate.hskCode).length >= 10 ? "이 코드로 조회" : productCandidateDetailButtonText(candidate)}
                     </Link>
                   </article>
                 );
