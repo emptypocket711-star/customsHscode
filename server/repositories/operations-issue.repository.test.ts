@@ -5,6 +5,7 @@ import {
   filterOperationsIssueEvents,
   getOpenOperationsIssueAgeStatus,
   getOperationsIssueStatusChangeSummary,
+  isUnassignedOperationsIssueOwnerFilter,
   operationsIssueFiltersMatch,
   sortOperationsIssueEventsForTriage,
   summarizeOpenOperationsIssuesByOwner,
@@ -128,6 +129,13 @@ describe("operations issue repository helpers", () => {
       ageLevel: "stale",
       assignedToLabel: "미지정"
     }, now).map((event) => event.id)).toEqual(["stale-unassigned"]);
+  });
+
+  it("recognizes supported unassigned owner filter values", () => {
+    expect(isUnassignedOperationsIssueOwnerFilter("미지정")).toBe(true);
+    expect(isUnassignedOperationsIssueOwnerFilter(" __unassigned__ ")).toBe(true);
+    expect(isUnassignedOperationsIssueOwnerFilter("김운영")).toBe(false);
+    expect(isUnassignedOperationsIssueOwnerFilter(null)).toBe(false);
   });
 
   it("summarizes open operations issues by owner workload", () => {

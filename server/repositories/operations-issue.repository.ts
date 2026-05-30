@@ -338,6 +338,12 @@ function includesNormalized(value: string | null | undefined, query: string) {
   return Boolean(value?.toLowerCase().includes(query));
 }
 
+export function isUnassignedOperationsIssueOwnerFilter(value: string | null | undefined) {
+  const normalizedValue = value?.trim().toLowerCase();
+
+  return normalizedValue === "__unassigned__" || normalizedValue === "미지정";
+}
+
 export function filterOperationsIssueEvents(
   events: OperationsIssueEventItem[],
   filters: OperationsIssueEventFilters,
@@ -353,7 +359,7 @@ export function filterOperationsIssueEvents(
     if (status && event.status !== status) return false;
     if (severity && event.severity !== severity) return false;
     if (ageLevel && getOpenOperationsIssueAgeStatus(event, now)?.level !== ageLevel) return false;
-    const filtersUnassigned = assignedToLabel === "__unassigned__" || assignedToLabel === "미지정";
+    const filtersUnassigned = isUnassignedOperationsIssueOwnerFilter(assignedToLabel);
     if (filtersUnassigned && event.assignedToLabel?.trim()) return false;
     if (assignedToLabel && !filtersUnassigned && !includesNormalized(event.assignedToLabel, assignedToLabel)) return false;
     if (!query) return true;
