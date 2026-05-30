@@ -13,7 +13,10 @@ import {
 
 const operationsIssueStatusSchema = z.object({
   issueId: z.uuid(),
-  status: z.enum(["open", "resolved", "ignored"])
+  status: z.enum(["open", "resolved", "ignored"]),
+  assignedToLabel: z.string().trim().max(120).optional(),
+  operatorNote: z.string().trim().max(1000).optional(),
+  resolutionReason: z.string().trim().max(1000).optional()
 });
 
 function stringValue(formData: FormData, key: string) {
@@ -48,17 +51,24 @@ export async function updateOperationsIssueStatusAction(formData: FormData) {
   const actor = await requireCurrentDeveloper();
   const parsed = operationsIssueStatusSchema.parse({
     issueId: stringValue(formData, "issueId"),
-    status: stringValue(formData, "status")
+    status: stringValue(formData, "status"),
+    assignedToLabel: stringValue(formData, "assignedToLabel"),
+    operatorNote: stringValue(formData, "operatorNote"),
+    resolutionReason: stringValue(formData, "resolutionReason")
   });
   const admin = createSupabaseServiceRoleClient();
   const { data: beforeIssue } = await admin
     .from("operations_issue_events")
-    .select("id,issue_key,status,severity,title,occurrence_count,resolved_at")
+    .select("id,issue_key,status,severity,title,occurrence_count,resolved_at,assigned_to_label,operator_note,resolution_reason,status_updated_by,status_updated_at")
     .eq("id", parsed.issueId)
     .maybeSingle();
   const updated = await updateOperationsIssueStatus(admin, {
     issueId: parsed.issueId,
-    status: parsed.status as OperationsIssueStatus
+    status: parsed.status as OperationsIssueStatus,
+    assignedToLabel: parsed.assignedToLabel || null,
+    operatorNote: parsed.operatorNote || null,
+    resolutionReason: parsed.resolutionReason || null,
+    statusUpdatedBy: actor.id
   });
 
   await recordAuditLog({
@@ -70,7 +80,12 @@ export async function updateOperationsIssueStatusAction(formData: FormData) {
     after: {
       issueKey: updated.issueKey,
       status: updated.status,
-      resolvedAt: updated.resolvedAt
+      resolvedAt: updated.resolvedAt,
+      assignedToLabel: updated.assignedToLabel,
+      operatorNote: updated.operatorNote,
+      resolutionReason: updated.resolutionReason,
+      statusUpdatedBy: updated.statusUpdatedBy,
+      statusUpdatedAt: updated.statusUpdatedAt
     }
   });
 

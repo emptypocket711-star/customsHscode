@@ -193,9 +193,15 @@
   - `npm run ops:job:operations-issues` 실행 결과 scannedEvents 0, recurringIssues 0, syncedIssues 0건, alerts 0건을 확인했다.
   - `npm run ops:job:operations-issues-rehearsal` 실행 결과 synthetic telemetry 3건, recurringIssues 1건, 운영 이슈 occurrenceCount 3건, resolved/open 상태 변경, cleanup true를 확인했다.
   - `npm run ops:job:operations-retention` 실행 결과 운영 알림 이력 deletedCount 0, background job history deletedRuns 0/deletedJobs 0, 운영 이슈 deletedCount 0을 확인했다.
+- 운영 이슈 담당자/메모/처리 사유를 추가했다.
+  - `operations_issue_events`에 담당자 표시명, 운영 메모, 처리 사유, 상태 변경자, 상태 변경 시각 컬럼을 추가했다.
+  - 운영 점검 화면의 운영 이슈 처리 폼에서 담당자, 메모, 처리 사유를 함께 입력한 뒤 해결, 제외, 다시 열기를 수행할 수 있게 했다.
+  - 상태 변경 server action은 개발자 권한과 service-role update 흐름을 유지하고, 변경 전후 담당자/메모/처리 사유를 `audit_logs`에 남긴다.
+  - RLS는 기존 staff read, service-role write/update 정책을 유지한다.
 
 검증:
 
+- `npm test -- server/repositories/operations-issue.repository.test.ts server/operations/operations-issue-alert.service.test.ts`
 - `npm test -- server/operations/operations-issue-alert.service.test.ts server/operations/background-job-alert.service.test.ts`
 - `npm test -- server/observability/lookup-telemetry.test.ts`
 - `npm test -- server/observability/lookup-telemetry.test.ts server/repositories/operations-issue.repository.test.ts`

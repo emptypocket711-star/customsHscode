@@ -70,7 +70,7 @@ npm run health:db
 - 일자별 무결과/GPT 실패/HS6 예비 후보 요약
 - route별 실패율과 평균/최대 응답시간
 - 운영 이슈 처리 상태: 반복 조회 품질 이슈가 `operations_issue_events`에 저장되고 미해결/해결/제외 상태로 표시되는지 확인
-- 운영 이슈 처리 액션: 개발자 계정에서 해결, 제외, 다시 열기 버튼이 동작하고 audit log가 남는지 확인
+- 운영 이슈 처리 액션: 개발자 계정에서 담당자, 메모, 처리 사유와 함께 해결, 제외, 다시 열기 버튼이 동작하고 audit log가 남는지 확인
 
 `LOOKUP_TELEMETRY_ENABLED=true`와 `SUPABASE_SERVICE_ROLE_KEY`가 설정되어야 조회 품질 로그가 저장된다.
 로그에는 원문 품명, 이메일, 문서 내용, prompt, API key를 저장하지 않는다.
@@ -82,6 +82,8 @@ vercel env run -e production -- npm run ops:job:operations-issues
 ```
 
 새 미해결 운영 이슈는 `operations_alert_events`에 `operations_issue_open` 알림 이력으로 기록된다. `OPERATIONS_ALERT_THROTTLE_MINUTES` 기준으로 같은 이슈 키의 중복 알림은 생략된다.
+
+담당자, 운영 메모, 처리 사유는 `operations_issue_events` row에 저장된다. 상태 변경은 service-role server action에서만 수행하고, 변경 전후 상태와 메모는 `audit_logs`에 남긴다.
 
 해결·제외 처리된 운영 이슈는 `operations-retention` job이 `OPERATIONS_ISSUE_RETENTION_DAYS` 기준으로 정리한다. 미해결 이슈는 정리 대상에서 제외된다.
 
