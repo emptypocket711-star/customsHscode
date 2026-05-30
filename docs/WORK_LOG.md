@@ -39,6 +39,12 @@
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
   - Vercel `BACKGROUND_JOBS_ENABLED`를 production/preview에서 `true`로 갱신하고 production을 재배포했다.
   - `https://hsfinder.co.kr/api/jobs/run` 수동 실행 결과 200 OK, claimed 0건을 확인했다.
+- 운영 E2E:
+  - 일회성 테스트 계정으로 로그인 후 `/hs/batch`에서 82행 입력을 제출해 `hs_batch_lookup` 큐 등록을 확인했다.
+  - `/api/jobs/run` 수동 실행 결과 해당 job 1건이 claimed/succeeded 처리되었다.
+  - 처리 결과 요약: 총 82행, 성공 55행, 확인 필요 27행, 오류 0행.
+  - `/hs/batch` 최근 백그라운드 조회 섹션에서 82행 작업과 XLSX 다운로드 버튼 노출을 확인했다.
+  - 검증 후 테스트 계정, profile/company, background job 데이터를 삭제했다.
 
 검증:
 
@@ -50,6 +56,7 @@
 - `npm run lint`
 - `npm run build`
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
+- 운영 E2E: 임시 계정 기반 82행 큐 등록 → worker 처리 → 결과 UI/XLSX 버튼 확인
 
 ## 2026-05-29
 
