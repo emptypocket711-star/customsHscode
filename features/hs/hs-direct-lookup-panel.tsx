@@ -824,6 +824,28 @@ function productCandidateEvidenceText(candidate: HsCandidateRecommendation) {
     : "입력 품명과 제품 단서를 기준으로 구성한 HS 후보입니다";
 }
 
+function productCandidateRouteSummary(candidate: HsCandidateRecommendation, lookup?: HsDirectLookupResult) {
+  const hierarchy = productCandidateHierarchyNodes(candidate, lookup);
+  const hs4 = hierarchy.find((node) => node.level === 4);
+  const hs6 = hierarchy.find((node) => node.level === 6);
+  const current = hierarchy[hierarchy.length - 1];
+
+  return [
+    hs4 ? `호 검토: ${formatHsCode(hs4.code)} ${hs4.label}` : null,
+    hs6 ? `소호 검토: ${formatHsCode(hs6.code)} ${hs6.label}` : null,
+    current ? `후보 정리: ${formatHsCode(candidate.hskCode)} ${candidate.koreanName}` : null
+  ].filter((item): item is string => Boolean(item));
+}
+
+function productCandidateBranchNotes(candidate: HsCandidateRecommendation) {
+  const notes = [
+    ...candidate.requiredQuestions,
+    candidate.riskNotes
+  ].map((note) => note.trim()).filter(Boolean);
+
+  return Array.from(new Set(notes)).slice(0, 4);
+}
+
 function productCandidateCodeLevelLabel(candidate: HsCandidateRecommendation) {
   const codeLength = normalizeHsInput(candidate.hskCode).length;
   if (codeLength >= 10) return "10자리 후보";
@@ -3560,6 +3582,8 @@ export async function HsDirectLookupPanel({
               {productCandidates.map((candidate, index) => {
                 const lookup = productCandidateLookupByHsk.get(candidate.hskCode);
                 const hierarchyLines = productCandidateHierarchyLines(candidate, lookup);
+                const routeSummary = productCandidateRouteSummary(candidate, lookup);
+                const branchNotes = productCandidateBranchNotes(candidate);
                 const detailHref = hsLookupHref({
                   hskCode: candidate.hskCode,
                   direction: lookupDirection,
@@ -3602,30 +3626,48 @@ export async function HsDirectLookupPanel({
                     <h3 className="mt-3 text-base font-semibold text-slate-950">{candidate.koreanName}</h3>
                     <p className="mt-1 text-sm leading-6 text-slate-600">{candidate.reason}</p>
 
-                    <div className="mt-3 grid gap-2 rounded-md border border-slate-100 bg-slate-50 p-3">
-                      <div className="flex flex-wrap items-center gap-2 text-sm">
-                        <span className="text-xs font-semibold text-slate-500">{dictionary.product.hs6}</span>
-                        <Link className="font-mono font-semibold text-blue-700 underline-offset-2 hover:underline" data-navigation-progress="상세조회" href={hs6Href}>
-                          {formatHsCode(candidate.hs6)}
-                        </Link>
+                    <div className="mt-3 grid gap-3 rounded-md border border-blue-100 bg-blue-50 p-3">
+                      <div>
+                        <div className="text-xs font-semibold text-blue-900">AI 검토 경로</div>
+                        <ol className="mt-2 grid gap-1 text-xs leading-5 text-blue-950">
+                          {routeSummary.map((line, stepIndex) => (
+                            <li className="flex gap-2" key={line}>
+                              <span className="font-mono font-semibold text-blue-700">{stepIndex + 1}</span>
+                              <span>{line}</span>
+                            </li>
+                          ))}
+                        </ol>
                       </div>
-                      <div className="grid gap-1 text-xs leading-5 text-slate-600">
-                        {hierarchyLines.map((line) => (
-                          <div key={line}>{line}</div>
-                        ))}
+                      <div>
+                        <div className="text-xs font-semibold text-blue-900">선택 후 조회</div>
+                        <p className="mt-1 text-xs leading-5 text-blue-950">
+                          이 후보를 선택하면 기준일 {candidate.basisDate}의 관세율, FTA, 수입요건, 원산지표시 정보를 예비 조회합니다.
+                        </p>
                       </div>
                     </div>
 
-                    <div className="mt-3 grid gap-2 text-sm">
-                      <div>
+                    <div className="mt-3 grid gap-3 text-sm lg:grid-cols-2">
+                      <div className="rounded-md border border-slate-100 bg-slate-50 p-3">
                         <div className="text-xs font-semibold text-slate-500">{dictionary.product.evidence}</div>
                         <p className="mt-1 leading-6 text-slate-700">{productCandidateEvidenceText(candidate)}</p>
+                        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+                          <span className="text-xs font-semibold text-slate-500">{dictionary.product.hs6}</span>
+                          <Link className="font-mono font-semibold text-blue-700 underline-offset-2 hover:underline" data-navigation-progress="상세조회" href={hs6Href}>
+                            {formatHsCode(candidate.hs6)}
+                          </Link>
+                        </div>
+                        <div className="mt-2 grid gap-1 text-xs leading-5 text-slate-600">
+                          {hierarchyLines.map((line) => (
+                            <div key={line}>{line}</div>
+                          ))}
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-xs font-semibold text-slate-500">{dictionary.product.missingFacts}</div>
-                        {candidate.requiredQuestions.length ? (
+
+                      <div className="rounded-md border border-amber-100 bg-amber-50 p-3">
+                        <div className="text-xs font-semibold text-amber-900">갈림 조건</div>
+                        {branchNotes.length ? (
                           <ul className="mt-1 grid gap-1 leading-6 text-slate-700">
-                            {candidate.requiredQuestions.slice(0, 3).map((question) => (
+                            {branchNotes.map((question) => (
                               <li key={question}>- {question}</li>
                             ))}
                           </ul>
