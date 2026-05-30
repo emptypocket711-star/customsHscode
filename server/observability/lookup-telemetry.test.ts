@@ -4,6 +4,7 @@ import {
   classifyLookupTelemetryBucket,
   classifyLookupTelemetryIssue,
   lookupTelemetryIssueAction,
+  summarizeRecurringLookupTelemetryIssues,
   summarizeLookupTelemetryBuckets,
   summarizeLookupTelemetryDiagnostics,
   type LookupTelemetryEvent
@@ -185,6 +186,49 @@ describe("lookup telemetry", () => {
       expect.objectContaining({ key: "gpt", count: 1, issueCount: 1 }),
       expect.objectContaining({ key: "hs6_only", count: 1, issueCount: 1 }),
       expect.objectContaining({ key: "normal", count: 1, issueCount: 0 })
+    ]);
+  });
+
+  it("promotes recurring lookup telemetry issues by bucket", () => {
+    const recurring = summarizeRecurringLookupTelemetryIssues([
+      telemetryEvent({
+        id: "event-1",
+        route: "/hs/product-recommendation",
+        payload: { normalizationStatus: "failed", normalizationErrorType: "TimeoutError" },
+        resultCount: 1,
+        createdAt: "2026-05-29T00:00:00.000Z"
+      }),
+      telemetryEvent({
+        id: "event-2",
+        route: "/hs/product-recommendation",
+        eventType: "product_search_normalized",
+        resultCount: null,
+        payload: { candidateCount: 0 },
+        createdAt: "2026-05-29T01:00:00.000Z"
+      }),
+      telemetryEvent({
+        id: "event-3",
+        route: "/hs/batch",
+        payload: { hasNormalization: true, normalizationCandidateCount: 1, aiHintCount: 0, officialCandidateCount: 0 },
+        createdAt: "2026-05-29T02:00:00.000Z"
+      }),
+      telemetryEvent({
+        id: "event-4",
+        route: "/hs/product-recommendation",
+        resultCount: 2,
+        payload: {},
+        createdAt: "2026-05-29T03:00:00.000Z"
+      })
+    ], 2);
+
+    expect(recurring).toEqual([
+      expect.objectContaining({
+        key: "gpt",
+        issueCount: 3,
+        latestAt: "2026-05-29T02:00:00.000Z",
+        routes: ["/hs/product-recommendation", "/hs/batch"],
+        diagnoses: ["GPT 호출 실패", "GPT 후보 없음", "GPT 후보 후처리 확인"]
+      })
     ]);
   });
 });

@@ -266,6 +266,51 @@ export function summarizeLookupTelemetryBuckets(events: LookupTelemetryEvent[]):
     .filter((summary) => summary.count > 0);
 }
 
+export type RecurringLookupTelemetryIssue = LookupTelemetryBucket & {
+  issueCount: number;
+  latestAt: string;
+  routes: string[];
+  diagnoses: string[];
+};
+
+export function summarizeRecurringLookupTelemetryIssues(
+  events: LookupTelemetryEvent[],
+  threshold = 3
+): RecurringLookupTelemetryIssue[] {
+  const minimum = Math.max(1, Math.floor(threshold));
+  const summaries = new Map<LookupTelemetryBucketKey, RecurringLookupTelemetryIssue>();
+
+  for (const event of events) {
+    if (!isLookupTelemetryIssue(event)) continue;
+
+    const bucket = classifyLookupTelemetryBucket(event);
+    const diagnosis = classifyLookupTelemetryIssue(event);
+    const route = event.route ?? event.eventType;
+    const current = summaries.get(bucket.key) ?? {
+      ...bucket,
+      issueCount: 0,
+      latestAt: event.createdAt,
+      routes: [],
+      diagnoses: []
+    };
+
+    current.issueCount += 1;
+    if (new Date(event.createdAt).getTime() > new Date(current.latestAt).getTime()) {
+      current.latestAt = event.createdAt;
+    }
+    if (!current.routes.includes(route)) current.routes.push(route);
+    if (!current.diagnoses.includes(diagnosis)) current.diagnoses.push(diagnosis);
+    summaries.set(bucket.key, current);
+  }
+
+  return [...summaries.values()]
+    .filter((summary) => summary.issueCount >= minimum)
+    .sort((a, b) => {
+      if (b.issueCount !== a.issueCount) return b.issueCount - a.issueCount;
+      return new Date(b.latestAt).getTime() - new Date(a.latestAt).getTime();
+    });
+}
+
 export type LookupTelemetryDiagnosisSummary = {
   diagnosis: string;
   count: number;

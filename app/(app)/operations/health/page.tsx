@@ -30,6 +30,7 @@ import {
   classifyLookupTelemetryIssue,
   isLookupTelemetryIssue,
   listRecentLookupTelemetryEvents,
+  summarizeRecurringLookupTelemetryIssues,
   summarizeLookupTelemetryBuckets,
   summarizeLookupTelemetryDiagnostics,
   type LookupTelemetryEvent
@@ -411,6 +412,7 @@ export default async function OperationsHealthPage() {
   const lookupIssueSummary = lookupDiagnosisSummary.filter((item) => item.issueCount > 0).slice(0, 4);
   const lookupDailySummary = summarizeLookupTelemetryByDay(lookupTelemetryEvents);
   const lookupRouteSummary = summarizeLookupTelemetryByRoute(lookupTelemetryEvents);
+  const recurringLookupIssues = summarizeRecurringLookupTelemetryIssues(lookupTelemetryEvents, 3);
   const priorityLookupEvents = lookupTelemetryEvents.filter(isLookupTelemetryIssue).slice(0, 8);
   const normalLookupSamples = lookupTelemetryEvents.filter((event) => !isLookupTelemetryIssue(event)).slice(0, 3);
   const backgroundJobSummary = summarizeBackgroundJobOperations(backgroundJobs);
@@ -465,8 +467,10 @@ export default async function OperationsHealthPage() {
     },
     {
       label: "조회 품질",
-      value: `${lookupIssueCount}건 점검`,
-      detail: `정상 ${lookupSuccessCount}건 / 무결과 ${zeroResultCount}건`,
+      value: recurringLookupIssues.length ? `반복 ${recurringLookupIssues.length}개` : `${lookupIssueCount}건 점검`,
+      detail: recurringLookupIssues.length
+        ? `최다 ${recurringLookupIssues[0].label} ${recurringLookupIssues[0].issueCount}건`
+        : `정상 ${lookupSuccessCount}건 / 무결과 ${zeroResultCount}건`,
       tone: lookupIssueCount > 0 ? "warning" : "success"
     }
   ] satisfies Array<{
@@ -958,6 +962,36 @@ export default async function OperationsHealthPage() {
                   <p className="mt-1 font-semibold text-slate-950">{zeroResultCount}건</p>
                 </div>
               </div>
+              {recurringLookupIssues.length ? (
+                <div className="border-b border-amber-200 bg-amber-50 p-3">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="text-xs font-semibold text-amber-900">반복 이슈 개선 큐 후보</p>
+                      <p className="mt-1 text-xs text-amber-800">최근 로그에서 같은 분류가 3회 이상 반복된 항목입니다.</p>
+                    </div>
+                    <Badge tone="warning">{recurringLookupIssues.length}개 분류</Badge>
+                  </div>
+                  <div className="grid gap-2 lg:grid-cols-2">
+                    {recurringLookupIssues.map((issue) => (
+                      <div className="rounded-md border border-amber-200 bg-white px-3 py-3 text-sm" key={issue.key}>
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div>
+                            <p className="font-semibold text-slate-950">{issue.label}</p>
+                            <p className="mt-1 text-xs text-slate-500">최근 발생 {formatDate(issue.latestAt)}</p>
+                          </div>
+                          <Badge tone="warning">{issue.issueCount}건</Badge>
+                        </div>
+                        <p className="mt-2 text-xs leading-5 text-slate-600">
+                          진단: {issue.diagnoses.join(", ")}
+                          <br />
+                          경로: {issue.routes.join(", ")}
+                        </p>
+                        <p className="mt-2 text-xs leading-5 text-amber-900">{issue.action}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
               {lookupBucketSummary.length ? (
                 <div className="border-b border-slate-200 bg-white p-3">
                   <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
