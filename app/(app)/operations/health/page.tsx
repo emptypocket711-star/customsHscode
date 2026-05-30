@@ -1189,6 +1189,54 @@ export default async function OperationsHealthPage({
               <p className="mt-1 font-semibold text-slate-950">{operationsIssueSummary.latestIssueAt ? formatDate(operationsIssueSummary.latestIssueAt) : "-"}</p>
             </div>
           </div>
+          <div className="border-b border-slate-200 bg-white p-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-sm font-semibold text-slate-950">운영 판단 흐름</p>
+                <p className="mt-1 text-xs text-slate-500">우선 확인, 담당 분배, 목록 좁히기 순서로 처리 대상을 정합니다.</p>
+              </div>
+              <Badge tone={operationsIssueSummary.open > 0 ? "warning" : "success"}>
+                {operationsIssueSummary.open > 0 ? "조치 필요" : "미해결 없음"}
+              </Badge>
+            </div>
+            <div className="grid gap-2 md:grid-cols-3">
+              <div className={operationsIssueTriageFocus
+                ? "rounded-md border border-amber-200 bg-amber-50 px-3 py-2"
+                : "rounded-md border border-emerald-100 bg-emerald-50 px-3 py-2"}
+              >
+                <p className={operationsIssueTriageFocus
+                  ? "text-xs font-semibold text-amber-800"
+                  : "text-xs font-semibold text-emerald-800"}
+                >
+                  1. 우선 확인
+                </p>
+                <p className="mt-1 break-words text-sm font-semibold text-slate-950">
+                  {operationsIssueTriageFocus ? operationsIssueTriageFocus.reasonLabel : "대상 없음"}
+                </p>
+                <p className="mt-1 break-words text-xs leading-5 text-slate-600">
+                  {operationsIssueTriageFocus
+                    ? operationsIssueTriageFocus.actionLabel
+                    : "현재 필터 기준 미해결 운영 이슈가 없습니다."}
+                </p>
+              </div>
+              <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+                <p className="text-xs font-semibold text-slate-600">2. 담당 분배</p>
+                <p className="mt-1 text-sm font-semibold text-slate-950">담당 {operationsIssueOwnerSummary.length}명</p>
+                <p className="mt-1 text-xs leading-5 text-slate-600">
+                  차단 담당 {operationsIssueOwnerSummary.filter((item) => item.blocker > 0).length}명 · 미지정 {operationsIssueOwnerSummary.some((item) => item.assignedToLabel === "미지정") ? "있음" : "없음"}
+                </p>
+              </div>
+              <div className="rounded-md border border-blue-100 bg-blue-50 px-3 py-2">
+                <p className="text-xs font-semibold text-blue-800">3. 목록 좁히기</p>
+                <p className="mt-1 text-sm font-semibold text-blue-950">
+                  표시 {filteredOperationsIssueSummary.total}건
+                </p>
+                <p className="mt-1 text-xs leading-5 text-blue-900">
+                  {hasOperationsIssueFilters ? "필터 적용 중입니다. 결과 요약과 우선 확인 카드를 먼저 확인합니다." : "빠른 필터 또는 상세 필터로 처리 대상을 좁힙니다."}
+                </p>
+              </div>
+            </div>
+          </div>
           {operationsIssueResolutionSummary.closed > 0 ? (
             <div className="border-b border-slate-200 bg-white p-4">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -1228,7 +1276,7 @@ export default async function OperationsHealthPage({
             <div className="border-b border-slate-200 bg-white p-4">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <p className="text-sm font-semibold text-slate-950">담당자별 미해결 요약</p>
+                  <p className="text-sm font-semibold text-slate-950">2. 담당자별 미해결 분배</p>
                   <p className="mt-1 text-xs text-slate-500">미해결 운영 이슈를 담당자 기준으로 묶어 우선 확인 대상을 표시합니다.</p>
                 </div>
                 <Badge tone={operationsIssueOwnerSummary.some((item) => item.blocker > 0) ? "warning" : "neutral"}>담당 {operationsIssueOwnerSummary.length}명</Badge>
@@ -1273,7 +1321,7 @@ export default async function OperationsHealthPage({
           <div className="border-b border-slate-200 bg-white p-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <div>
-                <p className="text-sm font-semibold text-slate-950">빠른 필터</p>
+                <p className="text-sm font-semibold text-slate-950">3. 빠른 필터로 목록 좁히기</p>
                 <p className="mt-1 text-xs text-slate-500">운영자가 자주 보는 처리 대상을 바로 좁혀 봅니다.</p>
               </div>
               {hasOperationsIssueFilters ? (
@@ -1304,7 +1352,7 @@ export default async function OperationsHealthPage({
           </div>
           <form className="grid gap-3 border-b border-slate-200 bg-white p-4 text-sm lg:grid-cols-[1fr_1fr_1fr_1fr_1.5fr_auto]" action="/operations/health#issue-events">
             <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 lg:col-span-6">
-              <p className="text-xs font-semibold text-slate-500">현재 필터</p>
+              <p className="text-xs font-semibold text-slate-500">4. 현재 목록 기준</p>
               {operationsIssueActiveFilterLabels.length ? (
                 <div className="mt-2 flex flex-wrap gap-2">
                   {operationsIssueActiveFilterLabels.map((filter) => (
