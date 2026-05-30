@@ -294,6 +294,16 @@ function operationsIssueFilterHref(filters: OperationsIssueEventFilters) {
   return query ? `/operations/health?${query}#issue-events` : "/operations/health#issue-events";
 }
 
+function operationsIssueFilterHrefWithout(
+  filters: OperationsIssueEventFilters,
+  key: "status" | "severity" | "ageLevel" | "assignedToLabel" | "query"
+) {
+  return operationsIssueFilterHref({
+    ...filters,
+    [key]: key === "status" || key === "severity" || key === "ageLevel" ? "all" : ""
+  });
+}
+
 function operationsIssueQuickFilterClassName(preset: OperationsIssueQuickFilterPreset) {
   if (preset.tone === "warning") {
     return "rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-left transition hover:bg-amber-100";
@@ -1251,10 +1261,16 @@ export default async function OperationsHealthPage({
               {operationsIssueActiveFilterLabels.length ? (
                 <div className="mt-2 flex flex-wrap gap-2">
                   {operationsIssueActiveFilterLabels.map((filter) => (
-                    <span className="rounded-md border border-blue-100 bg-white px-2 py-1 text-xs font-semibold text-blue-800" key={filter.key}>
-                      {filter.label}
+                    <span className="inline-flex items-center gap-2 rounded-md border border-blue-100 bg-white px-2 py-1 text-xs font-semibold text-blue-800" key={filter.key}>
+                      <span>{filter.label}</span>
+                      <a className="text-slate-500 underline-offset-2 hover:text-blue-800 hover:underline" href={operationsIssueFilterHrefWithout(issueFilters, filter.key)}>
+                        해제
+                      </a>
                     </span>
                   ))}
+                  <a className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700 underline-offset-2 hover:bg-slate-100 hover:underline" href="/operations/health#issue-events">
+                    전체 초기화
+                  </a>
                 </div>
               ) : (
                 <p className="mt-1 text-xs text-slate-600">전체 운영 이슈를 우선순위순으로 표시합니다.</p>
