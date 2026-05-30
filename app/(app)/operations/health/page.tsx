@@ -74,42 +74,49 @@ const operationsManualCommands = [
   {
     label: "worker 즉시 실행",
     command: "vercel env run -e production -- npm run ops:job:background",
+    useWhen: "대기 중인 백그라운드 작업을 cron 전 즉시 처리해야 할 때 사용합니다.",
     purpose: "대기 중인 document_extraction, hs_batch_lookup 백그라운드 작업을 즉시 처리합니다.",
     expected: "claimed, outcomes, alert 결과가 JSON으로 표시됩니다."
   },
   {
     label: "worker 실패 알림 리허설",
     command: "vercel env run -e production -- npm run ops:job:background-failure-rehearsal",
+    useWhen: "운영 실패 알림 메일과 run 이력 저장 경로를 배포 후 확인할 때 사용합니다.",
     purpose: "임시 실패 job으로 실패 처리, run 이력, 운영 메일 알림 경로를 검증합니다.",
     expected: "alert.sent가 true이고 임시 job은 스크립트가 삭제합니다."
   },
   {
     label: "운영 이력 정리",
     command: "vercel env run -e production -- npm run ops:job:operations-retention",
+    useWhen: "보존 상태 카드의 정리 후보가 누적되었거나 정리 cron을 수동 확인할 때 사용합니다.",
     purpose: "운영 알림 이력, worker 실행 이력, 완료된 background job 이력을 보존 기간 기준으로 정리합니다.",
     expected: "deletedCount, deletedRuns, deletedJobs가 JSON으로 표시됩니다."
   },
   {
     label: "운영 이슈 동기화",
     command: "vercel env run -e production -- npm run ops:job:operations-issues",
+    useWhen: "운영 이슈 목록이 0건이거나 최근 반복 조회 품질 이슈를 즉시 반영해야 할 때 사용합니다.",
     purpose: "반복 조회 품질 이슈를 operations issue로 저장해 처리 상태를 추적합니다.",
     expected: "scannedEvents, recurringIssues, syncedIssues가 JSON으로 표시됩니다."
   },
   {
     label: "운영 이슈 리허설",
     command: "vercel env run -e production -- npm run ops:job:operations-issues-rehearsal",
+    useWhen: "원문 없는 synthetic 데이터로 운영 이슈 생성, 상태 변경, cleanup 경로를 검증할 때 사용합니다.",
     purpose: "원문 없는 synthetic telemetry로 반복 이슈 생성, 상태 변경, cleanup 경로를 검증합니다.",
     expected: "ok가 true이고 cleanupOk 값들이 true로 표시됩니다."
   },
   {
     label: "운영 스키마 점검",
     command: "vercel env run -e production -- npm run health:db",
+    useWhen: "migration 반영 후 production Supabase schema drift 여부를 확인할 때 사용합니다.",
     purpose: "현재 migration 파일 기준으로 production Supabase schema drift를 확인합니다.",
     expected: "Issues 0 blocker, 0 warning이면 정상입니다."
   },
   {
     label: "production smoke",
     command: "SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production",
+    useWhen: "배포 후 실제 도메인의 로그인 보호와 주요 route 응답을 확인할 때 사용합니다.",
     purpose: "로그인 보호와 주요 route 응답 상태를 빠르게 확인합니다.",
     expected: "summary total=10 success=10 failed=0이면 정상입니다."
   }
@@ -854,6 +861,9 @@ export default async function OperationsHealthPage({
                   </div>
                   <Badge tone="neutral">수동</Badge>
                 </div>
+                <p className="mt-3 rounded-md border border-blue-100 bg-blue-50 px-2 py-1.5 text-xs leading-5 text-blue-900">
+                  실행 시점: {item.useWhen}
+                </p>
                 <pre className="mt-3 overflow-x-auto rounded-md bg-slate-950 px-3 py-2 text-xs leading-5 text-slate-50">
                   <code>{item.command}</code>
                 </pre>
@@ -1679,6 +1689,11 @@ export default async function OperationsHealthPage({
                   </div>
                   <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600">
                     수동 확인이 필요하면 운영 명령 `vercel env run -e production -- npm run ops:job:operations-issues`를 실행한 뒤 이 화면을 다시 확인합니다.
+                  </div>
+                  <div>
+                    <a className="inline-flex rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800 transition hover:bg-blue-100" href="#manual-commands">
+                      운영 이슈 동기화 명령 보기
+                    </a>
                   </div>
                 </>
               )}
