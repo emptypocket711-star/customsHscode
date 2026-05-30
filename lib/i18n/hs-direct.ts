@@ -215,10 +215,10 @@ const dictionaries = {
     },
     product: {
       detailLookup: "이 후보로 상세 예비조회",
-      evidence: "예비 후보 근거",
+      evidence: "추천 근거",
       hs6: "HS6",
       missingFacts: "보완 필요 정보",
-      productResult: "품명 기반 HS 예비 후보",
+      productResult: "품명 기반 HS CODE 추천 결과",
       rank: (rank: number) => `후보 ${rank}`,
       referenceScore: (score: number) => `참고도 ${(score * 100).toFixed(0)}%`
     },
