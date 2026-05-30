@@ -7,7 +7,7 @@ import { CountryComboboxField } from "@/features/hs/country-combobox-field";
 import { formatHsCode, normalizeHsCode } from "@/lib/hs-code";
 import { lookupHsBatchAction } from "@/server/actions/hs-batch.actions";
 import type { HsBatchInputRow, HsBatchLookupActionState, HsBatchResultRow } from "./schemas";
-import { parseDelimitedText, rowsFromMatrix } from "./input-parser";
+import { parseDelimitedInput, parseDelimitedText, parseMatrix, type HsBatchParseResult } from "./input-parser";
 
 const initialState: HsBatchLookupActionState = { status: "idle" };
 
@@ -257,6 +257,16 @@ function statusBadgeClass(status: HsBatchResultRow["status"]) {
   return "bg-red-50 text-red-700 ring-red-200";
 }
 
+function describeColumnDetection(result: HsBatchParseResult) {
+  const columns = [
+    `HS CODE: ${result.columns.hsk.header}`,
+    result.columns.product ? `품명: ${result.columns.product.header}` : null,
+    result.columns.memo ? `비고: ${result.columns.memo.header}` : null
+  ].filter((value): value is string => value !== null);
+
+  return columns.join(" / ");
+}
+
 export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
   const [state, formAction, pending] = useActionState(lookupHsBatchAction, initialState);
   const [inputText, setInputText] = useState(sampleText);
@@ -291,22 +301,21 @@ export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
     if (!file) return;
     try {
       const name = file.name.toLowerCase();
-      const matrix = name.endsWith(".csv")
-        ? (await file.text()).split(/\r?\n/).map((line) => line.split(","))
-        : await readXlsxFile(file);
-      const parsedRows = rowsFromMatrix(matrix as unknown[][]);
-      setRows(parsedRows);
+      const parsed = name.endsWith(".csv")
+        ? parseDelimitedInput(await file.text())
+        : parseMatrix((await readXlsxFile(file)) as unknown as unknown[][]);
+      setRows(parsed.rows);
       setInputText("");
-      setParseMessage(`${file.name}에서 ${parsedRows.length}행을 읽었습니다. 같은 HS CODE가 여러 번 있어도 그대로 조회합니다.`);
+      setParseMessage(`${file.name}에서 ${parsed.rows.length}행을 읽었습니다. ${describeColumnDetection(parsed)}로 인식했습니다. 같은 HS CODE가 여러 번 있어도 그대로 조회합니다.`);
     } catch (error) {
       setParseMessage(error instanceof Error ? error.message : "파일을 읽지 못했습니다. XLSX 또는 CSV 파일인지 확인해 주세요.");
     }
   }
 
   function parseTextarea() {
-    const parsedRows = parseDelimitedText(inputText);
-    setRows(parsedRows);
-    setParseMessage(`${parsedRows.length}행을 읽었습니다. 입력 순서와 중복 HS CODE를 유지합니다.`);
+    const parsed = parseDelimitedInput(inputText);
+    setRows(parsed.rows);
+    setParseMessage(`${parsed.rows.length}행을 읽었습니다. ${describeColumnDetection(parsed)}로 인식했습니다. 입력 순서와 중복 HS CODE를 유지합니다.`);
   }
 
   async function handleDownloadResults() {
