@@ -368,6 +368,14 @@
 - 운영 이슈 빈 처리 정보 표시 운영 반영:
   - production 배포 `customs-hscode-2948n6d77-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+- 운영 이슈 처리 폼 안내를 보강했다.
+  - 이전 작업은 담당자, 메모, 처리 사유, 상태 변경 이력이 비어 있을 때 의미 있는 빈 상태 문구를 표시하는 행 정보 보강이고, 이번 작업은 운영자가 해결, 제외, 다시 열기 버튼을 누르기 전에 어떤 근거를 입력해야 하는지 알려주는 입력 UX 보강이다.
+  - 처리 폼 상단에 다음 상태 처리 전 작성할 내용 안내를 추가했다.
+  - 담당자, 메모, 처리 사유 placeholder를 실무 입력 목적에 맞게 구체화했다.
+  - 담당자 미입력 시 담당 미지정 이슈로 남는다는 안내를 추가했다.
+- 운영 이슈 처리 폼 안내 운영 반영:
+  - production 배포 `customs-hscode-ets6uph37-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
