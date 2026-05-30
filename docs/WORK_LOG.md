@@ -187,6 +187,12 @@
   - 알림은 `OPERATIONS_ALERT_EMAIL` 또는 `DEVELOPER_ALERT_EMAIL`을 사용하고, `OPERATIONS_ALERT_THROTTLE_MINUTES` 기준으로 같은 issue key의 중복 발송을 제한한다.
   - `operations_alert_events`에는 해시된 alert key와 issue type, severity, occurrence count 같은 운영 메타데이터만 저장하고 입력 품명, 문서 원문, invoice 내용은 저장하지 않는다.
   - 운영 이슈 리허설 job은 반복 검증 중 메일이 발송되지 않도록 `sendAlerts: false`로 유지한다.
+- 운영 이슈 알림 운영 반영:
+  - production 배포 `customs-hscode-4xt3cz4f0-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+  - `npm run ops:job:operations-issues` 실행 결과 scannedEvents 0, recurringIssues 0, syncedIssues 0건, alerts 0건을 확인했다.
+  - `npm run ops:job:operations-issues-rehearsal` 실행 결과 synthetic telemetry 3건, recurringIssues 1건, 운영 이슈 occurrenceCount 3건, resolved/open 상태 변경, cleanup true를 확인했다.
+  - `npm run ops:job:operations-retention` 실행 결과 운영 알림 이력 deletedCount 0, background job history deletedRuns 0/deletedJobs 0, 운영 이슈 deletedCount 0을 확인했다.
 
 검증:
 
@@ -240,6 +246,11 @@
 - `npm run typecheck`
 - `npm run lint`
 - `npm run build`
+- `vercel env run -e production -- npm run health:db`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
+- `vercel env run -e production -- npm run ops:job:operations-issues`
+- `vercel env run -e production -- npm run ops:job:operations-issues-rehearsal`
+- `vercel env run -e production -- npm run ops:job:operations-retention`
 - `vercel env run -e production -- npm run ops:job:operations-retention`
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 - `npm test`
