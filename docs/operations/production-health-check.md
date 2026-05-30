@@ -69,9 +69,16 @@ npm run health:db
 - 반복 이슈 개선 큐 후보: 같은 조회 품질 분류가 최근 로그에서 3회 이상 반복되는지 확인
 - 일자별 무결과/GPT 실패/HS6 예비 후보 요약
 - route별 실패율과 평균/최대 응답시간
+- 운영 이슈 처리 상태: 반복 조회 품질 이슈가 `operations_issue_events`에 저장되고 미해결/해결/제외 상태로 표시되는지 확인
 
 `LOOKUP_TELEMETRY_ENABLED=true`와 `SUPABASE_SERVICE_ROLE_KEY`가 설정되어야 조회 품질 로그가 저장된다.
 로그에는 원문 품명, 이메일, 문서 내용, prompt, API key를 저장하지 않는다.
+
+반복 조회 품질 이슈는 `operations-issues` job이 동기화한다.
+
+```bash
+vercel env run -e production -- npm run ops:job:operations-issues
+```
 
 ## 외부 연동 실패 점검
 

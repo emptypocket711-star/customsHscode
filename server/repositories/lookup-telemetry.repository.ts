@@ -268,6 +268,7 @@ export function summarizeLookupTelemetryBuckets(events: LookupTelemetryEvent[]):
 
 export type RecurringLookupTelemetryIssue = LookupTelemetryBucket & {
   issueCount: number;
+  firstSeenAt: string;
   latestAt: string;
   routes: string[];
   diagnoses: string[];
@@ -289,12 +290,16 @@ export function summarizeRecurringLookupTelemetryIssues(
     const current = summaries.get(bucket.key) ?? {
       ...bucket,
       issueCount: 0,
+      firstSeenAt: event.createdAt,
       latestAt: event.createdAt,
       routes: [],
       diagnoses: []
     };
 
     current.issueCount += 1;
+    if (new Date(event.createdAt).getTime() < new Date(current.firstSeenAt).getTime()) {
+      current.firstSeenAt = event.createdAt;
+    }
     if (new Date(event.createdAt).getTime() > new Date(current.latestAt).getTime()) {
       current.latestAt = event.createdAt;
     }

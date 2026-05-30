@@ -26,6 +26,12 @@ import {
   type BackgroundJobOperationsItem
 } from "@/server/repositories/background-job.repository";
 import {
+  listRecentOperationsIssueEvents,
+  summarizeOperationsIssueEvents,
+  type OperationsIssueEventItem,
+  type OperationsIssueStatus
+} from "@/server/repositories/operations-issue.repository";
+import {
   classifyLookupTelemetryBucket,
   classifyLookupTelemetryIssue,
   isLookupTelemetryIssue,
@@ -65,6 +71,12 @@ const operationsManualCommands = [
     command: "vercel env run -e production -- npm run ops:job:operations-retention",
     purpose: "운영 알림 이력, worker 실행 이력, 완료된 background job 이력을 보존 기간 기준으로 정리합니다.",
     expected: "deletedCount, deletedRuns, deletedJobs가 JSON으로 표시됩니다."
+  },
+  {
+    label: "운영 이슈 동기화",
+    command: "vercel env run -e production -- npm run ops:job:operations-issues",
+    purpose: "반복 조회 품질 이슈를 operations issue로 저장해 처리 상태를 추적합니다.",
+    expected: "scannedEvents, recurringIssues, syncedIssues가 JSON으로 표시됩니다."
   },
   {
     label: "운영 스키마 점검",
@@ -115,6 +127,11 @@ const operationsSectionLinks = [
     href: "#alert-events",
     label: "운영 알림",
     detail: "발송·생략·실패"
+  },
+  {
+    href: "#issue-events",
+    label: "운영 이슈",
+    detail: "반복 이슈·처리 상태"
   },
   {
     href: "#lookup-quality",
@@ -194,6 +211,19 @@ function operationsAlertStatusLabel(status: string) {
 function operationsAlertStatusTone(status: string) {
   if (status === "sent") return "success";
   if (status === "failed") return "warning";
+  return "neutral";
+}
+
+function operationsIssueStatusLabel(status: OperationsIssueStatus) {
+  if (status === "open") return "미해결";
+  if (status === "resolved") return "해결";
+  if (status === "ignored") return "제외";
+  return status;
+}
+
+function operationsIssueStatusTone(status: OperationsIssueStatus) {
+  if (status === "open") return "warning";
+  if (status === "resolved") return "success";
   return "neutral";
 }
 
@@ -380,6 +410,13 @@ async function loadOperationsAlertEvents() {
   return listRecentOperationsAlertEvents(supabase, 20).catch(() => []);
 }
 
+async function loadOperationsIssueEvents() {
+  if (!hasSupabaseEnv()) return [];
+
+  const supabase = await createSupabaseServerClient();
+  return listRecentOperationsIssueEvents(supabase, 20).catch(() => []);
+}
+
 async function loadOperationsRetentionStatus(): Promise<OperationsRetentionStatus | null> {
   if (!hasSupabaseEnv()) return null;
 
@@ -396,11 +433,12 @@ export default async function OperationsHealthPage() {
 
   const groups = getEnvironmentHealthGroups();
   const integrationHealthItems = getExternalIntegrationHealthItems();
-  const [lookupTelemetryEvents, backgroundJobs, backgroundJobRuns, operationsAlertEvents, operationsRetentionStatus, schemaHealthReport] = await Promise.all([
+  const [lookupTelemetryEvents, backgroundJobs, backgroundJobRuns, operationsAlertEvents, operationsIssueEvents, operationsRetentionStatus, schemaHealthReport] = await Promise.all([
     loadLookupTelemetryEvents(),
     loadBackgroundJobOperations(),
     loadBackgroundJobRuns(),
     loadOperationsAlertEvents(),
+    loadOperationsIssueEvents(),
     loadOperationsRetentionStatus(),
     getProductionSchemaHealthReport()
   ]);
@@ -418,6 +456,7 @@ export default async function OperationsHealthPage() {
   const backgroundJobSummary = summarizeBackgroundJobOperations(backgroundJobs);
   const backgroundJobRunSummary = summarizeBackgroundJobRuns(backgroundJobRuns);
   const operationsAlertSummary = summarizeOperationsAlertEvents(operationsAlertEvents);
+  const operationsIssueSummary = summarizeOperationsIssueEvents(operationsIssueEvents);
   const totalRetentionCandidates = operationsRetentionStatus
     ? operationsRetentionStatus.operationsAlertEvents.pruneCandidateCount
       + operationsRetentionStatus.backgroundJobHistory.runPruneCandidateCount
@@ -458,6 +497,12 @@ export default async function OperationsHealthPage() {
       value: operationsAlertSummary.latestStatus ? operationsAlertStatusLabel(operationsAlertSummary.latestStatus) : "-",
       detail: `발송 실패 ${operationsAlertSummary.failed}건`,
       tone: operationsAlertSummary.failed > 0 ? "warning" : "success"
+    },
+    {
+      label: "운영 이슈",
+      value: `${operationsIssueSummary.open}건 미해결`,
+      detail: `차단 ${operationsIssueSummary.blocker} / 주의 ${operationsIssueSummary.warning}`,
+      tone: operationsIssueSummary.open > 0 ? "warning" : "success"
     },
     {
       label: "정리 후보",
@@ -934,6 +979,82 @@ export default async function OperationsHealthPage() {
           ) : (
             <div className="p-5 text-sm text-slate-600">
               아직 운영 알림 이력이 없습니다. worker 실패 알림 발송 또는 throttle 생략 후 표시됩니다.
+            </div>
+          )}
+        </CardBody>
+      </Card>
+
+      <Card id="issue-events" className="scroll-mt-6">
+        <CardHeader
+          title="운영 이슈 처리 상태"
+          description="반복 조회 품질 이슈처럼 운영자가 후속 조치해야 하는 항목을 상태와 함께 확인합니다."
+          action={<Badge tone={operationsIssueSummary.open > 0 ? "warning" : "success"}>미해결 {operationsIssueSummary.open}건</Badge>}
+        />
+        <CardBody className="p-0">
+          <div className="grid gap-2 border-b border-slate-200 bg-slate-50 p-3 text-sm md:grid-cols-5">
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">최근 이슈</p>
+              <p className="mt-1 font-semibold text-slate-950">{operationsIssueSummary.total}건</p>
+            </div>
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">미해결</p>
+              <p className="mt-1 font-semibold text-amber-700">{operationsIssueSummary.open}건</p>
+            </div>
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">해결</p>
+              <p className="mt-1 font-semibold text-emerald-700">{operationsIssueSummary.resolved}건</p>
+            </div>
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">제외</p>
+              <p className="mt-1 font-semibold text-slate-700">{operationsIssueSummary.ignored}건</p>
+            </div>
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">최근 갱신</p>
+              <p className="mt-1 font-semibold text-slate-950">{operationsIssueSummary.latestIssueAt ? formatDate(operationsIssueSummary.latestIssueAt) : "-"}</p>
+            </div>
+          </div>
+          {operationsIssueEvents.length ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-[1160px] text-left text-sm">
+                <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
+                  <tr>
+                    <th className="px-5 py-3">상태</th>
+                    <th className="px-5 py-3">이슈</th>
+                    <th className="px-5 py-3">반복</th>
+                    <th className="px-5 py-3">발생</th>
+                    <th className="px-5 py-3">조치</th>
+                    <th className="px-5 py-3">키</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {operationsIssueEvents.map((event: OperationsIssueEventItem) => (
+                    <tr key={event.id} className={event.status === "open" ? "bg-amber-50/45" : undefined}>
+                      <td className="px-5 py-4">
+                        <Badge tone={operationsIssueStatusTone(event.status)}>{operationsIssueStatusLabel(event.status)}</Badge>
+                      </td>
+                      <td className="px-5 py-4">
+                        <p className="font-semibold text-slate-950">{event.title}</p>
+                        <p className="mt-1 text-xs leading-5 text-slate-600">{event.summary}</p>
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-4 text-slate-700">
+                        <span className="font-semibold text-slate-950">{event.occurrenceCount}</span>
+                        <span className="ml-1 text-xs text-slate-500">건</span>
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-4 text-xs leading-5 text-slate-600">
+                        최초 {formatDate(event.firstSeenAt)}
+                        <br />
+                        최근 {formatDate(event.lastSeenAt)}
+                      </td>
+                      <td className="max-w-[320px] px-5 py-4 text-xs leading-5 text-slate-600">{event.action}</td>
+                      <td className="max-w-[280px] truncate px-5 py-4 font-mono text-xs text-slate-500">{event.issueKey}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="p-5 text-sm text-slate-600">
+              저장된 운영 이슈가 없습니다. `operations-issues` job이 반복 조회 품질 이슈를 감지하면 표시됩니다.
             </div>
           )}
         </CardBody>

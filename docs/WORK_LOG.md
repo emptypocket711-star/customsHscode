@@ -130,6 +130,11 @@
   - 같은 조회 품질 분류가 최근 로그에서 3회 이상 반복되면 `반복 이슈 개선 큐 후보`로 별도 표시한다.
   - 운영 요약의 `조회 품질` 카드도 반복 이슈가 있으면 점검 건수 대신 반복 분류 수와 최다 반복 분류를 보여준다.
   - 반복 이슈 카드에는 최근 발생 시각, 진단 목록, route 목록, 운영 조치 문구를 함께 표시한다.
+- 반복 조회 품질 이슈를 운영 이슈로 저장하는 흐름을 추가했다.
+  - `operations_issue_events` 테이블을 추가해 운영 이슈의 유형, 키, 미해결/해결/제외 상태, 심각도, 발생 횟수, 최초/최근 발생 시각, 조치 문구를 저장한다.
+  - `/api/jobs/operations-issues` 보호 job이 최근 조회 telemetry를 스캔하고 반복 이슈를 `lookup_quality_recurring:*` 키로 upsert한다.
+  - `npm run ops:job:operations-issues` 수동 명령과 30분 주기 Vercel Cron을 추가했다.
+  - 운영 점검 화면에 `운영 이슈 처리 상태` 섹션을 추가해 반복 이슈가 저장된 뒤 처리 상태와 조치 내용을 볼 수 있게 했다.
 - 운영 점검 화면에 수동 운영 명령 안내를 추가했다.
   - worker 즉시 실행, 실패 알림 리허설, 운영 이력 정리, 스키마 점검, production smoke 명령을 한 화면에 정리했다.
   - 명령은 `vercel env run -e production -- ...` 형식으로 표시해 secret 값을 화면에 노출하지 않고 Vercel 환경변수에서 주입되도록 했다.
@@ -151,6 +156,7 @@
 검증:
 
 - `npm test -- server/observability/lookup-telemetry.test.ts`
+- `npm test -- server/observability/lookup-telemetry.test.ts server/repositories/operations-issue.repository.test.ts`
 - `npm test -- features/hs-batch/input-parser.test.ts server/actions/hs-batch.actions.test.ts`
 - `npm test -- server/actions/hs-batch.actions.test.ts server/repositories/background-job.repository.test.ts server/jobs/hs-batch-lookup-job.handler.test.ts server/jobs/background-worker.service.test.ts`
 - `npm test -- server/repositories/background-job.repository.test.ts server/jobs/hs-batch-lookup-job.handler.test.ts server/actions/hs-batch.actions.test.ts`
