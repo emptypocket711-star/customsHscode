@@ -66,6 +66,12 @@
   - 리허설 payload에는 회사/사용자/문서 원문/인보이스 내용이 없고, 검증 후 임시 job row를 삭제한다.
   - `/api/jobs/run` 응답에 알림 전송 결과를 포함해 운영 리허설에서 `alert.sent === true`를 확인할 수 있게 했다.
   - `background_job_runs` 이력은 실패 경로 증적으로 남겨 운영 점검 화면에서 확인할 수 있게 했다.
+- 운영 리허설:
+  - production 배포 후 `vercel env run -e production -- npm run ops:job:background-failure-rehearsal`을 실행했다.
+  - 임시 job `ab1bb679-6feb-4a65-a625-bd2753338f70`이 claimed 1건으로 처리되고 의도한 실패 결과로 `dead`, attempts 1이 되었다.
+  - worker run `failure-rehearsal-1780112715634`는 `failed`, failed_count 1로 저장되었다.
+  - 알림 응답은 `sent: true`로 확인했고, 임시 job row는 스크립트 finally 단계에서 삭제했다.
+  - production smoke 10개 경로 모두 통과했다.
 
 검증:
 
@@ -76,6 +82,7 @@
 - `npm run typecheck`
 - `npm run lint`
 - `npm run build`
+- `vercel env run -e production -- npm run ops:job:background-failure-rehearsal`
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 - 운영 E2E: 임시 계정 기반 82행 큐 등록 → worker 처리 → 결과 UI/XLSX 버튼 확인
 - `npm test -- server/repositories/background-job.repository.test.ts`
