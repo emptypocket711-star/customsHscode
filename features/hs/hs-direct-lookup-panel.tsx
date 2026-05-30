@@ -81,6 +81,45 @@ function isHsCodeLike(value: string) {
   return /^[0-9.\-\s]+$/.test(value) && normalizeHsInput(value).length >= 2;
 }
 
+type ProductSupplementEntry = {
+  answer: string;
+  question: string;
+};
+
+function parseProductSupplementQuery(value: string) {
+  const marker = "\n보완정보:";
+  const markerIndex = value.indexOf(marker);
+
+  if (markerIndex < 0) {
+    return {
+      baseProductName: value.trim(),
+      supplementEntries: [] as ProductSupplementEntry[]
+    };
+  }
+
+  const baseProductName = value.slice(0, markerIndex).trim();
+  const supplementText = value.slice(markerIndex + marker.length).trim();
+  const supplementEntries = supplementText
+    .split("\n")
+    .map((line) => line.trim().replace(/^-\s*/, ""))
+    .map((line) => {
+      const separatorIndex = line.indexOf(":");
+      if (separatorIndex < 0) return null;
+
+      const question = line.slice(0, separatorIndex).trim();
+      const answer = line.slice(separatorIndex + 1).trim();
+      if (!question || !answer) return null;
+
+      return { question, answer };
+    })
+    .filter((entry): entry is ProductSupplementEntry => Boolean(entry));
+
+  return {
+    baseProductName: baseProductName || value.trim(),
+    supplementEntries
+  };
+}
+
 const lookupCacheTtlMs = 5 * 60 * 1000;
 
 function cachedHsDirectLookup(hskCode: string, basisDate: string) {
@@ -989,6 +1028,32 @@ function ProductClassificationFlowPanel({
           </p>
         </div>
       </div>
+    </section>
+  );
+}
+
+function ProductSupplementSummaryPanel({ entries }: { entries: ProductSupplementEntry[] }) {
+  if (!entries.length) return null;
+
+  return (
+    <section className="mt-4 rounded-md border border-blue-100 bg-blue-50 px-3 py-3 text-sm leading-6 text-blue-950">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <p className="font-semibold">이번 재조회에 반영된 보완사항</p>
+          <p className="mt-1 text-xs text-blue-900">
+            검색창에는 원 품명만 표시하고, 아래 답변을 함께 반영해 다시 분류했습니다.
+          </p>
+        </div>
+        <Badge tone="info">{entries.length}개 반영</Badge>
+      </div>
+      <dl className="mt-3 grid gap-2 md:grid-cols-2">
+        {entries.map((entry) => (
+          <div className="rounded-md border border-blue-100 bg-white px-3 py-2" key={`${entry.question}-${entry.answer}`}>
+            <dt className="text-xs font-semibold text-blue-800">{entry.question}</dt>
+            <dd className="mt-1 text-sm text-slate-700">{entry.answer}</dd>
+          </div>
+        ))}
+      </dl>
     </section>
   );
 }
@@ -3312,6 +3377,9 @@ export async function HsDirectLookupPanel({
   const showDestinationExportResults = lookupDirection === "export" && exportResultMode === "destination";
   const showDomesticExportResults = lookupDirection === "export" && exportResultMode === "domestic";
   const searchQuery = (query ?? hskCode ?? "").trim();
+  const productSupplementQuery = parseProductSupplementQuery(searchQuery);
+  const displaySearchQuery = productSupplementQuery.baseProductName;
+  const productSupplementEntries = productSupplementQuery.supplementEntries;
   const hasQuery = Boolean(searchQuery);
   const shouldShowDestinationMap = showDestinationExportResults && !hasQuery && !destinationHsCode;
   const shouldLookupHs = hasQuery && isHsCodeLike(searchQuery);
@@ -3531,7 +3599,7 @@ export async function HsDirectLookupPanel({
       <CardBody>
         <FavoriteStatusMessage status={favoriteStatus} />
         <form className={`grid gap-4 ${showDirectionSelect ? "lg:grid-cols-[minmax(240px,1fr)_130px_minmax(220px,260px)_minmax(180px,230px)_auto]" : "lg:grid-cols-[minmax(260px,1fr)_minmax(240px,300px)_minmax(180px,230px)_auto]"}`} method="get">
-          <QueryField defaultValue={searchQuery} label={dictionary.form.query} name="query" placeholder={dictionary.form.queryPlaceholder} />
+          <QueryField defaultValue={shouldLookupProduct ? displaySearchQuery : searchQuery} label={dictionary.form.query} name="query" placeholder={dictionary.form.queryPlaceholder} />
           {showDirectionSelect ? <DirectionSelect defaultValue={lookupDirection} dictionary={dictionary} /> : <DirectionHiddenField value={lookupDirection} />}
           {showDestinationExportResults ? (
             <DestinationCountryPicker defaultValue={selectedDestinationCountry} direction={lookupDirection} showMap={shouldShowDestinationMap} />
@@ -3548,6 +3616,8 @@ export async function HsDirectLookupPanel({
             {parsed.error.issues[0]?.message ?? dictionary.empty.invalidInput}
           </div>
         ) : null}
+
+        {shouldLookupProduct ? <ProductSupplementSummaryPanel entries={productSupplementEntries} /> : null}
 
         {shouldLookupHs && source === "product_search" ? (
           <ProductSearchSourceBanner candidateRank={sourceCandidateRank} productName={sourceProductName} />
@@ -3566,7 +3636,7 @@ export async function HsDirectLookupPanel({
               {lookupDirection === "import" ? (
                 <HsCopySummaryButton
                   texts={productCandidateCopySummaryTexts({
-                    productName: searchQuery,
+                    productName: displaySearchQuery,
                     candidates: productCandidates,
                     lookupByHsk: productCandidateLookupByHsk,
                     internalTaxByHsk: productCandidateInternalTaxByHsk,
@@ -3591,7 +3661,7 @@ export async function HsDirectLookupPanel({
                   basisDate: candidate.basisDate,
                   source: "product_search",
                   sourceCandidateRank: candidate.rank,
-                  sourceProductName: searchQuery
+                  sourceProductName: displaySearchQuery
                 });
                 const hs6Href = hsLookupHref({
                   hskCode: candidate.hs6,
@@ -3601,7 +3671,7 @@ export async function HsDirectLookupPanel({
                   basisDate: candidate.basisDate,
                   source: "product_search",
                   sourceCandidateRank: candidate.rank,
-                  sourceProductName: searchQuery
+                  sourceProductName: displaySearchQuery
                 });
 
                 return (
@@ -3725,7 +3795,7 @@ export async function HsDirectLookupPanel({
                         basisDate: candidate.basisDate,
                         source: "product_search",
                         sourceCandidateRank: candidate.rank,
-                        sourceProductName: searchQuery
+                        sourceProductName: displaySearchQuery
                       });
                       const hs6Href = hsLookupHref({
                         hskCode: candidate.hs6,
@@ -3735,7 +3805,7 @@ export async function HsDirectLookupPanel({
                         basisDate: candidate.basisDate,
                         source: "product_search",
                         sourceCandidateRank: candidate.rank,
-                        sourceProductName: searchQuery
+                        sourceProductName: displaySearchQuery
                       });
 
                       return (
@@ -3831,7 +3901,7 @@ export async function HsDirectLookupPanel({
           <ProductClassificationFlowPanel
             candidates={productCandidates}
             clarification={aiClarification}
-            productName={searchQuery}
+            productName={displaySearchQuery}
           />
         ) : null}
 
@@ -3842,7 +3912,7 @@ export async function HsDirectLookupPanel({
             destinationCountry={selectedDestinationCountry}
             direction={lookupDirection}
             originCountry={selectedOriginCountry}
-            productName={searchQuery}
+            productName={displaySearchQuery}
           />
         ) : null}
 
@@ -3864,7 +3934,7 @@ export async function HsDirectLookupPanel({
             destinationCountry={selectedDestinationCountry}
             direction={lookupDirection}
             originCountry={selectedOriginCountry}
-            productName={searchQuery}
+            productName={displaySearchQuery}
           />
         ) : null}
 
