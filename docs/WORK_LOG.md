@@ -428,6 +428,14 @@
 - 운영 이슈 우선 확인 처리 안내 운영 반영:
   - production 배포 `customs-hscode-3b08cj5yq-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` alias 연결과 production smoke 10개 경로 통과를 확인했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+- 운영 이슈 처리 입력 확인을 추가했다.
+  - 이전 작업은 우선 확인 대상 행의 처리 폼에 사유와 다음 조치를 반복 표시한 안내 보강이고, 이번 작업은 담당자, 메모, 처리 사유의 현재 작성됨/미입력 상태를 저장 전 표시하는 입력 상태 보강이다.
+  - 처리 폼 입력값을 client state로 추적해 담당자, 메모, 처리 사유별 작성 상태와 미입력 안내를 표시한다.
+  - 미입력 항목은 저장을 막지 않고 담당자 인계와 사후 검토 품질 저하 가능성만 안내한다.
+  - 저장 데이터, RLS, 상태 변경 권한 구조는 바꾸지 않았다.
+- 운영 이슈 처리 입력 확인 운영 반영:
+  - production 배포 `customs-hscode-3lcvl2k57-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` alias 연결과 production smoke 10개 경로 통과를 확인했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
