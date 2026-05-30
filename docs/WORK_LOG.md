@@ -113,6 +113,10 @@
 - 운영 반영:
   - production 배포 후 `npm run ops:job:operations-retention`을 실행해 운영 알림 이력 deletedCount 0, background job runs deletedRuns 0, 완료 job deletedJobs 0을 확인했다.
   - production smoke 10개 경로 모두 통과했다.
+- 운영 점검 화면 상단 요약을 재구성했다.
+  - 기존 환경변수 중심 3개 숫자 카드 대신 `핵심 운영 요약` 카드로 배포 설정, DB 스키마, worker, 작업 큐, 운영 알림, 정리 후보, 조회 품질을 한 번에 보이게 했다.
+  - 각 항목에 정상/확인 badge와 상세 지표를 붙여 화면 진입 직후 점검 우선순위를 판단할 수 있게 했다.
+  - 기존 상세 섹션은 유지해 요약에서 문제를 발견한 뒤 바로 아래에서 원인을 확인할 수 있게 했다.
 - 운영 점검 화면에 수동 운영 명령 안내를 추가했다.
   - worker 즉시 실행, 실패 알림 리허설, 운영 이력 정리, 스키마 점검, production smoke 명령을 한 화면에 정리했다.
   - 명령은 `vercel env run -e production -- ...` 형식으로 표시해 secret 값을 화면에 노출하지 않고 Vercel 환경변수에서 주입되도록 했다.
@@ -169,6 +173,10 @@
 - `npm run build`
 - `vercel env run -e production -- npm run ops:job:operations-retention`
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
+- `npm test`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
 - 운영 E2E: 임시 계정 기반 82행 큐 등록 → worker 처리 → 결과 UI/XLSX 버튼 확인
 - `npm test -- server/repositories/background-job.repository.test.ts`
 - `vercel env run -e production -- npm run ops:job:background`

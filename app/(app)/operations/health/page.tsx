@@ -378,6 +378,55 @@ export default async function OperationsHealthPage() {
   const configuredCount = items.filter((item) => item.status === "ok").length;
   const schemaStatusTone = schemaHealthReport.status === "ok" ? "success" : "warning";
   const schemaStatusLabel = schemaHealthReport.status === "ok" ? "정상" : schemaHealthReport.status === "warn" ? "주의" : "차단";
+  const operationalSummary = [
+    {
+      label: "배포 설정",
+      value: missingRequiredCount > 0 ? `${missingRequiredCount}건 확인` : "준비됨",
+      detail: `설정됨 ${configuredCount}건`,
+      tone: missingRequiredCount > 0 ? "warning" : "success"
+    },
+    {
+      label: "DB 스키마",
+      value: schemaStatusLabel,
+      detail: `차단 ${schemaHealthReport.summary.blockerCount} / 주의 ${schemaHealthReport.summary.warnCount}`,
+      tone: schemaStatusTone
+    },
+    {
+      label: "worker",
+      value: backgroundJobRunSummary.latestStatus ? backgroundJobRunStatusLabel(backgroundJobRunSummary.latestStatus) : "-",
+      detail: `작업 실패 ${backgroundJobRunSummary.failedJobs}건`,
+      tone: backgroundJobRunSummary.failedJobs > 0 || backgroundJobRunSummary.latestStatus === "failed" ? "warning" : "success"
+    },
+    {
+      label: "작업 큐",
+      value: `${backgroundJobSummary.queued + backgroundJobSummary.running}건 진행`,
+      detail: `최종 실패 ${backgroundJobSummary.dead}건`,
+      tone: backgroundJobSummary.dead > 0 || backgroundJobSummary.failed > 0 ? "warning" : "success"
+    },
+    {
+      label: "운영 알림",
+      value: operationsAlertSummary.latestStatus ? operationsAlertStatusLabel(operationsAlertSummary.latestStatus) : "-",
+      detail: `발송 실패 ${operationsAlertSummary.failed}건`,
+      tone: operationsAlertSummary.failed > 0 ? "warning" : "success"
+    },
+    {
+      label: "정리 후보",
+      value: `${totalRetentionCandidates}건`,
+      detail: operationsRetentionStatus ? `최근 확인 ${formatDate(operationsRetentionStatus.checkedAt)}` : "상태 미확인",
+      tone: totalRetentionCandidates > 0 || !operationsRetentionStatus ? "warning" : "success"
+    },
+    {
+      label: "조회 품질",
+      value: `${lookupIssueCount}건 점검`,
+      detail: `정상 ${lookupSuccessCount}건 / 무결과 ${zeroResultCount}건`,
+      tone: lookupIssueCount > 0 ? "warning" : "success"
+    }
+  ] satisfies Array<{
+    label: string;
+    value: string;
+    detail: string;
+    tone: "success" | "warning";
+  }>;
 
   return (
     <div className="grid gap-5">
@@ -386,32 +435,27 @@ export default async function OperationsHealthPage() {
         description="배포 환경에서 필요한 연결값과 운영 보호 설정을 확인합니다. 키 원문은 표시하지 않습니다."
       />
 
-      <div className="grid gap-3 md:grid-cols-3">
-        <Card>
-          <CardBody>
-            <p className="text-xs font-semibold text-slate-500">설정된 항목</p>
-            <p className="mt-1 text-2xl font-semibold text-slate-950">{configuredCount}</p>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <p className="text-xs font-semibold text-slate-500">필수 누락</p>
-            <p className={missingRequiredCount > 0 ? "mt-1 text-2xl font-semibold text-amber-700" : "mt-1 text-2xl font-semibold text-emerald-700"}>
-              {missingRequiredCount}
-            </p>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <p className="text-xs font-semibold text-slate-500">배포 판정</p>
-            <p className="mt-2">
-              <Badge tone={missingRequiredCount > 0 ? "warning" : "success"}>
-                {missingRequiredCount > 0 ? "필수 환경변수 확인 필요" : "필수 환경변수 준비됨"}
-              </Badge>
-            </p>
-          </CardBody>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader
+          title="핵심 운영 요약"
+          description="배포 설정, 스키마, worker, 알림, 보존 정책, 조회 품질을 한 번에 확인합니다."
+          action={<Badge tone={operationalSummary.some((item) => item.tone === "warning") ? "warning" : "success"}>점검 {operationalSummary.filter((item) => item.tone === "warning").length}건</Badge>}
+        />
+        <CardBody>
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+            {operationalSummary.map((item) => (
+              <div key={item.label} className="rounded-md border border-slate-200 bg-white px-3 py-3">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-xs font-semibold text-slate-500">{item.label}</p>
+                  <Badge tone={item.tone}>{item.tone === "warning" ? "확인" : "정상"}</Badge>
+                </div>
+                <p className="mt-2 text-lg font-semibold text-slate-950">{item.value}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">{item.detail}</p>
+              </div>
+            ))}
+          </div>
+        </CardBody>
+      </Card>
 
       <Card>
         <CardHeader
