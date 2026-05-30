@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildOperationsIssueActiveFilterLabels,
   buildOperationsIssueQuickFilterPresets,
+  buildOperationsIssueResultSummaryMetrics,
   filterOperationsIssueEvents,
   getOpenOperationsIssueAgeStatus,
   getOperationsIssueStatusChangeSummary,
@@ -393,6 +394,36 @@ describe("operations issue repository helpers", () => {
       { key: "ageLevel", label: "경과: 장기 미해결" },
       { key: "assignedToLabel", label: "담당: 미지정" },
       { key: "query", label: "검색: GPT" }
+    ]);
+  });
+
+  it("builds result summary metrics for filtered operations issues", () => {
+    expect(buildOperationsIssueResultSummaryMetrics(
+      {
+        total: 2,
+        open: 1,
+        resolved: 1,
+        ignored: 0,
+        blocker: 1,
+        warning: 1,
+        latestIssueAt: "2026-05-29T02:00:00.000Z"
+      },
+      {
+        total: 5,
+        open: 3,
+        resolved: 1,
+        ignored: 1,
+        blocker: 2,
+        warning: 2,
+        latestIssueAt: "2026-05-29T03:00:00.000Z"
+      },
+      true
+    )).toEqual([
+      { label: "표시", value: "2건", tone: "info" },
+      { label: "필터 제외", value: "3건", tone: "warning" },
+      { label: "미해결", value: "1건", tone: "warning" },
+      { label: "차단", value: "1건", tone: "warning" },
+      { label: "주의", value: "1건", tone: "info" }
     ]);
   });
 

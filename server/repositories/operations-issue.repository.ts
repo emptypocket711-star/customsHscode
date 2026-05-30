@@ -135,6 +135,12 @@ export type OperationsIssueActiveFilterLabel = {
   label: string;
 };
 
+export type OperationsIssueResultSummaryMetric = {
+  label: string;
+  value: string;
+  tone: "neutral" | "info" | "warning";
+};
+
 export function operationsIssueFiltersMatch(
   current: OperationsIssueEventFilters,
   target: OperationsIssueEventFilters
@@ -584,6 +590,42 @@ export function buildOperationsIssueActiveFilterLabels(
   }
 
   return labels;
+}
+
+export function buildOperationsIssueResultSummaryMetrics(
+  filteredSummary: OperationsIssueEventSummary,
+  totalSummary: OperationsIssueEventSummary,
+  hasFilters: boolean
+): OperationsIssueResultSummaryMetric[] {
+  const hiddenCount = Math.max(totalSummary.total - filteredSummary.total, 0);
+
+  return [
+    {
+      label: "표시",
+      value: `${filteredSummary.total}건`,
+      tone: hasFilters ? "info" : "neutral"
+    },
+    {
+      label: hasFilters ? "필터 제외" : "최근 이슈",
+      value: `${hasFilters ? hiddenCount : totalSummary.total}건`,
+      tone: hasFilters && hiddenCount > 0 ? "warning" : "neutral"
+    },
+    {
+      label: "미해결",
+      value: `${filteredSummary.open}건`,
+      tone: filteredSummary.open > 0 ? "warning" : "neutral"
+    },
+    {
+      label: "차단",
+      value: `${filteredSummary.blocker}건`,
+      tone: filteredSummary.blocker > 0 ? "warning" : "neutral"
+    },
+    {
+      label: "주의",
+      value: `${filteredSummary.warning}건`,
+      tone: filteredSummary.warning > 0 ? "info" : "neutral"
+    }
+  ];
 }
 
 export function summarizeOpenOperationsIssuesByOwner(

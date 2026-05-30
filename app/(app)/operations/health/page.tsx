@@ -31,6 +31,7 @@ import {
   getOpenOperationsIssueAgeStatus,
   getOperationsIssueStatusChangeSummary,
   buildOperationsIssueActiveFilterLabels,
+  buildOperationsIssueResultSummaryMetrics,
   buildOperationsIssueQuickFilterPresets,
   isUnassignedOperationsIssueOwnerFilter,
   operationsIssueFiltersMatch,
@@ -322,6 +323,18 @@ function operationsIssueQuickFilterClassName(preset: OperationsIssueQuickFilterP
   return "rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-left transition hover:bg-slate-100";
 }
 
+function operationsIssueResultMetricClassName(tone: "neutral" | "info" | "warning") {
+  if (tone === "warning") {
+    return "rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900";
+  }
+
+  if (tone === "info") {
+    return "rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-blue-900";
+  }
+
+  return "rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700";
+}
+
 function eventTone(event: LookupTelemetryEvent) {
   return isLookupTelemetryIssue(event) ? "warning" : "success";
 }
@@ -585,6 +598,11 @@ export default async function OperationsHealthPage({
       || (issueFilters.ageLevel && issueFilters.ageLevel !== "all")
       || issueFilters.assignedToLabel
       || issueFilters.query
+  );
+  const operationsIssueResultSummaryMetrics = buildOperationsIssueResultSummaryMetrics(
+    filteredOperationsIssueSummary,
+    operationsIssueSummary,
+    hasOperationsIssueFilters
   );
   const operationsIssueOwnerFilterHelp = isUnassignedOperationsIssueOwnerFilter(issueFilters.assignedToLabel)
     ? "담당자 값이 비어 있는 미해결 이슈만 확인할 때 사용하는 조건입니다."
@@ -1366,6 +1384,14 @@ export default async function OperationsHealthPage({
               표시 {filteredOperationsIssueSummary.total}건 / 최근 이슈 {operationsIssueSummary.total}건 · 우선순위순
               {hasOperationsIssueFilters ? " · 필터 적용 중" : ""}
             </p>
+            <div className="grid gap-2 sm:grid-cols-5 lg:col-span-6">
+              {operationsIssueResultSummaryMetrics.map((metric) => (
+                <div className={operationsIssueResultMetricClassName(metric.tone)} key={metric.label}>
+                  <p className="text-[11px] font-semibold">{metric.label}</p>
+                  <p className="mt-1 text-sm font-semibold">{metric.value}</p>
+                </div>
+              ))}
+            </div>
           </form>
           {filteredOperationsIssueEvents.length ? (
             <div className="overflow-x-auto">
