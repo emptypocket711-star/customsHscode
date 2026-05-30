@@ -1452,14 +1452,14 @@ export default async function OperationsHealthPage({
               <table className="min-w-[1480px] text-left text-sm">
                 <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
                   <tr>
-                    <th className="px-5 py-3">상태</th>
-                    <th className="px-5 py-3">이슈</th>
-                    <th className="px-5 py-3">반복</th>
-                    <th className="px-5 py-3">발생</th>
-                    <th className="px-5 py-3">조치</th>
-                    <th className="px-5 py-3">담당·메모</th>
-                    <th className="px-5 py-3">키</th>
-                    <th className="px-5 py-3">처리</th>
+                    <th className="w-[130px] px-5 py-3">상태</th>
+                    <th className="w-[430px] px-5 py-3">이슈</th>
+                    <th className="w-[100px] px-5 py-3">반복</th>
+                    <th className="w-[180px] px-5 py-3">발생</th>
+                    <th className="w-[270px] px-5 py-3">조치</th>
+                    <th className="w-[320px] px-5 py-3">담당·메모</th>
+                    <th className="w-[220px] px-5 py-3">키</th>
+                    <th className="w-[360px] px-5 py-3">처리</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -1478,23 +1478,23 @@ export default async function OperationsHealthPage({
                               ? "bg-amber-50/45"
                               : undefined}
                         >
-                          <td className="px-5 py-4">
-                            <Badge tone={operationsIssueStatusTone(event.status)}>{operationsIssueStatusLabel(event.status)}</Badge>
-                            {isTriageFocus ? (
-                              <p className="mt-2">
+                          <td className="px-5 py-4 align-top">
+                            <div className="grid gap-2">
+                              <Badge tone={operationsIssueStatusTone(event.status)}>{operationsIssueStatusLabel(event.status)}</Badge>
+                              {isTriageFocus ? (
                                 <Badge tone="warning">우선 확인</Badge>
-                              </p>
-                            ) : null}
-                            <p className="mt-2 text-xs font-semibold text-slate-500">{operationsIssueSeverityLabel(event.severity)}</p>
-                            {ageStatus ? (
-                              <p className="mt-2">
+                              ) : null}
+                              <span className="rounded-md border border-slate-200 bg-white/80 px-2 py-1 text-xs font-semibold text-slate-600">
+                                {operationsIssueSeverityLabel(event.severity)}
+                              </span>
+                              {ageStatus ? (
                                 <Badge tone={operationsIssueAgeTone(ageStatus.level)}>{ageStatus.label}</Badge>
-                              </p>
-                            ) : null}
+                              ) : null}
+                            </div>
                           </td>
-                          <td className="max-w-[420px] px-5 py-4">
+                          <td className="max-w-[430px] px-5 py-4 align-top">
                             {isTriageFocus ? (
-                              <p className="mb-2 rounded-md border border-amber-200 bg-white/80 px-2 py-1 text-xs font-semibold text-amber-900">
+                              <p className="mb-2 break-words rounded-md border border-amber-200 bg-white/80 px-2 py-1 text-xs font-semibold text-amber-900">
                                 상단 우선 확인 대상 · {operationsIssueTriageFocus.reasonLabel}
                               </p>
                             ) : null}
@@ -1521,33 +1521,47 @@ export default async function OperationsHealthPage({
                               </div>
                             ) : null}
                           </td>
-                          <td className="whitespace-nowrap px-5 py-4 text-slate-700">
-                            <span className="font-semibold text-slate-950">{event.occurrenceCount}</span>
-                            <span className="ml-1 text-xs text-slate-500">건</span>
+                          <td className="px-5 py-4 align-top text-slate-700">
+                            <div className="rounded-md border border-slate-200 bg-white px-2 py-1.5 text-center">
+                              <p className="text-[11px] font-semibold text-slate-500">반복 발생</p>
+                              <p className="mt-1 whitespace-nowrap text-sm font-semibold text-slate-950">{event.occurrenceCount}건</p>
+                            </div>
                           </td>
-                          <td className="whitespace-nowrap px-5 py-4 text-xs leading-5 text-slate-600">
-                            최초 {formatDate(event.firstSeenAt)}
-                            <br />
-                            최근 {formatDate(event.lastSeenAt)}
-                          </td>
-                          <td className="max-w-[320px] break-words px-5 py-4 text-xs leading-5 text-slate-600">{event.action}</td>
-                          <td className="max-w-[320px] break-words px-5 py-4 text-xs leading-5 text-slate-600">
+                          <td className="px-5 py-4 align-top text-xs leading-5 text-slate-600">
                             <div className="grid gap-2">
+                              <div className="rounded-md border border-slate-200 bg-white px-2 py-1.5">
+                                <p className="font-semibold text-slate-500">최초</p>
+                                <p className="mt-0.5 whitespace-nowrap text-slate-800">{formatDate(event.firstSeenAt)}</p>
+                              </div>
+                              <div className="rounded-md border border-slate-200 bg-white px-2 py-1.5">
+                                <p className="font-semibold text-slate-500">최근</p>
+                                <p className="mt-0.5 whitespace-nowrap text-slate-800">{formatDate(event.lastSeenAt)}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="max-w-[270px] px-5 py-4 align-top text-xs leading-5 text-slate-600">
+                            <div className="rounded-md border border-slate-200 bg-white px-2 py-1.5">
+                              <p className="font-semibold text-slate-500">다음 조치</p>
+                              <p className="mt-0.5 break-words text-slate-700">{event.action}</p>
+                            </div>
+                          </td>
+                          <td className="max-w-[320px] px-5 py-4 align-top text-xs leading-5 text-slate-600">
+                            <div className="grid min-w-0 gap-2">
                               <div className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5">
                                 <p className="font-semibold text-slate-500">담당자</p>
-                                <p className="mt-0.5 text-slate-900">{operationsIssueDisplayValue(event.assignedToLabel)}</p>
+                                <p className="mt-0.5 break-words text-slate-900">{operationsIssueDisplayValue(event.assignedToLabel)}</p>
                               </div>
                               <div className="rounded-md border border-slate-200 bg-white px-2 py-1.5">
                                 <p className="font-semibold text-slate-500">메모</p>
-                                <p className="mt-0.5 text-slate-700">{operationsIssueDisplayValue(event.operatorNote)}</p>
+                                <p className="mt-0.5 break-words text-slate-700">{operationsIssueDisplayValue(event.operatorNote)}</p>
                               </div>
                               <div className="rounded-md border border-slate-200 bg-white px-2 py-1.5">
                                 <p className="font-semibold text-slate-500">처리 사유</p>
-                                <p className="mt-0.5 text-slate-700">{operationsIssueDisplayValue(event.resolutionReason)}</p>
+                                <p className="mt-0.5 break-words text-slate-700">{operationsIssueDisplayValue(event.resolutionReason)}</p>
                               </div>
                             </div>
                             {statusChangeSummary ? (
-                              <p className="mt-2 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-slate-500">
+                              <p className="mt-2 break-words rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-slate-500">
                                 <span className="font-semibold text-slate-700">{statusChangeSummary.changeLabel}</span>
                                 <br />
                                 {formatDate(statusChangeSummary.changedAt)}
@@ -1558,10 +1572,12 @@ export default async function OperationsHealthPage({
                               <p className="mt-1 text-slate-500">상태 변경 이력 없음</p>
                             )}
                           </td>
-                          <td className="max-w-[280px] px-5 py-4 font-mono text-xs text-slate-500">
-                            <span title={event.issueKey}>{shortOperationsIssueKey(event.issueKey)}</span>
+                          <td className="max-w-[220px] px-5 py-4 align-top font-mono text-xs text-slate-500">
+                            <span className="block break-all rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5" title={event.issueKey}>
+                              {shortOperationsIssueKey(event.issueKey)}
+                            </span>
                           </td>
-                          <td className="px-5 py-4">
+                          <td className="px-5 py-4 align-top">
                             <OperationsIssueStatusForm
                               event={event}
                               triageFocus={isTriageFocus && operationsIssueTriageFocus
