@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildHsBriefDescription, buildHsSubheadingDescription } from "@/lib/hs-summary";
+import { buildHsBriefDescription } from "@/lib/hs-summary";
 
 describe("HS summary helpers", () => {
   it("builds readable descriptions for generic HSK residual lines", () => {
@@ -16,7 +16,6 @@ describe("HS summary helpers", () => {
     };
 
     expect(buildHsBriefDescription(input)).toBe("플라스틱으로 만든 기타 제품");
-    expect(buildHsSubheadingDescription(input)).toBe("3926.90 계열: 플라스틱으로 만든 기타 제품");
   });
 
   it("uses available subheading labels for specific HSK names", () => {
@@ -33,6 +32,5 @@ describe("HS summary helpers", () => {
     };
 
     expect(buildHsBriefDescription(input)).toBe("정유와 레지노이드ㆍ조제향료ㆍ화장품 관련 품목 중 기초화장용 제품류");
-    expect(buildHsSubheadingDescription(input)).toBe("3304.99 계열: 정유와 레지노이드ㆍ조제향료ㆍ화장품 관련 품목 중 기초화장용 제품류");
   });
 });

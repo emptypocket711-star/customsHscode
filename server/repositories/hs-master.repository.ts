@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildHsHierarchyPath, hsAncestorCodes, type HsHierarchyNode } from "@/lib/hs-hierarchy";
-import { buildHsBriefDescription, buildHsSubheadingDescription } from "@/lib/hs-summary";
+import { buildHsBriefDescription } from "@/lib/hs-summary";
 import { hasSupabaseEnv, createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   mockHsMasterRecords,
@@ -107,7 +107,6 @@ export type HsDirectLookupResult = {
   hs6: string;
   koreanName: string;
   briefDescription: string;
-  subheadingDescription: string;
   englishName: string | null;
   importNatureCode: string | null;
   exportNatureCode: string | null;
@@ -377,12 +376,6 @@ function mapResult(
     hs6: record.hs6,
     koreanName: record.korean_name,
     briefDescription: buildHsBriefDescription({
-      hskCode: record.hsk_code,
-      hs6: record.hs6,
-      koreanName: record.korean_name,
-      hierarchyPath
-    }),
-    subheadingDescription: buildHsSubheadingDescription({
       hskCode: record.hsk_code,
       hs6: record.hs6,
       koreanName: record.korean_name,

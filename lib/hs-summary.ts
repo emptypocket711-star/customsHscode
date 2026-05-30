@@ -1,4 +1,4 @@
-import { formatHsCode, normalizeHsCode } from "@/lib/hs-code";
+import { normalizeHsCode } from "@/lib/hs-code";
 import { hsChapterName, type HsHierarchyNode } from "@/lib/hs-hierarchy";
 
 function cleanedLabel(value?: string | null) {
@@ -62,23 +62,4 @@ export function buildHsBriefDescription(input: {
   }
 
   return `${basePhrase} 중 ${koreanName}`;
-}
-
-export function buildHsSubheadingDescription(input: {
-  hskCode: string;
-  hs6?: string | null;
-  koreanName?: string | null;
-  hierarchyPath?: HsHierarchyNode[];
-}) {
-  const hskCode = normalizeHsCode(input.hskCode);
-  const hs6 = normalizeHsCode(input.hs6 || hskCode.slice(0, 6));
-  if (hs6.length !== 6) return "-";
-
-  const hs6Label = cleanedLabel(hs6Node(input.hierarchyPath ?? [], hs6)?.label);
-  if (hs6Label && !isGenericLabel(hs6Label)) {
-    return `${formatHsCode(hs6)} ${hs6Label}`;
-  }
-
-  const brief = buildHsBriefDescription(input);
-  return `${formatHsCode(hs6)} 계열: ${brief}`;
 }

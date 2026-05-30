@@ -31,7 +31,7 @@ import {
 } from "@/features/hs/hs-supplement-guidance";
 import { formatHsCode, normalizeHsCode } from "@/lib/hs-code";
 import { buildHsHierarchyPath, type HsHierarchyNode } from "@/lib/hs-hierarchy";
-import { buildHsBriefDescription, buildHsSubheadingDescription } from "@/lib/hs-summary";
+import { buildHsBriefDescription } from "@/lib/hs-summary";
 import { defaultLocale, getHsDirectDictionary, type AppLocale, type HsDirectDictionary } from "@/lib/i18n";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import { cn, getSeoulDateString } from "@/lib/utils";
@@ -910,15 +910,6 @@ function productCandidateBriefDescription(candidate: HsCandidateRecommendation, 
   });
 }
 
-function productCandidateSubheadingDescription(candidate: HsCandidateRecommendation, lookup?: HsDirectLookupResult) {
-  return lookup?.subheadingDescription ?? buildHsSubheadingDescription({
-    hskCode: candidate.hskCode,
-    hs6: candidate.hs6,
-    koreanName: candidate.koreanName,
-    hierarchyPath: productCandidateHierarchyNodes(candidate, lookup)
-  });
-}
-
 function productCandidateDisplayReason(reason: string) {
   return reason
     .replaceAll("예비 후보", "후보")
@@ -1458,68 +1449,32 @@ function splitHskNavigatorCode(value: string) {
   };
 }
 
-const hs8NavigatorStyles = [
-  {
-    rowClass: "bg-sky-50/70 hover:bg-sky-100/80",
-    codeClass: "bg-sky-100/80 text-sky-950",
-    anchorClass: "bg-sky-200/80 text-sky-950",
-    borderClass: "border-l-4 border-sky-400",
-    badgeClass: "bg-sky-100 text-sky-800"
-  },
-  {
-    rowClass: "bg-emerald-50/70 hover:bg-emerald-100/80",
-    codeClass: "bg-emerald-100/80 text-emerald-950",
-    anchorClass: "bg-emerald-200/80 text-emerald-950",
-    borderClass: "border-l-4 border-emerald-400",
-    badgeClass: "bg-emerald-100 text-emerald-800"
-  },
-  {
-    rowClass: "bg-violet-50/70 hover:bg-violet-100/80",
-    codeClass: "bg-violet-100/80 text-violet-950",
-    anchorClass: "bg-violet-200/80 text-violet-950",
-    borderClass: "border-l-4 border-violet-400",
-    badgeClass: "bg-violet-100 text-violet-800"
-  },
-  {
-    rowClass: "bg-amber-50/70 hover:bg-amber-100/80",
-    codeClass: "bg-amber-100/80 text-amber-950",
-    anchorClass: "bg-amber-200/80 text-amber-950",
-    borderClass: "border-l-4 border-amber-400",
-    badgeClass: "bg-amber-100 text-amber-800"
-  },
-  {
-    rowClass: "bg-rose-50/70 hover:bg-rose-100/80",
-    codeClass: "bg-rose-100/80 text-rose-950",
-    anchorClass: "bg-rose-200/80 text-rose-950",
-    borderClass: "border-l-4 border-rose-400",
-    badgeClass: "bg-rose-100 text-rose-800"
-  }
-] as const;
-
 function hs8GroupKey(value: string) {
   const normalized = normalizeHsInput(value);
 
   return normalized.length >= 8 ? normalized.slice(0, 8) : "";
 }
 
-function buildHs8GroupIndexes(codes: string[]) {
-  const groupIndexes = new Map<string, number>();
+function startsHs8Group(value: string, previousValue?: string) {
+  const key = hs8GroupKey(value);
+  if (!key) return false;
 
-  for (const code of codes) {
-    const key = hs8GroupKey(code);
-
-    if (!key || groupIndexes.has(key)) continue;
-    groupIndexes.set(key, groupIndexes.size);
-  }
-
-  return groupIndexes;
+  return key !== hs8GroupKey(previousValue ?? "");
 }
 
-function hs8NavigatorStyle(value: string, groupIndexes: Map<string, number>) {
-  const key = hs8GroupKey(value);
-  const index = key ? groupIndexes.get(key) : undefined;
+function hsNavigatorRowClass({ isCurrent, startsGroup }: { isCurrent: boolean; startsGroup: boolean }) {
+  return cn(
+    startsGroup ? "border-t-2 border-slate-300" : "border-t border-slate-100",
+    isCurrent ? "bg-slate-100 font-semibold text-slate-950" : "text-slate-800 hover:bg-slate-50"
+  );
+}
 
-  return index === undefined ? null : hs8NavigatorStyles[index % hs8NavigatorStyles.length];
+function hsNavigatorCodeClass({ isHs8, isAnchor }: { isHs8: boolean; isAnchor?: boolean }) {
+  return cn(
+    "border-r border-slate-200 px-1.5 py-1.5 text-right align-top font-mono text-slate-700",
+    isHs8 ? "border-l-2 border-l-slate-300 font-semibold" : "font-medium",
+    isAnchor ? "text-slate-950" : null
+  );
 }
 
 function HsNavigatorCodeCell({
@@ -1553,16 +1508,13 @@ function HsCodeSideNavigator({
 }) {
   const currentCode = normalizeHsInput(result.hskCode);
   const visibleSiblings = result.classificationSiblings.filter((sibling) => normalizeHsInput(sibling.hskCode) !== currentCode);
-  const hs8GroupIndexes = buildHs8GroupIndexes([
-    ...result.hierarchyPath.map((node) => node.code),
-    ...visibleSiblings.map((sibling) => sibling.hskCode)
-  ]);
+  const hierarchyCodes = result.hierarchyPath.map((node) => node.code);
 
   return (
     <aside className="border-b border-slate-200 bg-white lg:border-b-0 lg:border-r">
       <div>
-        <div className="grid h-10 grid-cols-[144px_minmax(0,1fr)] items-center bg-blue-700 text-sm font-semibold text-white">
-          <div className="border-r border-blue-500 px-3 py-2 text-center">HSK</div>
+        <div className="grid h-10 grid-cols-[144px_minmax(0,1fr)] items-center bg-slate-900 text-sm font-semibold text-white">
+          <div className="border-r border-slate-700 px-3 py-2 text-center">HSK</div>
           <div className="px-3 py-2 text-center">품명</div>
         </div>
         <div className="max-h-[calc(100vh-150px)] overflow-auto">
@@ -1575,15 +1527,15 @@ function HsCodeSideNavigator({
               <col />
             </colgroup>
             <tbody>
-              {result.hierarchyPath.map((node) => {
+              {result.hierarchyPath.map((node, index) => {
                 const normalized = normalizeHsInput(node.code);
                 const parts = splitHskNavigatorCode(normalized);
                 const isCurrent = normalized === currentCode;
-                const hs8Style = hs8NavigatorStyle(normalized, hs8GroupIndexes);
-                const codeClass = cn("border-r border-slate-200 px-1.5 py-1.5 text-right align-top font-mono font-semibold text-slate-700", hs8Style?.codeClass);
-                const hs8AnchorCodeClass = cn(codeClass, hs8Style?.anchorClass);
-                const firstCodeClass = cn(codeClass, hs8Style?.borderClass);
-                const rowClass = cn(isCurrent ? "bg-red-50 text-red-600" : "text-slate-800 hover:bg-blue-50", hs8Style?.rowClass);
+                const startsGroup = startsHs8Group(normalized, hierarchyCodes[index - 1]);
+                const codeClass = hsNavigatorCodeClass({ isHs8: false });
+                const hs8AnchorCodeClass = hsNavigatorCodeClass({ isHs8: normalized.length >= 8, isAnchor: true });
+                const firstCodeClass = hsNavigatorCodeClass({ isHs8: normalized.length >= 8 });
+                const rowClass = hsNavigatorRowClass({ isCurrent, startsGroup });
                 const labelClass = node.level <= 4 ? "font-semibold" : "font-medium";
                 const href = hsLookupHref({
                   hskCode: node.code,
@@ -1609,14 +1561,15 @@ function HsCodeSideNavigator({
                   </tr>
                 );
               })}
-              {visibleSiblings.map((sibling) => {
+              {visibleSiblings.map((sibling, index) => {
                 const normalized = normalizeHsInput(sibling.hskCode);
                 const parts = splitHskNavigatorCode(normalized);
-                const hs8Style = hs8NavigatorStyle(normalized, hs8GroupIndexes);
-                const codeClass = cn("border-r border-slate-200 px-1.5 py-1.5 text-right align-top font-mono font-semibold", hs8Style?.codeClass);
-                const hs8AnchorCodeClass = cn(codeClass, hs8Style?.anchorClass);
-                const firstCodeClass = cn(codeClass, hs8Style?.borderClass);
-                const rowClass = cn(sibling.isSelected ? "bg-red-50 text-red-600" : "text-slate-800 hover:bg-blue-50", hs8Style?.rowClass);
+                const previousCode = index > 0 ? visibleSiblings[index - 1]?.hskCode : result.hierarchyPath.at(-1)?.code;
+                const startsGroup = startsHs8Group(normalized, previousCode);
+                const codeClass = hsNavigatorCodeClass({ isHs8: false });
+                const hs8AnchorCodeClass = hsNavigatorCodeClass({ isHs8: normalized.length >= 8, isAnchor: true });
+                const firstCodeClass = hsNavigatorCodeClass({ isHs8: normalized.length >= 8 });
+                const rowClass = hsNavigatorRowClass({ isCurrent: sibling.isSelected, startsGroup });
                 const href = hsLookupHref({
                   hskCode: sibling.hskCode,
                   direction,
@@ -3754,7 +3707,6 @@ export async function HsDirectLookupPanel({
                     <h3 className="mt-3 text-base font-semibold text-slate-950">{candidate.koreanName}</h3>
                     <div className="mt-2 grid gap-1 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-700">
                       <div><span className="font-semibold text-slate-500">간략 정보</span> {productCandidateBriefDescription(candidate, lookup)}</div>
-                      <div><span className="font-semibold text-slate-500">소호 정보</span> {productCandidateSubheadingDescription(candidate, lookup)}</div>
                     </div>
                     <p className="mt-1 text-sm leading-6 text-slate-600">{productCandidateDisplayReason(candidate.reason)}</p>
 
@@ -3902,7 +3854,6 @@ export async function HsDirectLookupPanel({
                           <h3 className="mt-3 text-base font-semibold text-slate-950">{candidate.koreanName}</h3>
                           <div className="mt-2 grid gap-1 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-700">
                             <div><span className="font-semibold text-slate-500">간략 정보</span> {productCandidateBriefDescription(candidate, lookup)}</div>
-                            <div><span className="font-semibold text-slate-500">소호 정보</span> {productCandidateSubheadingDescription(candidate, lookup)}</div>
                           </div>
                           <p className="mt-1 text-sm leading-6 text-slate-600">{productCandidateDisplayReason(candidate.reason)}</p>
 
@@ -4325,8 +4276,6 @@ export async function HsDirectLookupPanel({
                       <dd className="border-b border-slate-200 px-3 py-2">{result.koreanName}</dd>
                       <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">간략 정보</dt>
                       <dd className="border-b border-slate-200 px-3 py-2 leading-6">{result.briefDescription}</dd>
-                      <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">소호 정보</dt>
-                      <dd className="border-b border-slate-200 px-3 py-2 leading-6">{result.subheadingDescription}</dd>
                       <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.result.englishName}</dt>
                       <dd className="border-b border-slate-200 px-3 py-2">{displayValue(result.englishName)}</dd>
                       <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.result.unit}</dt>
