@@ -502,6 +502,8 @@
 - `npm run typecheck`
 - `npm run lint`
 - `npm run build`
+
+
 - `vercel env run -e production -- npm run health:db`
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 - 운영 이슈 화면 보강 반복 작업마다 위 6개 명령을 동일하게 실행했다.
@@ -1479,3 +1481,24 @@
 - `npm run typecheck`
 - `npm run lint`
 - `npm run build`
+
+### 검토 유료화 고객 노출 숨김
+
+- 이전 작업은 운영 이슈 화면의 수동 명령 안내를 보강한 것이고, 이번 작업은 MVP 제품 범위에서 검토 유료화 노출을 빼는 결정이다.
+- 좌측 운영 메뉴에서 담당자 검토 센터 진입 항목을 제거했다. 내부 `/staff/review` 라우트는 `requireStaffRole()` 보호 상태로 남겨 두고 고객 메뉴에서는 보이지 않게 했다.
+- `/billing` 페이지와 과금 mock/service에서 담당자 검토 크레딧, 검토 사용량, 검토 과금 정책 문구를 제거했다.
+- HS 예비진단 요청 성공 문구에서 "담당자 검토 후 확정" 흐름을 제거하고, 출처 기준 예비 조회와 HSK 확정 전 재확인 안내로 바꿨다.
+- HS 확정 요청 폼은 나중에 다시 노출할 수 있도록 컴포넌트 이름은 유지하되 현재는 아무 UI도 렌더링하지 않게 했다.
+- `PRODUCT_SPEC`와 `ROADMAP`에 HS 확정 요청, 담당자 검토 크레딧, 검토 유료화는 협업 관세사무소와 가격 정책이 정해질 때까지 고객 화면에서 숨긴다고 기록했다.
+
+검증:
+
+- `npm test -- server/rules/billing.service.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `git diff --check`
+- Vercel production deployment: `customs-hscode-446t6tudo-koo-apps.vercel.app`
+- Alias: `https://hsfinder.co.kr`
+- `vercel env run -e production -- npm run health:db`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
