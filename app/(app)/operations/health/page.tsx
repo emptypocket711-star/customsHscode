@@ -339,6 +339,10 @@ function shortOperationsIssueKey(issueKey: string) {
   return issueKey.length > 42 ? `${issueKey.slice(0, 39)}...` : issueKey;
 }
 
+function operationsIssueDisplayValue(value: string | null | undefined) {
+  return value?.trim() || "미입력";
+}
+
 function eventTone(event: LookupTelemetryEvent) {
   return isLookupTelemetryIssue(event) ? "warning" : "success";
 }
@@ -1470,15 +1474,15 @@ export default async function OperationsHealthPage({
                             <div className="grid gap-2">
                               <div className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5">
                                 <p className="font-semibold text-slate-500">담당자</p>
-                                <p className="mt-0.5 text-slate-900">{event.assignedToLabel || "-"}</p>
+                                <p className="mt-0.5 text-slate-900">{operationsIssueDisplayValue(event.assignedToLabel)}</p>
                               </div>
                               <div className="rounded-md border border-slate-200 bg-white px-2 py-1.5">
                                 <p className="font-semibold text-slate-500">메모</p>
-                                <p className="mt-0.5 text-slate-700">{event.operatorNote || "-"}</p>
+                                <p className="mt-0.5 text-slate-700">{operationsIssueDisplayValue(event.operatorNote)}</p>
                               </div>
                               <div className="rounded-md border border-slate-200 bg-white px-2 py-1.5">
                                 <p className="font-semibold text-slate-500">처리 사유</p>
-                                <p className="mt-0.5 text-slate-700">{event.resolutionReason || "-"}</p>
+                                <p className="mt-0.5 text-slate-700">{operationsIssueDisplayValue(event.resolutionReason)}</p>
                               </div>
                             </div>
                             {statusChangeSummary ? (
@@ -1490,7 +1494,7 @@ export default async function OperationsHealthPage({
                                 {statusChangeSummary.changedByLabel}
                               </p>
                             ) : (
-                              <p className="mt-1 text-slate-500">상태 변경 -</p>
+                              <p className="mt-1 text-slate-500">상태 변경 이력 없음</p>
                             )}
                           </td>
                           <td className="max-w-[280px] px-5 py-4 font-mono text-xs text-slate-500">
