@@ -383,6 +383,13 @@
 - 운영 이슈 처리 버튼 안내 운영 반영:
   - production 배포 `customs-hscode-af2qyljbr-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+- 운영 이슈 처리 결과 메시지를 보강했다.
+  - 이전 작업은 버튼 아래에 변경될 상태 설명을 붙이는 버튼 조작 피드백 보강이고, 이번 작업은 서버 액션의 성공/오류 메시지에 어떤 상태 변경 시도였는지 포함하는 처리 결과 피드백 보강이다.
+  - 성공/오류 메시지에 `해결 처리`, `제외 처리`, `다시 열기`를 포함해 저장 결과를 구분한다.
+  - 저장 데이터, RLS, 상태 변경 권한 구조는 바꾸지 않았다.
+- 운영 이슈 처리 결과 메시지 운영 반영:
+  - production 배포 `customs-hscode-awse99yxc-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
