@@ -222,6 +222,27 @@ function reasonForHsCodeHint(
   return reasons.find((item) => hskCode.startsWith(item.code) || hs6.startsWith(item.code) || item.code.startsWith(hs6));
 }
 
+function normalizedAiCandidateScore(score: number | undefined) {
+  if (typeof score !== "number" || !Number.isFinite(score)) return null;
+  return Math.max(0.01, Math.min(1, Number(score) / 100));
+}
+
+function aiCandidateScoreForCode(
+  normalization: AiProductSearchNormalizationResult | null,
+  hskCode: string,
+  hs6: string
+) {
+  const hintReason = reasonForHsCodeHint(normalization, hskCode, hs6);
+  const primaryCode = normalization?.primaryCandidate?.code.replace(/[^0-9]/g, "");
+  const primaryMatches = Boolean(primaryCode && (
+    hskCode.startsWith(primaryCode)
+    || hs6.startsWith(primaryCode)
+    || primaryCode.startsWith(hs6)
+  ));
+
+  return normalizedAiCandidateScore(hintReason?.score ?? (primaryMatches ? normalization?.primaryCandidate?.score : undefined));
+}
+
 function aiCodeHintRankBonus(normalization: AiProductSearchNormalizationResult | null, hskCode: string, hs6: string) {
   const hints = normalizeAiHsCodeHints(normalization);
   const index = hints.findIndex((code) => {
@@ -294,6 +315,7 @@ function recommendAiHsCodeHintCandidates(
   return codes.slice(0, 5).map((code, index) => {
     const hs6 = code.length >= 6 ? code.slice(0, 6) : code;
     const hintReason = reasonForHsCodeHint(normalization, code, hs6);
+    const aiScore = aiCandidateScoreForCode(normalization, code, hs6);
     const requiredQuestions = [
       ...(hintReason?.requiredInfo ?? []),
       ...(normalization?.missingQuestions ?? []),
@@ -305,7 +327,7 @@ function recommendAiHsCodeHintCandidates(
       hskCode: code,
       hs6,
       rank: index + 1,
-      confidenceScore: Math.max(0.54, 0.69 - index * 0.04),
+      confidenceScore: aiScore ?? Math.max(0.54, 0.69 - index * 0.04),
       koreanName: aiHsCodeHintLabel(code),
       reason: hintReason
         ? `${hintReason.reason} 일반적인 제품 설명 기준의 검토 방향이며, 하위 HSK 10자리와 실제 제품 사양 확인이 필요합니다.`
@@ -314,6 +336,7 @@ function recommendAiHsCodeHintCandidates(
       riskNotes: "AI 예비 후보이며 품목분류 확정이 아닙니다. 동일 HS4/HS6 내에서도 재질, 성분, 용도, 가공상태에 따라 하위 세번이 달라질 수 있습니다.",
       scoreBreakdown: [
         "AI 분류 인터뷰 결과",
+        ...(aiScore === null ? [] : [`GPT 추천 점수: ${Math.round(aiScore * 100)}점`]),
         ...(hintReason ? [`검토 근거: ${hintReason.reason}`] : [])
       ],
       lookupBasis: "ai_hs_hint",
@@ -603,14 +626,15 @@ function mapOfficialHsMasterRowsToCandidates(
     .slice(0, 5)
     .map((item, index) => {
       const hintReason = reasonForHsCodeHint(normalization, item.row.hsk_code, item.row.hs6);
+      const aiScore = aiCandidateScoreForCode(normalization, item.row.hsk_code, item.row.hs6);
 
       return {
         hskCode: item.row.hsk_code,
         hs6: item.row.hs6,
         rank: index + 1,
-        confidenceScore: item.fromCodeHint
+        confidenceScore: aiScore ?? (item.fromCodeHint
           ? Math.max(0.64, Math.min(0.86, 0.68 + item.score * 0.025 - index * 0.02))
-          : Math.max(0.34, Math.min(0.7, 0.44 + item.score * 0.035 - index * 0.03)),
+          : Math.max(0.34, Math.min(0.7, 0.44 + item.score * 0.035 - index * 0.03))),
         koreanName: item.row.korean_name,
         reason: hintReason
           ? `${hintReason.reason} 해당 HS 후보의 류·호·소호 설명을 함께 확인해야 합니다.`
@@ -625,6 +649,7 @@ function mapOfficialHsMasterRowsToCandidates(
         riskNotes: "AI 검색 보조 결과이며 품목분류 확정이 아닙니다.",
         scoreBreakdown: [
           item.fromCodeHint ? "AI HS 후보 상세 조회" : "AI 품명 단서 조회",
+          ...(aiScore === null ? [] : [`GPT 추천 점수: ${Math.round(aiScore * 100)}점`]),
           ...item.matches.slice(0, 5).map((term) => `조회 보조어 ${term}`)
         ],
         lookupBasis: item.fromUserHsHint ? "user_hs_hint" : item.fromCodeHint ? "ai_hs_hint" : "ai_term_match",
@@ -673,6 +698,7 @@ function rankOfficialHsMasterRows(
       + Math.min(row.hsk_code.length, 10) / 10
       + (reasonedHint ? 2 : 0)
       + aiCodeHintRankBonus(normalization, row.hsk_code, row.hs6)
+      + ((aiCandidateScoreForCode(normalization, row.hsk_code, row.hs6) ?? 0) * 10)
       + aiCodeHintOfficialExpansionBonus(normalization, row);
     if (!current || score > current.score) {
       const fromUserHsHint = userProvidedHsHints.some((hint) => {

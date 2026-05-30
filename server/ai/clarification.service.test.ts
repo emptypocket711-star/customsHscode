@@ -111,7 +111,7 @@ describe("normalizeProductSearchInput", () => {
     });
 
     expect(key).toContain("ai-product-normalization");
-    expect(key).toContain("product-search-normalization-v21");
+    expect(key).toContain("product-search-normalization-v22");
     expect(key).toContain("901910");
     expect(key).not.toContain("secret");
     expect(key).not.toContain("ABC-123");
@@ -227,6 +227,38 @@ describe("normalizeProductSearchInput", () => {
       { code: "844332", reason: "프린터 단독기 가능성", requiredInfo: ["복합기 여부"] }
     ]);
     expect(parsed.webSources).toEqual([{ title: "Maker page", url: "https://example.com/product" }]);
+  });
+
+  it("parses GPT candidate scores from primary and candidate reasons", () => {
+    const fallback = {
+      provider: "openai" as const,
+      model: "test",
+      correctedProductName: null,
+      searchTerms: [],
+      koreanTerms: [],
+      englishTerms: [],
+      productFamilies: [],
+      candidateHsCodes: [],
+      candidateHsCodeReasons: [],
+      webSources: [],
+      missingQuestions: []
+    };
+    const parsed = aiProviderInternals.parseAiProductSearchNormalizationJson(JSON.stringify({
+      primaryCandidate: {
+        code: "1704",
+        reason: "설탕과자류 가능성",
+        requiredInfo: ["코코아 함유 여부"],
+        score: 0.91
+      },
+      candidateHsCodes: ["1704", "1806"],
+      candidateHsCodeReasons: [
+        { code: "1704", reason: "설탕과자류 가능성", requiredInfo: ["코코아 함유 여부"], score: 91 },
+        { code: "1806", reason: "초콜릿 함유 시 검토", requiredInfo: ["코코아 함유 여부"], confidenceScore: "63" }
+      ]
+    }), fallback);
+
+    expect(parsed.primaryCandidate?.score).toBe(91);
+    expect(parsed.candidateHsCodeReasons.map((candidate) => candidate.score)).toEqual([91, 63]);
   });
 
   it("keeps GPT candidate order ahead of local context fallback hints", () => {

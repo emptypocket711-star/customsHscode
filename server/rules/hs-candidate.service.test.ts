@@ -619,12 +619,14 @@ describe("recommendHsCandidates", () => {
           {
             code: "190190",
             reason: "제품 문맥상 제1901호 계열 확인이 필요합니다.",
-            requiredInfo: ["성분표", "제조공정"]
+            requiredInfo: ["성분표", "제조공정"],
+            score: 88
           },
           {
             code: "190590",
             reason: "제품 문맥상 제1905호 계열 확인이 필요합니다.",
-            requiredInfo: ["형태", "섭취 전 조리 여부"]
+            requiredInfo: ["형태", "섭취 전 조리 여부"],
+            score: 57
           }
         ],
         webSources: [],
@@ -636,6 +638,8 @@ describe("recommendHsCandidates", () => {
     expect(candidates.length).toBeGreaterThan(0);
     expect(candidates.map((candidate) => candidate.hskCode)).toEqual(expect.arrayContaining(["190190", "190590"]));
     expect(candidates.every((candidate) => candidate.lookupBasis === "ai_hs_hint")).toBe(true);
+    expect(candidates.find((candidate) => candidate.hskCode === "190190")?.confidenceScore).toBe(0.88);
+    expect(candidates.find((candidate) => candidate.hskCode === "190190")?.scoreBreakdown.join(" ")).toContain("GPT 추천 점수: 88점");
     expect(candidates.find((candidate) => candidate.hskCode === "190190")?.reason).toContain("일반적인 제품 설명 기준");
     expect(candidates.every((candidate) => candidate.riskNotes.includes("품목분류 확정"))).toBe(true);
   });

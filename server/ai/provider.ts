@@ -34,6 +34,7 @@ export type AiProductSearchNormalizationResult = {
     code: string;
     reason: string;
     requiredInfo: string[];
+    score?: number;
   } | null;
   searchTerms: string[];
   koreanTerms: string[];
@@ -44,6 +45,7 @@ export type AiProductSearchNormalizationResult = {
     code: string;
     reason: string;
     requiredInfo: string[];
+    score?: number;
   }>;
   webSources: Array<{ title: string; url: string }>;
   missingQuestions: string[];
@@ -234,80 +236,94 @@ export class MockAiProvider implements AiProvider {
           {
             code: "847160",
             reason: "ESC가 컴퓨터 키보드의 Escape key 또는 키 입력장치 관련 약어일 가능성이 있습니다.",
-            requiredInfo: ["키보드 완제품인지 키캡·스위치 등 부분품인지", "컴퓨터용 입력장치인지", "유선·무선 및 인터페이스"]
+            requiredInfo: ["키보드 완제품인지 키캡·스위치 등 부분품인지", "컴퓨터용 입력장치인지", "유선·무선 및 인터페이스"],
+            score: 66
           },
           {
             code: "870830",
             reason: "ESC가 차량의 Electronic Stability Control 관련 제동 제어장치를 의미할 가능성이 있습니다.",
-            requiredInfo: ["차량용 완성 제어장치인지 부분품인지", "ABS/ESC 모듈 포함 여부", "장착 대상 차종과 부품번호"]
+            requiredInfo: ["차량용 완성 제어장치인지 부분품인지", "ABS/ESC 모듈 포함 여부", "장착 대상 차종과 부품번호"],
+            score: 61
           },
           {
             code: "848690",
             reason: "ESC가 반도체 제조 공정의 Electrostatic Chuck을 의미할 가능성이 있습니다.",
-            requiredInfo: ["반도체 웨이퍼 고정용 정전척인지", "사용 장비와 공정", "제8486호 장비 전용 부분품인지"]
+            requiredInfo: ["반도체 웨이퍼 고정용 정전척인지", "사용 장비와 공정", "제8486호 장비 전용 부분품인지"],
+            score: 58
           }
         ] : []),
         ...(mushroomPowderLike ? [
           {
             code: "071239",
             reason: "건조 버섯을 단순 분쇄한 분말로 해석될 가능성이 있어 제0712호 계열 확인이 필요합니다.",
-            requiredInfo: ["건조 버섯 단순 분쇄품인지", "조미·혼합·추출·열처리 등 추가 가공 여부", "버섯 종류와 성분표"]
+            requiredInfo: ["건조 버섯 단순 분쇄품인지", "조미·혼합·추출·열처리 등 추가 가공 여부", "버섯 종류와 성분표"],
+            score: 88
           },
           {
             code: "210690",
             reason: "섭취용 조제품·보충제 형태라면 조제 식료품 계열과 경합될 수 있습니다.",
-            requiredInfo: ["사람 섭취용 완제품인지", "다른 성분 혼합 여부", "건강기능식품 또는 효능 표시 여부"]
+            requiredInfo: ["사람 섭취용 완제품인지", "다른 성분 혼합 여부", "건강기능식품 또는 효능 표시 여부"],
+            score: 62
           }
         ] : []),
         ...(excavatorLike ? [{
           code: "842952",
           reason: "굴착·굴삭 장비로 해석될 가능성이 있어 제8429호 계열 확인이 필요합니다.",
-          requiredInfo: ["자주식 완제품인지 부분품인지", "상부구조가 360도 회전하는지", "궤도식·휠식 여부"]
+          requiredInfo: ["자주식 완제품인지 부분품인지", "상부구조가 360도 회전하는지", "궤도식·휠식 여부"],
+          score: 86
         }] : []),
         ...(laserBeltLike ? [{
           code: "901910",
           reason: "마사지·물리치료용 기기로 해석될 가능성이 있어 제9019호 계열 확인이 필요합니다.",
-          requiredInfo: ["마사지·물리치료 기능 여부", "레이저 조사 외 진동·압박·온열 기능 여부", "의료기기 표시 목적"]
+          requiredInfo: ["마사지·물리치료 기능 여부", "레이저 조사 외 진동·압박·온열 기능 여부", "의료기기 표시 목적"],
+          score: 82
         }] : []),
         ...(printerLike ? [
           {
             code: "844332",
             reason: "컴퓨터나 네트워크에 연결 가능한 프린터 단독기로 해석될 가능성이 있습니다.",
-            requiredInfo: ["프린터 단독 기능인지", "복사·팩스·스캔 기능 포함 여부", "레이저·잉크젯 등 인쇄 방식"]
+            requiredInfo: ["프린터 단독 기능인지", "복사·팩스·스캔 기능 포함 여부", "레이저·잉크젯 등 인쇄 방식"],
+            score: 84
           },
           {
             code: "844331",
             reason: "복사·팩스 등 복합 기능이 있는 프린터일 가능성도 함께 확인해야 합니다.",
-            requiredInfo: ["복사·팩스 기능 포함 여부", "스캔 기능 포함 여부", "출력 방식"]
+            requiredInfo: ["복사·팩스 기능 포함 여부", "스캔 기능 포함 여부", "출력 방식"],
+            score: 68
           }
         ] : []),
         ...(batteryLike ? [{
           code: "850760",
           reason: "리튬이온 축전지 또는 배터리 모듈로 해석될 가능성이 있어 제8507호 계열 확인이 필요합니다.",
-          requiredInfo: ["셀·모듈·팩 형태", "리튬이온 축전지 여부", "정격 전압·용량과 최종 사용처"]
+          requiredInfo: ["셀·모듈·팩 형태", "리튬이온 축전지 여부", "정격 전압·용량과 최종 사용처"],
+          score: 86
         }] : []),
         ...(electricFanLike ? [
           {
             code: "841451",
             reason: "전동기를 내장한 휴대용·탁상용 전기팬 완제품으로 해석될 가능성이 있습니다.",
-            requiredInfo: ["전동기를 내장한 팬 완제품인지", "출력", "휴대용·탁상용·천장용 등 설치 형태", "배터리 별도 판매 여부"]
+            requiredInfo: ["전동기를 내장한 팬 완제품인지", "출력", "휴대용·탁상용·천장용 등 설치 형태", "배터리 별도 판매 여부"],
+            score: 86
           },
           {
             code: "841459",
             reason: "제8414.51호에 해당하지 않는 기타 팬 구조라면 제8414.59호 계열도 함께 확인해야 합니다.",
-            requiredInfo: ["팬 종류와 설치 형태", "모터 내장 여부", "산업용·가정용 구분"]
+            requiredInfo: ["팬 종류와 설치 형태", "모터 내장 여부", "산업용·가정용 구분"],
+            score: 63
           }
         ] : []),
         ...(workVestLike ? [
           {
             code: "621133",
             reason: "작업용·안전·반사 조끼가 직물제 인조섬유 의류일 가능성이 있습니다.",
-            requiredInfo: ["편직물/직물 구분", "섬유 조성", "반사띠·형광색 등 안전 기능", "남성용·여성용·공용 구분"]
+            requiredInfo: ["편직물/직물 구분", "섬유 조성", "반사띠·형광색 등 안전 기능", "남성용·여성용·공용 구분"],
+            score: 70
           },
           {
             code: "611030",
             reason: "니트·편직물 조끼라면 제6110.30호 계열과 경합될 수 있습니다.",
-            requiredInfo: ["니트·편직물 여부", "섬유 조성", "일반 의류인지 보호·안전 기능이 있는지"]
+            requiredInfo: ["니트·편직물 여부", "섬유 조성", "일반 의류인지 보호·안전 기능이 있는지"],
+            score: 58
           }
         ] : [])
       ],
@@ -369,11 +385,12 @@ function aiProductSearchNormalizationInstructions() {
     "Classify lookup intent by the traded finished article, principal function, and use before material or internal components.",
     "For rechargeable finished articles, do not prioritize battery headings only because the article contains an internal battery. Use battery headings only when the traded good is the battery, cell, module, pack, or spare battery itself.",
     "If the user input already includes an HS/HSK code hint, preserve it as a lookup hint. If it appears to be a foreign import code longer than HS6, include the shared HS6 prefix and do not assume the foreign national suffix equals Korean HSK.",
-    "For every candidateHsCodes item, also provide candidateHsCodeReasons with {code, reason, requiredInfo}. The code must match one of candidateHsCodes after removing punctuation.",
+    "For every candidateHsCodes item, also provide candidateHsCodeReasons with {code, reason, requiredInfo, score}. The code must match one of candidateHsCodes after removing punctuation.",
+    "score is your product-name fit score from 1 to 100 for that HS direction. Use 80-95 for a strong likely match, 55-79 for plausible but detail-dependent, and below 55 for weak alternatives. Do not use score as legal certainty.",
     "candidateHsCodes are lookup hints only. They are not final classifications.",
     "Write Korean business SaaS copy for missingQuestions.",
     "Accepted aliases are tolerated but prefer the exact JSON keys. Do not use markdown.",
-    "JSON shape: {\"classificationState\":\"needs_clarification|single_likely_candidate|ambiguous_multiple_meanings\",\"certainty\":\"high|medium|low\",\"displayMode\":\"single|multiple|needs_more_info\",\"userMessage\":\"string|null\",\"correctedProductName\":\"string|null\",\"primaryCandidate\":{\"code\":\"string\",\"reason\":\"string\",\"requiredInfo\":[\"string\"]}|null,\"searchTerms\":[\"string\"],\"koreanTerms\":[\"string\"],\"englishTerms\":[\"string\"],\"productFamilies\":[\"string\"],\"candidateHsCodes\":[\"string\"],\"candidateHsCodeReasons\":[{\"code\":\"string\",\"reason\":\"string\",\"requiredInfo\":[\"string\"]}],\"webSources\":[{\"title\":\"string\",\"url\":\"string\"}],\"missingQuestions\":[\"string\"]}"
+    "JSON shape: {\"classificationState\":\"needs_clarification|single_likely_candidate|ambiguous_multiple_meanings\",\"certainty\":\"high|medium|low\",\"displayMode\":\"single|multiple|needs_more_info\",\"userMessage\":\"string|null\",\"correctedProductName\":\"string|null\",\"primaryCandidate\":{\"code\":\"string\",\"reason\":\"string\",\"requiredInfo\":[\"string\"],\"score\":number}|null,\"searchTerms\":[\"string\"],\"koreanTerms\":[\"string\"],\"englishTerms\":[\"string\"],\"productFamilies\":[\"string\"],\"candidateHsCodes\":[\"string\"],\"candidateHsCodeReasons\":[{\"code\":\"string\",\"reason\":\"string\",\"requiredInfo\":[\"string\"],\"score\":number}],\"webSources\":[{\"title\":\"string\",\"url\":\"string\"}],\"missingQuestions\":[\"string\"]}"
   ].join("\n");
 }
 
@@ -482,6 +499,13 @@ function stringValueFromObject(value: unknown, keys: string[]) {
   return keys.map((key) => record[key]).find((field): field is string => typeof field === "string") ?? "";
 }
 
+function normalizedCandidateScore(value: unknown) {
+  const raw = typeof value === "string" && value.trim() ? Number(value) : typeof value === "number" ? value : Number.NaN;
+  if (!Number.isFinite(raw)) return undefined;
+  const score = raw > 0 && raw <= 1 ? raw * 100 : raw;
+  return Math.max(1, Math.min(100, Math.round(score)));
+}
+
 function parseAiProductSearchNormalizationJson(text: string, fallback: AiProductSearchNormalizationResult): AiProductSearchNormalizationResult {
   try {
     const parsed = JSON.parse(text) as Partial<AiProductSearchNormalizationResult>;
@@ -509,7 +533,7 @@ function parseAiProductSearchNormalizationJson(text: string, fallback: AiProduct
       : fallback.displayMode;
     const rawPrimarySource = parsed.primaryCandidate ?? rawParsed.primaryHsCandidate ?? rawParsed.primaryHsCode;
     const rawPrimaryCandidate = rawPrimarySource && typeof rawPrimarySource === "object"
-      ? rawPrimarySource as { code?: unknown; hsCode?: unknown; hs_code?: unknown; hskCode?: unknown; hsk_code?: unknown; hs?: unknown; hs6?: unknown; reason?: unknown; description?: unknown; requiredInfo?: unknown; missingInfo?: unknown }
+      ? rawPrimarySource as { code?: unknown; hsCode?: unknown; hs_code?: unknown; hskCode?: unknown; hsk_code?: unknown; hs?: unknown; hs6?: unknown; reason?: unknown; description?: unknown; requiredInfo?: unknown; missingInfo?: unknown; score?: unknown; confidenceScore?: unknown; confidence?: unknown; matchScore?: unknown }
       : null;
     const primaryCodeSource = rawPrimaryCandidate
       ? [rawPrimaryCandidate.code, rawPrimaryCandidate.hsCode, rawPrimaryCandidate.hs_code, rawPrimaryCandidate.hskCode, rawPrimaryCandidate.hsk_code, rawPrimaryCandidate.hs, rawPrimaryCandidate.hs6]
@@ -525,7 +549,10 @@ function parseAiProductSearchNormalizationJson(text: string, fallback: AiProduct
       ? {
         code: primaryCode,
         reason: primaryReason,
-        requiredInfo: stringArray(rawPrimaryCandidate?.requiredInfo ?? rawPrimaryCandidate?.missingInfo, 5)
+        requiredInfo: stringArray(rawPrimaryCandidate?.requiredInfo ?? rawPrimaryCandidate?.missingInfo, 5),
+        ...(normalizedCandidateScore(rawPrimaryCandidate?.score ?? rawPrimaryCandidate?.confidenceScore ?? rawPrimaryCandidate?.confidence ?? rawPrimaryCandidate?.matchScore) === undefined
+          ? {}
+          : { score: normalizedCandidateScore(rawPrimaryCandidate?.score ?? rawPrimaryCandidate?.confidenceScore ?? rawPrimaryCandidate?.confidence ?? rawPrimaryCandidate?.matchScore) })
       }
       : fallback.primaryCandidate ?? null;
     const rawCandidateHsCodes = firstArray(
@@ -567,35 +594,39 @@ function parseAiProductSearchNormalizationJson(text: string, fallback: AiProduct
         ? rawCandidateReasons
           .map((item) => {
             if (!item || typeof item !== "object") return null;
-            const reason = item as { code?: unknown; hsCode?: unknown; hs_code?: unknown; hskCode?: unknown; hsk_code?: unknown; hs?: unknown; hs6?: unknown; reason?: unknown; description?: unknown; name?: unknown; product?: unknown; requiredInfo?: unknown; missingInfo?: unknown };
+            const reason = item as { code?: unknown; hsCode?: unknown; hs_code?: unknown; hskCode?: unknown; hsk_code?: unknown; hs?: unknown; hs6?: unknown; reason?: unknown; description?: unknown; name?: unknown; product?: unknown; requiredInfo?: unknown; missingInfo?: unknown; score?: unknown; confidenceScore?: unknown; confidence?: unknown; matchScore?: unknown };
             const code = stringValueFromObject(reason, ["code", "hsCode", "hs_code", "hskCode", "hsk_code", "hs", "hs6"]).replace(/[^0-9]/g, "");
             const reasonText = stringValueFromObject(reason, ["reason", "description", "name", "product"]).trim();
             if (code.length < 4 || code.length > 10 || !reasonText) return null;
+            const score = normalizedCandidateScore(reason.score ?? reason.confidenceScore ?? reason.confidence ?? reason.matchScore);
             return {
               code,
               reason: reasonText,
-              requiredInfo: stringArray(reason.requiredInfo ?? reason.missingInfo, 5)
+              requiredInfo: stringArray(reason.requiredInfo ?? reason.missingInfo, 5),
+              ...(score === undefined ? {} : { score })
             };
           })
-          .filter((item): item is { code: string; reason: string; requiredInfo: string[] } => item !== null)
+          .filter((item): item is { code: string; reason: string; requiredInfo: string[]; score?: number } => item !== null)
           .slice(0, 8)
         : Array.isArray(rawCandidateHsCodes)
         ? rawCandidateHsCodes
           .map((item) => {
             if (!item || typeof item !== "object") return null;
-            const candidate = item as { code?: unknown; hsCode?: unknown; hs_code?: unknown; hskCode?: unknown; hsk_code?: unknown; hs?: unknown; hs6?: unknown; description?: unknown; reason?: unknown; name?: unknown; product?: unknown; requiredInfo?: unknown; missingInfo?: unknown };
+            const candidate = item as { code?: unknown; hsCode?: unknown; hs_code?: unknown; hskCode?: unknown; hsk_code?: unknown; hs?: unknown; hs6?: unknown; description?: unknown; reason?: unknown; name?: unknown; product?: unknown; requiredInfo?: unknown; missingInfo?: unknown; score?: unknown; confidenceScore?: unknown; confidence?: unknown; matchScore?: unknown };
             const codeSource = [candidate.code, candidate.hsCode, candidate.hs_code, candidate.hskCode, candidate.hsk_code, candidate.hs, candidate.hs6]
               .find((field): field is string => typeof field === "string") ?? "";
             const code = codeSource.replace(/[^0-9]/g, "");
             const reason = stringValueFromObject(candidate, ["reason", "description", "name", "product"]).trim();
             if (code.length < 4 || code.length > 10 || !reason) return null;
+            const score = normalizedCandidateScore(candidate.score ?? candidate.confidenceScore ?? candidate.confidence ?? candidate.matchScore);
             return {
               code,
               reason,
-              requiredInfo: stringArray(candidate.requiredInfo ?? candidate.missingInfo, 5)
+              requiredInfo: stringArray(candidate.requiredInfo ?? candidate.missingInfo, 5),
+              ...(score === undefined ? {} : { score })
             };
           })
-          .filter((item): item is { code: string; reason: string; requiredInfo: string[] } => item !== null)
+          .filter((item): item is { code: string; reason: string; requiredInfo: string[]; score?: number } => item !== null)
           .slice(0, 8)
         : fallback.candidateHsCodeReasons,
       webSources: Array.isArray(parsed.webSources)
