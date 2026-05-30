@@ -342,15 +342,17 @@ export function NavigationProgress() {
         stopProgress();
       }, 180000);
 
-      const startedAt = Date.now();
-      const locationAtSubmit = window.location.href;
-      actionSettleTimerRef.current = setInterval(() => {
-        if (window.location.href !== locationAtSubmit) return;
-        const disabled = submitter instanceof HTMLButtonElement || submitter instanceof HTMLInputElement ? submitter.disabled : false;
-        if (!disabled && Date.now() - startedAt > 1200) {
-          stopProgress();
-        }
-      }, 300);
+      if ((form.method || "get").toLowerCase() !== "get") {
+        const startedAt = Date.now();
+        const locationAtSubmit = window.location.href;
+        actionSettleTimerRef.current = setInterval(() => {
+          if (window.location.href !== locationAtSubmit) return;
+          const disabled = submitter instanceof HTMLButtonElement || submitter instanceof HTMLInputElement ? submitter.disabled : false;
+          if (!disabled && Date.now() - startedAt > 1200) {
+            stopProgress();
+          }
+        }, 300);
+      }
     }
 
     function handleClick(event: MouseEvent) {
