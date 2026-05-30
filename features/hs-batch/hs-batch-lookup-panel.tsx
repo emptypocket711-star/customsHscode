@@ -16,55 +16,70 @@ const sampleText = `HS CODE\t품명\t비고
 3304.99-1000\t기초화장품 세트\t샘플 2
 3923.50-0000\t플라스틱 캡\t샘플 3`;
 
-function escapeTsvCell(value: string | number) {
-  return String(value).replace(/\r?\n/g, " / ").replace(/\t/g, " ");
+const resultColumns: Array<{ header: string; key: keyof HsBatchResultRow; width: number }> = [
+  { header: "입력행", key: "rowNumber", width: 8 },
+  { header: "입력 HS CODE", key: "inputHskCode", width: 16 },
+  { header: "정규화 HS CODE", key: "normalizedHskCode", width: 16 },
+  { header: "입력 품명", key: "productName", width: 26 },
+  { header: "조회 HS CODE", key: "matchedHskCode", width: 16 },
+  { header: "품목명", key: "matchedName", width: 34 },
+  { header: "수입국가", key: "countryCode", width: 12 },
+  { header: "기본관세", key: "basicTariff", width: 22 },
+  { header: "FTA 관세", key: "ftaTariff", width: 28 },
+  { header: "적용 가능 최저세율", key: "lowestTariff", width: 28 },
+  { header: "내국세", key: "internalTax", width: 18 },
+  { header: "수입요건", key: "importRequirements", width: 54 },
+  { header: "원산지표시", key: "originMarking", width: 34 },
+  { header: "상태", key: "status", width: 12 },
+  { header: "메시지", key: "message", width: 44 }
+];
+
+function resultStatusLabel(status: HsBatchResultRow["status"]) {
+  if (status === "success") return "완료";
+  if (status === "warning") return "확인 필요";
+  return "오류";
 }
 
-function downloadResults(results: HsBatchResultRow[]) {
-  const headers = [
-    "입력행",
-    "입력 HS CODE",
-    "정규화 HS CODE",
-    "입력 품명",
-    "조회 HS CODE",
-    "품목명",
-    "수입국가",
-    "기본관세",
-    "FTA 관세",
-    "적용 가능 최저세율",
-    "내국세",
-    "수입요건",
-    "원산지표시",
-    "상태",
-    "메시지"
+async function downloadResults(results: HsBatchResultRow[]) {
+  const writeXlsxFile = (await import("write-excel-file/browser")).default;
+  const headerStyle = {
+    backgroundColor: "#1D4ED8",
+    fontWeight: "bold" as const,
+    textColor: "#FFFFFF",
+    alignVertical: "center" as const,
+    wrap: true
+  };
+  const cellStyle = {
+    alignVertical: "top" as const,
+    borderColor: "#E2E8F0",
+    borderStyle: "thin" as const,
+    wrap: true
+  };
+  const rows = [
+    resultColumns.map((column) => ({ value: column.header, type: String, ...headerStyle })),
+    ...results.map((result) =>
+      resultColumns.map((column) => {
+        const value = column.key === "status"
+          ? resultStatusLabel(result.status)
+          : column.key === "normalizedHskCode" && result.normalizedHskCode
+          ? formatHsCode(result.normalizedHskCode)
+          : result[column.key];
+        const statusStyle = column.key === "status"
+          ? {
+              fontWeight: "bold" as const,
+              textColor: result.status === "success" ? "#047857" : result.status === "warning" ? "#B45309" : "#B91C1C"
+            }
+          : {};
+        return { value: String(value ?? ""), type: String, ...cellStyle, ...statusStyle };
+      })
+    )
   ];
-  const body = results.map((row) => [
-    row.rowNumber,
-    row.inputHskCode,
-    row.normalizedHskCode,
-    row.productName,
-    row.matchedHskCode,
-    row.matchedName,
-    row.countryCode,
-    row.basicTariff,
-    row.ftaTariff,
-    row.lowestTariff,
-    row.internalTax,
-    row.importRequirements,
-    row.originMarking,
-    row.status,
-    row.message
-  ]);
-  const tsv = [headers, ...body].map((row) => row.map(escapeTsvCell).join("\t")).join("\n");
-  const blob = new Blob([`\uFEFF${tsv}`], { type: "application/vnd.ms-excel;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `hs-batch-result-${new Date().toISOString().slice(0, 10)}.xls`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
+
+  await writeXlsxFile(rows, {
+    columns: resultColumns.map((column) => ({ width: column.width })),
+    sheet: "HS 일괄조회",
+    stickyRowsCount: 1
+  }).toFile(`hs-batch-result-${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
 
 function statusBadgeClass(status: HsBatchResultRow["status"]) {
@@ -78,6 +93,7 @@ export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
   const [inputText, setInputText] = useState(sampleText);
   const [rows, setRows] = useState<HsBatchInputRow[]>(() => parseDelimitedText(sampleText));
   const [parseMessage, setParseMessage] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const rowSummary = useMemo(() => {
     const valid10 = rows.filter((row) => normalizeHsCode(row.hskCode).length === 10).length;
@@ -104,6 +120,16 @@ export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
     const parsedRows = parseDelimitedText(inputText);
     setRows(parsedRows);
     setParseMessage(`${parsedRows.length}행을 읽었습니다. 입력 순서와 중복 HS CODE를 유지합니다.`);
+  }
+
+  async function handleDownloadResults() {
+    if (!state.results?.length) return;
+    setExporting(true);
+    try {
+      await downloadResults(state.results);
+    } finally {
+      setExporting(false);
+    }
   }
 
   return (
@@ -244,12 +270,13 @@ export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
               </p>
             </div>
             <button
-              className="focus-ring inline-flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
-              onClick={() => downloadResults(state.results ?? [])}
+              className="focus-ring inline-flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-500"
+              disabled={exporting}
+              onClick={() => void handleDownloadResults()}
               type="button"
             >
-              <Download aria-hidden="true" size={17} />
-              엑셀 다운로드
+              {exporting ? <Loader2 aria-hidden="true" className="animate-spin" size={17} /> : <Download aria-hidden="true" size={17} />}
+              {exporting ? "XLSX 생성 중" : "XLSX 다운로드"}
             </button>
           </div>
           <div className="overflow-x-auto">
