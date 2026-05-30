@@ -1643,3 +1643,23 @@
 - Alias: `https://hsfinder.co.kr`
 - `vercel env run -e production -- npm run health:db`
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
+
+### 품명검색 진행바 최종 단계 정체 보정
+
+- 사용자 제보: 품명검색 진행 표시가 `검색 결과 화면 생성` 단계에서 멈췄다.
+- 이전 수정은 GET 검색 진행바가 너무 빨리 꺼지는 문제를 막은 것이고, 이번 수정은 결과 완료 신호를 못 받는 경우 진행바가 계속 남는 문제를 보정한 것이다.
+- GET 검색 폼에도 안전 종료 타이머를 다시 적용하되, 1.2초가 아니라 최종 단계 도달 후 12초가 지나고 버튼이 복구된 경우에만 닫히게 했다.
+- POST 저장/요청류 폼은 기존처럼 1.2초 안전 종료 기준을 유지한다.
+- 운영 로그에서 `/hs/direct` 요청이 200으로 완료되는 것을 확인했고, 진행바 종료 조건 문제로 판단해 전역 진행바 로직을 수정했다.
+
+검증:
+
+- `npm test -- lib/i18n/hs-direct.test.ts server/rules/hs-candidate.service.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `git diff --check`
+- Vercel production deployment: `customs-hscode-qvn8htkn0-koo-apps.vercel.app`
+- Alias: `https://hsfinder.co.kr`
+- `vercel env run -e production -- npm run health:db`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
