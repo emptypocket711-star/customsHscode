@@ -28,11 +28,16 @@
   - 큐 작업은 회사/사용자 범위로 저장되며, payload에는 입력 행과 조회기준일·목적국만 저장하고 문서 원문 텍스트는 저장하지 않는다.
   - `/api/jobs/run` worker가 `document_extraction`과 함께 `hs_batch_lookup` 작업을 처리한다.
   - 작업 결과에는 조회기준일, 목적국, 요약, 행별 예비 조회 결과를 저장한다.
+- `/hs/batch` 화면에서 최근 `hs_batch_lookup` 작업 상태를 다시 확인할 수 있게 했다.
+  - 완료된 백그라운드 작업은 저장된 행별 결과로 기존 `전체 결과`, `보완 필요`, `업체 전달용` XLSX를 다시 다운로드할 수 있다.
+  - 조회는 Supabase RLS를 통과한 현재 회사 범위의 작업만 표시한다.
 
 검증:
 
 - `npm test -- features/hs-batch/input-parser.test.ts server/actions/hs-batch.actions.test.ts`
 - `npm test -- server/actions/hs-batch.actions.test.ts server/repositories/background-job.repository.test.ts server/jobs/hs-batch-lookup-job.handler.test.ts server/jobs/background-worker.service.test.ts`
+- `npm test -- server/repositories/background-job.repository.test.ts server/jobs/hs-batch-lookup-job.handler.test.ts server/actions/hs-batch.actions.test.ts`
+- `npm test`
 - `npm run typecheck`
 - `npm run lint`
 - `npm run build`

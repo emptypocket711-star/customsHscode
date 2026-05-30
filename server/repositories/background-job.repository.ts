@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { HsBatchQueuedLookupJob, HsBatchResultRow } from "@/features/hs-batch/schemas";
 
 export type BackgroundJobType =
   | "document_extraction"
@@ -53,6 +54,16 @@ type BackgroundJobOperationsRow = {
   max_attempts: number;
   error_message: string | null;
   available_at: string;
+  created_at: string;
+  updated_at: string;
+};
+
+type HsBatchLookupJobRow = {
+  id: string;
+  status: BackgroundJobStatus;
+  payload: Record<string, unknown>;
+  result: Record<string, unknown>;
+  error_message: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -232,6 +243,93 @@ function mapBackgroundJobOperationsRow(row: BackgroundJobOperationsRow): Backgro
   };
 }
 
+function recordValue(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function stringRecordValue(record: Record<string, unknown>, key: string) {
+  const value = record[key];
+  return typeof value === "string" ? value : "";
+}
+
+function numberRecordValue(record: Record<string, unknown>, key: string) {
+  const value = record[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function hsBatchSummaryValue(value: unknown) {
+  const summary = recordValue(value);
+  if (!Object.keys(summary).length) return undefined;
+  return {
+    total: numberRecordValue(summary, "total"),
+    success: numberRecordValue(summary, "success"),
+    warning: numberRecordValue(summary, "warning"),
+    error: numberRecordValue(summary, "error")
+  };
+}
+
+function hsBatchResultsValue(value: unknown): HsBatchResultRow[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+
+  const rows: HsBatchResultRow[] = [];
+
+  for (const row of value) {
+    const record = recordValue(row);
+    const status = stringRecordValue(record, "status");
+    if (typeof record.rowNumber !== "number" || !["success", "warning", "error"].includes(status)) {
+      continue;
+    }
+
+    rows.push({
+      rowNumber: record.rowNumber,
+      inputHskCode: stringRecordValue(record, "inputHskCode"),
+      normalizedHskCode: stringRecordValue(record, "normalizedHskCode"),
+      productName: stringRecordValue(record, "productName"),
+      basisDate: stringRecordValue(record, "basisDate") || undefined,
+      matchedHskCode: stringRecordValue(record, "matchedHskCode"),
+      matchedName: stringRecordValue(record, "matchedName"),
+      countryCode: stringRecordValue(record, "countryCode"),
+      basicTariff: stringRecordValue(record, "basicTariff") || "-",
+      ftaTariff: stringRecordValue(record, "ftaTariff") || "-",
+      lowestTariff: stringRecordValue(record, "lowestTariff") || "-",
+      internalTax: stringRecordValue(record, "internalTax") || "-",
+      importRequirements: stringRecordValue(record, "importRequirements") || "-",
+      originMarking: stringRecordValue(record, "originMarking") || "-",
+      status: status as HsBatchResultRow["status"],
+      message: stringRecordValue(record, "message"),
+      candidateOptions: Array.isArray(record.candidateOptions) ? record.candidateOptions as HsBatchResultRow["candidateOptions"] : undefined,
+      missingQuestions: Array.isArray(record.missingQuestions) ? record.missingQuestions.filter((question): question is string => typeof question === "string") : undefined,
+      aiSuggestedCodes: Array.isArray(record.aiSuggestedCodes) ? record.aiSuggestedCodes as HsBatchResultRow["aiSuggestedCodes"] : undefined
+    });
+  }
+
+  return rows;
+}
+
+function mapHsBatchLookupJobRow(row: HsBatchLookupJobRow): HsBatchQueuedLookupJob {
+  const payload = recordValue(row.payload);
+  const result = recordValue(row.result);
+  const summary = hsBatchSummaryValue(result.summary);
+  const results = hsBatchResultsValue(result.results);
+  const rowCount = numberRecordValue(result, "rowCount")
+    || (Array.isArray(payload.rows) ? payload.rows.length : 0)
+    || summary?.total
+    || 0;
+
+  return {
+    jobId: row.id,
+    status: row.status,
+    rowCount,
+    basisDate: stringRecordValue(result, "basisDate") || stringRecordValue(payload, "basisDate"),
+    destinationCountry: stringRecordValue(result, "destinationCountry") || stringRecordValue(payload, "destinationCountry") || "ALL",
+    summary,
+    results,
+    errorMessage: row.error_message,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
 export async function listRecentBackgroundJobOperations(
   supabase: SupabaseClient,
   limit = 20
@@ -244,6 +342,21 @@ export async function listRecentBackgroundJobOperations(
 
   if (error) throw new Error(error.message);
   return ((data ?? []) as BackgroundJobOperationsRow[]).map(mapBackgroundJobOperationsRow);
+}
+
+export async function listRecentHsBatchLookupJobs(
+  supabase: SupabaseClient,
+  limit = 10
+): Promise<HsBatchQueuedLookupJob[]> {
+  const { data, error } = await supabase
+    .from("background_jobs")
+    .select("id,status,payload,result,error_message,created_at,updated_at")
+    .eq("job_type", "hs_batch_lookup")
+    .order("updated_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as HsBatchLookupJobRow[]).map(mapHsBatchLookupJobRow);
 }
 
 export function summarizeBackgroundJobOperations(jobs: BackgroundJobOperationsItem[]): BackgroundJobOperationsSummary {

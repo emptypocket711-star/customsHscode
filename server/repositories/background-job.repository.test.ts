@@ -1,9 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   claimBackgroundJobsRpcName,
   createDocumentExtractionJobPayload,
   createHsBatchLookupJobPayload,
   isBackgroundQueueEnabled,
+  listRecentHsBatchLookupJobs,
   summarizeBackgroundJobOperations,
   type BackgroundJobOperationsItem
 } from "@/server/repositories/background-job.repository";
@@ -88,5 +89,79 @@ describe("background job repository helpers", () => {
       retryWaiting: 1,
       dead: 1
     });
+  });
+
+  it("lists recent HS batch lookup jobs with downloadable result metadata", async () => {
+    const builder = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      order: vi.fn(),
+      limit: vi.fn()
+    };
+    builder.select.mockReturnValue(builder);
+    builder.eq.mockReturnValue(builder);
+    builder.order.mockReturnValue(builder);
+    builder.limit.mockResolvedValue({
+      data: [
+        {
+          id: "00000000-0000-0000-0000-000000000010",
+          status: "succeeded",
+          payload: {
+            kind: "hs_batch_lookup",
+            basisDate: "2026-05-30",
+            destinationCountry: "CHN",
+            rows: [{ rowNumber: 1, hskCode: "3304991000", productName: "기초화장품", memo: "" }]
+          },
+          result: {
+            kind: "hs_batch_lookup",
+            basisDate: "2026-05-30",
+            destinationCountry: "CHN",
+            rowCount: 1,
+            summary: { total: 1, success: 1, warning: 0, error: 0 },
+            results: [
+              {
+                rowNumber: 1,
+                inputHskCode: "3304991000",
+                status: "success",
+                message: "조회기준일 2026-05-30 기준 예비 조회"
+              }
+            ]
+          },
+          error_message: null,
+          created_at: "2026-05-30T00:00:00Z",
+          updated_at: "2026-05-30T00:01:00Z"
+        }
+      ],
+      error: null
+    });
+    const supabase = { from: vi.fn(() => builder) };
+
+    const jobs = await listRecentHsBatchLookupJobs(supabase as never, 8);
+
+    expect(supabase.from).toHaveBeenCalledWith("background_jobs");
+    expect(builder.eq).toHaveBeenCalledWith("job_type", "hs_batch_lookup");
+    expect(builder.limit).toHaveBeenCalledWith(8);
+    expect(jobs).toMatchObject([
+      {
+        jobId: "00000000-0000-0000-0000-000000000010",
+        status: "succeeded",
+        rowCount: 1,
+        basisDate: "2026-05-30",
+        destinationCountry: "CHN",
+        summary: { total: 1, success: 1, warning: 0, error: 0 },
+        results: [
+          {
+            rowNumber: 1,
+            inputHskCode: "3304991000",
+            status: "success",
+            message: "조회기준일 2026-05-30 기준 예비 조회"
+          }
+        ],
+        errorMessage: null,
+        createdAt: "2026-05-30T00:00:00Z",
+        updatedAt: "2026-05-30T00:01:00Z"
+      }
+    ]);
+    expect(jobs[0]?.results?.[0]?.basicTariff).toBe("-");
   });
 });

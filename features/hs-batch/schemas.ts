@@ -65,3 +65,21 @@ export type HsBatchLookupActionState = {
     status: string;
   };
 };
+
+export type HsBatchQueuedLookupJob = {
+  jobId: string;
+  status: string;
+  rowCount: number;
+  basisDate: string;
+  destinationCountry: string;
+  summary?: {
+    total: number;
+    success: number;
+    warning: number;
+    error: number;
+  };
+  results?: HsBatchResultRow[];
+  errorMessage?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};

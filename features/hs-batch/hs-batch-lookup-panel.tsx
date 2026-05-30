@@ -6,7 +6,7 @@ import { Check, Clipboard, Download, FileSpreadsheet, Loader2, Search, UploadClo
 import { CountryComboboxField } from "@/features/hs/country-combobox-field";
 import { formatHsCode, normalizeHsCode } from "@/lib/hs-code";
 import { lookupHsBatchAction } from "@/server/actions/hs-batch.actions";
-import type { HsBatchInputRow, HsBatchLookupActionState, HsBatchResultRow } from "./schemas";
+import type { HsBatchInputRow, HsBatchLookupActionState, HsBatchQueuedLookupJob, HsBatchResultRow } from "./schemas";
 import { parseDelimitedInput, parseDelimitedText, parseMatrix, type HsBatchParseResult } from "./input-parser";
 
 const initialState: HsBatchLookupActionState = { status: "idle" };
@@ -64,6 +64,36 @@ function resultStatusLabel(status: HsBatchResultRow["status"]) {
   if (status === "success") return "완료";
   if (status === "warning") return "확인 필요";
   return "오류";
+}
+
+function queuedJobStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    queued: "대기",
+    running: "실행 중",
+    succeeded: "완료",
+    failed: "재시도 대기",
+    canceled: "취소",
+    dead: "최종 실패"
+  };
+
+  return labels[status] ?? status;
+}
+
+function queuedJobStatusClass(status: string) {
+  if (status === "succeeded") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+  if (status === "failed" || status === "dead") return "bg-amber-50 text-amber-700 ring-amber-200";
+  if (status === "running") return "bg-blue-50 text-blue-700 ring-blue-200";
+  return "bg-slate-50 text-slate-700 ring-slate-200";
+}
+
+function formatQueuedJobTime(value: string) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Seoul"
+  }).format(new Date(value));
 }
 
 function hasVisibleRequirement(row: HsBatchResultRow) {
@@ -457,7 +487,13 @@ function describeColumnDetection(result: HsBatchParseResult) {
   return columns.join(" / ");
 }
 
-export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
+export function HsBatchLookupPanel({
+  basisDate,
+  recentQueuedJobs = []
+}: {
+  basisDate: string;
+  recentQueuedJobs?: HsBatchQueuedLookupJob[];
+}) {
   const [state, formAction, pending] = useActionState(lookupHsBatchAction, initialState);
   const [inputText, setInputText] = useState(sampleText);
   const [rows, setRows] = useState<HsBatchInputRow[]>(() => parseDelimitedText(sampleText));
@@ -467,6 +503,7 @@ export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
   const [resultFilter, setResultFilter] = useState<ResultFilter>("all");
   const [copiedRowKey, setCopiedRowKey] = useState<string | null>(null);
   const [copiedVisibleRows, setCopiedVisibleRows] = useState(false);
+  const [downloadingQueuedJobId, setDownloadingQueuedJobId] = useState<string | null>(null);
 
   const rowSummary = useMemo(() => {
     const valid10 = rows.filter((row) => normalizeHsCode(row.hskCode).length === 10).length;
@@ -515,6 +552,16 @@ export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
       await downloadResults(state.results);
     } finally {
       setExporting(false);
+    }
+  }
+
+  async function handleDownloadQueuedJob(job: HsBatchQueuedLookupJob) {
+    if (!job.results?.length) return;
+    setDownloadingQueuedJobId(job.jobId);
+    try {
+      await downloadResults(job.results);
+    } finally {
+      setDownloadingQueuedJobId(null);
     }
   }
 
@@ -683,6 +730,66 @@ export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
             </div>
           ) : null}
         </div>
+      ) : null}
+
+      {recentQueuedJobs.length ? (
+        <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 px-5 py-4">
+            <h2 className="text-lg font-bold text-slate-950">최근 백그라운드 조회</h2>
+            <p className="mt-1 text-sm text-slate-600">대량 일괄조회 작업의 처리 상태와 완료 결과를 확인합니다.</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-[920px] text-left text-sm">
+              <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
+                <tr>
+                  <th className="px-5 py-3">수정 시간</th>
+                  <th className="px-5 py-3">조회 조건</th>
+                  <th className="px-5 py-3">상태</th>
+                  <th className="px-5 py-3">결과</th>
+                  <th className="px-5 py-3">다운로드</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {recentQueuedJobs.map((job) => {
+                  const downloadable = job.status === "succeeded" && Boolean(job.results?.length);
+                  const downloadingQueuedJob = downloadingQueuedJobId === job.jobId;
+                  return (
+                    <tr key={job.jobId}>
+                      <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-600">{formatQueuedJobTime(job.updatedAt)}</td>
+                      <td className="px-5 py-4">
+                        <p className="font-semibold text-slate-950">{job.rowCount}행 / {job.destinationCountry || "ALL"}</p>
+                        <p className="mt-1 text-xs text-slate-500">조회기준일 {job.basisDate || "-"}</p>
+                        <p className="mt-1 font-mono text-[11px] text-slate-400">{job.jobId}</p>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${queuedJobStatusClass(job.status)}`}>
+                          {queuedJobStatusLabel(job.status)}
+                        </span>
+                        {job.errorMessage ? <p className="mt-2 max-w-[280px] truncate text-xs text-amber-700">{job.errorMessage}</p> : null}
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-4 text-slate-700">
+                        {job.summary
+                          ? `완료 ${job.summary.success} / 확인 필요 ${job.summary.warning} / 오류 ${job.summary.error}`
+                          : "처리 결과 대기"}
+                      </td>
+                      <td className="px-5 py-4">
+                        <button
+                          className="focus-ring inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                          disabled={!downloadable || downloadingQueuedJob}
+                          onClick={() => void handleDownloadQueuedJob(job)}
+                          type="button"
+                        >
+                          {downloadingQueuedJob ? <Loader2 aria-hidden="true" className="animate-spin" size={16} /> : <Download aria-hidden="true" size={16} />}
+                          {downloadable ? "XLSX" : "대기"}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
       ) : null}
 
       {state.results?.length ? (
