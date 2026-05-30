@@ -34,6 +34,11 @@
 - `/api/jobs/run`을 실제 worker cron으로 호출할 수 있게 운영 진입점을 보강했다.
   - 다른 job route와 동일하게 `JOB_WORKER_SECRET` 또는 `CRON_SECRET`, query secret, `GET`/`POST`를 지원한다.
   - `vercel.json`에 `/api/jobs/run` 5분 주기 cron을 추가했다.
+- 운영 반영:
+  - Supabase production DB에 `20260530001000_hs_batch_lookup_jobs.sql` migration을 적용했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+  - Vercel `BACKGROUND_JOBS_ENABLED`를 production/preview에서 `true`로 갱신하고 production을 재배포했다.
+  - `https://hsfinder.co.kr/api/jobs/run` 수동 실행 결과 200 OK, claimed 0건을 확인했다.
 
 검증:
 
@@ -44,6 +49,7 @@
 - `npm run typecheck`
 - `npm run lint`
 - `npm run build`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 
 ## 2026-05-29
 
