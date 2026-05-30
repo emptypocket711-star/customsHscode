@@ -233,6 +233,30 @@ function aiCodeHintRankBonus(normalization: AiProductSearchNormalizationResult |
   return index >= 0 ? Math.max(0, 2 - index * 0.35) : 0;
 }
 
+function isOtherHsMasterRow(row: HsMasterSearchRow) {
+  return row.korean_name.includes("기타") || row.english_name?.toLowerCase() === "other";
+}
+
+function aiCodeHintOfficialExpansionBonus(normalization: AiProductSearchNormalizationResult | null, row: HsMasterSearchRow) {
+  const hints = normalizeAiHsCodeHints(normalization);
+  let bonus = 0;
+
+  for (const hint of hints) {
+    if (hint.length >= 10) {
+      if (row.hsk_code === hint.slice(0, 10)) bonus = Math.max(bonus, 4);
+      if (row.hsk_code !== hint.slice(0, 10) && row.hsk_code.startsWith(hint.slice(0, 6)) && isOtherHsMasterRow(row)) {
+        bonus = Math.max(bonus, 3);
+      }
+    } else if (hint.length >= 6) {
+      if (row.hsk_code.startsWith(hint.slice(0, 6)) && isOtherHsMasterRow(row)) {
+        bonus = Math.max(bonus, 1.5);
+      }
+    }
+  }
+
+  return bonus;
+}
+
 function normalizeAiHsCodeHints(normalization: AiProductSearchNormalizationResult | null) {
   return Array.from(new Set(
     (normalization?.candidateHsCodes ?? [])
@@ -482,6 +506,39 @@ async function findHsMasterRowsByExactCodes(
   return (data ?? []) as HsMasterSearchRow[];
 }
 
+async function findHsMasterRowsByCodeHintPrefixes(
+  supabase: SupabaseClient,
+  input: ProductHsRecommendationInput,
+  codeHints: string[]
+) {
+  const collected = new Map<string, HsMasterSearchRow>();
+  const normalizedHints = Array.from(new Set(
+    codeHints
+      .map((code) => code.replace(/[^0-9]/g, ""))
+      .filter((code) => code.length >= 4 && code.length <= 10)
+  ));
+
+  for (const code of normalizedHints) {
+    const prefix = code.length >= 6 ? code.slice(0, 6) : code.slice(0, 4);
+    const { data, error } = await supabase
+      .from("hs_master")
+      .select("hsk_code, hs6, korean_name, english_name, source_name, source_url, source_version, effective_from, effective_to")
+      .like("hsk_code", `${prefix}%`)
+      .lte("effective_from", input.basisDate)
+      .or(`effective_to.is.null,effective_to.gte.${input.basisDate}`)
+      .eq("status", "published")
+      .order("hsk_code")
+      .limit(24);
+
+    if (error) throw new Error(error.message);
+    for (const row of (data ?? []) as HsMasterSearchRow[]) {
+      collected.set(row.hsk_code, row);
+    }
+  }
+
+  return [...collected.values()];
+}
+
 function mockHsMasterRowsByCodeHints(
   input: ProductHsRecommendationInput,
   codeHints: string[]
@@ -613,7 +670,8 @@ function rankOfficialHsMasterRows(
       + matches.length * 2
       + Math.min(row.hsk_code.length, 10) / 10
       + (reasonedHint ? 2 : 0)
-      + aiCodeHintRankBonus(normalization, row.hsk_code, row.hs6);
+      + aiCodeHintRankBonus(normalization, row.hsk_code, row.hs6)
+      + aiCodeHintOfficialExpansionBonus(normalization, row);
     if (!current || score > current.score) {
       const fromUserHsHint = userProvidedHsHints.some((hint) => {
         if (hint.length >= 10) return row.hsk_code === hint.slice(0, 10) || row.hs6 === hint.slice(0, 6);
@@ -1088,13 +1146,29 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
         return candidates;
       }
     }
-    const aiHintCandidates = normalization
-      ? recommendAiHsCodeHintCandidates(augmentedInput, normalization, [])
+    const officialAiHintRows = normalization?.candidateHsCodes.length
+      ? await findHsMasterRowsByCodeHintPrefixes(
+        supabase,
+        augmentedInput,
+        normalization.candidateHsCodes
+      ).catch(() => [])
       : [];
-    const fallbackCandidates = !shouldKeepAiAlternatives && !aiHintCandidates.length
+    const officialAiHintCandidates = officialAiHintRows.length
+      ? rankOfficialHsMasterRows(
+        augmentedInput,
+        normalization,
+        hsMasterSearchTerms(analyzeProductNameInput(augmentedInput), normalization),
+        [],
+        officialAiHintRows
+      )
+      : [];
+    const aiHintCandidates = normalization
+      ? recommendAiHsCodeHintCandidates(augmentedInput, normalization, officialAiHintCandidates)
+      : [];
+    const fallbackCandidates = !shouldKeepAiAlternatives && !officialAiHintCandidates.length && !aiHintCandidates.length
       ? recommendHsCandidates(augmentedInput)
       : [];
-    const normalizedCandidates = [...aiHintCandidates, ...fallbackCandidates];
+    const normalizedCandidates = [...officialAiHintCandidates, ...aiHintCandidates, ...fallbackCandidates];
     const merged = filterContextConflictingCandidates(augmentedInput, mergeRecommendations([
       ...recommendAmbiguousProductCandidates(input),
       ...normalizedCandidates
@@ -1106,11 +1180,11 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       ...productInputShape(input),
       route: "hs_product_ai",
       status: "success",
-      sourceMode: "supabase_gpt_only",
+      sourceMode: officialAiHintCandidates.length ? "supabase_gpt_official_prefix" : "supabase_gpt_only",
       durationMs: Date.now() - startedAt,
       resultCount: candidates.length,
       aiHintCount: aiHintCandidates.length,
-      officialCandidateCount: 0,
+      officialCandidateCount: officialAiHintCandidates.length,
       fallbackCandidateCount: fallbackCandidates.length,
       ...candidateTelemetryShape(candidates),
       ...productNormalizationTelemetryShape(normalization, { normalizationErrorType, normalizationStatus })

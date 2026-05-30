@@ -111,7 +111,7 @@ describe("normalizeProductSearchInput", () => {
     });
 
     expect(key).toContain("ai-product-normalization");
-    expect(key).toContain("product-search-normalization-v19");
+    expect(key).toContain("product-search-normalization-v20");
     expect(key).toContain("901910");
     expect(key).not.toContain("secret");
     expect(key).not.toContain("ABC-123");
@@ -263,6 +263,8 @@ describe("normalizeProductSearchInput", () => {
     expect(instructions).toContain("Use general product knowledge only");
     expect(instructions).toContain("Keep the answer short");
     expect(instructions).toContain("candidateHsCodes max 3");
+    expect(instructions).toContain("Korean HSK 10-digit code");
+    expect(instructions).toContain("map it to an official Korean '기타' candidate");
     expect(instructions).toContain("clear common product");
     expect(instructions).toContain("candy/sweets/confectionery");
     expect(instructions).toContain("Do not return an empty candidateHsCodes array only because the exact Korean HSK 10-digit suffix is unknown");
