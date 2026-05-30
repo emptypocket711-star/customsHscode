@@ -85,6 +85,14 @@
   - production 배포 후 실패 알림 리허설을 다시 실행해 임시 job `78319c36-d716-402b-ab10-3b7edebe210e`이 `dead`, worker run이 `failed`, 알림이 `sent: true`로 처리되는 것을 확인했다.
   - `operations_alert_events` 최신 row가 `background_job_failure`, `sent`, provider id 있음, alert key `background_job_failure:jobs:1098fd3c155b050e`로 저장되는 것을 확인했다.
   - production smoke 10개 경로 모두 통과했다.
+- 운영 알림 이력 보존 정책을 추가했다.
+  - `cleanup_operations_alert_events(retention_days)` RPC를 추가해 cutoff 이전 `operations_alert_events` row를 DB에서 직접 삭제하고 삭제 건수만 반환한다.
+  - `/api/jobs/operations-retention` 보호 route와 `npm run ops:job:operations-retention` 스크립트를 추가했다.
+  - 기본 보존 기간은 90일이며 `OPERATIONS_ALERT_RETENTION_DAYS`로 조정할 수 있다. 1 미만, 비숫자, 미설정 값은 기본 90일로 처리한다.
+  - Vercel Cron에 매일 03:40 KST 실행되도록 `40 18 * * *` UTC schedule을 추가했다.
+- 운영 반영:
+  - Supabase production DB에 `20260530004000_cleanup_operations_alert_events.sql` migration을 적용했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
@@ -105,6 +113,12 @@
 - `vercel env run -e production -- npm run health:db`
 - `vercel env run -e production -- npm run ops:job:background-failure-rehearsal`
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
+- `npm test -- server/operations/operations-retention.service.test.ts`
+- `npm test`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `vercel env run -e production -- npm run health:db`
 - 운영 E2E: 임시 계정 기반 82행 큐 등록 → worker 처리 → 결과 UI/XLSX 버튼 확인
 - `npm test -- server/repositories/background-job.repository.test.ts`
 - `vercel env run -e production -- npm run ops:job:background`
