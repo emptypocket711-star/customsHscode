@@ -354,6 +354,13 @@
 - 운영 이슈 긴 텍스트 표시 운영 반영:
   - production 배포 `customs-hscode-c7idf9eho-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+- 운영 이슈 키 표시를 보강했다.
+  - 이전 작업은 제목, 요약, 조치, 드릴다운 샘플, 메모 같은 긴 텍스트가 테이블 폭을 밀지 않도록 하는 레이아웃 안정화이고, 이번 작업은 긴 `issue_key`만 축약 표시하되 전체 값을 확인할 수 있게 하는 키 확인성 보강이다.
+  - 화면에는 긴 issue key를 축약 표시하고, hover title로 전체 issue key를 확인할 수 있게 했다.
+  - 저장 데이터와 운영 이슈 처리 로직은 바꾸지 않았다.
+- 운영 이슈 키 표시 운영 반영:
+  - production 배포 `customs-hscode-mtr43tdv6-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
