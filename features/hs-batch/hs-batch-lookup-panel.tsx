@@ -16,6 +16,12 @@ const sampleText = `HS CODE\t품명\t비고
 3304.99-1000\t기초화장품 세트\t샘플 2
 3923.50-0000\t플라스틱 캡\t샘플 3`;
 
+const templateColumns = [
+  { header: "HS CODE", width: 18 },
+  { header: "품명", width: 34 },
+  { header: "비고", width: 42 }
+];
+
 type XlsxResultColumn = {
   header: string;
   key: keyof HsBatchResultRow | "guidance";
@@ -168,6 +174,83 @@ async function downloadResults(results: HsBatchResultRow[]) {
   await writeXlsxFile(sheets).toFile(`hs-batch-result-${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
 
+async function downloadUploadTemplate() {
+  const writeXlsxFile = (await import("write-excel-file/browser")).default;
+  const headerStyle = {
+    backgroundColor: "#1D4ED8",
+    fontWeight: "bold" as const,
+    textColor: "#FFFFFF",
+    alignVertical: "center" as const,
+    wrap: true
+  };
+  const requiredStyle = {
+    backgroundColor: "#EEF2FF",
+    fontWeight: "bold" as const,
+    textColor: "#1E3A8A",
+    alignVertical: "top" as const,
+    borderColor: "#CBD5E1",
+    borderStyle: "thin" as const,
+    wrap: true
+  };
+  const cellStyle = {
+    alignVertical: "top" as const,
+    borderColor: "#E2E8F0",
+    borderStyle: "thin" as const,
+    wrap: true
+  };
+
+  await writeXlsxFile([
+    {
+      sheet: "업로드 양식",
+      columns: templateColumns.map((column) => ({ width: column.width })),
+      stickyRowsCount: 1,
+      data: [
+        templateColumns.map((column) => ({ value: column.header, type: String, ...headerStyle })),
+        [
+          { value: "3304.99-1000", type: String, ...requiredStyle },
+          { value: "기초화장품", type: String, ...cellStyle },
+          { value: "예: 인보이스 1번 행 / 브랜드명 / 모델명 / 확인 메모", type: String, ...cellStyle }
+        ],
+        [
+          { value: "3923.50-0000", type: String, ...cellStyle },
+          { value: "플라스틱 캡", type: String, ...cellStyle },
+          { value: "같은 HS CODE가 여러 번 있어도 행을 합치지 않습니다.", type: String, ...cellStyle }
+        ]
+      ]
+    },
+    {
+      sheet: "작성 방법",
+      columns: [{ width: 24 }, { width: 76 }],
+      data: [
+        [
+          { value: "항목", type: String, ...headerStyle },
+          { value: "작성 방법", type: String, ...headerStyle }
+        ],
+        [
+          { value: "HS CODE", type: String, ...requiredStyle },
+          { value: "필수값입니다. 관세율, 내국세, 수입요건 조회는 10자리 기준입니다. 예: 3304.99-1000 또는 3304991000", type: String, ...cellStyle }
+        ],
+        [
+          { value: "품명", type: String, ...cellStyle },
+          { value: "선택값입니다. 업체 안내문과 내부 확인용으로 표시됩니다.", type: String, ...cellStyle }
+        ],
+        [
+          { value: "비고", type: String, ...cellStyle },
+          { value: "선택값입니다. 인보이스 행 번호, 모델명, 브랜드명, 확인 메모 등을 적을 수 있습니다.", type: String, ...cellStyle }
+        ],
+        [
+          { value: "중복 행", type: String, ...cellStyle },
+          { value: "같은 HS CODE가 여러 번 있어도 합치지 않고 업로드한 순서 그대로 조회 결과를 만듭니다.", type: String, ...cellStyle }
+        ],
+        [
+          { value: "4/6/8자리", type: String, ...cellStyle },
+          { value: "일괄조회에서는 보완 필요로 표시됩니다. 하위 10자리 확정 후 다시 조회해 주세요.", type: String, ...cellStyle }
+        ]
+      ]
+    }
+  ]).toFile("hs-batch-upload-template.xlsx");
+}
+
 function statusBadgeClass(status: HsBatchResultRow["status"]) {
   if (status === "success") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
   if (status === "warning") return "bg-amber-50 text-amber-700 ring-amber-200";
@@ -180,6 +263,7 @@ export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
   const [rows, setRows] = useState<HsBatchInputRow[]>(() => parseDelimitedText(sampleText));
   const [parseMessage, setParseMessage] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [templateDownloading, setTemplateDownloading] = useState(false);
   const [resultFilter, setResultFilter] = useState<ResultFilter>("all");
   const [copiedRowKey, setCopiedRowKey] = useState<string | null>(null);
   const [copiedVisibleRows, setCopiedVisibleRows] = useState(false);
@@ -235,6 +319,15 @@ export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
     }
   }
 
+  async function handleDownloadTemplate() {
+    setTemplateDownloading(true);
+    try {
+      await downloadUploadTemplate();
+    } finally {
+      setTemplateDownloading(false);
+    }
+  }
+
   async function handleCopyRow(row: HsBatchResultRow, key: string) {
     await navigator.clipboard.writeText(buildRowGuidance(row));
     setCopiedRowKey(key);
@@ -268,6 +361,15 @@ export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
               엑셀/CSV 업로드
               <div className="flex min-h-28 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center">
                 <UploadCloud aria-hidden="true" className="text-slate-400" size={24} />
+                <button
+                  className="focus-ring inline-flex items-center gap-2 rounded-md border border-blue-200 bg-white px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                  disabled={templateDownloading}
+                  onClick={() => void handleDownloadTemplate()}
+                  type="button"
+                >
+                  {templateDownloading ? <Loader2 aria-hidden="true" className="animate-spin" size={16} /> : <Download aria-hidden="true" size={16} />}
+                  {templateDownloading ? "양식 생성 중" : "업로드 양식 다운로드"}
+                </button>
                 <input
                   accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
                   className="focus-ring w-full max-w-sm rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
