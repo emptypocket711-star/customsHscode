@@ -2,7 +2,7 @@
 
 import readXlsxFile from "read-excel-file/browser";
 import { useMemo, useState, useActionState } from "react";
-import { Download, FileSpreadsheet, Loader2, Search, UploadCloud } from "lucide-react";
+import { Check, Clipboard, Download, FileSpreadsheet, Loader2, Search, UploadCloud } from "lucide-react";
 import { CountryComboboxField } from "@/features/hs/country-combobox-field";
 import { formatHsCode, normalizeHsCode } from "@/lib/hs-code";
 import { lookupHsBatchAction } from "@/server/actions/hs-batch.actions";
@@ -116,6 +116,55 @@ function statusBadgeClass(status: HsBatchResultRow["status"]) {
   return "bg-red-50 text-red-700 ring-red-200";
 }
 
+function hasVisibleRequirement(row: HsBatchResultRow) {
+  return row.importRequirements !== "-"
+    && !row.importRequirements.includes("수입요건 조회 결과 없음");
+}
+
+function buildRowGuidance(row: HsBatchResultRow) {
+  const normalizedInput = formatHsCode(row.normalizedHskCode || normalizeHsCode(row.inputHskCode));
+  const itemName = row.productName || row.matchedName || "입력 품명 미기재";
+
+  if (row.status !== "success") {
+    return [
+      `[HS CODE 일괄 조회 보완 요청]`,
+      `입력행: ${row.rowNumber}`,
+      `품명: ${itemName}`,
+      `입력 HS CODE: ${normalizedInput || row.inputHskCode}`,
+      ``,
+      `현재 상태: ${resultStatusLabel(row.status)}`,
+      `확인 내용: ${row.message}`,
+      ``,
+      `HS CODE 10자리 기준으로 관세율, 내국세, 수입요건을 다시 확인할 수 있습니다.`,
+      `정확한 10자리 HS CODE 또는 품목 세부 정보를 보완해 주시면 재조회하겠습니다.`
+    ].join("\n");
+  }
+
+  const lines = [
+    `[HS CODE 예비 조회 안내]`,
+    `입력행: ${row.rowNumber}`,
+    `품명: ${itemName}`,
+    `HS CODE: ${row.matchedHskCode}`,
+    `품목명: ${row.matchedName}`,
+    ``,
+    `적용 관세율: ${row.basicTariff}`,
+    row.ftaTariff !== "-" ? `FTA 관세율: ${row.ftaTariff}` : null,
+    `적용 가능 최저세율: ${row.lowestTariff}`,
+    `내국세: ${row.internalTax}`,
+    ``,
+    `수입요건:`,
+    hasVisibleRequirement(row)
+      ? row.importRequirements
+      : `표시된 세관장확인 수입요건은 조회되지 않았습니다. 다만 통합공고, 개별법령, 표시·인증·유통규제 의무가 존재할 수 있으므로 품목 세부 조건은 별도 확인이 필요합니다.`,
+    ``,
+    `원산지표시: ${row.originMarking}`,
+    ``,
+    `위 내용은 ${row.message} 결과이며, 실제 신고 전 품목의 재질·용도·구성·원산지 조건에 따라 추가 확인이 필요할 수 있습니다.`
+  ].filter((line): line is string => line !== null);
+
+  return lines.join("\n");
+}
+
 export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
   const [state, formAction, pending] = useActionState(lookupHsBatchAction, initialState);
   const [inputText, setInputText] = useState(sampleText);
@@ -123,6 +172,7 @@ export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
   const [parseMessage, setParseMessage] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [resultFilter, setResultFilter] = useState<ResultFilter>("all");
+  const [copiedRowKey, setCopiedRowKey] = useState<string | null>(null);
 
   const rowSummary = useMemo(() => {
     const valid10 = rows.filter((row) => normalizeHsCode(row.hskCode).length === 10).length;
@@ -173,6 +223,12 @@ export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
     } finally {
       setExporting(false);
     }
+  }
+
+  async function handleCopyRow(row: HsBatchResultRow, key: string) {
+    await navigator.clipboard.writeText(buildRowGuidance(row));
+    setCopiedRowKey(key);
+    window.setTimeout(() => setCopiedRowKey((current) => current === key ? null : current), 1600);
   }
 
   return (
@@ -363,29 +419,48 @@ export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
                   <th className="px-3 py-2">수입요건</th>
                   <th className="px-3 py-2">원산지표시</th>
                   <th className="px-3 py-2">메시지</th>
+                  <th className="px-3 py-2">안내</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredResults.map((row, index) => (
-                  <tr key={`${row.rowNumber}-${row.inputHskCode}-${index}`} className="align-top">
-                    <td className="whitespace-nowrap px-3 py-2 text-slate-500">{row.rowNumber}</td>
-                    <td className="whitespace-nowrap px-3 py-2">
-                      <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ring-1 ${statusBadgeClass(row.status)}`}>
-                        {row.status === "success" ? "완료" : row.status === "warning" ? "확인 필요" : "오류"}
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-2 font-mono text-slate-700">{formatHsCode(row.normalizedHskCode || normalizeHsCode(row.inputHskCode))}</td>
-                    <td className="whitespace-nowrap px-3 py-2 font-mono font-semibold text-blue-700">{row.matchedHskCode || "-"}</td>
-                    <td className="min-w-56 px-3 py-2 font-medium text-slate-900">{row.matchedName || row.productName || "-"}</td>
-                    <td className="whitespace-nowrap px-3 py-2 text-slate-700">{row.basicTariff}</td>
-                    <td className="whitespace-nowrap px-3 py-2 text-slate-700">{row.ftaTariff}</td>
-                    <td className="whitespace-nowrap px-3 py-2 font-semibold text-orange-700">{row.lowestTariff}</td>
-                    <td className="whitespace-nowrap px-3 py-2 text-slate-700">{row.internalTax}</td>
-                    <td className="min-w-72 whitespace-pre-line px-3 py-2 text-slate-700">{row.importRequirements}</td>
-                    <td className="min-w-48 px-3 py-2 text-slate-700">{row.originMarking}</td>
-                    <td className="min-w-64 px-3 py-2 text-slate-500">{row.message}</td>
-                  </tr>
-                ))}
+                {filteredResults.map((row, index) => {
+                  const rowKey = `${row.rowNumber}-${row.inputHskCode}-${index}`;
+                  const copied = copiedRowKey === rowKey;
+                  return (
+                    <tr key={rowKey} className="align-top">
+                      <td className="whitespace-nowrap px-3 py-2 text-slate-500">{row.rowNumber}</td>
+                      <td className="whitespace-nowrap px-3 py-2">
+                        <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ring-1 ${statusBadgeClass(row.status)}`}>
+                          {row.status === "success" ? "완료" : row.status === "warning" ? "확인 필요" : "오류"}
+                        </span>
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2 font-mono text-slate-700">{formatHsCode(row.normalizedHskCode || normalizeHsCode(row.inputHskCode))}</td>
+                      <td className="whitespace-nowrap px-3 py-2 font-mono font-semibold text-blue-700">{row.matchedHskCode || "-"}</td>
+                      <td className="min-w-56 px-3 py-2 font-medium text-slate-900">{row.matchedName || row.productName || "-"}</td>
+                      <td className="whitespace-nowrap px-3 py-2 text-slate-700">{row.basicTariff}</td>
+                      <td className="whitespace-nowrap px-3 py-2 text-slate-700">{row.ftaTariff}</td>
+                      <td className="whitespace-nowrap px-3 py-2 font-semibold text-orange-700">{row.lowestTariff}</td>
+                      <td className="whitespace-nowrap px-3 py-2 text-slate-700">{row.internalTax}</td>
+                      <td className="min-w-72 whitespace-pre-line px-3 py-2 text-slate-700">{row.importRequirements}</td>
+                      <td className="min-w-48 px-3 py-2 text-slate-700">{row.originMarking}</td>
+                      <td className="min-w-64 px-3 py-2 text-slate-500">{row.message}</td>
+                      <td className="whitespace-nowrap px-3 py-2">
+                        <button
+                          className={
+                            copied
+                              ? "focus-ring inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white"
+                              : "focus-ring inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                          }
+                          onClick={() => void handleCopyRow(row, rowKey)}
+                          type="button"
+                        >
+                          {copied ? <Check aria-hidden="true" size={14} /> : <Clipboard aria-hidden="true" size={14} />}
+                          {copied ? "복사됨" : "안내 복사"}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
