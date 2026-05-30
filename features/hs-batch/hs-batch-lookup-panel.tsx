@@ -16,7 +16,13 @@ const sampleText = `HS CODE\t품명\t비고
 3304.99-1000\t기초화장품 세트\t샘플 2
 3923.50-0000\t플라스틱 캡\t샘플 3`;
 
-const resultColumns: Array<{ header: string; key: keyof HsBatchResultRow; width: number }> = [
+type XlsxResultColumn = {
+  header: string;
+  key: keyof HsBatchResultRow | "guidance";
+  width: number;
+};
+
+const resultColumns: XlsxResultColumn[] = [
   { header: "입력행", key: "rowNumber", width: 8 },
   { header: "입력 HS CODE", key: "inputHskCode", width: 16 },
   { header: "정규화 HS CODE", key: "normalizedHskCode", width: 16 },
@@ -31,7 +37,8 @@ const resultColumns: Array<{ header: string; key: keyof HsBatchResultRow; width:
   { header: "수입요건", key: "importRequirements", width: 54 },
   { header: "원산지표시", key: "originMarking", width: 34 },
   { header: "상태", key: "status", width: 12 },
-  { header: "메시지", key: "message", width: 44 }
+  { header: "메시지", key: "message", width: 44 },
+  { header: "업체 안내문", key: "guidance", width: 72 }
 ];
 
 type ResultFilter = "all" | "success" | "warning" | "error";
@@ -47,73 +54,6 @@ function resultStatusLabel(status: HsBatchResultRow["status"]) {
   if (status === "success") return "완료";
   if (status === "warning") return "확인 필요";
   return "오류";
-}
-
-function buildXlsxSheetData(results: HsBatchResultRow[]) {
-  const headerStyle = {
-    backgroundColor: "#1D4ED8",
-    fontWeight: "bold" as const,
-    textColor: "#FFFFFF",
-    alignVertical: "center" as const,
-    wrap: true
-  };
-  const cellStyle = {
-    alignVertical: "top" as const,
-    borderColor: "#E2E8F0",
-    borderStyle: "thin" as const,
-    wrap: true
-  };
-
-  return [
-    resultColumns.map((column) => ({ value: column.header, type: String, ...headerStyle })),
-    ...results.map((result) =>
-      resultColumns.map((column) => {
-        const value = column.key === "status"
-          ? resultStatusLabel(result.status)
-          : column.key === "normalizedHskCode" && result.normalizedHskCode
-          ? formatHsCode(result.normalizedHskCode)
-          : result[column.key];
-        const statusStyle = column.key === "status"
-          ? {
-              fontWeight: "bold" as const,
-              textColor: result.status === "success" ? "#047857" : result.status === "warning" ? "#B45309" : "#B91C1C"
-            }
-          : {};
-        return { value: String(value ?? ""), type: String, ...cellStyle, ...statusStyle };
-      })
-    )
-  ];
-}
-
-async function downloadResults(results: HsBatchResultRow[]) {
-  const writeXlsxFile = (await import("write-excel-file/browser")).default;
-  const needsAttention = results.filter((result) => result.status !== "success");
-  const sheetOptions = {
-    columns: resultColumns.map((column) => ({ width: column.width })),
-    stickyRowsCount: 1
-  };
-  const sheets = [
-    {
-      data: buildXlsxSheetData(results),
-      sheet: "전체 결과",
-      ...sheetOptions
-    },
-    ...(needsAttention.length
-      ? [{
-          data: buildXlsxSheetData(needsAttention),
-          sheet: "보완 필요",
-          ...sheetOptions
-        }]
-      : [])
-  ];
-
-  await writeXlsxFile(sheets).toFile(`hs-batch-result-${new Date().toISOString().slice(0, 10)}.xlsx`);
-}
-
-function statusBadgeClass(status: HsBatchResultRow["status"]) {
-  if (status === "success") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
-  if (status === "warning") return "bg-amber-50 text-amber-700 ring-amber-200";
-  return "bg-red-50 text-red-700 ring-red-200";
 }
 
 function hasVisibleRequirement(row: HsBatchResultRow) {
@@ -163,6 +103,75 @@ function buildRowGuidance(row: HsBatchResultRow) {
   ].filter((line): line is string => line !== null);
 
   return lines.join("\n");
+}
+
+function buildXlsxSheetData(results: HsBatchResultRow[]) {
+  const headerStyle = {
+    backgroundColor: "#1D4ED8",
+    fontWeight: "bold" as const,
+    textColor: "#FFFFFF",
+    alignVertical: "center" as const,
+    wrap: true
+  };
+  const cellStyle = {
+    alignVertical: "top" as const,
+    borderColor: "#E2E8F0",
+    borderStyle: "thin" as const,
+    wrap: true
+  };
+
+  return [
+    resultColumns.map((column) => ({ value: column.header, type: String, ...headerStyle })),
+    ...results.map((result) =>
+      resultColumns.map((column) => {
+        const value = column.key === "status"
+          ? resultStatusLabel(result.status)
+          : column.key === "guidance"
+          ? buildRowGuidance(result)
+          : column.key === "normalizedHskCode" && result.normalizedHskCode
+          ? formatHsCode(result.normalizedHskCode)
+          : result[column.key];
+        const statusStyle = column.key === "status"
+          ? {
+              fontWeight: "bold" as const,
+              textColor: result.status === "success" ? "#047857" : result.status === "warning" ? "#B45309" : "#B91C1C"
+            }
+          : {};
+        return { value: String(value ?? ""), type: String, ...cellStyle, ...statusStyle };
+      })
+    )
+  ];
+}
+
+async function downloadResults(results: HsBatchResultRow[]) {
+  const writeXlsxFile = (await import("write-excel-file/browser")).default;
+  const needsAttention = results.filter((result) => result.status !== "success");
+  const sheetOptions = {
+    columns: resultColumns.map((column) => ({ width: column.width })),
+    stickyRowsCount: 1
+  };
+  const sheets = [
+    {
+      data: buildXlsxSheetData(results),
+      sheet: "전체 결과",
+      ...sheetOptions
+    },
+    ...(needsAttention.length
+      ? [{
+          data: buildXlsxSheetData(needsAttention),
+          sheet: "보완 필요",
+          ...sheetOptions
+        }]
+      : [])
+  ];
+
+  await writeXlsxFile(sheets).toFile(`hs-batch-result-${new Date().toISOString().slice(0, 10)}.xlsx`);
+}
+
+function statusBadgeClass(status: HsBatchResultRow["status"]) {
+  if (status === "success") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+  if (status === "warning") return "bg-amber-50 text-amber-700 ring-amber-200";
+  return "bg-red-50 text-red-700 ring-red-200";
 }
 
 export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
