@@ -853,13 +853,17 @@ async function recommendHsCandidatesFromOfficialHsMasterSearch(
   const codeHints = normalization?.candidateHsCodes ?? [];
   if (!codeHints.length && !terms.length) return [];
 
+  if (codeHints.length) {
+    const codeHintRows = await findHsMasterRowsByCodeHints(supabase, input, codeHints).catch(() => []);
+    const codeHintCandidates = rankOfficialHsMasterRows(input, normalization, terms, [], codeHintRows);
+    if (codeHintCandidates.length) return codeHintCandidates;
+  }
+
   const [
-    codeHintRows,
     termRows,
     standardNameCandidates,
     storedCustomsCandidates
   ] = await Promise.all([
-    codeHints.length ? findHsMasterRowsByCodeHints(supabase, input, codeHints).catch(() => []) : Promise.resolve([]),
     terms.length ? findHsMasterRowsByTerms(supabase, input, terms).catch(() => []) : Promise.resolve([]),
     terms.length ? recommendHsCandidatesFromStandardProductNames(supabase, input, normalization, terms, analysis).catch(() => []) : Promise.resolve([]),
     terms.length
@@ -870,7 +874,7 @@ async function recommendHsCandidatesFromOfficialHsMasterSearch(
   ]);
 
   return mergeRecommendations([
-    ...rankOfficialHsMasterRows(input, normalization, terms, termRows, codeHintRows),
+    ...rankOfficialHsMasterRows(input, normalization, terms, termRows, []),
     ...standardNameCandidates,
     ...storedCustomsCandidates
   ]);
