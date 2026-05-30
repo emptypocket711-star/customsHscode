@@ -23,9 +23,9 @@ function statusButtonSubLabel(status: OperationsIssueStatus) {
 }
 
 function statusButtonRecommendedInputs(status: OperationsIssueStatus) {
-  if (status === "resolved") return "권장 입력: 메모, 처리 사유";
-  if (status === "ignored") return "권장 입력: 처리 사유";
-  return "권장 입력: 담당자, 메모";
+  if (status === "resolved") return "메모·사유 권장";
+  if (status === "ignored") return "사유 권장";
+  return "담당·메모 권장";
 }
 
 function statusButtonClassName(status: OperationsIssueStatus) {
@@ -74,6 +74,7 @@ export function OperationsIssueStatusForm({ event, triageFocus }: OperationsIssu
   const [assignedToLabel, setAssignedToLabel] = useState(event.assignedToLabel ?? "");
   const [operatorNote, setOperatorNote] = useState(event.operatorNote ?? "");
   const [resolutionReason, setResolutionReason] = useState(event.resolutionReason ?? "");
+  const [lastSubmittedSignature, setLastSubmittedSignature] = useState<string | null>(null);
   const [state, formAction, pending] = useActionState(
     updateOperationsIssueStatusWithStateAction,
     initialOperationsIssueStatusActionState
@@ -87,15 +88,26 @@ export function OperationsIssueStatusForm({ event, triageFocus }: OperationsIssu
   const assignedToLabelReady = Boolean(assignedToLabel.trim());
   const operatorNoteReady = Boolean(operatorNote.trim());
   const resolutionReasonReady = Boolean(resolutionReason.trim());
+  const currentInputSignature = JSON.stringify({
+    assignedToLabel,
+    operatorNote,
+    resolutionReason
+  });
+  const savedInputsChanged = state.status === "success"
+    && lastSubmittedSignature !== null
+    && lastSubmittedSignature !== currentInputSignature;
 
   return (
-    <form action={formAction} className="grid min-w-[260px] gap-2">
+    <form
+      action={formAction}
+      className="grid min-w-[260px] gap-2"
+      onSubmit={() => setLastSubmittedSignature(currentInputSignature)}
+    >
       <input name="issueId" type="hidden" value={event.id} />
       {triageFocus ? (
         <div className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs leading-5 text-amber-900">
           <p className="font-semibold">우선 확인 대상 · {triageFocus.reasonLabel}</p>
           <p className="mt-1">{triageFocus.actionLabel}</p>
-          <p className="mt-1 text-amber-800">처리 전 담당자와 메모에 확인 결과를 남깁니다.</p>
         </div>
       ) : null}
       <p className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs leading-5 text-slate-600">
@@ -139,13 +151,19 @@ export function OperationsIssueStatusForm({ event, triageFocus }: OperationsIssu
         />
       </label>
       <div className="grid gap-1 rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs">
-        <p className="font-semibold text-slate-600">저장 전 입력 확인</p>
+        <p className="font-semibold text-slate-600">입력 상태</p>
         <div className="grid gap-1 sm:grid-cols-3">
           <span className={inputStatusClassName(assignedToLabelReady)}>담당자 {inputStatusLabel(assignedToLabelReady)}</span>
           <span className={inputStatusClassName(operatorNoteReady)}>메모 {inputStatusLabel(operatorNoteReady)}</span>
           <span className={inputStatusClassName(resolutionReasonReady)}>처리 사유 {inputStatusLabel(resolutionReasonReady)}</span>
         </div>
-        {assignedToLabelReady && operatorNoteReady && resolutionReasonReady ? (
+        {state.status === "success" ? (
+          <p className={savedInputsChanged ? "text-amber-700" : "text-emerald-700"}>
+            {savedInputsChanged
+              ? "저장 후 입력값이 수정되었습니다. 변경 내용을 반영하려면 다시 저장합니다."
+              : "현재 입력값 기준으로 저장 결과를 확인했습니다."}
+          </p>
+        ) : assignedToLabelReady && operatorNoteReady && resolutionReasonReady ? (
           <p className="text-emerald-700">처리 근거 입력 상태를 확인했습니다.</p>
         ) : (
           <p className="text-amber-700">미입력 항목은 저장은 가능하지만 담당자 인계와 사후 검토 품질이 낮아질 수 있습니다.</p>
@@ -163,7 +181,7 @@ export function OperationsIssueStatusForm({ event, triageFocus }: OperationsIssu
           >
             <span className="block">{pending ? "저장 중" : statusButtonLabel(status)}</span>
             <span className="mt-0.5 block text-[11px] font-normal opacity-80">{statusButtonSubLabel(status)}</span>
-            <span className="mt-0.5 block text-[11px] font-normal opacity-80">{statusButtonRecommendedInputs(status)}</span>
+            <span className="mt-0.5 block text-[11px] font-semibold opacity-80">{statusButtonRecommendedInputs(status)}</span>
           </button>
         ))}
       </div>
