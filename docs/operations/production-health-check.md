@@ -77,6 +77,7 @@ npm run health:db
 - 운영 이슈 우선순위 정렬: 미해결, 차단, 장기 미해결, 반복 건수가 높은 이슈가 목록 상단에 표시되는지 확인
 - 운영 이슈 상태 변경 추적: 상태 변경 시각과 짧은 운영자 식별자가 표시되는지 확인
 - 운영 이슈 처리 피드백: 처리 버튼 클릭 중 입력창과 버튼이 비활성화되고 저장 성공 또는 오류 메시지가 표시되는지 확인
+- 운영 이슈 처리 결과 요약: 해결·제외 건수, 평균 처리 기간, 최근 처리 시각이 표시되는지 확인
 - 운영 이슈 처리 액션: 개발자 계정에서 담당자, 메모, 처리 사유와 함께 해결, 제외, 다시 열기 버튼이 동작하고 audit log가 남는지 확인
 
 `LOOKUP_TELEMETRY_ENABLED=true`와 `SUPABASE_SERVICE_ROLE_KEY`가 설정되어야 조회 품질 로그가 저장된다.
@@ -105,6 +106,8 @@ vercel env run -e production -- npm run ops:job:operations-issues
 운영 이슈 상태 변경 추적은 `status_updated_at`, `status_updated_by`를 화면에 요약한다. 운영자 식별자는 전체 사용자 ID를 노출하지 않고 앞 8자리만 표시한다.
 
 운영 이슈 처리 폼은 각 행 단위로 pending, success, error 피드백을 표시한다. 처리 중에는 같은 행의 입력창과 버튼을 비활성화해 중복 제출을 줄인다.
+
+운영 이슈 처리 결과 요약은 닫힌 이슈만 집계한다. 해결·제외 건수, `first_seen_at`부터 `resolved_at` 또는 상태 변경 시각까지의 평균 처리 기간, 최근 처리 시각을 표시한다.
 
 해결·제외 처리된 운영 이슈는 `operations-retention` job이 `OPERATIONS_ISSUE_RETENTION_DAYS` 기준으로 정리한다. 미해결 이슈는 정리 대상에서 제외된다.
 

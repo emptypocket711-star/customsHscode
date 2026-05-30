@@ -112,6 +112,14 @@ export type OperationsIssueStatusChangeSummary = {
   changedByLabel: string;
 };
 
+export type OperationsIssueResolutionSummary = {
+  closed: number;
+  resolved: number;
+  ignored: number;
+  averageCloseAgeDays: number | null;
+  latestClosedAt: string | null;
+};
+
 const operationsIssueStatusPriority: Record<OperationsIssueStatus, number> = {
   open: 0,
   resolved: 1,
@@ -340,6 +348,12 @@ function ageDaysSince(value: string | null, now: Date) {
   return Math.max(0, Math.floor(ageMs / (24 * 60 * 60 * 1000)));
 }
 
+function ageDaysBetween(start: string | null, end: string | null) {
+  if (!start || !end) return null;
+  const ageMs = new Date(end).getTime() - new Date(start).getTime();
+  return Math.max(0, Math.floor(ageMs / (24 * 60 * 60 * 1000)));
+}
+
 export function getOpenOperationsIssueAgeStatus(
   event: OperationsIssueEventItem,
   now = new Date(),
@@ -395,6 +409,45 @@ export function getOperationsIssueStatusChangeSummary(
     changedAt: event.statusUpdatedAt,
     changedByLabel
   };
+}
+
+export function summarizeOperationsIssueResolutionOutcomes(
+  events: OperationsIssueEventItem[]
+): OperationsIssueResolutionSummary {
+  const closedEvents = events.filter((event) => event.status === "resolved" || event.status === "ignored");
+  let totalCloseAgeDays = 0;
+  let closeAgeCount = 0;
+
+  const summary = closedEvents.reduce<OperationsIssueResolutionSummary>((current, event) => {
+    current.closed += 1;
+    current.resolved += event.status === "resolved" ? 1 : 0;
+    current.ignored += event.status === "ignored" ? 1 : 0;
+
+    const closedAt = event.resolvedAt ?? event.statusUpdatedAt ?? event.updatedAt;
+    if (!current.latestClosedAt || new Date(closedAt).getTime() > new Date(current.latestClosedAt).getTime()) {
+      current.latestClosedAt = closedAt;
+    }
+
+    const closeAgeDays = ageDaysBetween(event.firstSeenAt, closedAt);
+    if (closeAgeDays !== null) {
+      totalCloseAgeDays += closeAgeDays;
+      closeAgeCount += 1;
+    }
+
+    return current;
+  }, {
+    closed: 0,
+    resolved: 0,
+    ignored: 0,
+    averageCloseAgeDays: null,
+    latestClosedAt: null
+  });
+
+  summary.averageCloseAgeDays = closeAgeCount > 0
+    ? Math.round((totalCloseAgeDays / closeAgeCount) * 10) / 10
+    : null;
+
+  return summary;
 }
 
 export function summarizeOpenOperationsIssuesByOwner(

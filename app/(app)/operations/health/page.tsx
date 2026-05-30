@@ -33,6 +33,7 @@ import {
   listRecentOperationsIssueEvents,
   sortOperationsIssueEventsForTriage,
   summarizeOpenOperationsIssuesByOwner,
+  summarizeOperationsIssueResolutionOutcomes,
   summarizeOperationsIssueEvents,
   type OperationsIssueEventItem,
   type OperationsIssueEventFilters,
@@ -520,6 +521,7 @@ export default async function OperationsHealthPage({
   const operationsIssueSummary = summarizeOperationsIssueEvents(operationsIssueEvents);
   const filteredOperationsIssueSummary = summarizeOperationsIssueEvents(filteredOperationsIssueEvents);
   const operationsIssueOwnerSummary = summarizeOpenOperationsIssuesByOwner(operationsIssueEvents).slice(0, 6);
+  const operationsIssueResolutionSummary = summarizeOperationsIssueResolutionOutcomes(operationsIssueEvents);
   const operationsIssueDrilldowns = new Map(operationsIssueEvents.map((issue) => [
     issue.id,
     buildOperationsIssueLookupDrilldown(issue, lookupTelemetryEvents)
@@ -1106,6 +1108,41 @@ export default async function OperationsHealthPage({
               <p className="mt-1 font-semibold text-slate-950">{operationsIssueSummary.latestIssueAt ? formatDate(operationsIssueSummary.latestIssueAt) : "-"}</p>
             </div>
           </div>
+          {operationsIssueResolutionSummary.closed > 0 ? (
+            <div className="border-b border-slate-200 bg-white p-4">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-sm font-semibold text-slate-950">처리 결과 요약</p>
+                  <p className="mt-1 text-xs text-slate-500">해결·제외된 운영 이슈의 처리 속도와 최근 처리 시각을 확인합니다.</p>
+                </div>
+                <Badge tone="success">닫힘 {operationsIssueResolutionSummary.closed}건</Badge>
+              </div>
+              <div className="grid gap-2 md:grid-cols-4">
+                <div className="rounded-md border border-emerald-100 bg-emerald-50 px-3 py-2">
+                  <p className="text-xs font-semibold text-emerald-800">해결</p>
+                  <p className="mt-1 font-semibold text-emerald-900">{operationsIssueResolutionSummary.resolved}건</p>
+                </div>
+                <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+                  <p className="text-xs font-semibold text-slate-600">제외</p>
+                  <p className="mt-1 font-semibold text-slate-900">{operationsIssueResolutionSummary.ignored}건</p>
+                </div>
+                <div className="rounded-md border border-blue-100 bg-blue-50 px-3 py-2">
+                  <p className="text-xs font-semibold text-blue-800">평균 처리 기간</p>
+                  <p className="mt-1 font-semibold text-blue-950">
+                    {operationsIssueResolutionSummary.averageCloseAgeDays !== null
+                      ? `${operationsIssueResolutionSummary.averageCloseAgeDays}일`
+                      : "-"}
+                  </p>
+                </div>
+                <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+                  <p className="text-xs font-semibold text-slate-600">최근 처리</p>
+                  <p className="mt-1 font-semibold text-slate-950">
+                    {operationsIssueResolutionSummary.latestClosedAt ? formatDate(operationsIssueResolutionSummary.latestClosedAt) : "-"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
           {operationsIssueOwnerSummary.length ? (
             <div className="border-b border-slate-200 bg-white p-4">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">

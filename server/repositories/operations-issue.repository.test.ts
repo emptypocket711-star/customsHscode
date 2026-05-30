@@ -5,6 +5,7 @@ import {
   getOperationsIssueStatusChangeSummary,
   sortOperationsIssueEventsForTriage,
   summarizeOpenOperationsIssuesByOwner,
+  summarizeOperationsIssueResolutionOutcomes,
   summarizeOperationsIssueEvents,
   type OperationsIssueEventItem
 } from "@/server/repositories/operations-issue.repository";
@@ -263,5 +264,37 @@ describe("operations issue repository helpers", () => {
       statusUpdatedAt: null,
       statusUpdatedBy: "7a9f1c20-1234-5678-9012-abcdefabcdef"
     }))).toBeNull();
+  });
+
+  it("summarizes closed operations issue outcomes", () => {
+    expect(summarizeOperationsIssueResolutionOutcomes([
+      issue({
+        id: "open",
+        status: "open",
+        firstSeenAt: "2026-05-28T00:00:00.000Z",
+        updatedAt: "2026-05-30T00:00:00.000Z"
+      }),
+      issue({
+        id: "resolved",
+        status: "resolved",
+        firstSeenAt: "2026-05-25T00:00:00.000Z",
+        resolvedAt: "2026-05-29T00:00:00.000Z",
+        updatedAt: "2026-05-29T00:00:00.000Z"
+      }),
+      issue({
+        id: "ignored",
+        status: "ignored",
+        firstSeenAt: "2026-05-29T00:00:00.000Z",
+        resolvedAt: null,
+        statusUpdatedAt: "2026-05-30T00:00:00.000Z",
+        updatedAt: "2026-05-30T00:00:00.000Z"
+      })
+    ])).toEqual({
+      closed: 2,
+      resolved: 1,
+      ignored: 1,
+      averageCloseAgeDays: 2.5,
+      latestClosedAt: "2026-05-30T00:00:00.000Z"
+    });
   });
 });
