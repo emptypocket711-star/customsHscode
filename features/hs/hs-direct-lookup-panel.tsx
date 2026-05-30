@@ -1,4 +1,4 @@
-import { CheckCircle2, ChevronDown, ExternalLink, FileText, Folder, Search } from "lucide-react";
+import { CheckCircle2, ChevronDown, ExternalLink, FileText, Folder } from "lucide-react";
 import Link from "next/link";
 import { Fragment } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { mockExportDestinationTariffRates } from "@/features/export-diagnosis/mo
 import { CountryComboboxField } from "@/features/hs/country-combobox-field";
 import { DestinationCountryPicker } from "@/features/hs/destination-country-picker";
 import { HsCopySummaryButton, type HsCopyGuideLanguage, type HsCopyGuideVariant, type HsCopySummaryTexts } from "@/features/hs/hs-copy-summary-button";
+import { HsDirectSubmitStatus } from "@/features/hs/hs-direct-submit-status";
 import { destinationAgreementRateDisplayItems, destinationDisplayAgreementRates, destinationDisplayBaseRate } from "@/features/hs/export-destination-tariff-display";
 import { DestinationAgreementRateDialog } from "@/features/hs/destination-agreement-rate-dialog";
 import { displayImportTariffLabel, filterImportTariffsForCountry, importTariffApplicationPriority, isCommonImportTariff } from "@/features/hs/import-tariff-display";
@@ -3483,10 +3484,7 @@ export async function HsDirectLookupPanel({
             <DestinationCountrySelect defaultValue={selectedDestinationCountry} direction={lookupDirection} />
           )}
           <OriginCountrySelect defaultValue={selectedOriginCountry} dictionary={dictionary} direction={lookupDirection} />
-          <button className="focus-ring inline-flex items-center justify-center gap-2 self-end rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800" type="submit">
-            <Search aria-hidden="true" size={18} />
-            {dictionary.form.submit}
-          </button>
+          <HsDirectSubmitStatus submitLabel={dictionary.form.submit} />
           <BasisDateOptions defaultValue={resolvedBasisDate} dictionary={dictionary} />
         </form>
 
