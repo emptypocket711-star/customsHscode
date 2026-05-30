@@ -333,6 +333,12 @@
 - 운영 이슈 빠른 필터 액션 문구 운영 반영:
   - production 배포 `customs-hscode-3dv64rr4v-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+- 운영 이슈 행 처리 정보 표시를 보강했다.
+  - 이전 작업은 빠른 필터 카드에 선택 후 확인할 운영 조치를 표시하는 카드 안내 기능이고, 이번 작업은 각 운영 이슈 행 안의 담당자, 메모, 처리 사유, 상태 변경 이력을 구획별로 분리하는 행 가독성 보강이다.
+  - 저장 데이터와 상태 변경 로직은 바꾸지 않고 화면 표시 구조만 정리했다.
+- 운영 이슈 행 처리 정보 표시 운영 반영:
+  - production 배포 `customs-hscode-bucyuwwef-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
