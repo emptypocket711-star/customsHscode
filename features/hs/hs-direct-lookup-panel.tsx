@@ -31,6 +31,7 @@ import {
 } from "@/features/hs/hs-supplement-guidance";
 import { formatHsCode, normalizeHsCode } from "@/lib/hs-code";
 import { buildHsHierarchyPath, type HsHierarchyNode } from "@/lib/hs-hierarchy";
+import { buildHsBriefDescription, buildHsSubheadingDescription } from "@/lib/hs-summary";
 import { defaultLocale, getHsDirectDictionary, type AppLocale, type HsDirectDictionary } from "@/lib/i18n";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import { cn, getSeoulDateString } from "@/lib/utils";
@@ -898,6 +899,24 @@ function productCandidateCodeLevelLabel(candidate: HsCandidateRecommendation) {
 
 function productCandidateScoreLabel(candidate: HsCandidateRecommendation) {
   return `점수 ${Math.round(candidate.confidenceScore * 100)}점`;
+}
+
+function productCandidateBriefDescription(candidate: HsCandidateRecommendation, lookup?: HsDirectLookupResult) {
+  return lookup?.briefDescription ?? buildHsBriefDescription({
+    hskCode: candidate.hskCode,
+    hs6: candidate.hs6,
+    koreanName: candidate.koreanName,
+    hierarchyPath: productCandidateHierarchyNodes(candidate, lookup)
+  });
+}
+
+function productCandidateSubheadingDescription(candidate: HsCandidateRecommendation, lookup?: HsDirectLookupResult) {
+  return lookup?.subheadingDescription ?? buildHsSubheadingDescription({
+    hskCode: candidate.hskCode,
+    hs6: candidate.hs6,
+    koreanName: candidate.koreanName,
+    hierarchyPath: productCandidateHierarchyNodes(candidate, lookup)
+  });
 }
 
 function productCandidateDisplayReason(reason: string) {
@@ -3733,6 +3752,10 @@ export async function HsDirectLookupPanel({
                     </div>
 
                     <h3 className="mt-3 text-base font-semibold text-slate-950">{candidate.koreanName}</h3>
+                    <div className="mt-2 grid gap-1 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-700">
+                      <div><span className="font-semibold text-slate-500">간략 정보</span> {productCandidateBriefDescription(candidate, lookup)}</div>
+                      <div><span className="font-semibold text-slate-500">소호 정보</span> {productCandidateSubheadingDescription(candidate, lookup)}</div>
+                    </div>
                     <p className="mt-1 text-sm leading-6 text-slate-600">{productCandidateDisplayReason(candidate.reason)}</p>
 
                     <Link
@@ -3877,6 +3900,10 @@ export async function HsDirectLookupPanel({
                           </div>
 
                           <h3 className="mt-3 text-base font-semibold text-slate-950">{candidate.koreanName}</h3>
+                          <div className="mt-2 grid gap-1 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-700">
+                            <div><span className="font-semibold text-slate-500">간략 정보</span> {productCandidateBriefDescription(candidate, lookup)}</div>
+                            <div><span className="font-semibold text-slate-500">소호 정보</span> {productCandidateSubheadingDescription(candidate, lookup)}</div>
+                          </div>
                           <p className="mt-1 text-sm leading-6 text-slate-600">{productCandidateDisplayReason(candidate.reason)}</p>
 
                           <Link
@@ -4296,6 +4323,10 @@ export async function HsDirectLookupPanel({
                       </dd>
                       <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.result.koreanName}</dt>
                       <dd className="border-b border-slate-200 px-3 py-2">{result.koreanName}</dd>
+                      <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">간략 정보</dt>
+                      <dd className="border-b border-slate-200 px-3 py-2 leading-6">{result.briefDescription}</dd>
+                      <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">소호 정보</dt>
+                      <dd className="border-b border-slate-200 px-3 py-2 leading-6">{result.subheadingDescription}</dd>
                       <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.result.englishName}</dt>
                       <dd className="border-b border-slate-200 px-3 py-2">{displayValue(result.englishName)}</dd>
                       <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.result.unit}</dt>

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildHsHierarchyPath, hsAncestorCodes, type HsHierarchyNode } from "@/lib/hs-hierarchy";
+import { buildHsBriefDescription, buildHsSubheadingDescription } from "@/lib/hs-summary";
 import { hasSupabaseEnv, createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   mockHsMasterRecords,
@@ -105,6 +106,8 @@ export type HsDirectLookupResult = {
   hskCode: string;
   hs6: string;
   koreanName: string;
+  briefDescription: string;
+  subheadingDescription: string;
   englishName: string | null;
   importNatureCode: string | null;
   exportNatureCode: string | null;
@@ -362,10 +365,29 @@ function mapResult(
   hierarchyLabels: Record<string, string | null | undefined> = {},
   originMarking: HsDirectLookupResult["originMarking"] = null
 ): HsDirectLookupResult {
+  const hierarchyPath = buildHsHierarchyPath({
+    code: record.hsk_code,
+    hs6: record.hs6,
+    currentLabel: record.korean_name,
+    labels: hierarchyLabels
+  });
+
   return {
     hskCode: record.hsk_code,
     hs6: record.hs6,
     koreanName: record.korean_name,
+    briefDescription: buildHsBriefDescription({
+      hskCode: record.hsk_code,
+      hs6: record.hs6,
+      koreanName: record.korean_name,
+      hierarchyPath
+    }),
+    subheadingDescription: buildHsSubheadingDescription({
+      hskCode: record.hsk_code,
+      hs6: record.hs6,
+      koreanName: record.korean_name,
+      hierarchyPath
+    }),
     englishName: record.english_name,
     importNatureCode: record.import_nature_code,
     exportNatureCode: record.export_nature_code,
@@ -437,12 +459,7 @@ function mapResult(
       sourceName: item.source_name,
       sourceVersion: item.source_version
     })),
-    hierarchyPath: buildHsHierarchyPath({
-      code: record.hsk_code,
-      hs6: record.hs6,
-      currentLabel: record.korean_name,
-      labels: hierarchyLabels
-    })
+    hierarchyPath
   };
 }
 

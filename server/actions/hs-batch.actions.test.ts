@@ -24,6 +24,8 @@ function mockLookupResult(hskCode: string, koreanName: string): HsDirectLookupRe
     hskCode,
     hs6: hskCode.slice(0, 6),
     koreanName,
+    briefDescription: koreanName,
+    subheadingDescription: `${hskCode.slice(0, 4)}.${hskCode.slice(4, 6)} 계열: ${koreanName}`,
     englishName: null,
     importNatureCode: null,
     exportNatureCode: null,

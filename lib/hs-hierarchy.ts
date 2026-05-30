@@ -6,7 +6,7 @@ export type HsHierarchyNode = {
   level: 2 | 4 | 6 | 10;
 };
 
-const chapterNames: Record<string, string> = {
+export const chapterNames: Record<string, string> = {
   "01": "살아 있는 동물",
   "02": "육과 식용 설육",
   "03": "어류ㆍ갑각류ㆍ연체동물 등",
@@ -104,6 +104,12 @@ const chapterNames: Record<string, string> = {
   "96": "잡품",
   "97": "예술품ㆍ수집품ㆍ골동품"
 };
+
+export function hsChapterName(code: string) {
+  const normalized = normalizeHsCode(code);
+  const chapter = normalized.slice(0, 2);
+  return chapterNames[chapter] ?? (chapter ? `${chapter}류` : "");
+}
 
 function cleanedLabel(value?: string | null) {
   return value?.replace(/^-+\s*/, "").trim() || "";
