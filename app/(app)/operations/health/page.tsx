@@ -44,6 +44,39 @@ const dayFormatter = new Intl.DateTimeFormat("ko-KR", {
   timeZone: "Asia/Seoul"
 });
 
+const operationsManualCommands = [
+  {
+    label: "worker 즉시 실행",
+    command: "vercel env run -e production -- npm run ops:job:background",
+    purpose: "대기 중인 document_extraction, hs_batch_lookup 백그라운드 작업을 즉시 처리합니다.",
+    expected: "claimed, outcomes, alert 결과가 JSON으로 표시됩니다."
+  },
+  {
+    label: "worker 실패 알림 리허설",
+    command: "vercel env run -e production -- npm run ops:job:background-failure-rehearsal",
+    purpose: "임시 실패 job으로 실패 처리, run 이력, 운영 메일 알림 경로를 검증합니다.",
+    expected: "alert.sent가 true이고 임시 job은 스크립트가 삭제합니다."
+  },
+  {
+    label: "운영 이력 정리",
+    command: "vercel env run -e production -- npm run ops:job:operations-retention",
+    purpose: "운영 알림 이력, worker 실행 이력, 완료된 background job 이력을 보존 기간 기준으로 정리합니다.",
+    expected: "deletedCount, deletedRuns, deletedJobs가 JSON으로 표시됩니다."
+  },
+  {
+    label: "운영 스키마 점검",
+    command: "vercel env run -e production -- npm run health:db",
+    purpose: "현재 migration 파일 기준으로 production Supabase schema drift를 확인합니다.",
+    expected: "Issues 0 blocker, 0 warning이면 정상입니다."
+  },
+  {
+    label: "production smoke",
+    command: "SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production",
+    purpose: "로그인 보호와 주요 route 응답 상태를 빠르게 확인합니다.",
+    expected: "summary total=10 success=10 failed=0이면 정상입니다."
+  }
+];
+
 function statusLabel(status: EnvironmentHealthItem["status"]) {
   if (status === "ok") return "정상";
   if (status === "missing") return "필수 누락";
@@ -477,6 +510,32 @@ export default async function OperationsHealthPage() {
               운영 DB 스키마가 현재 migration 기준과 일치합니다. 최근 점검: {formatDate(schemaHealthReport.checkedAt)}
             </div>
           )}
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="수동 운영 명령"
+          description="장애 대응, 정리 작업, 배포 후 검증에 사용하는 보호된 운영 명령입니다. secret 값은 Vercel production 환경변수에서 주입됩니다."
+        />
+        <CardBody>
+          <div className="grid gap-3 xl:grid-cols-2">
+            {operationsManualCommands.map((item) => (
+              <div key={item.label} className="rounded-lg border border-slate-200 bg-white p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-slate-950">{item.label}</p>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">{item.purpose}</p>
+                  </div>
+                  <Badge tone="neutral">수동</Badge>
+                </div>
+                <pre className="mt-3 overflow-x-auto rounded-md bg-slate-950 px-3 py-2 text-xs leading-5 text-slate-50">
+                  <code>{item.command}</code>
+                </pre>
+                <p className="mt-3 text-xs leading-5 text-slate-500">예상 결과: {item.expected}</p>
+              </div>
+            ))}
+          </div>
         </CardBody>
       </Card>
 
