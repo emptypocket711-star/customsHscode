@@ -486,6 +486,14 @@
 - 운영 이슈 빈 상태 행동 유도 운영 반영:
   - production 배포 `customs-hscode-m3wwk59hl-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` alias 연결과 production smoke 10개 경로 통과를 확인했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+- 운영 이슈 운영 명령 연결을 정리했다.
+  - 이전 작업은 필터 결과 0건, 전체 미해결 0건, 저장된 운영 이슈 0건 상태에서 다음 행동을 다르게 안내하는 빈 상태 정리이고, 이번 작업은 저장된 운영 이슈 0건 상태에서 수동 운영 명령 섹션으로 바로 이동하고 각 운영 명령의 실행 시점을 구분하는 운영 명령 연결성 정리다.
+  - 수동 운영 명령 카드에 실행 시점 안내를 추가해 worker 즉시 실행, 실패 알림 리허설, 운영 이력 정리, 운영 이슈 동기화, 운영 이슈 리허설, 스키마 점검, smoke 검증의 용도를 구분했다.
+  - 저장된 운영 이슈 0건 안내에서 수동 운영 명령 섹션으로 이동하는 링크를 추가했다.
+  - 저장 데이터, RLS, 상태 변경 권한 구조는 바꾸지 않았다.
+- 운영 이슈 운영 명령 연결 운영 반영:
+  - production 배포 `customs-hscode-pge6w8ylx-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` alias 연결과 production smoke 10개 경로 통과를 확인했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
