@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   filterOperationsIssueEvents,
   getOpenOperationsIssueAgeStatus,
+  sortOperationsIssueEventsForTriage,
   summarizeOpenOperationsIssuesByOwner,
   summarizeOperationsIssueEvents,
   type OperationsIssueEventItem
@@ -178,5 +179,65 @@ describe("operations issue repository helpers", () => {
       status: "resolved",
       firstSeenAt: "2026-05-20T00:00:00.000Z"
     }), now)).toBeNull();
+  });
+
+  it("sorts operations issues by triage priority", () => {
+    const now = new Date("2026-05-30T00:00:00.000Z");
+
+    const sorted = sortOperationsIssueEventsForTriage([
+      issue({
+        id: "resolved-recent",
+        status: "resolved",
+        severity: "blocker",
+        updatedAt: "2026-05-30T01:00:00.000Z"
+      }),
+      issue({
+        id: "open-warning-stale",
+        status: "open",
+        severity: "warning",
+        firstSeenAt: "2026-05-20T00:00:00.000Z",
+        occurrenceCount: 3,
+        updatedAt: "2026-05-29T02:00:00.000Z"
+      }),
+      issue({
+        id: "open-blocker-watch",
+        status: "open",
+        severity: "blocker",
+        firstSeenAt: "2026-05-27T00:00:00.000Z",
+        occurrenceCount: 1,
+        updatedAt: "2026-05-29T01:00:00.000Z"
+      }),
+      issue({
+        id: "open-warning-watch-high-count",
+        status: "open",
+        severity: "warning",
+        firstSeenAt: "2026-05-27T00:00:00.000Z",
+        occurrenceCount: 8,
+        updatedAt: "2026-05-29T00:00:00.000Z"
+      }),
+      issue({
+        id: "open-warning-watch-low-count",
+        status: "open",
+        severity: "warning",
+        firstSeenAt: "2026-05-27T00:00:00.000Z",
+        occurrenceCount: 2,
+        updatedAt: "2026-05-29T03:00:00.000Z"
+      }),
+      issue({
+        id: "ignored",
+        status: "ignored",
+        severity: "warning",
+        updatedAt: "2026-05-30T02:00:00.000Z"
+      })
+    ], now);
+
+    expect(sorted.map((event) => event.id)).toEqual([
+      "open-blocker-watch",
+      "open-warning-stale",
+      "open-warning-watch-high-count",
+      "open-warning-watch-low-count",
+      "resolved-recent",
+      "ignored"
+    ]);
   });
 });

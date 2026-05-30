@@ -30,6 +30,7 @@ import {
   filterOperationsIssueEvents,
   getOpenOperationsIssueAgeStatus,
   listRecentOperationsIssueEvents,
+  sortOperationsIssueEventsForTriage,
   summarizeOpenOperationsIssuesByOwner,
   summarizeOperationsIssueEvents,
   type OperationsIssueEventItem,
@@ -512,7 +513,9 @@ export default async function OperationsHealthPage({
   const backgroundJobSummary = summarizeBackgroundJobOperations(backgroundJobs);
   const backgroundJobRunSummary = summarizeBackgroundJobRuns(backgroundJobRuns);
   const operationsAlertSummary = summarizeOperationsAlertEvents(operationsAlertEvents);
-  const filteredOperationsIssueEvents = filterOperationsIssueEvents(operationsIssueEvents, issueFilters);
+  const filteredOperationsIssueEvents = sortOperationsIssueEventsForTriage(
+    filterOperationsIssueEvents(operationsIssueEvents, issueFilters)
+  );
   const operationsIssueSummary = summarizeOperationsIssueEvents(operationsIssueEvents);
   const filteredOperationsIssueSummary = summarizeOperationsIssueEvents(filteredOperationsIssueEvents);
   const operationsIssueOwnerSummary = summarizeOpenOperationsIssuesByOwner(operationsIssueEvents).slice(0, 6);
@@ -1204,7 +1207,7 @@ export default async function OperationsHealthPage({
               ) : null}
             </div>
             <p className="text-xs text-slate-500 lg:col-span-5">
-              표시 {filteredOperationsIssueSummary.total}건 / 최근 이슈 {operationsIssueSummary.total}건
+              표시 {filteredOperationsIssueSummary.total}건 / 최근 이슈 {operationsIssueSummary.total}건 · 우선순위순
               {hasOperationsIssueFilters ? " · 필터 적용 중" : ""}
             </p>
           </form>

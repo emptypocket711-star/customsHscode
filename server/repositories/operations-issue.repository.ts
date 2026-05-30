@@ -107,6 +107,24 @@ export type OperationsIssueAgeStatus = {
   label: string;
 };
 
+const operationsIssueStatusPriority: Record<OperationsIssueStatus, number> = {
+  open: 0,
+  resolved: 1,
+  ignored: 2
+};
+
+const operationsIssueSeverityPriority: Record<OperationsIssueSeverity, number> = {
+  blocker: 0,
+  warning: 1,
+  info: 2
+};
+
+const operationsIssueAgeLevelPriority: Record<OperationsIssueAgeStatus["level"], number> = {
+  stale: 0,
+  watch: 1,
+  normal: 2
+};
+
 const operationsIssueEventSelect = [
   "id",
   "issue_type",
@@ -335,6 +353,29 @@ export function getOpenOperationsIssueAgeStatus(
       : `열림 ${ageDays}일`;
 
   return { ageDays, level, label };
+}
+
+export function sortOperationsIssueEventsForTriage(
+  events: OperationsIssueEventItem[],
+  now = new Date()
+): OperationsIssueEventItem[] {
+  return [...events].sort((a, b) => {
+    const statusDiff = operationsIssueStatusPriority[a.status] - operationsIssueStatusPriority[b.status];
+    if (statusDiff !== 0) return statusDiff;
+
+    const severityDiff = operationsIssueSeverityPriority[a.severity] - operationsIssueSeverityPriority[b.severity];
+    if (severityDiff !== 0) return severityDiff;
+
+    const aAge = getOpenOperationsIssueAgeStatus(a, now);
+    const bAge = getOpenOperationsIssueAgeStatus(b, now);
+    const ageLevelDiff = operationsIssueAgeLevelPriority[aAge?.level ?? "normal"] - operationsIssueAgeLevelPriority[bAge?.level ?? "normal"];
+    if (ageLevelDiff !== 0) return ageLevelDiff;
+    if ((bAge?.ageDays ?? 0) !== (aAge?.ageDays ?? 0)) return (bAge?.ageDays ?? 0) - (aAge?.ageDays ?? 0);
+
+    if (b.occurrenceCount !== a.occurrenceCount) return b.occurrenceCount - a.occurrenceCount;
+
+    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+  });
 }
 
 export function summarizeOpenOperationsIssuesByOwner(
