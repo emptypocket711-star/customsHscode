@@ -361,6 +361,13 @@
 - 운영 이슈 키 표시 운영 반영:
   - production 배포 `customs-hscode-mtr43tdv6-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+- 운영 이슈 빈 처리 정보 표시를 보강했다.
+  - 이전 작업은 긴 issue key를 축약 표시하되 전체 값을 확인할 수 있게 하는 키 확인성 보강이고, 이번 작업은 담당자, 메모, 처리 사유, 상태 변경 이력이 비어 있을 때 의미 있는 빈 상태 문구를 표시하는 행 정보 보강이다.
+  - 담당자, 메모, 처리 사유가 비어 있으면 `미입력`으로 표시한다.
+  - 상태 변경 시각이 없으면 `상태 변경 이력 없음`으로 표시한다.
+- 운영 이슈 빈 처리 정보 표시 운영 반영:
+  - production 배포 `customs-hscode-2948n6d77-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
