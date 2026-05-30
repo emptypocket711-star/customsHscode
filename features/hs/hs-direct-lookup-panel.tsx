@@ -1254,6 +1254,35 @@ function displayValue(value?: string | null) {
   return value?.trim() ? value : "-";
 }
 
+function productRetrySearchHref({
+  basisDate,
+  destinationCountry,
+  direction,
+  originCountry,
+  productName,
+  question
+}: {
+  basisDate: string;
+  destinationCountry: string;
+  direction: "import" | "export";
+  originCountry: string;
+  productName: string;
+  question: string;
+}) {
+  const params = new URLSearchParams({
+    query: `${productName} ${question}`.trim(),
+    direction,
+    destinationCountry,
+    basisDate
+  });
+
+  if (originCountry) {
+    params.set("originCountry", originCountry);
+  }
+
+  return `/hs/direct?${params.toString()}`;
+}
+
 function hsLookupHref({
   hskCode,
   basisDate,
@@ -3026,22 +3055,27 @@ function ExportDomesticDiagnosisSection({
 
 function AiClarificationPanel({
   analysis,
+  basisDate,
   candidates,
   direction,
   destinationCountry,
-  originCountry
+  originCountry,
+  productName
 }: {
   analysis: ProductClarificationResult;
+  basisDate: string;
   candidates: HsCandidateRecommendation[];
   direction: "import" | "export";
   destinationCountry: string;
   originCountry: string;
+  productName: string;
 }) {
   const candidateByCode = new Map(candidates.map((candidate) => [candidate.hskCode, candidate]));
   const presentation = productSearchPresentationState(candidates, analysis);
   const candidateCodes = analysis.suggestedCandidateCodes.length
     ? analysis.suggestedCandidateCodes
     : candidates.slice(0, 3).map((candidate) => candidate.hskCode);
+  const retryQuestions = presentation.questions.slice(0, 3);
 
   return (
     <section className={cn(
@@ -3098,6 +3132,37 @@ function AiClarificationPanel({
               현재 입력 기준으로는 우선 검토 후보를 표시할 수 있습니다. 실제 사양서나 용도 확인 후 하위 세번을 검토하세요.
             </div>
           )}
+          {retryQuestions.length ? (
+            <div className={cn(
+              "mt-3 rounded-md border bg-white p-3",
+              presentation.tone === "warning" ? "border-amber-100" : "border-blue-100"
+            )}>
+              <p className={cn(
+                "text-xs font-semibold",
+                presentation.tone === "warning" ? "text-amber-900" : "text-blue-900"
+              )}>보완 정보로 다시 검색</p>
+              <div className="mt-2 grid gap-2">
+                {retryQuestions.map((question) => (
+                  <Link
+                    className="inline-flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-800"
+                    data-navigation-progress="보완검색"
+                    href={productRetrySearchHref({
+                      basisDate,
+                      destinationCountry,
+                      direction,
+                      originCountry,
+                      productName,
+                      question
+                    })}
+                    key={question}
+                  >
+                    <span className="min-w-0 flex-1">{question}</span>
+                    <span className="shrink-0 text-blue-700">반영</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
         <div>
           <p className={cn(
@@ -3203,6 +3268,32 @@ function ProductNoResultPanel({
               </li>
             ))}
           </ol>
+          <div className="mt-3 rounded-md border border-amber-100 bg-amber-50 p-3">
+            <p className="text-xs font-semibold text-amber-900">보완 정보로 다시 검색</p>
+            <p className="mt-1 text-xs leading-5 text-amber-900">
+              아래 항목을 선택하면 기존 품명에 해당 보완 조건을 붙여 다시 예비 분류를 실행합니다.
+            </p>
+            <div className="mt-2 grid gap-2">
+              {questions.slice(0, 4).map((question) => (
+                <Link
+                  className="inline-flex items-center justify-between gap-3 rounded-md border border-amber-100 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-800"
+                  data-navigation-progress="보완검색"
+                  href={productRetrySearchHref({
+                    basisDate,
+                    destinationCountry,
+                    direction,
+                    originCountry,
+                    productName,
+                    question
+                  })}
+                  key={question}
+                >
+                  <span className="min-w-0 flex-1">{question}</span>
+                  <span className="shrink-0 text-blue-700">재검색</span>
+                </Link>
+              ))}
+            </div>
+          </div>
         </div>
         <div className="grid gap-3">
           {hasSuggestedCodes ? (
@@ -3651,10 +3742,12 @@ export async function HsDirectLookupPanel({
         {aiClarification && productCandidates.length ? (
           <AiClarificationPanel
             analysis={aiClarification}
+            basisDate={resolvedBasisDate}
             candidates={productCandidates}
             destinationCountry={selectedDestinationCountry}
             direction={lookupDirection}
             originCountry={selectedOriginCountry}
+            productName={searchQuery}
           />
         ) : null}
 
