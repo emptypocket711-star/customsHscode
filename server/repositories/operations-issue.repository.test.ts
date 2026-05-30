@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildOperationsIssueActiveFilterLabels,
   buildOperationsIssueQuickFilterPresets,
   filterOperationsIssueEvents,
   getOpenOperationsIssueAgeStatus,
@@ -367,6 +368,22 @@ describe("operations issue repository helpers", () => {
       ["unassigned_open", 1],
       ["resolved", 1],
       ["ignored", 1]
+    ]);
+  });
+
+  it("builds active filter labels", () => {
+    expect(buildOperationsIssueActiveFilterLabels({
+      status: "open",
+      severity: "blocker",
+      ageLevel: "stale",
+      assignedToLabel: "미지정",
+      query: "GPT"
+    })).toEqual([
+      { key: "status", label: "상태: 미해결" },
+      { key: "severity", label: "심각도: 차단" },
+      { key: "ageLevel", label: "경과: 장기 미해결" },
+      { key: "assignedToLabel", label: "담당: 미지정" },
+      { key: "query", label: "검색: GPT" }
     ]);
   });
 });

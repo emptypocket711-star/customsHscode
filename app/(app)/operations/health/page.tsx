@@ -30,6 +30,7 @@ import {
   filterOperationsIssueEvents,
   getOpenOperationsIssueAgeStatus,
   getOperationsIssueStatusChangeSummary,
+  buildOperationsIssueActiveFilterLabels,
   buildOperationsIssueQuickFilterPresets,
   listRecentOperationsIssueEvents,
   sortOperationsIssueEventsForTriage,
@@ -553,6 +554,7 @@ export default async function OperationsHealthPage({
   const operationsIssueOwnerSummary = summarizeOpenOperationsIssuesByOwner(operationsIssueEvents).slice(0, 6);
   const operationsIssueResolutionSummary = summarizeOperationsIssueResolutionOutcomes(operationsIssueEvents);
   const operationsIssueQuickFilterPresets = buildOperationsIssueQuickFilterPresets(operationsIssueEvents);
+  const operationsIssueActiveFilterLabels = buildOperationsIssueActiveFilterLabels(issueFilters);
   const operationsIssueDrilldowns = new Map(operationsIssueEvents.map((issue) => [
     issue.id,
     buildOperationsIssueLookupDrilldown(issue, lookupTelemetryEvents)
@@ -1244,6 +1246,20 @@ export default async function OperationsHealthPage({
             </div>
           </div>
           <form className="grid gap-3 border-b border-slate-200 bg-white p-4 text-sm lg:grid-cols-[1fr_1fr_1fr_1fr_1.5fr_auto]" action="/operations/health#issue-events">
+            <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 lg:col-span-6">
+              <p className="text-xs font-semibold text-slate-500">현재 필터</p>
+              {operationsIssueActiveFilterLabels.length ? (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {operationsIssueActiveFilterLabels.map((filter) => (
+                    <span className="rounded-md border border-blue-100 bg-white px-2 py-1 text-xs font-semibold text-blue-800" key={filter.key}>
+                      {filter.label}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-1 text-xs text-slate-600">전체 운영 이슈를 우선순위순으로 표시합니다.</p>
+              )}
+            </div>
             <label className="grid gap-1 text-xs font-semibold text-slate-600">
               상태
               <select

@@ -130,6 +130,11 @@ export type OperationsIssueQuickFilterPreset = {
   filters: OperationsIssueEventFilters;
 };
 
+export type OperationsIssueActiveFilterLabel = {
+  key: "status" | "severity" | "ageLevel" | "assignedToLabel" | "query";
+  label: string;
+};
+
 const operationsIssueStatusPriority: Record<OperationsIssueStatus, number> = {
   open: 0,
   resolved: 1,
@@ -517,6 +522,49 @@ export function buildOperationsIssueQuickFilterPresets(
       filters: { status: "ignored" }
     }
   ];
+}
+
+export function buildOperationsIssueActiveFilterLabels(
+  filters: OperationsIssueEventFilters
+): OperationsIssueActiveFilterLabel[] {
+  const labels: OperationsIssueActiveFilterLabel[] = [];
+
+  if (filters.status && filters.status !== "all") {
+    labels.push({
+      key: "status",
+      label: `상태: ${filters.status === "open" ? "미해결" : filters.status === "resolved" ? "해결" : "제외"}`
+    });
+  }
+
+  if (filters.severity && filters.severity !== "all") {
+    labels.push({
+      key: "severity",
+      label: `심각도: ${filters.severity === "blocker" ? "차단" : filters.severity === "warning" ? "주의" : "정보"}`
+    });
+  }
+
+  if (filters.ageLevel && filters.ageLevel !== "all") {
+    labels.push({
+      key: "ageLevel",
+      label: `경과: ${filters.ageLevel === "stale" ? "장기 미해결" : filters.ageLevel === "watch" ? "지연 확인" : "열림"}`
+    });
+  }
+
+  if (filters.assignedToLabel?.trim()) {
+    labels.push({
+      key: "assignedToLabel",
+      label: `담당: ${filters.assignedToLabel.trim()}`
+    });
+  }
+
+  if (filters.query?.trim()) {
+    labels.push({
+      key: "query",
+      label: `검색: ${filters.query.trim()}`
+    });
+  }
+
+  return labels;
 }
 
 export function summarizeOpenOperationsIssuesByOwner(
