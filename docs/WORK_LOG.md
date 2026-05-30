@@ -49,6 +49,11 @@
   - `background_job_runs` 테이블에 `/api/jobs/run` 호출 단위의 worker id, 상태, claimed/succeeded/failed 건수, 소요시간, 오류 메시지를 저장한다.
   - 운영 점검 화면에 최근 worker 실행 이력, 마지막 실행 시각, 마지막 상태, 처리/실패 건수를 표시한다.
   - 개별 job 상태와 별도로 cron route 자체의 실행 여부를 확인할 수 있게 했다.
+- 운영 반영:
+  - Supabase production DB에 `20260530002000_background_job_runs.sql` migration을 적용했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+  - production 배포 후 `/api/jobs/run` 수동 실행 결과 200 OK, claimed 0건을 확인했다.
+  - `background_job_runs` 최신 row가 `succeeded`, claimed 0, failed 0으로 저장되는 것을 확인했다.
 
 검증:
 
@@ -62,6 +67,7 @@
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 - 운영 E2E: 임시 계정 기반 82행 큐 등록 → worker 처리 → 결과 UI/XLSX 버튼 확인
 - `npm test -- server/repositories/background-job.repository.test.ts`
+- `vercel env run -e production -- npm run ops:job:background`
 
 ## 2026-05-29
 
