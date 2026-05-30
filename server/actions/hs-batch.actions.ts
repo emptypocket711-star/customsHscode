@@ -10,7 +10,10 @@ import {
   type HsBatchResultRow
 } from "@/features/hs-batch/schemas";
 import { formatHsCode, normalizeHsCode } from "@/lib/hs-code";
+import { normalizeProductSearchInput } from "@/server/ai/product-search-normalization.service";
 import { lookupHsDirect, type HsDirectLookupResult } from "@/server/repositories/hs-master.repository";
+
+const maxAiAssistedBatchRows = 20;
 
 function stringValue(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -107,6 +110,50 @@ function summarizeCandidateOptions(candidates: HsDirectLookupResult[]) {
   }));
 }
 
+function normalizeAiSuggestedCode(code: string) {
+  const normalized = normalizeHsCode(code);
+  if (normalized.length < 4) return "";
+  if (normalized.length >= 10) return normalized.slice(0, 10);
+  return normalized;
+}
+
+async function buildAiProductAssist(row: HsBatchInputRow, basisDate: string) {
+  const productName = row.productName?.trim();
+  if (!productName) {
+    return {
+      aiSuggestedCodes: [],
+      missingQuestions: buildMissingQuestions(row)
+    };
+  }
+
+  const normalization = await normalizeProductSearchInput({
+    productName,
+    basisDate
+  }).catch(() => null);
+
+  const aiSuggestedCodes = normalization
+    ? Array.from(
+        new Map(
+          normalization.candidateHsCodeReasons
+            .map((item) => ({
+              code: normalizeAiSuggestedCode(item.code),
+              reason: item.reason,
+              requiredInfo: item.requiredInfo
+            }))
+            .filter((item) => item.code)
+            .map((item) => [item.code, item])
+        ).values()
+      ).slice(0, 6)
+    : [];
+
+  return {
+    aiSuggestedCodes,
+    missingQuestions: normalization?.missingQuestions.length
+      ? normalization.missingQuestions
+      : buildMissingQuestions(row)
+  };
+}
+
 function buildSuccessRow({
   row,
   result,
@@ -156,6 +203,7 @@ function buildErrorRow(
     countryCode?: string;
     basisDate?: string;
     missingQuestions?: string[];
+    aiSuggestedCodes?: HsBatchResultRow["aiSuggestedCodes"];
   }
 ): HsBatchResultRow {
   const normalized = normalizeHsCode(row.hskCode);
@@ -177,7 +225,8 @@ function buildErrorRow(
     status,
     message,
     candidateOptions: options?.candidateOptions,
-    missingQuestions: options?.missingQuestions
+    missingQuestions: options?.missingQuestions,
+    aiSuggestedCodes: options?.aiSuggestedCodes
   };
 }
 
@@ -205,26 +254,50 @@ async function lookupRow({
   row,
   destinationCountry,
   basisDate,
-  cache
+  cache,
+  aiEnabled
 }: {
   row: HsBatchInputRow;
   destinationCountry: string;
   basisDate: string;
   cache: Map<string, Promise<HsDirectLookupResult[]>>;
+  aiEnabled: boolean;
 }) {
   const normalized = normalizeHsCode(row.hskCode);
+  if (!normalized) {
+    const aiAssist = aiEnabled
+      ? await buildAiProductAssist(row, basisDate)
+      : { aiSuggestedCodes: [], missingQuestions: buildMissingQuestions(row) };
+    const aiMessage = aiAssist.aiSuggestedCodes.length
+      ? `품명 기준 AI 예비 HS 방향 ${aiAssist.aiSuggestedCodes.length}건을 확인했습니다. 하위 HSK 10자리와 품목 세부정보 확인 후 다시 조회해 주세요.`
+      : "HS CODE가 없어 일괄 세율·요건 조회는 제외했습니다. 품명과 품목 세부정보를 기준으로 HS 후보 확인이 필요합니다.";
+
+    return buildErrorRow(row, aiMessage, "warning", {
+      countryCode: destinationCountry,
+      basisDate,
+      missingQuestions: aiAssist.missingQuestions,
+      aiSuggestedCodes: aiAssist.aiSuggestedCodes
+    });
+  }
+
   if (normalized.length !== 10) {
     const candidates = await findIncompleteCodeCandidates({ normalized, basisDate, cache });
     const candidateOptions = summarizeCandidateOptions(candidates);
+    const aiAssist = !candidateOptions.length && aiEnabled
+      ? await buildAiProductAssist(row, basisDate)
+      : { aiSuggestedCodes: [], missingQuestions: buildMissingQuestions(row) };
     const candidateMessage = candidateOptions.length
       ? `HS CODE ${normalized.length}자리 기준 하위 10자리 후보 ${candidateOptions.length}건을 확인했습니다. 하위 HSK 선택 후 다시 조회해 주세요.`
+      : aiAssist.aiSuggestedCodes.length
+      ? `HS CODE ${normalized.length}자리로 직접 확장되는 하위 후보는 찾지 못했습니다. 품명 기준 AI 예비 HS 방향 ${aiAssist.aiSuggestedCodes.length}건을 확인했습니다.`
       : "HS CODE 10자리를 입력해 주세요. 4자리/6자리/8자리는 일괄조회에서 제외했습니다.";
 
     return buildErrorRow(row, candidateMessage, "warning", {
       candidateOptions,
       countryCode: destinationCountry,
       basisDate,
-      missingQuestions: buildMissingQuestions(row)
+      missingQuestions: aiAssist.missingQuestions,
+      aiSuggestedCodes: aiAssist.aiSuggestedCodes
     });
   }
 
@@ -261,13 +334,21 @@ export async function lookupHsBatchAction(
   try {
     const rows = parseRows(parsed.data.rowsJson);
     const cache = new Map<string, Promise<HsDirectLookupResult[]>>();
+    const aiEligibleRowNumbers = new Set(
+      rows
+        .filter((row) => row.productName?.trim())
+        .filter((row) => normalizeHsCode(row.hskCode).length !== 10)
+        .slice(0, maxAiAssistedBatchRows)
+        .map((row) => row.rowNumber)
+    );
     const results = await Promise.all(
       rows.map((row) =>
         lookupRow({
           row,
           destinationCountry: parsed.data.destinationCountry,
           basisDate: parsed.data.basisDate,
-          cache
+          cache,
+          aiEnabled: aiEligibleRowNumbers.has(row.rowNumber)
         }).catch((error) => buildErrorRow(row, error instanceof Error ? error.message : "조회 중 오류가 발생했습니다."))
       )
     );

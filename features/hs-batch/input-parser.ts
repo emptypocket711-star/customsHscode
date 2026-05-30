@@ -122,7 +122,7 @@ export function parseMatrix(matrix: unknown[][]): HsBatchParseResult {
     hskCode: cellText(row[hskIndex]),
     productName: productIndex >= 0 ? cellText(row[productIndex]) : "",
     memo: memoIndex >= 0 ? cellText(row[memoIndex]) : ""
-  })).filter((row) => row.hskCode);
+  })).filter((row) => row.hskCode || row.productName);
 
   return {
     columns: {
@@ -173,8 +173,8 @@ function splitDelimitedLine(line: string, separator: string) {
 export function parseDelimitedInput(value: string): HsBatchParseResult {
   const lines = value
     .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
+    .map((line) => line.trimEnd())
+    .filter((line) => line.trim());
   const separator = lines.some((line) => line.includes("\t")) ? "\t" : ",";
   return parseMatrix(lines.map((line) => splitDelimitedLine(line, separator)));
 }

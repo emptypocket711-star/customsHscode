@@ -54,4 +54,15 @@ describe("HS batch input parser", () => {
       { rowNumber: 3, hskCode: "8471.60-1020", productName: "Keyboard, wireless", memo: "model A" }
     ]);
   });
+
+  it("keeps product-only rows for AI-assisted follow-up", () => {
+    const rows = parseDelimitedText(`HS CODE\t품명\t비고
+\t작업용 조끼\tHS 미정
+3304.99-1000\t기초화장품\tHS 기재`);
+
+    expect(rows).toEqual([
+      { rowNumber: 2, hskCode: "", productName: "작업용 조끼", memo: "HS 미정" },
+      { rowNumber: 3, hskCode: "3304.99-1000", productName: "기초화장품", memo: "HS 기재" }
+    ]);
+  });
 });

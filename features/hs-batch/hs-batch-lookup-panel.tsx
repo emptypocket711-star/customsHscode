@@ -24,7 +24,7 @@ const templateColumns = [
 
 type XlsxResultColumn = {
   header: string;
-  key: keyof HsBatchResultRow | "candidateOptionsText" | "missingQuestionsText" | "guidance";
+  key: keyof HsBatchResultRow | "candidateOptionsText" | "aiSuggestedCodesText" | "missingQuestionsText" | "guidance";
   width: number;
 };
 
@@ -43,6 +43,7 @@ const resultColumns: XlsxResultColumn[] = [
   { header: "수입요건", key: "importRequirements", width: 54 },
   { header: "원산지표시", key: "originMarking", width: 34 },
   { header: "하위 HSK 후보", key: "candidateOptionsText", width: 54 },
+  { header: "AI 예비 HS 방향", key: "aiSuggestedCodesText", width: 54 },
   { header: "보완 질문", key: "missingQuestionsText", width: 54 },
   { header: "상태", key: "status", width: 12 },
   { header: "메시지", key: "message", width: 44 },
@@ -81,12 +82,19 @@ function missingQuestionsText(row: HsBatchResultRow) {
     : "";
 }
 
+function aiSuggestedCodesText(row: HsBatchResultRow) {
+  return row.aiSuggestedCodes?.length
+    ? row.aiSuggestedCodes.map((candidate, index) => `${index + 1}. ${formatHsCode(candidate.code)} ${candidate.reason}`).join("\n")
+    : "";
+}
+
 function buildRowGuidance(row: HsBatchResultRow) {
   const normalizedInput = formatHsCode(row.normalizedHskCode || normalizeHsCode(row.inputHskCode));
   const itemName = row.productName || row.matchedName || "입력 품명 미기재";
 
   if (row.status !== "success") {
     const candidates = candidateOptionsText(row);
+    const aiCodes = aiSuggestedCodesText(row);
     const questions = missingQuestionsText(row);
 
     return [
@@ -100,6 +108,9 @@ function buildRowGuidance(row: HsBatchResultRow) {
       candidates ? `` : null,
       candidates ? `하위 HSK 후보:` : null,
       candidates || null,
+      aiCodes ? `` : null,
+      aiCodes ? `AI 예비 HS 방향:` : null,
+      aiCodes || null,
       questions ? `` : null,
       questions ? `보완 확인사항:` : null,
       questions || null,
@@ -159,6 +170,8 @@ function buildXlsxSheetData(results: HsBatchResultRow[]) {
           ? buildRowGuidance(result)
           : column.key === "candidateOptionsText"
           ? candidateOptionsText(result)
+          : column.key === "aiSuggestedCodesText"
+          ? aiSuggestedCodesText(result)
           : column.key === "missingQuestionsText"
           ? missingQuestionsText(result)
           : column.key === "normalizedHskCode" && result.normalizedHskCode
@@ -592,6 +605,7 @@ export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
                   <th className="px-3 py-2">수입요건</th>
                   <th className="px-3 py-2">원산지표시</th>
                   <th className="px-3 py-2">하위 후보</th>
+                  <th className="px-3 py-2">AI 예비 방향</th>
                   <th className="px-3 py-2">보완 질문</th>
                   <th className="px-3 py-2">메시지</th>
                   <th className="px-3 py-2">안내</th>
@@ -628,6 +642,21 @@ export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
                                 key={candidate.hskCode}
                               >
                                 {formatHsCode(candidate.hskCode)} <span className="font-sans font-medium text-slate-700">{candidate.koreanName}</span>
+                              </a>
+                            ))}
+                          </div>
+                        ) : "-"}
+                      </td>
+                      <td className="min-w-72 px-3 py-2 text-slate-700">
+                        {row.aiSuggestedCodes?.length ? (
+                          <div className="grid gap-1.5">
+                            {row.aiSuggestedCodes.map((candidate) => (
+                              <a
+                                className="font-mono text-xs font-semibold text-blue-700 underline-offset-2 hover:underline"
+                                href={`/hs/direct?direction=import&destinationCountry=${encodeURIComponent(row.countryCode || "ALL")}&basisDate=${encodeURIComponent(row.basisDate || basisDate)}&query=${encodeURIComponent(candidate.code)}`}
+                                key={candidate.code}
+                              >
+                                {formatHsCode(candidate.code)} <span className="font-sans font-medium text-slate-700">{candidate.reason}</span>
                               </a>
                             ))}
                           </div>

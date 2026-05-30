@@ -2,9 +2,11 @@ import { z } from "zod";
 
 export const hsBatchInputRowSchema = z.object({
   rowNumber: z.number().int().positive(),
-  hskCode: z.string().trim().min(1),
+  hskCode: z.string().trim(),
   productName: z.string().trim().optional(),
   memo: z.string().trim().optional()
+}).refine((row) => row.hskCode || row.productName, {
+  message: "HS CODE 또는 품명 중 하나는 입력해 주세요."
 });
 
 export const hsBatchLookupSchema = z.object({
@@ -40,6 +42,11 @@ export type HsBatchResultRow = {
     koreanName: string;
   }>;
   missingQuestions?: string[];
+  aiSuggestedCodes?: Array<{
+    code: string;
+    reason: string;
+    requiredInfo: string[];
+  }>;
 };
 
 export type HsBatchLookupActionState = {
