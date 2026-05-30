@@ -101,6 +101,12 @@ export type OperationsIssueOwnerSummary = {
   latestIssueAt: string | null;
 };
 
+export type OperationsIssueAgeStatus = {
+  ageDays: number;
+  level: "normal" | "watch" | "stale";
+  label: string;
+};
+
 const operationsIssueEventSelect = [
   "id",
   "issue_type",
@@ -309,6 +315,26 @@ function ageDaysSince(value: string | null, now: Date) {
   if (!value) return null;
   const ageMs = now.getTime() - new Date(value).getTime();
   return Math.max(0, Math.floor(ageMs / (24 * 60 * 60 * 1000)));
+}
+
+export function getOpenOperationsIssueAgeStatus(
+  event: OperationsIssueEventItem,
+  now = new Date(),
+  options: { watchDays?: number; staleDays?: number } = {}
+): OperationsIssueAgeStatus | null {
+  if (event.status !== "open") return null;
+
+  const watchDays = options.watchDays ?? 2;
+  const staleDays = options.staleDays ?? 7;
+  const ageDays = ageDaysSince(event.firstSeenAt, now) ?? 0;
+  const level = ageDays >= staleDays ? "stale" : ageDays >= watchDays ? "watch" : "normal";
+  const label = level === "stale"
+    ? `장기 미해결 ${ageDays}일`
+    : level === "watch"
+      ? `지연 확인 ${ageDays}일`
+      : `열림 ${ageDays}일`;
+
+  return { ageDays, level, label };
 }
 
 export function summarizeOpenOperationsIssuesByOwner(

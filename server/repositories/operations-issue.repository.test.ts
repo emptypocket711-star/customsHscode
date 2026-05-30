@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   filterOperationsIssueEvents,
+  getOpenOperationsIssueAgeStatus,
   summarizeOpenOperationsIssuesByOwner,
   summarizeOperationsIssueEvents,
   type OperationsIssueEventItem
@@ -144,5 +145,38 @@ describe("operations issue repository helpers", () => {
         latestIssueAt: "2026-05-29T01:00:00.000Z"
       }
     ]);
+  });
+
+  it("classifies open operations issues by age", () => {
+    const now = new Date("2026-05-30T00:00:00.000Z");
+
+    expect(getOpenOperationsIssueAgeStatus(issue({
+      status: "open",
+      firstSeenAt: "2026-05-29T00:00:00.000Z"
+    }), now)).toEqual({
+      ageDays: 1,
+      level: "normal",
+      label: "열림 1일"
+    });
+    expect(getOpenOperationsIssueAgeStatus(issue({
+      status: "open",
+      firstSeenAt: "2026-05-27T00:00:00.000Z"
+    }), now)).toEqual({
+      ageDays: 3,
+      level: "watch",
+      label: "지연 확인 3일"
+    });
+    expect(getOpenOperationsIssueAgeStatus(issue({
+      status: "open",
+      firstSeenAt: "2026-05-20T00:00:00.000Z"
+    }), now)).toEqual({
+      ageDays: 10,
+      level: "stale",
+      label: "장기 미해결 10일"
+    });
+    expect(getOpenOperationsIssueAgeStatus(issue({
+      status: "resolved",
+      firstSeenAt: "2026-05-20T00:00:00.000Z"
+    }), now)).toBeNull();
   });
 });

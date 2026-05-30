@@ -73,6 +73,7 @@ npm run health:db
 - 운영 이슈 필터/검색: 상태, 심각도, 담당자, 검색어로 처리 대상 이슈 목록을 좁혀 볼 수 있는지 확인
 - 운영 이슈 담당자별 요약: 담당자별 미해결 건수, 차단/주의 건수, 오래 열린 이슈 기간이 표시되는지 확인
 - 운영 이슈 원인 드릴다운: 반복 조회 품질 이슈에서 관련 telemetry 진단, 경로, 후보 수치 샘플이 원문 없이 표시되는지 확인
+- 운영 이슈 경과일 경고: 미해결 이슈가 열려 있던 기간에 따라 열림, 지연 확인, 장기 미해결 배지가 표시되는지 확인
 - 운영 이슈 처리 액션: 개발자 계정에서 담당자, 메모, 처리 사유와 함께 해결, 제외, 다시 열기 버튼이 동작하고 audit log가 남는지 확인
 
 `LOOKUP_TELEMETRY_ENABLED=true`와 `SUPABASE_SERVICE_ROLE_KEY`가 설정되어야 조회 품질 로그가 저장된다.
@@ -93,6 +94,8 @@ vercel env run -e production -- npm run ops:job:operations-issues
 운영 이슈 담당자별 요약은 새 상태를 저장하지 않고, 미해결 이슈를 담당자 기준으로 묶어 업무 부담과 오래 열린 이슈를 먼저 확인하게 한다.
 
 운영 이슈 원인 드릴다운은 이슈 관리 상태를 바꾸지 않고, 이슈 metadata의 bucket, route, diagnosis와 최근 telemetry를 대조해 원인 분석용 수치만 보여준다.
+
+운영 이슈 경과일 경고는 원인 분석이 아니라 처리 우선순위 표시용이다. `open` 상태의 `first_seen_at` 기준으로 지연 여부를 계산한다.
 
 해결·제외 처리된 운영 이슈는 `operations-retention` job이 `OPERATIONS_ISSUE_RETENTION_DAYS` 기준으로 정리한다. 미해결 이슈는 정리 대상에서 제외된다.
 

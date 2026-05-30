@@ -28,6 +28,7 @@ import {
 } from "@/server/repositories/background-job.repository";
 import {
   filterOperationsIssueEvents,
+  getOpenOperationsIssueAgeStatus,
   listRecentOperationsIssueEvents,
   summarizeOpenOperationsIssuesByOwner,
   summarizeOperationsIssueEvents,
@@ -243,6 +244,12 @@ function operationsIssueSeverityLabel(severity: OperationsIssueSeverity) {
   if (severity === "blocker") return "차단";
   if (severity === "warning") return "주의";
   return "정보";
+}
+
+function operationsIssueAgeTone(level: "normal" | "watch" | "stale") {
+  if (level === "stale") return "warning";
+  if (level === "watch") return "neutral";
+  return "success";
 }
 
 function searchParamValue(value: string | string[] | undefined) {
@@ -512,6 +519,10 @@ export default async function OperationsHealthPage({
   const operationsIssueDrilldowns = new Map(operationsIssueEvents.map((issue) => [
     issue.id,
     buildOperationsIssueLookupDrilldown(issue, lookupTelemetryEvents)
+  ]));
+  const operationsIssueAgeStatuses = new Map(operationsIssueEvents.map((issue) => [
+    issue.id,
+    getOpenOperationsIssueAgeStatus(issue)
   ]));
   const hasOperationsIssueFilters = Boolean(
     (issueFilters.status && issueFilters.status !== "all")
@@ -1215,12 +1226,18 @@ export default async function OperationsHealthPage({
                 <tbody className="divide-y divide-slate-100">
                   {filteredOperationsIssueEvents.map((event: OperationsIssueEventItem) => {
                       const drilldown = operationsIssueDrilldowns.get(event.id);
+                      const ageStatus = operationsIssueAgeStatuses.get(event.id);
 
                       return (
                         <tr key={event.id} className={event.status === "open" ? "bg-amber-50/45" : undefined}>
                           <td className="px-5 py-4">
                             <Badge tone={operationsIssueStatusTone(event.status)}>{operationsIssueStatusLabel(event.status)}</Badge>
                             <p className="mt-2 text-xs font-semibold text-slate-500">{operationsIssueSeverityLabel(event.severity)}</p>
+                            {ageStatus ? (
+                              <p className="mt-2">
+                                <Badge tone={operationsIssueAgeTone(ageStatus.level)}>{ageStatus.label}</Badge>
+                              </p>
+                            ) : null}
                           </td>
                           <td className="px-5 py-4">
                             <p className="font-semibold text-slate-950">{event.title}</p>
