@@ -262,9 +262,22 @@
 - 운영 이슈 상태 변경 추적 운영 반영:
   - production 배포 `customs-hscode-mtknl84cr-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+- 운영 이슈 처리 피드백을 보강했다.
+  - 이전 작업은 상태 변경 이력을 행 안에서 확인하는 추적 기능이고, 이번 작업은 운영자가 상태 처리 버튼을 누르는 순간의 pending, success, error 피드백을 주는 입력 UX 기능이다.
+  - 운영 이슈 처리 폼을 행 단위 client component로 분리해 처리 중에는 해당 행의 입력창과 버튼을 비활성화한다.
+  - server action은 상태 저장 성공 메시지와 입력 오류 메시지를 반환하고, 기존 service-role 업데이트와 audit log 기록은 유지한다.
+- 운영 이슈 처리 피드백 운영 반영:
+  - production 배포 `customs-hscode-pf1wqttje-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
+- `npm test -- server/repositories/operations-issue.repository.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `vercel env run -e production -- npm run health:db`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 - `npm test -- server/repositories/operations-issue.repository.test.ts`
 - `npm run typecheck`
 - `npm run lint`
