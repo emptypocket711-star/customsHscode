@@ -93,6 +93,8 @@
 - 운영 반영:
   - Supabase production DB에 `20260530004000_cleanup_operations_alert_events.sql` migration을 적용했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+  - production 배포 후 `npm run ops:job:operations-retention`을 실행해 200 OK, retentionDays 90, deletedCount 0을 확인했다.
+  - production smoke 10개 경로 모두 통과했다.
 
 검증:
 
@@ -119,6 +121,8 @@
 - `npm run lint`
 - `npm run build`
 - `vercel env run -e production -- npm run health:db`
+- `vercel env run -e production -- npm run ops:job:operations-retention`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 - 운영 E2E: 임시 계정 기반 82행 큐 등록 → worker 처리 → 결과 UI/XLSX 버튼 확인
 - `npm test -- server/repositories/background-job.repository.test.ts`
 - `vercel env run -e production -- npm run ops:job:background`
