@@ -276,9 +276,22 @@
 - 운영 이슈 처리 결과 요약 운영 반영:
   - production 배포 `customs-hscode-rlaay0bgi-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+- 운영 이슈 빠른 필터를 추가했다.
+  - 이전 작업은 닫힌 운영 이슈의 처리 결과를 집계하는 기능이고, 이번 작업은 운영자가 차단 미해결, 장기 미해결, 담당 미지정, 해결, 제외 목록으로 바로 이동하는 탐색 기능이다.
+  - 빠른 필터는 기존 필터 파라미터를 사용하며 새 운영 데이터를 저장하지 않는다.
+  - 장기 미해결과 담당 미지정 필터를 단위 테스트로 고정했다.
+- 운영 이슈 빠른 필터 운영 반영:
+  - production 배포 `customs-hscode-hpnef1p5f-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
+- `npm test -- server/repositories/operations-issue.repository.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `vercel env run -e production -- npm run health:db`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 - `npm test -- server/repositories/operations-issue.repository.test.ts`
 - `npm run typecheck`
 - `npm run lint`
