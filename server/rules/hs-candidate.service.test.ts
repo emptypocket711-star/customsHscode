@@ -55,6 +55,22 @@ describe("recommendHsCandidates", () => {
     expect(recommendHsCandidates({ productName: "립밤", basisDate: "2026-05-21" })[0]?.hskCode).toBe("3304101000");
   });
 
+  it("returns fast deterministic candidates for common drink containers and bags", () => {
+    const tumblerCandidates = recommendHsCandidates({
+      productName: "텀블러",
+      basisDate: "2026-05-21"
+    });
+    const bagCandidates = recommendHsCandidates({
+      productName: "가방",
+      basisDate: "2026-05-21"
+    });
+
+    expect(tumblerCandidates.map((candidate) => candidate.hskCode)).toEqual(expect.arrayContaining(["9617001000", "3924100000"]));
+    expect(tumblerCandidates[0]?.requiredQuestions.join(" ")).toContain("진공");
+    expect(bagCandidates.map((candidate) => candidate.hskCode)).toContain("4202922000");
+    expect(bagCandidates[0]?.requiredQuestions.join(" ")).toContain("외부 표면 재질");
+  });
+
   it("returns possible meanings for ambiguous short acronyms such as ESC", () => {
     const candidates = recommendHsCandidates({
       productName: "esc",

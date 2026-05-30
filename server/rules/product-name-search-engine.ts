@@ -58,6 +58,34 @@ export const productCandidateHints: ProductCandidateHint[] = [
     risk: "부분품 분류 가능성과 재질별 분류 경합 확인 필요"
   },
   {
+    hskCode: "9617001000",
+    keywords: ["텀블러", "보온병", "보냉병", "진공", "물병", "tumbler", "vacuum flask", "vacuum bottle", "thermos", "insulated bottle"],
+    baseReason: "품명에 휴대용 음료 용기 또는 진공 보온·보냉 용기 단서가 있습니다.",
+    questions: ["진공 단열 구조인지", "내부 재질이 스테인리스·유리·플라스틱 중 무엇인지", "보온·보냉 기능과 뚜껑·마개 구성"],
+    risk: "진공 플라스크, 금속제 식탁·주방용품, 플라스틱 식탁·주방용품은 재질과 단열 구조에 따라 세번 경합이 큽니다."
+  },
+  {
+    hskCode: "3924100000",
+    keywords: ["텀블러", "물병", "컵", "플라스틱 컵", "플라스틱 텀블러", "plastic tumbler", "plastic cup", "plastic bottle"],
+    baseReason: "품명에 플라스틱제 식탁·주방용 음료 용기 단서가 있습니다.",
+    questions: ["플라스틱제인지", "진공 단열 구조가 없는 일반 컵·물병인지", "뚜껑·빨대 등 구성품 포함 여부"],
+    risk: "진공 보온병, 금속제 용기, 일반 플라스틱 식탁·주방용품은 재질과 구조에 따라 달라질 수 있습니다."
+  },
+  {
+    hskCode: "4202922000",
+    keywords: ["가방", "백", "핸드백", "숄더백", "토트백", "파우치", "bag", "handbag", "shoulder bag", "tote bag", "pouch"],
+    baseReason: "품명에 휴대용 가방류 단서가 있습니다.",
+    questions: ["외부 표면 재질이 방직용 섬유·가죽·플라스틱 시트 중 무엇인지", "핸드백인지 여행가방·서류가방·파우치인지", "크기와 사용 목적"],
+    risk: "제4202호 내에서 용도와 외부 표면 재질에 따라 하위 세번이 달라질 수 있습니다."
+  },
+  {
+    hskCode: "4202222000",
+    keywords: ["핸드백", "숄더백", "토트백", "여성가방", "handbag", "shoulder bag", "tote bag"],
+    baseReason: "품명에 핸드백류 단서가 있습니다.",
+    questions: ["핸드백 형태인지", "외부 표면 재질이 방직용 섬유인지", "가죽·플라스틱 시트 등 다른 외부 표면 재질 여부"],
+    risk: "핸드백, 여행가방, 파우치, 지갑은 용도와 외부 표면 재질에 따라 제4202호 내 하위 세번이 달라질 수 있습니다."
+  },
+  {
     hskCode: "8543709090",
     keywords: ["전기", "전자", "장치", "센서", "모듈", "device", "sensor", "electronic"],
     baseReason: "품명 또는 용도에 전기기기 단서가 있습니다.",
@@ -107,6 +135,7 @@ const synonymGroups = [
   ["핸드크림", "hand cream", "handcream", "moisture cream", "moisturizing cream", "moisture", "moisturizing", "moisturizer", "moisturiser", "lotion", "스킨케어", "피부", "보습", "크림", "화장품", "cosmetic", "skin care"],
   ["선크림", "선스크린", "자외선차단", "썬크림"],
   ["핸드백", "가방", "백", "파우치", "지갑"],
+  ["텀블러", "보온병", "보냉병", "물병", "컵", "tumbler", "vacuum flask", "vacuum bottle", "thermos", "insulated bottle"],
   ["리튬이온", "리튬", "배터리", "전지", "축전지", "셀", "모듈", "팩"],
   ["영양제", "보충제", "건강기능식품", "섭취", "식품"],
   ["분말", "가루", "powder", "powders"],
@@ -123,6 +152,8 @@ const conceptGroups = [
   { label: "분말/가루", terms: ["powder", "powders", "분말", "가루"] },
   { label: "식품/섭취", terms: ["food", "식품", "섭취", "보충제", "supplement"] },
   { label: "화장품", terms: ["cosmetic", "화장품", "화장", "피부", "입술", "크림", "핸드크림", "hand cream", "handcream", "moisture cream", "moisturizing cream", "moisture", "moisturizing", "moisturizer", "moisturiser", "lotion", "skin care"] },
+  { label: "가방류", terms: ["가방", "핸드백", "파우치", "백", "bag", "handbag", "pouch", "shoulder bag", "tote bag"] },
+  { label: "음료 용기", terms: ["텀블러", "보온병", "보냉병", "물병", "컵", "tumbler", "vacuum flask", "vacuum bottle", "thermos", "insulated bottle"] },
   { label: "전기/전자", terms: ["electronic", "device", "전기", "전자", "장치", "센서", "모듈"] },
   { label: "배터리", terms: ["battery", "리튬", "배터리", "전지", "축전지"] },
   { label: "굴착 장비", terms: ["excavator", "excavators", "excavation", "excavating", "굴삭기", "굴착기", "backhoe", "digger"] },
