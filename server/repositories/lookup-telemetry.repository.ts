@@ -323,6 +323,32 @@ export type LookupTelemetryDiagnosisSummary = {
   action: string;
 };
 
+export type OperationsIssueLookupDrilldownInput = {
+  issueType: string;
+  metadata: Record<string, unknown>;
+};
+
+export type OperationsIssueLookupDrilldownSample = {
+  id: string;
+  createdAt: string;
+  route: string;
+  diagnosis: string;
+  bucketLabel: string;
+  resultCount: number | null;
+  durationMs: number | null;
+  normalizationCandidateCount: number | null;
+  officialCandidateCount: number | null;
+  finalHs6Count: number | null;
+  finalHsk10Count: number | null;
+};
+
+export type OperationsIssueLookupDrilldown = {
+  relatedEventCount: number;
+  routes: string[];
+  diagnoses: string[];
+  samples: OperationsIssueLookupDrilldownSample[];
+};
+
 export function summarizeLookupTelemetryDiagnostics(events: LookupTelemetryEvent[]): LookupTelemetryDiagnosisSummary[] {
   const summaries = new Map<string, LookupTelemetryDiagnosisSummary>();
 
@@ -344,4 +370,62 @@ export function summarizeLookupTelemetryDiagnostics(events: LookupTelemetryEvent
     if (b.count !== a.count) return b.count - a.count;
     return a.diagnosis.localeCompare(b.diagnosis);
   });
+}
+
+function stringArrayMetadataValue(metadata: Record<string, unknown>, key: string) {
+  const value = metadata[key];
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string" && Boolean(item.trim()))
+    : [];
+}
+
+export function buildOperationsIssueLookupDrilldown(
+  issue: OperationsIssueLookupDrilldownInput,
+  events: LookupTelemetryEvent[],
+  sampleLimit = 3
+): OperationsIssueLookupDrilldown | null {
+  if (!issue.issueType.startsWith("lookup_quality")) return null;
+
+  const bucketKey = stringPayloadValue(issue.metadata, "bucketKey");
+  const issueRoutes = stringArrayMetadataValue(issue.metadata, "routes");
+  const issueDiagnoses = stringArrayMetadataValue(issue.metadata, "diagnoses");
+  const matches = events
+    .filter(isLookupTelemetryIssue)
+    .filter((event) => {
+      const bucket = classifyLookupTelemetryBucket(event);
+      const diagnosis = classifyLookupTelemetryIssue(event);
+      const route = event.route ?? event.eventType;
+
+      if (bucketKey) return bucket.key === bucketKey;
+      return issueRoutes.includes(route) || issueDiagnoses.includes(diagnosis);
+    })
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  if (!matches.length) return null;
+
+  const routes = Array.from(new Set(matches.map((event) => event.route ?? event.eventType))).slice(0, 5);
+  const diagnoses = Array.from(new Set(matches.map(classifyLookupTelemetryIssue))).slice(0, 5);
+
+  return {
+    relatedEventCount: matches.length,
+    routes,
+    diagnoses,
+    samples: matches.slice(0, Math.max(1, Math.floor(sampleLimit))).map((event) => {
+      const bucket = classifyLookupTelemetryBucket(event);
+
+      return {
+        id: event.id,
+        createdAt: event.createdAt,
+        route: event.route ?? event.eventType,
+        diagnosis: classifyLookupTelemetryIssue(event),
+        bucketLabel: bucket.label,
+        resultCount: event.resultCount,
+        durationMs: event.durationMs ?? numericPayloadValue(event.payload, "durationMs"),
+        normalizationCandidateCount: numericPayloadValue(event.payload, "normalizationCandidateCount"),
+        officialCandidateCount: numericPayloadValue(event.payload, "officialCandidateCount"),
+        finalHs6Count: numericPayloadValue(event.payload, "finalHs6Count"),
+        finalHsk10Count: numericPayloadValue(event.payload, "finalHsk10Count")
+      };
+    })
+  };
 }

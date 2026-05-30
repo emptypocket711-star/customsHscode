@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { productInputShape, sanitizeLookupTelemetryPayload } from "@/server/observability/lookup-telemetry";
 import {
+  buildOperationsIssueLookupDrilldown,
   classifyLookupTelemetryBucket,
   classifyLookupTelemetryIssue,
   lookupTelemetryIssueAction,
@@ -231,5 +232,51 @@ describe("lookup telemetry", () => {
         diagnoses: ["GPT 호출 실패", "GPT 후보 없음", "GPT 후보 후처리 확인"]
       })
     ]);
+  });
+
+  it("builds lookup telemetry drilldown for operations issues without raw input", () => {
+    const drilldown = buildOperationsIssueLookupDrilldown({
+      issueType: "lookup_quality_recurring",
+      metadata: {
+        bucketKey: "gpt",
+        routes: ["/hs/product-recommendation"],
+        diagnoses: ["GPT 호출 실패"]
+      }
+    }, [
+      telemetryEvent({
+        id: "event-1",
+        route: "/hs/product-recommendation",
+        payload: { normalizationStatus: "failed", normalizationErrorType: "TimeoutError", normalizationCandidateCount: 0 },
+        resultCount: 1,
+        createdAt: "2026-05-29T00:00:00.000Z"
+      }),
+      telemetryEvent({
+        id: "event-2",
+        route: "/hs/batch",
+        eventType: "product_search_normalized",
+        resultCount: null,
+        payload: { candidateCount: 0, normalizationCandidateCount: 0 },
+        createdAt: "2026-05-29T01:00:00.000Z"
+      }),
+      telemetryEvent({
+        id: "event-3",
+        route: "/hs/direct",
+        resultCount: 2,
+        payload: {},
+        createdAt: "2026-05-29T02:00:00.000Z"
+      })
+    ]);
+
+    expect(drilldown).toEqual(expect.objectContaining({
+      relatedEventCount: 2,
+      routes: ["/hs/batch", "/hs/product-recommendation"],
+      diagnoses: ["GPT 후보 없음", "GPT 호출 실패"]
+    }));
+    expect(drilldown?.samples[0]).toMatchObject({
+      id: "event-2",
+      diagnosis: "GPT 후보 없음",
+      route: "/hs/batch"
+    });
+    expect(JSON.stringify(drilldown)).not.toContain("productName");
   });
 });

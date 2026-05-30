@@ -227,9 +227,15 @@
   - `npm run ops:job:operations-issues` 실행 결과 scannedEvents 0, recurringIssues 0, syncedIssues 0건, alerts 0건을 확인했다.
   - `npm run ops:job:operations-issues-rehearsal` 실행 결과 synthetic telemetry 3건, recurringIssues 1건, 운영 이슈 occurrenceCount 3건, resolved/open 상태 변경, cleanup true를 확인했다.
   - `npm run ops:job:operations-retention` 실행 결과 운영 알림 이력 deletedCount 0, background job history deletedRuns 0/deletedJobs 0, 운영 이슈 deletedCount 0을 확인했다.
+- 운영 이슈 원인 드릴다운을 추가했다.
+  - 이전 작업은 담당자별 미해결 부담을 보는 요약 기능이고, 이번 작업은 운영 이슈가 왜 생겼는지 관련 telemetry 원인으로 내려가는 분석 기능이다.
+  - 운영 이슈 metadata의 bucket, route, diagnosis와 최근 조회 telemetry를 대조해 관련 로그 수, 진단, 경로, 후보 수치 샘플을 표시한다.
+  - 드릴다운 샘플에는 원문 품명, 이메일, 문서 내용 없이 시간, 진단, 결과 수, AI 후보 수, 공식 후보 수, HS6/10자리 후보 수만 표시한다.
+  - 반복 조회 품질 이슈가 아닌 운영 이슈에는 드릴다운을 표시하지 않는다.
 
 검증:
 
+- `npm test -- server/observability/lookup-telemetry.test.ts`
 - `npm test -- server/repositories/operations-issue.repository.test.ts`
 - `npm test -- server/repositories/operations-issue.repository.test.ts server/operations/operations-issue-alert.service.test.ts`
 - `npm test -- server/operations/operations-issue-alert.service.test.ts server/operations/background-job-alert.service.test.ts`

@@ -37,6 +37,7 @@ import {
   type OperationsIssueStatus
 } from "@/server/repositories/operations-issue.repository";
 import {
+  buildOperationsIssueLookupDrilldown,
   classifyLookupTelemetryBucket,
   classifyLookupTelemetryIssue,
   isLookupTelemetryIssue,
@@ -508,6 +509,10 @@ export default async function OperationsHealthPage({
   const operationsIssueSummary = summarizeOperationsIssueEvents(operationsIssueEvents);
   const filteredOperationsIssueSummary = summarizeOperationsIssueEvents(filteredOperationsIssueEvents);
   const operationsIssueOwnerSummary = summarizeOpenOperationsIssuesByOwner(operationsIssueEvents).slice(0, 6);
+  const operationsIssueDrilldowns = new Map(operationsIssueEvents.map((issue) => [
+    issue.id,
+    buildOperationsIssueLookupDrilldown(issue, lookupTelemetryEvents)
+  ]));
   const hasOperationsIssueFilters = Boolean(
     (issueFilters.status && issueFilters.status !== "all")
       || (issueFilters.severity && issueFilters.severity !== "all")
@@ -1208,113 +1213,137 @@ export default async function OperationsHealthPage({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredOperationsIssueEvents.map((event: OperationsIssueEventItem) => (
-                    <tr key={event.id} className={event.status === "open" ? "bg-amber-50/45" : undefined}>
-                      <td className="px-5 py-4">
-                        <Badge tone={operationsIssueStatusTone(event.status)}>{operationsIssueStatusLabel(event.status)}</Badge>
-                        <p className="mt-2 text-xs font-semibold text-slate-500">{operationsIssueSeverityLabel(event.severity)}</p>
-                      </td>
-                      <td className="px-5 py-4">
-                        <p className="font-semibold text-slate-950">{event.title}</p>
-                        <p className="mt-1 text-xs leading-5 text-slate-600">{event.summary}</p>
-                      </td>
-                      <td className="whitespace-nowrap px-5 py-4 text-slate-700">
-                        <span className="font-semibold text-slate-950">{event.occurrenceCount}</span>
-                        <span className="ml-1 text-xs text-slate-500">건</span>
-                      </td>
-                      <td className="whitespace-nowrap px-5 py-4 text-xs leading-5 text-slate-600">
-                        최초 {formatDate(event.firstSeenAt)}
-                        <br />
-                        최근 {formatDate(event.lastSeenAt)}
-                      </td>
-                      <td className="max-w-[320px] px-5 py-4 text-xs leading-5 text-slate-600">{event.action}</td>
-                      <td className="max-w-[320px] px-5 py-4 text-xs leading-5 text-slate-600">
-                        <p>
-                          <span className="font-semibold text-slate-500">담당자</span>
-                          <span className="ml-2 text-slate-900">{event.assignedToLabel || "-"}</span>
-                        </p>
-                        <p className="mt-1">
-                          <span className="font-semibold text-slate-500">메모</span>
-                          <span className="ml-2 text-slate-700">{event.operatorNote || "-"}</span>
-                        </p>
-                        <p className="mt-1">
-                          <span className="font-semibold text-slate-500">처리 사유</span>
-                          <span className="ml-2 text-slate-700">{event.resolutionReason || "-"}</span>
-                        </p>
-                        <p className="mt-1 text-slate-500">
-                          상태 변경 {event.statusUpdatedAt ? formatDate(event.statusUpdatedAt) : "-"}
-                        </p>
-                      </td>
-                      <td className="max-w-[280px] truncate px-5 py-4 font-mono text-xs text-slate-500">{event.issueKey}</td>
-                      <td className="px-5 py-4">
-                        <form action={updateOperationsIssueStatusAction} className="grid min-w-[260px] gap-2">
-                          <input name="issueId" type="hidden" value={event.id} />
-                          <label className="grid gap-1 text-xs font-semibold text-slate-600">
-                            담당자
-                            <input
-                              className="rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs font-normal text-slate-900 outline-none transition focus:border-blue-400"
-                              defaultValue={event.assignedToLabel ?? ""}
-                              maxLength={120}
-                              name="assignedToLabel"
-                              placeholder="예: 운영 담당자"
-                            />
-                          </label>
-                          <label className="grid gap-1 text-xs font-semibold text-slate-600">
-                            메모
-                            <textarea
-                              className="min-h-16 rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs font-normal text-slate-900 outline-none transition focus:border-blue-400"
-                              defaultValue={event.operatorNote ?? ""}
-                              maxLength={1000}
-                              name="operatorNote"
-                              placeholder="확인한 원인 또는 후속 작업"
-                            />
-                          </label>
-                          <label className="grid gap-1 text-xs font-semibold text-slate-600">
-                            처리 사유
-                            <textarea
-                              className="min-h-14 rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs font-normal text-slate-900 outline-none transition focus:border-blue-400"
-                              defaultValue={event.resolutionReason ?? ""}
-                              maxLength={1000}
-                              name="resolutionReason"
-                              placeholder="해결·제외·재오픈 판단 근거"
-                            />
-                          </label>
-                          <div className="flex flex-wrap gap-2">
-                            {event.status !== "resolved" ? (
-                              <button
-                                className="rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 transition hover:bg-emerald-100"
-                                name="status"
-                                type="submit"
-                                value="resolved"
-                              >
-                                해결
-                              </button>
+                  {filteredOperationsIssueEvents.map((event: OperationsIssueEventItem) => {
+                      const drilldown = operationsIssueDrilldowns.get(event.id);
+
+                      return (
+                        <tr key={event.id} className={event.status === "open" ? "bg-amber-50/45" : undefined}>
+                          <td className="px-5 py-4">
+                            <Badge tone={operationsIssueStatusTone(event.status)}>{operationsIssueStatusLabel(event.status)}</Badge>
+                            <p className="mt-2 text-xs font-semibold text-slate-500">{operationsIssueSeverityLabel(event.severity)}</p>
+                          </td>
+                          <td className="px-5 py-4">
+                            <p className="font-semibold text-slate-950">{event.title}</p>
+                            <p className="mt-1 text-xs leading-5 text-slate-600">{event.summary}</p>
+                            {drilldown ? (
+                              <div className="mt-3 rounded-md border border-amber-200 bg-white px-3 py-2 text-xs leading-5 text-slate-600">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <p className="font-semibold text-amber-900">원인 드릴다운</p>
+                                  <Badge tone="warning">관련 로그 {drilldown.relatedEventCount}건</Badge>
+                                </div>
+                                <p className="mt-2">
+                                  진단: {drilldown.diagnoses.join(", ")}
+                                  <br />
+                                  경로: {drilldown.routes.join(", ")}
+                                </p>
+                                <div className="mt-2 grid gap-1">
+                                  {drilldown.samples.map((sample) => (
+                                    <p className="rounded border border-slate-100 bg-slate-50 px-2 py-1" key={sample.id}>
+                                      {formatDate(sample.createdAt)} · {sample.diagnosis} · 결과 {sample.resultCount ?? "-"}건 · AI {sample.normalizationCandidateCount ?? "-"} / 공식 {sample.officialCandidateCount ?? "-"} / HS6 {sample.finalHs6Count ?? "-"} / 10자리 {sample.finalHsk10Count ?? "-"}
+                                    </p>
+                                  ))}
+                                </div>
+                              </div>
                             ) : null}
-                            {event.status !== "ignored" ? (
-                              <button
-                                className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
-                                name="status"
-                                type="submit"
-                                value="ignored"
-                              >
-                                제외
-                              </button>
-                            ) : null}
-                            {event.status !== "open" ? (
-                              <button
-                                className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 transition hover:bg-amber-100"
-                                name="status"
-                                type="submit"
-                                value="open"
-                              >
-                                다시 열기
-                              </button>
-                            ) : null}
-                          </div>
-                        </form>
-                      </td>
-                    </tr>
-                  ))}
+                          </td>
+                          <td className="whitespace-nowrap px-5 py-4 text-slate-700">
+                            <span className="font-semibold text-slate-950">{event.occurrenceCount}</span>
+                            <span className="ml-1 text-xs text-slate-500">건</span>
+                          </td>
+                          <td className="whitespace-nowrap px-5 py-4 text-xs leading-5 text-slate-600">
+                            최초 {formatDate(event.firstSeenAt)}
+                            <br />
+                            최근 {formatDate(event.lastSeenAt)}
+                          </td>
+                          <td className="max-w-[320px] px-5 py-4 text-xs leading-5 text-slate-600">{event.action}</td>
+                          <td className="max-w-[320px] px-5 py-4 text-xs leading-5 text-slate-600">
+                            <p>
+                              <span className="font-semibold text-slate-500">담당자</span>
+                              <span className="ml-2 text-slate-900">{event.assignedToLabel || "-"}</span>
+                            </p>
+                            <p className="mt-1">
+                              <span className="font-semibold text-slate-500">메모</span>
+                              <span className="ml-2 text-slate-700">{event.operatorNote || "-"}</span>
+                            </p>
+                            <p className="mt-1">
+                              <span className="font-semibold text-slate-500">처리 사유</span>
+                              <span className="ml-2 text-slate-700">{event.resolutionReason || "-"}</span>
+                            </p>
+                            <p className="mt-1 text-slate-500">
+                              상태 변경 {event.statusUpdatedAt ? formatDate(event.statusUpdatedAt) : "-"}
+                            </p>
+                          </td>
+                          <td className="max-w-[280px] truncate px-5 py-4 font-mono text-xs text-slate-500">{event.issueKey}</td>
+                          <td className="px-5 py-4">
+                            <form action={updateOperationsIssueStatusAction} className="grid min-w-[260px] gap-2">
+                              <input name="issueId" type="hidden" value={event.id} />
+                              <label className="grid gap-1 text-xs font-semibold text-slate-600">
+                                담당자
+                                <input
+                                  className="rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs font-normal text-slate-900 outline-none transition focus:border-blue-400"
+                                  defaultValue={event.assignedToLabel ?? ""}
+                                  maxLength={120}
+                                  name="assignedToLabel"
+                                  placeholder="예: 운영 담당자"
+                                />
+                              </label>
+                              <label className="grid gap-1 text-xs font-semibold text-slate-600">
+                                메모
+                                <textarea
+                                  className="min-h-16 rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs font-normal text-slate-900 outline-none transition focus:border-blue-400"
+                                  defaultValue={event.operatorNote ?? ""}
+                                  maxLength={1000}
+                                  name="operatorNote"
+                                  placeholder="확인한 원인 또는 후속 작업"
+                                />
+                              </label>
+                              <label className="grid gap-1 text-xs font-semibold text-slate-600">
+                                처리 사유
+                                <textarea
+                                  className="min-h-14 rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs font-normal text-slate-900 outline-none transition focus:border-blue-400"
+                                  defaultValue={event.resolutionReason ?? ""}
+                                  maxLength={1000}
+                                  name="resolutionReason"
+                                  placeholder="해결·제외·재오픈 판단 근거"
+                                />
+                              </label>
+                              <div className="flex flex-wrap gap-2">
+                                {event.status !== "resolved" ? (
+                                  <button
+                                    className="rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 transition hover:bg-emerald-100"
+                                    name="status"
+                                    type="submit"
+                                    value="resolved"
+                                  >
+                                    해결
+                                  </button>
+                                ) : null}
+                                {event.status !== "ignored" ? (
+                                  <button
+                                    className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                                    name="status"
+                                    type="submit"
+                                    value="ignored"
+                                  >
+                                    제외
+                                  </button>
+                                ) : null}
+                                {event.status !== "open" ? (
+                                  <button
+                                    className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 transition hover:bg-amber-100"
+                                    name="status"
+                                    type="submit"
+                                    value="open"
+                                  >
+                                    다시 열기
+                                  </button>
+                                ) : null}
+                              </div>
+                            </form>
+                          </td>
+                        </tr>
+                      );
+                    })}
                 </tbody>
               </table>
             </div>
