@@ -1502,3 +1502,24 @@
 - Alias: `https://hsfinder.co.kr`
 - `vercel env run -e production -- npm run health:db`
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
+
+### 품명검색 AI 분류 흐름 노출
+
+- 이전 작업은 검토 유료화와 HS 확정 요청 노출을 숨긴 것이고, 이번 작업은 품명검색 자체를 AI 분류 진행 흐름이 보이도록 바꾼 것이다.
+- `/hs/direct`의 품명검색 결과에 `AI HS 분류 검토 흐름` 패널을 추가했다.
+- 패널은 `제품 의미 해석`, `류·호 후보 검토`, `HSK 후보 정리`, `조회 연결 준비` 순서로 AI가 어떤 기준으로 검토했는지 보여준다.
+- 후보가 있으면 하단에 `AI 예비 분류가 완료되었습니다.` 안내를 표시하고, 후보 선택 후 관세율·수입요건 예비 조회로 이어지게 했다.
+- 후보가 없으면 `AI 예비 분류는 완료됐지만 후보 확정을 위한 정보가 부족합니다.` 안내와 보완 필요 흐름을 표시한다.
+- 10자리 후보 카드의 CTA는 `상세 조회`보다 사용 의도가 명확한 `이 코드로 조회`로 바꿨다.
+
+검증:
+
+- `npm test -- server/rules/hs-candidate.service.test.ts lib/i18n/hs-direct.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `git diff --check`
+- Vercel production deployment: `customs-hscode-moczquww6-koo-apps.vercel.app`
+- Alias: `https://hsfinder.co.kr`
+- `vercel env run -e production -- npm run health:db`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
