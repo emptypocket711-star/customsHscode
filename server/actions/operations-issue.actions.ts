@@ -11,6 +11,11 @@ import {
   type OperationsIssueStatus
 } from "@/server/repositories/operations-issue.repository";
 
+export type OperationsIssueStatusActionState = {
+  status: "idle" | "success" | "error";
+  message: string | null;
+};
+
 const operationsIssueStatusSchema = z.object({
   issueId: z.uuid(),
   status: z.enum(["open", "resolved", "ignored"]),
@@ -47,7 +52,7 @@ async function requireCurrentDeveloper() {
   return user;
 }
 
-export async function updateOperationsIssueStatusAction(formData: FormData) {
+async function updateOperationsIssueStatusFromForm(formData: FormData) {
   const actor = await requireCurrentDeveloper();
   const parsed = operationsIssueStatusSchema.parse({
     issueId: stringValue(formData, "issueId"),
@@ -90,4 +95,39 @@ export async function updateOperationsIssueStatusAction(formData: FormData) {
   });
 
   revalidatePath("/operations/health");
+  return updated;
+}
+
+export async function updateOperationsIssueStatusAction(formData: FormData) {
+  await updateOperationsIssueStatusFromForm(formData);
+}
+
+export async function updateOperationsIssueStatusWithStateAction(
+  _previousState: OperationsIssueStatusActionState,
+  formData: FormData
+): Promise<OperationsIssueStatusActionState> {
+  try {
+    const updated = await updateOperationsIssueStatusFromForm(formData);
+    const statusLabel = updated.status === "resolved"
+      ? "해결"
+      : updated.status === "ignored"
+        ? "제외"
+        : "미해결";
+
+    return {
+      status: "success",
+      message: `운영 이슈 상태를 ${statusLabel}로 저장했습니다.`
+    };
+  } catch (error) {
+    const message = error instanceof z.ZodError
+      ? "입력값을 확인해 주세요. 담당자 120자, 메모와 처리 사유는 각각 1000자 이내여야 합니다."
+      : error instanceof Error
+        ? error.message
+        : "운영 이슈 상태를 저장하지 못했습니다.";
+
+    return {
+      status: "error",
+      message
+    };
+  }
 }
