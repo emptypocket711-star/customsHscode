@@ -3499,6 +3499,18 @@ export async function HsDirectLookupPanel({
   const shouldShowDestinationMap = showDestinationExportResults && !hasQuery && !destinationHsCode;
   const shouldLookupHs = hasQuery && isHsCodeLike(searchQuery);
   const shouldLookupProduct = hasQuery && !shouldLookupHs;
+  const productTimingStartedAt = process.hrtime.bigint();
+  const logProductTiming = (step: string, extra: Record<string, unknown> = {}) => {
+    if (!shouldLookupProduct) return;
+    console.info("[hs-direct-product-timing]", {
+      step,
+      elapsedMs: Number((process.hrtime.bigint() - productTimingStartedAt) / BigInt(1_000_000)),
+      queryLength: searchQuery.length,
+      direction: lookupDirection,
+      destinationCountry: selectedDestinationCountry,
+      ...extra
+    });
+  };
   const parsed = shouldLookupHs
     ? hsDirectLookupSchema.safeParse({
         hskCode: searchQuery,
@@ -3514,6 +3526,10 @@ export async function HsDirectLookupPanel({
         })
       : Promise.resolve([])
   ]);
+  logProductTiming("candidates", {
+    candidateCount: productCandidates.length,
+    hsResultCount: results.length
+  });
   const [productCandidateLookupResults, aiClarification] = await Promise.all([
     shouldLookupProduct
       ? Promise.resolve([])
@@ -3528,6 +3544,10 @@ export async function HsDirectLookupPanel({
         }).catch(() => null)
       : Promise.resolve(null)
   ]);
+  logProductTiming("clarification", {
+    candidateLookupCount: productCandidateLookupResults.length,
+    hasClarification: Boolean(aiClarification)
+  });
   const productCandidateLookupByHsk = new Map(productCandidateLookupResults.map((result) => [result.hskCode, result]));
   const productCandidateInternalTaxByHskPromise = lookupDirection === "import" && productCandidateLookupResults.length ? internalTaxCodesForResults({
     results: productCandidateLookupResults,
@@ -3591,6 +3611,10 @@ export async function HsDirectLookupPanel({
         .catch(() => new Set<string>())
       : Promise.resolve(new Set<string>())
   ]);
+  logProductTiming("detail-data", {
+    destinationTariffGroups: destinationTariffsByHsk.size,
+    productInternalTaxGroups: productCandidateInternalTaxByHsk.size
+  });
   const hs6DestinationTariffs = Array.from(
     new Map(
       exportLookupSources.flatMap((source) =>
@@ -3628,6 +3652,10 @@ export async function HsDirectLookupPanel({
       basisDate: resolvedBasisDate
     }) : Promise.resolve(new Map<string, ExportDestinationCustomsCodeItem[]>())
   ]);
+  logProductTiming("destination-import-data", {
+    destinationRowCount: exportDestinationRows.length,
+    destinationCustomsCodeGroups: destinationCustomsCodesByTariffKey.size
+  });
   const selectedDestinationHsCode = normalizeHsInput(destinationHsCode);
   const selectedDestinationRowByParam = selectedDestinationHsCode
     ? exportDestinationRows.find((row) => normalizeHsInput(row.destinationHsCode) === selectedDestinationHsCode)
