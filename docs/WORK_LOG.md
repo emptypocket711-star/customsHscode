@@ -1603,3 +1603,23 @@
 - Alias: `https://hsfinder.co.kr`
 - `vercel env run -e production -- npm run health:db`
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
+
+### 품명검색 보완 질문 재검색 연결
+
+- 이전 작업은 품명검색 결과가 나온 뒤 완료 상태와 다음 행동을 안내한 것이고, 이번 작업은 후보가 없거나 보완이 필요한 상태에서 사용자가 보완 질문을 바로 재검색에 반영할 수 있게 한 것이다.
+- 보완 질문을 기존 품명 뒤에 붙여 `/hs/direct` 품명검색을 다시 실행하는 `productRetrySearchHref` 흐름을 추가했다.
+- AI 보완 패널에 `보완 정보로 다시 검색` 영역을 추가해 상위 보완 질문을 `반영` 링크로 제공한다.
+- 후보가 없는 `HS CODE 특정 정보 부족` 패널에도 상위 보완 요청 항목을 `재검색` 링크로 제공한다.
+- 기존 복사 버튼은 유지하되, 사용자가 별도 입력 없이 보완 조건을 붙인 검색 결과로 바로 이동할 수 있게 했다.
+
+검증:
+
+- `npm test -- lib/i18n/hs-direct.test.ts server/rules/hs-candidate.service.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `git diff --check`
+- Vercel production deployment: `customs-hscode-9hn324ce2-koo-apps.vercel.app`
+- Alias: `https://hsfinder.co.kr`
+- `vercel env run -e production -- npm run health:db`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
