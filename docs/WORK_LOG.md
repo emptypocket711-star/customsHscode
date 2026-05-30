@@ -1563,3 +1563,23 @@
 - Alias: `https://hsfinder.co.kr`
 - `vercel env run -e production -- npm run health:db`
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
+
+### 품명검색 후보 선택 후 직접조회 맥락 유지
+
+- 이전 작업은 품명검색 결과 카드 안에서 후보 판단 근거와 다음 행동을 명확히 보여준 것이고, 이번 작업은 사용자가 후보를 눌러 직접조회 화면으로 이동한 뒤에도 품명검색에서 선택한 후보라는 맥락이 끊기지 않게 한 것이다.
+- 품명검색 후보의 `이 코드로 조회` 링크에 `source=product_search`, 원래 입력 품명, 후보 순위를 함께 전달하게 했다.
+- `/hs/direct` 직접조회 화면은 품명검색에서 넘어온 후보일 때 `품명검색에서 선택한 AI 예비 후보입니다.` 안내 배너를 표시한다.
+- 안내 배너는 원래 입력 품명, 후보 순위, 그리고 아래 관세율·FTA·수입요건·원산지표시가 해당 HS CODE 기준의 예비 조회임을 함께 보여준다.
+- HS CODE 직접 입력 조회는 기존 흐름을 유지하고, 품명검색 후보 선택으로 넘어온 경우에만 출처 배너가 표시된다.
+
+검증:
+
+- `npm test -- lib/i18n/hs-direct.test.ts server/rules/hs-candidate.service.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `git diff --check`
+- Vercel production deployment: `customs-hscode-ju5xoiq6r-koo-apps.vercel.app`
+- Alias: `https://hsfinder.co.kr`
+- `vercel env run -e production -- npm run health:db`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
