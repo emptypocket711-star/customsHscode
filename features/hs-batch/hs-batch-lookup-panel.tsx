@@ -51,6 +51,7 @@ const resultColumns: XlsxResultColumn[] = [
 ];
 
 type ResultFilter = "all" | "success" | "warning" | "error";
+type GuidanceLanguage = "ko" | "en" | "zh";
 
 const resultFilterLabels: Record<ResultFilter, string> = {
   all: "전체",
@@ -88,36 +89,110 @@ function aiSuggestedCodesText(row: HsBatchResultRow) {
     : "";
 }
 
-function buildRowGuidance(row: HsBatchResultRow) {
+function localizedQuestions(row: HsBatchResultRow, language: GuidanceLanguage) {
+  if (row.missingQuestions?.length) return row.missingQuestions;
+  if (language === "en") {
+    return [
+      "Please confirm the product material or composition.",
+      "Please confirm the product use and end user/application.",
+      "Please provide model name, specifications, photo, catalog, or detailed description."
+    ];
+  }
+  if (language === "zh") {
+    return [
+      "请确认产品的材质或成分。",
+      "请确认产品用途及使用对象。",
+      "请提供型号、规格、照片、目录或详细说明。"
+    ];
+  }
+  return [
+    "제품의 재질 또는 성분을 확인해 주세요.",
+    "제품의 실제 용도와 사용 대상을 확인해 주세요.",
+    "모델명, 규격, 제품 사진, 카탈로그 또는 상세 설명을 제공해 주세요."
+  ];
+}
+
+function buildSupplementRequest(row: HsBatchResultRow, language: GuidanceLanguage) {
   const normalizedInput = formatHsCode(row.normalizedHskCode || normalizeHsCode(row.inputHskCode));
+  const itemName = row.productName || row.matchedName || "입력 품명 미기재";
+  const candidates = candidateOptionsText(row);
+  const aiCodes = aiSuggestedCodesText(row);
+  const questions = localizedQuestions(row, language).map((question, index) => `${index + 1}. ${question}`).join("\n");
+
+  if (language === "en") {
+    return [
+      `[Request for HS code review details]`,
+      `Row: ${row.rowNumber}`,
+      `Product: ${itemName}`,
+      `Input HS code: ${normalizedInput || row.inputHskCode || "Not provided"}`,
+      ``,
+      `Current status: Additional review needed`,
+      `Review note: ${row.message}`,
+      candidates ? `` : null,
+      candidates ? `Possible Korean HSK 10-digit candidates:` : null,
+      candidates || null,
+      aiCodes ? `` : null,
+      aiCodes ? `Preliminary AI HS direction:` : null,
+      aiCodes || null,
+      ``,
+      `Please provide or confirm the following details:`,
+      questions,
+      ``,
+      `Tariff rates, internal taxes, and import requirements can be checked again after a 10-digit Korean HSK code and product details are confirmed. This is not a final HS classification.`
+    ].filter((line): line is string => line !== null).join("\n");
+  }
+
+  if (language === "zh") {
+    return [
+      `[HS 编码复核资料补充请求]`,
+      `行号: ${row.rowNumber}`,
+      `品名: ${itemName}`,
+      `输入 HS 编码: ${normalizedInput || row.inputHskCode || "未提供"}`,
+      ``,
+      `当前状态: 需要补充确认`,
+      `确认内容: ${row.message}`,
+      candidates ? `` : null,
+      candidates ? `韩国 HSK 10 位候选:` : null,
+      candidates || null,
+      aiCodes ? `` : null,
+      aiCodes ? `AI 初步 HS 方向:` : null,
+      aiCodes || null,
+      ``,
+      `请补充或确认以下资料:`,
+      questions,
+      ``,
+      `确认韩国 10 位 HSK 编码及产品详细资料后，可重新查询关税、国内税和进口要求。以上内容并非最终归类结论。`
+    ].filter((line): line is string => line !== null).join("\n");
+  }
+
+  return [
+    `[HS CODE 일괄 조회 보완 요청]`,
+    `입력행: ${row.rowNumber}`,
+    `품명: ${itemName}`,
+    `입력 HS CODE: ${normalizedInput || row.inputHskCode || "미기재"}`,
+    ``,
+    `현재 상태: ${resultStatusLabel(row.status)}`,
+    `확인 내용: ${row.message}`,
+    candidates ? `` : null,
+    candidates ? `하위 HSK 후보:` : null,
+    candidates || null,
+    aiCodes ? `` : null,
+    aiCodes ? `AI 예비 HS 방향:` : null,
+    aiCodes || null,
+    ``,
+    `보완 확인사항:`,
+    questions,
+    ``,
+    `HS CODE 10자리 기준으로 관세율, 내국세, 수입요건을 다시 확인할 수 있습니다.`,
+    `정확한 10자리 HS CODE 또는 품목 세부 정보를 보완해 주시면 재조회하겠습니다.`
+  ].filter((line): line is string => line !== null).join("\n");
+}
+
+function buildRowGuidance(row: HsBatchResultRow) {
   const itemName = row.productName || row.matchedName || "입력 품명 미기재";
 
   if (row.status !== "success") {
-    const candidates = candidateOptionsText(row);
-    const aiCodes = aiSuggestedCodesText(row);
-    const questions = missingQuestionsText(row);
-
-    return [
-      `[HS CODE 일괄 조회 보완 요청]`,
-      `입력행: ${row.rowNumber}`,
-      `품명: ${itemName}`,
-      `입력 HS CODE: ${normalizedInput || row.inputHskCode}`,
-      ``,
-      `현재 상태: ${resultStatusLabel(row.status)}`,
-      `확인 내용: ${row.message}`,
-      candidates ? `` : null,
-      candidates ? `하위 HSK 후보:` : null,
-      candidates || null,
-      aiCodes ? `` : null,
-      aiCodes ? `AI 예비 HS 방향:` : null,
-      aiCodes || null,
-      questions ? `` : null,
-      questions ? `보완 확인사항:` : null,
-      questions || null,
-      ``,
-      `HS CODE 10자리 기준으로 관세율, 내국세, 수입요건을 다시 확인할 수 있습니다.`,
-      `정확한 10자리 HS CODE 또는 품목 세부 정보를 보완해 주시면 재조회하겠습니다.`
-    ].filter((line): line is string => line !== null).join("\n");
+    return buildSupplementRequest(row, "ko");
   }
 
   const lines = [
@@ -189,11 +264,53 @@ function buildXlsxSheetData(results: HsBatchResultRow[]) {
   ];
 }
 
+function buildVendorRequestSheetData(results: HsBatchResultRow[]) {
+  const headerStyle = {
+    backgroundColor: "#334155",
+    fontWeight: "bold" as const,
+    textColor: "#FFFFFF",
+    alignVertical: "center" as const,
+    wrap: true
+  };
+  const cellStyle = {
+    alignVertical: "top" as const,
+    borderColor: "#E2E8F0",
+    borderStyle: "thin" as const,
+    wrap: true
+  };
+  const columns = [
+    "입력행",
+    "품명",
+    "입력 HS CODE",
+    "상태",
+    "한국어 보완요청",
+    "English request",
+    "中文补充请求"
+  ];
+
+  return [
+    columns.map((header) => ({ value: header, type: String, ...headerStyle })),
+    ...results.map((result) => [
+      { value: result.rowNumber, type: Number, ...cellStyle },
+      { value: result.productName || result.matchedName || "", type: String, ...cellStyle },
+      { value: formatHsCode(result.normalizedHskCode || normalizeHsCode(result.inputHskCode)), type: String, ...cellStyle },
+      { value: resultStatusLabel(result.status), type: String, ...cellStyle },
+      { value: result.status === "success" ? buildRowGuidance(result) : buildSupplementRequest(result, "ko"), type: String, ...cellStyle },
+      { value: result.status === "success" ? "" : buildSupplementRequest(result, "en"), type: String, ...cellStyle },
+      { value: result.status === "success" ? "" : buildSupplementRequest(result, "zh"), type: String, ...cellStyle }
+    ])
+  ];
+}
+
 async function downloadResults(results: HsBatchResultRow[]) {
   const writeXlsxFile = (await import("write-excel-file/browser")).default;
   const needsAttention = results.filter((result) => result.status !== "success");
   const sheetOptions = {
     columns: resultColumns.map((column) => ({ width: column.width })),
+    stickyRowsCount: 1
+  };
+  const vendorSheetOptions = {
+    columns: [{ width: 8 }, { width: 28 }, { width: 16 }, { width: 14 }, { width: 72 }, { width: 72 }, { width: 72 }],
     stickyRowsCount: 1
   };
   const sheets = [
@@ -208,7 +325,12 @@ async function downloadResults(results: HsBatchResultRow[]) {
           sheet: "보완 필요",
           ...sheetOptions
         }]
-      : [])
+      : []),
+    {
+      data: buildVendorRequestSheetData(results),
+      sheet: "업체 전달용",
+      ...vendorSheetOptions
+    }
   ];
 
   await writeXlsxFile(sheets).toFile(`hs-batch-result-${new Date().toISOString().slice(0, 10)}.xlsx`);
