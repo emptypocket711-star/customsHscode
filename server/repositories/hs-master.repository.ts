@@ -43,6 +43,19 @@ type ImportRequirementPreviewRecord = {
   status: string;
 };
 
+type IntegratedPublicNoticeRequirementRow = {
+  hsk_code: string;
+  requirement_name: string;
+  related_law: string;
+  agency: string | null;
+  procedure_summary: string | null;
+  source_name: string;
+  source_version: string;
+  effective_from: string;
+  effective_to: string | null;
+  status: string;
+};
+
 type RequirementPlaybookRecord = {
   requirement_document_name: string;
   related_law: string;
@@ -677,108 +690,137 @@ async function lookupWithSupabase(
 
   const summaryOnly = normalizedCode.length <= 6;
   const codes = records.map((record) => record.hsk_code);
-  const hierarchyLabels = await findHierarchyLabels(
+  const hs6Codes = Array.from(new Set(records.map((record) => record.hs6)));
+  const hierarchyLabelsPromise = findHierarchyLabels(
     supabase,
     records.flatMap((record) => hsAncestorCodes(record.hsk_code)),
     basisDate
   );
-  let standardNames: StandardProductNameRecord[] = [];
-  if (!summaryOnly) {
-    const { data: standardRows, error: standardError } = await supabase
-      .from("standard_product_names")
-      .select(
-        "id, hsk_code, standard_name_kr, required_spec_kr, source_name, source_url, source_version, effective_from, effective_to, published_at, retrieved_at, status, checksum"
-      )
+
+  const standardNamesPromise: Promise<StandardProductNameRecord[]> = summaryOnly
+    ? Promise.resolve([])
+    : (async () => {
+        const { data: standardRows, error: standardError } = await supabase
+          .from("standard_product_names")
+          .select(
+            "id, hsk_code, standard_name_kr, required_spec_kr, source_name, source_url, source_version, effective_from, effective_to, published_at, retrieved_at, status, checksum"
+          )
+          .in("hsk_code", codes)
+          .lte("effective_from", basisDate)
+          .or(`effective_to.is.null,effective_to.gte.${basisDate}`)
+          .eq("status", "published")
+          .order("standard_name_kr");
+
+        if (standardError) {
+          throw new Error(standardError.message);
+        }
+
+        return (standardRows ?? []) as StandardProductNameRecord[];
+      })();
+
+  const siblingsPromise: Promise<HsMasterRecord[]> = summaryOnly
+    ? Promise.resolve([])
+    : (async () => {
+        const { data: siblingRows, error: siblingError } = await supabase
+          .from("hs_master")
+          .select(
+            "hsk_code, hs6, korean_name, english_name, import_nature_code, export_nature_code, quantity_unit, weight_unit, source_name, source_url, source_version, effective_from, effective_to, published_at, retrieved_at, status, checksum"
+          )
+          .in("hs6", hs6Codes)
+          .lte("effective_from", basisDate)
+          .or(`effective_to.is.null,effective_to.gte.${basisDate}`)
+          .eq("status", "published")
+          .order("hsk_code")
+          .limit(80);
+
+        if (siblingError) {
+          throw new Error(siblingError.message);
+        }
+
+        return (siblingRows ?? []) as HsMasterRecord[];
+      })();
+
+  const tariffRatesPromise = (async () => {
+    const { data: tariffRows, error: tariffError } = await supabase
+      .from("tariff_rates")
+      .select("hsk_code, rate_type, duty_rate, unit_duty, country_group, usage_rate_type, source_name, source_version, effective_from, effective_to, status")
       .in("hsk_code", codes)
       .lte("effective_from", basisDate)
       .or(`effective_to.is.null,effective_to.gte.${basisDate}`)
       .eq("status", "published")
-      .order("standard_name_kr");
+      .order("rate_type");
 
-    if (standardError) {
-      throw new Error(standardError.message);
+    if (tariffError) {
+      throw new Error(tariffError.message);
     }
 
-    standardNames = (standardRows ?? []) as StandardProductNameRecord[];
-  }
-  const hs6Codes = Array.from(new Set(records.map((record) => record.hs6)));
-  let siblings: HsMasterRecord[] = [];
-  if (!summaryOnly) {
-    const { data: siblingRows, error: siblingError } = await supabase
-      .from("hs_master")
-      .select(
-        "hsk_code, hs6, korean_name, english_name, import_nature_code, export_nature_code, quantity_unit, weight_unit, source_name, source_url, source_version, effective_from, effective_to, published_at, retrieved_at, status, checksum"
-      )
-      .in("hs6", hs6Codes)
+    return (tariffRows ?? []) as TariffRatePreviewRecord[];
+  })();
+
+  const importRequirementsPromise = (async () => {
+    const { data: requirementRows, error: requirementError } = await supabase
+      .from("customs_confirmation_requirements")
+      .select("hsk_code, requirement_document_name, related_law, agency_code, agency, source_name, source_version, effective_from, effective_to, status")
+      .in("hsk_code", codes)
+      .eq("direction", "import")
       .lte("effective_from", basisDate)
       .or(`effective_to.is.null,effective_to.gte.${basisDate}`)
       .eq("status", "published")
       .order("hsk_code")
-      .limit(80);
+      .order("related_law");
 
-    if (siblingError) {
-      throw new Error(siblingError.message);
+    if (requirementError) {
+      throw new Error(requirementError.message);
     }
 
-    siblings = (siblingRows ?? []) as HsMasterRecord[];
-  }
-  const { data: tariffRows, error: tariffError } = await supabase
-    .from("tariff_rates")
-    .select("hsk_code, rate_type, duty_rate, unit_duty, country_group, usage_rate_type, source_name, source_version, effective_from, effective_to, status")
-    .in("hsk_code", codes)
-    .lte("effective_from", basisDate)
-    .or(`effective_to.is.null,effective_to.gte.${basisDate}`)
-    .eq("status", "published")
-    .order("rate_type");
+    return (requirementRows ?? []) as ImportRequirementPreviewRecord[];
+  })();
 
-  if (tariffError) {
-    throw new Error(tariffError.message);
-  }
+  const publicNoticeRowsPromise = (async () => {
+    const { data: publicNoticeRows, error: publicNoticeError } = await supabase
+      .from("integrated_public_notice_requirements")
+      .select("hsk_code, requirement_name, related_law, agency, procedure_summary, source_name, source_version, effective_from, effective_to, status")
+      .in("hsk_code", codes)
+      .eq("direction", "import")
+      .lte("effective_from", basisDate)
+      .or(`effective_to.is.null,effective_to.gte.${basisDate}`)
+      .eq("status", "published")
+      .order("hsk_code")
+      .order("related_law");
 
-  const tariffRates = (tariffRows ?? []) as TariffRatePreviewRecord[];
-  const { data: requirementRows, error: requirementError } = await supabase
-    .from("customs_confirmation_requirements")
-    .select("hsk_code, requirement_document_name, related_law, agency_code, agency, source_name, source_version, effective_from, effective_to, status")
-    .in("hsk_code", codes)
-    .eq("direction", "import")
-    .lte("effective_from", basisDate)
-    .or(`effective_to.is.null,effective_to.gte.${basisDate}`)
-    .eq("status", "published")
-    .order("hsk_code")
-    .order("related_law");
+    if (publicNoticeError) {
+      throw new Error(publicNoticeError.message);
+    }
 
-  if (requirementError) {
-    throw new Error(requirementError.message);
-  }
+    return (publicNoticeRows ?? []) as IntegratedPublicNoticeRequirementRow[];
+  })();
 
-  const importRequirements = (requirementRows ?? []) as ImportRequirementPreviewRecord[];
-  const { data: publicNoticeRows, error: publicNoticeError } = await supabase
-    .from("integrated_public_notice_requirements")
-    .select("hsk_code, requirement_name, related_law, agency, procedure_summary, source_name, source_version, effective_from, effective_to, status")
-    .in("hsk_code", codes)
-    .eq("direction", "import")
-    .lte("effective_from", basisDate)
-    .or(`effective_to.is.null,effective_to.gte.${basisDate}`)
-    .eq("status", "published")
-    .order("hsk_code")
-    .order("related_law");
+  const originMarkingRecordsPromise = summaryOnly
+    ? Promise.resolve({
+        targets: [] as OriginMarkingTargetRecord[],
+        methods: [] as OriginMarkingMethodRecord[]
+      })
+    : findOriginMarkingRecords(supabase, codes, basisDate);
 
-  if (publicNoticeError) {
-    throw new Error(publicNoticeError.message);
-  }
+  const [
+    hierarchyLabels,
+    standardNames,
+    siblings,
+    tariffRates,
+    importRequirements,
+    publicNoticeRows,
+    originMarkingRecords
+  ] = await Promise.all([
+    hierarchyLabelsPromise,
+    standardNamesPromise,
+    siblingsPromise,
+    tariffRatesPromise,
+    importRequirementsPromise,
+    publicNoticeRowsPromise,
+    originMarkingRecordsPromise
+  ]);
 
-  const publicNoticeRequirements = ((publicNoticeRows ?? []) as Array<{
-    hsk_code: string;
-    requirement_name: string;
-    related_law: string;
-    agency: string | null;
-    procedure_summary: string | null;
-    source_name: string;
-    source_version: string;
-    effective_from: string;
-    effective_to: string | null;
-    status: string;
-  }>).map((item) => ({
+  const publicNoticeRequirements = publicNoticeRows.map((item) => ({
     hsk_code: item.hsk_code,
     requirement_type: "integrated_public_notice",
     requirement_document_name: item.requirement_name,
@@ -794,18 +836,17 @@ async function lookupWithSupabase(
     status: item.status
   }));
   const allRequirements = [...importRequirements, ...publicNoticeRequirements];
-  const requirementsWithContacts = summaryOnly
-    ? allRequirements
-    : attachRequirementPlaybooks(
-      attachRequirementAgencyContacts(allRequirements, await findRequirementAgencyContacts(supabase, allRequirements, basisDate)),
-      await findRequirementPlaybooks(supabase, allRequirements, basisDate)
+  let requirementsWithContacts = allRequirements;
+  if (!summaryOnly) {
+    const [agencyContacts, requirementPlaybooks] = await Promise.all([
+      findRequirementAgencyContacts(supabase, allRequirements, basisDate),
+      findRequirementPlaybooks(supabase, allRequirements, basisDate)
+    ]);
+    requirementsWithContacts = attachRequirementPlaybooks(
+      attachRequirementAgencyContacts(allRequirements, agencyContacts),
+      requirementPlaybooks
     );
-  const originMarkingRecords = summaryOnly
-    ? {
-        targets: [] as OriginMarkingTargetRecord[],
-        methods: [] as OriginMarkingMethodRecord[]
-      }
-    : await findOriginMarkingRecords(supabase, codes, basisDate);
+  }
 
   return records.map((record) =>
     mapResult(
