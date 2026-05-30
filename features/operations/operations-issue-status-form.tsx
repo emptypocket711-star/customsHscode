@@ -22,6 +22,12 @@ function statusButtonSubLabel(status: OperationsIssueStatus) {
   return "미해결 상태로 재전환";
 }
 
+function statusButtonRecommendedInputs(status: OperationsIssueStatus) {
+  if (status === "resolved") return "권장 입력: 메모, 처리 사유";
+  if (status === "ignored") return "권장 입력: 처리 사유";
+  return "권장 입력: 담당자, 메모";
+}
+
 function statusButtonClassName(status: OperationsIssueStatus) {
   if (status === "resolved") {
     return "rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-left text-xs font-semibold text-emerald-800 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60";
@@ -157,6 +163,7 @@ export function OperationsIssueStatusForm({ event, triageFocus }: OperationsIssu
           >
             <span className="block">{pending ? "저장 중" : statusButtonLabel(status)}</span>
             <span className="mt-0.5 block text-[11px] font-normal opacity-80">{statusButtonSubLabel(status)}</span>
+            <span className="mt-0.5 block text-[11px] font-normal opacity-80">{statusButtonRecommendedInputs(status)}</span>
           </button>
         ))}
       </div>
