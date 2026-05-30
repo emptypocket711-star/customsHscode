@@ -825,7 +825,7 @@ function hsCopySummaryTexts({
 function hierarchyLevelLabel(level: HsHierarchyNode["level"]) {
   if (level === 2) return "류";
   if (level === 4) return "호";
-  if (level === 6) return "소호";
+  if (level === 6) return "6자리 분류";
   return "HSK";
 }
 
@@ -850,8 +850,8 @@ function productCandidateLookupBasisLabel(candidate: HsCandidateRecommendation) 
   if (candidate.lookupBasis === "official_name_match") return "품명/제품 단서";
   if (candidate.lookupBasis === "customs_api") return "저장 HS 데이터";
   if (candidate.lookupBasis === "internal_tax_rule") return "내국세 단서";
-  if (candidate.lookupBasis === "ambiguous_abbreviation") return "약어/다의어 후보";
-  return "후보 검색";
+  if (candidate.lookupBasis === "ambiguous_abbreviation") return "여러 의미 가능";
+  return "추천 검색";
 }
 
 function productCandidateEvidenceText(candidate: HsCandidateRecommendation) {
@@ -861,8 +861,8 @@ function productCandidateEvidenceText(candidate: HsCandidateRecommendation) {
 
   if (evidence.length) return evidence.join(" / ");
   return candidate.lookupBasis === "ai_hs_hint"
-    ? "AI가 제품 성격을 기준으로 제시한 HS 후보입니다"
-    : "입력 품명과 제품 단서를 기준으로 구성한 HS 후보입니다";
+    ? "AI가 제품 성격을 기준으로 추천한 HS CODE입니다."
+    : "입력 품명과 제품 단서를 기준으로 추천한 HS CODE입니다.";
 }
 
 function productCandidateRouteSummary(candidate: HsCandidateRecommendation, lookup?: HsDirectLookupResult) {
@@ -873,8 +873,8 @@ function productCandidateRouteSummary(candidate: HsCandidateRecommendation, look
 
   return [
     hs4 ? `호 검토: ${formatHsCode(hs4.code)} ${hs4.label}` : null,
-    hs6 ? `소호 검토: ${formatHsCode(hs6.code)} ${hs6.label}` : null,
-    current ? `후보 정리: ${formatHsCode(candidate.hskCode)} ${candidate.koreanName}` : null
+    hs6 ? `6자리 분류 확인: ${formatHsCode(hs6.code)} ${hs6.label}` : null,
+    current ? `추천 코드: ${formatHsCode(candidate.hskCode)} ${candidate.koreanName}` : null
   ].filter((item): item is string => Boolean(item));
 }
 
@@ -910,7 +910,7 @@ function productCandidateDisplayReason(reason: string) {
 }
 
 function productCandidateDetailButtonText(candidate: HsCandidateRecommendation) {
-  return normalizeHsInput(candidate.hskCode).length >= 10 ? "상세 조회" : "하위 10자리 후보 보기";
+  return normalizeHsInput(candidate.hskCode).length >= 10 ? "상세 조회" : "10자리 코드 더 보기";
 }
 
 function uniqueProductQuestions(candidates: HsCandidateRecommendation[], clarification?: ProductClarificationResult | null) {
@@ -945,7 +945,7 @@ function productSearchPresentationState(candidates: HsCandidateRecommendation[],
       tone: "warning" as const,
       badge: "추가정보 필요",
       title: "제품 정보 보완 후 좁혀야 합니다",
-      description: "현재 입력값으로 검토 가능한 방향은 만들었지만, 품목을 바로 특정하기에는 조건이 부족합니다. 아래 질문에 답하면 후보를 더 줄일 수 있습니다.",
+      description: "현재 입력값으로 가까운 코드를 찾았습니다. 아래 질문에 답하면 더 정확하게 좁힐 수 있습니다.",
       questions
     };
   }
@@ -955,7 +955,7 @@ function productSearchPresentationState(candidates: HsCandidateRecommendation[],
       tone: "info" as const,
       badge: "복수 가능성",
       title: "의미가 갈릴 수 있는 품명입니다",
-      description: "입력 품명이 여러 제품군으로 해석될 수 있어 복수 후보를 표시했습니다. 실제 기능과 사용처가 확인되면 한 방향으로 좁혀 조회하세요.",
+      description: "입력 품명이 여러 제품군으로 해석될 수 있어 함께 볼 수 있는 코드를 표시했습니다. 실제 기능과 사용처가 확인되면 더 정확히 좁힐 수 있습니다.",
       questions
     };
   }
@@ -983,7 +983,7 @@ function ProductClassificationFlowPanel({
   const summaryLines = [
     clarification?.summary || `"${productName}" 품명의 제품 의미를 먼저 해석했습니다.`,
     primary ? `가장 가까운 방향: ${formatHsCode(primary.hskCode)} ${primary.koreanName}` : "현재 입력값만으로는 표시할 HS CODE가 부족합니다.",
-    uniqueProductQuestions(candidates, clarification).length ? "보완사항을 입력하면 후보를 다시 좁힐 수 있습니다." : "상세 조회 전 실제 재질, 용도, 구성은 다시 확인하세요."
+    uniqueProductQuestions(candidates, clarification).length ? "보완사항을 입력하면 더 정확한 코드로 좁힐 수 있습니다." : "상세 조회 전 실제 재질, 용도, 구성은 다시 확인하세요."
   ];
 
   return (
@@ -3048,7 +3048,7 @@ function AiClarificationPanel({
               "mt-2 rounded-md border bg-white px-3 py-2 text-sm leading-6 text-slate-700",
               presentation.tone === "warning" ? "border-amber-100" : "border-blue-100"
             )}>
-              현재 입력 기준으로는 우선 검토 후보를 표시할 수 있습니다. 실제 사양서나 용도 확인 후 하위 세번을 검토하세요.
+              현재 입력 기준으로 가장 가까운 코드를 표시할 수 있습니다. 실제 사양서나 용도를 확인하면 더 정확히 좁힐 수 있습니다.
             </div>
           )}
           <ProductSupplementResearchForm
@@ -3065,7 +3065,7 @@ function AiClarificationPanel({
           <p className={cn(
             "text-xs font-semibold",
             presentation.tone === "warning" ? "text-amber-900" : "text-blue-900"
-          )}>우선 검토 후보</p>
+          )}>함께 볼 수 있는 코드</p>
           <div className="mt-2 grid gap-2">
             {candidateCodes.length ? candidateCodes.map((code) => {
               const candidate = candidateByCode.get(code);
@@ -3088,7 +3088,7 @@ function AiClarificationPanel({
                   >
                     {formatHsCode(code)}
                   </Link>
-                  <div className="mt-1 text-sm font-medium text-slate-900">{candidate?.koreanName ?? "후보 품명 확인 필요"}</div>
+                  <div className="mt-1 text-sm font-medium text-slate-900">{candidate?.koreanName ?? "품명 확인 필요"}</div>
                 </div>
               );
             }) : (
@@ -3096,7 +3096,7 @@ function AiClarificationPanel({
                 "rounded-md border bg-white px-3 py-2 text-sm text-slate-600",
                 presentation.tone === "warning" ? "border-amber-100" : "border-blue-100"
               )}>
-                입력 정보가 부족하여 우선 검토 후보를 표시할 수 없습니다.
+                입력 정보가 부족하여 함께 볼 수 있는 코드를 표시할 수 없습니다.
               </div>
             )}
           </div>
@@ -3149,7 +3149,7 @@ function ProductNoResultPanel({
             {hasSuggestedCodes ? "HS 방향 확인 필요" : "HS CODE 특정 정보 부족"}
           </h2>
           <p className="mt-1 text-xs leading-5 text-amber-900">
-            {clarification?.summary ?? "입력한 품명만으로는 표시 가능한 HS 후보를 만들기 어렵습니다. 제품코드, 약어, 짧은 품명은 실제 제품 정보 보완이 필요할 수 있습니다."}
+            {clarification?.summary ?? "입력한 품명만으로는 표시 가능한 HS CODE를 만들기 어렵습니다. 제품코드, 약어, 짧은 품명은 실제 제품 정보 보완이 필요할 수 있습니다."}
           </p>
         </div>
         <HsCopySummaryButton texts={productNoResultCopySummaryTexts({ productName, clarification })} />
@@ -3698,7 +3698,7 @@ export async function HsDirectLookupPanel({
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
                         <div className={cn("text-xs font-semibold", isPrimaryCandidate ? "text-blue-700" : "text-slate-500")}>
-                          {isPrimaryCandidate ? "1순위 추천 HS CODE" : `다른 가능성 ${dictionary.product.rank(candidate.rank)}`}
+                          {isPrimaryCandidate ? "가장 가까운 HS CODE" : `함께 볼 수 있는 코드 ${candidate.rank}`}
                         </div>
                         <Link
                           className={cn(
@@ -3722,7 +3722,7 @@ export async function HsDirectLookupPanel({
                           {productCandidateLookupBasisLabel(candidate)}
                         </Badge>
                         {candidateGroup.related.length ? (
-                          <Badge tone="neutral">같은 소호 {candidateGroup.related.length + 1}개 묶음</Badge>
+                          <Badge tone="neutral">유사 코드 {candidateGroup.related.length + 1}개 묶음</Badge>
                         ) : null}
                         {productCandidates.length === 1 ? (
                           <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
@@ -3745,11 +3745,11 @@ export async function HsDirectLookupPanel({
 
                     <details className="mt-3 rounded-md border border-slate-200 bg-slate-50">
                       <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-slate-700">
-                        추천 근거와 갈림 조건 보기
+                        왜 이 코드인지 보기
                       </summary>
                       <div className="grid gap-3 border-t border-slate-200 p-3 text-sm lg:grid-cols-2">
                         <div>
-                          <div className="text-xs font-semibold text-blue-900">AI 검토 경로</div>
+                          <div className="text-xs font-semibold text-blue-900">분류 과정</div>
                           <ol className="mt-2 grid gap-1 text-xs leading-5 text-blue-950">
                             {routeSummary.map((line, stepIndex) => (
                               <li className="flex gap-2" key={line}>
@@ -3763,7 +3763,7 @@ export async function HsDirectLookupPanel({
                         </div>
 
                         <div>
-                          <div className="text-xs font-semibold text-amber-900">갈림 조건</div>
+                          <div className="text-xs font-semibold text-amber-900">확인하면 더 정확해지는 정보</div>
                           {branchNotes.length ? (
                             <ul className="mt-1 grid gap-1 leading-6 text-slate-700">
                               {branchNotes.map((question) => (
@@ -3772,7 +3772,7 @@ export async function HsDirectLookupPanel({
                             </ul>
                           ) : (
                             <p className="mt-1 leading-6 text-slate-700">
-                              입력 정보 기준으로 우선 후보를 표시했습니다. 실제 사양과 용도 확인 후 하위 세번을 검토하세요.
+                              입력 정보 기준으로 가장 가까운 코드를 표시했습니다. 실제 사양과 용도를 확인하면 더 정확히 좁힐 수 있습니다.
                             </p>
                           )}
                           <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
@@ -3790,7 +3790,7 @@ export async function HsDirectLookupPanel({
                       </div>
                       {candidateGroup.related.length ? (
                         <div className="border-t border-slate-200 px-3 py-3">
-                          <p className="text-xs font-semibold text-slate-600">같은 소호의 다른 후보</p>
+                          <p className="text-xs font-semibold text-slate-600">비슷한 세부 코드</p>
                           <div className="mt-2 flex flex-wrap gap-2">
                             {candidateGroup.related.map((relatedCandidate) => (
                               <Link
@@ -3821,7 +3821,7 @@ export async function HsDirectLookupPanel({
               {additionalProductCandidateGroups.length ? (
                 <details className="rounded-md border border-slate-200 bg-white lg:col-span-2">
                   <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-700">
-                    다른 가능성 {additionalProductCandidateCount}개 더 보기
+                    함께 볼 수 있는 코드 {additionalProductCandidateCount}개 더 보기
                   </summary>
                   <div className="grid gap-3 border-t border-slate-200 bg-slate-50 p-3 lg:grid-cols-2">
                     {additionalProductCandidateGroups.map((candidateGroup) => {
@@ -3856,7 +3856,7 @@ export async function HsDirectLookupPanel({
                           <div className="flex flex-wrap items-start justify-between gap-2">
                             <div>
                               <div className="text-xs font-semibold text-slate-500">
-                                다른 가능성 {dictionary.product.rank(candidate.rank)}
+                                함께 볼 수 있는 코드 {candidate.rank}
                               </div>
                               <Link className="mt-1 block font-mono text-lg font-semibold text-blue-700 underline-offset-2 hover:underline" data-navigation-progress="상세조회" href={detailHref}>
                                 {formatHsCode(candidate.hskCode)}
@@ -3871,7 +3871,7 @@ export async function HsDirectLookupPanel({
                                 {productCandidateLookupBasisLabel(candidate)}
                               </Badge>
                               {candidateGroup.related.length ? (
-                                <Badge tone="neutral">같은 소호 {candidateGroup.related.length + 1}개 묶음</Badge>
+                                <Badge tone="neutral">유사 코드 {candidateGroup.related.length + 1}개 묶음</Badge>
                               ) : null}
                             </div>
                           </div>
@@ -3889,11 +3889,11 @@ export async function HsDirectLookupPanel({
 
                           <details className="mt-3 rounded-md border border-slate-200 bg-slate-50">
                             <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-slate-700">
-                              추천 근거와 갈림 조건 보기
+                              왜 이 코드인지 보기
                             </summary>
                             <div className="grid gap-3 border-t border-slate-200 p-3 text-sm lg:grid-cols-2">
                               <div>
-                                <div className="text-xs font-semibold text-blue-900">AI 검토 경로</div>
+                                <div className="text-xs font-semibold text-blue-900">분류 과정</div>
                                 <ol className="mt-2 grid gap-1 text-xs leading-5 text-blue-950">
                                   {routeSummary.map((line, stepIndex) => (
                                     <li className="flex gap-2" key={line}>
@@ -3907,7 +3907,7 @@ export async function HsDirectLookupPanel({
                               </div>
 
                               <div>
-                                <div className="text-xs font-semibold text-amber-900">갈림 조건</div>
+                                <div className="text-xs font-semibold text-amber-900">확인하면 더 정확해지는 정보</div>
                                 {branchNotes.length ? (
                                   <ul className="mt-1 grid gap-1 leading-6 text-slate-700">
                                     {branchNotes.map((question) => (
@@ -3916,7 +3916,7 @@ export async function HsDirectLookupPanel({
                                   </ul>
                                 ) : (
                                   <p className="mt-1 leading-6 text-slate-700">
-                                    입력 정보 기준으로 우선 후보를 표시했습니다. 실제 사양과 용도 확인 후 하위 세번을 검토하세요.
+                                    입력 정보 기준으로 가장 가까운 코드를 표시했습니다. 실제 사양과 용도를 확인하면 더 정확히 좁힐 수 있습니다.
                                   </p>
                                 )}
                                 <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
@@ -3933,7 +3933,7 @@ export async function HsDirectLookupPanel({
                               </div>
                               {candidateGroup.related.length ? (
                                 <div className="border-t border-slate-200 px-3 py-3">
-                                  <p className="text-xs font-semibold text-slate-600">같은 소호의 다른 후보</p>
+                                  <p className="text-xs font-semibold text-slate-600">비슷한 세부 코드</p>
                                   <div className="mt-2 flex flex-wrap gap-2">
                                     {candidateGroup.related.map((relatedCandidate) => (
                                       <Link
