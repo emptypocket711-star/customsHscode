@@ -23,10 +23,16 @@
   - `전체 결과`: 내부 검토용
   - `보완 필요`: 10자리 미확정·조회 실패 행 확인용
   - `업체 전달용`: 다국어 보완 요청문 복사용
+- `BACKGROUND_JOBS_ENABLED=true`이고 80행 이상 입력된 경우 HS CODE 일괄 조회를 `hs_batch_lookup` 백그라운드 작업으로 등록하도록 추가했다.
+  - 기존 소량 조회는 즉시 처리 흐름을 유지한다.
+  - 큐 작업은 회사/사용자 범위로 저장되며, payload에는 입력 행과 조회기준일·목적국만 저장하고 문서 원문 텍스트는 저장하지 않는다.
+  - `/api/jobs/run` worker가 `document_extraction`과 함께 `hs_batch_lookup` 작업을 처리한다.
+  - 작업 결과에는 조회기준일, 목적국, 요약, 행별 예비 조회 결과를 저장한다.
 
 검증:
 
 - `npm test -- features/hs-batch/input-parser.test.ts server/actions/hs-batch.actions.test.ts`
+- `npm test -- server/actions/hs-batch.actions.test.ts server/repositories/background-job.repository.test.ts server/jobs/hs-batch-lookup-job.handler.test.ts server/jobs/background-worker.service.test.ts`
 - `npm run typecheck`
 - `npm run lint`
 - `npm run build`

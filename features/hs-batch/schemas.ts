@@ -59,4 +59,9 @@ export type HsBatchLookupActionState = {
     warning: number;
     error: number;
   };
+  queuedJob?: {
+    jobId: string;
+    rowCount: number;
+    status: string;
+  };
 };

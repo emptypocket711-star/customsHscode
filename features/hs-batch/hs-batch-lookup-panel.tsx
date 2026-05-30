@@ -677,6 +677,11 @@ export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
       {state.message ? (
         <div className={state.status === "success" ? "rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800" : "rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800"}>
           {state.message}
+          {state.queuedJob ? (
+            <div className="mt-2 text-xs leading-5 text-emerald-900">
+              큐 상태: {state.queuedJob.status} / 대상 행: {state.queuedJob.rowCount}행
+            </div>
+          ) : null}
         </div>
       ) : null}
 

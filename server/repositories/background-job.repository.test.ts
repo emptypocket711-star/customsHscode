@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   claimBackgroundJobsRpcName,
   createDocumentExtractionJobPayload,
+  createHsBatchLookupJobPayload,
   isBackgroundQueueEnabled,
   summarizeBackgroundJobOperations,
   type BackgroundJobOperationsItem
@@ -29,6 +30,27 @@ describe("background job repository helpers", () => {
 
   it("uses the constrained claim RPC", () => {
     expect(claimBackgroundJobsRpcName).toBe("claim_background_jobs");
+  });
+
+  it("creates HS batch lookup payload without raw document text", () => {
+    const payload = createHsBatchLookupJobPayload({
+      basisDate: "2026-05-30",
+      destinationCountry: "CHN",
+      rows: [
+        { rowNumber: 1, hskCode: "3304991000", productName: "기초화장품", memo: "샘플" }
+      ]
+    });
+
+    expect(payload).toMatchObject({
+      kind: "hs_batch_lookup",
+      basisDate: "2026-05-30",
+      destinationCountry: "CHN",
+      rows: [
+        { rowNumber: 1, hskCode: "3304991000", productName: "기초화장품", memo: "샘플" }
+      ]
+    });
+    expect(JSON.stringify(payload)).not.toContain("rawText");
+    expect(JSON.stringify(payload)).not.toContain("Unit Price");
   });
 
   it("keeps the background queue opt-in until a worker is deployed", () => {

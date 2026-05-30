@@ -10,10 +10,17 @@ import {
   type HsBatchResultRow
 } from "@/features/hs-batch/schemas";
 import { formatHsCode, normalizeHsCode } from "@/lib/hs-code";
+import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import { normalizeProductSearchInput } from "@/server/ai/product-search-normalization.service";
+import {
+  createHsBatchLookupJobPayload,
+  enqueueBackgroundJob,
+  isBackgroundQueueEnabled
+} from "@/server/repositories/background-job.repository";
 import { lookupHsDirect, type HsDirectLookupResult } from "@/server/repositories/hs-master.repository";
 
 const maxAiAssistedBatchRows = 20;
+const hsBatchBackgroundThreshold = 80;
 
 function stringValue(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -314,6 +321,88 @@ async function lookupRow({
   return buildSuccessRow({ row, result, destinationCountry, basisDate });
 }
 
+export async function runHsBatchLookupRows({
+  rows,
+  destinationCountry,
+  basisDate
+}: {
+  rows: HsBatchInputRow[];
+  destinationCountry: string;
+  basisDate: string;
+}) {
+  const cache = new Map<string, Promise<HsDirectLookupResult[]>>();
+  const aiEligibleRowNumbers = new Set(
+    rows
+      .filter((row) => row.productName?.trim())
+      .filter((row) => normalizeHsCode(row.hskCode).length !== 10)
+      .slice(0, maxAiAssistedBatchRows)
+      .map((row) => row.rowNumber)
+  );
+  const results = await Promise.all(
+    rows.map((row) =>
+      lookupRow({
+        row,
+        destinationCountry,
+        basisDate,
+        cache,
+        aiEnabled: aiEligibleRowNumbers.has(row.rowNumber)
+      }).catch((error) => buildErrorRow(row, error instanceof Error ? error.message : "조회 중 오류가 발생했습니다."))
+    )
+  );
+
+  return {
+    results,
+    summary: {
+      total: results.length,
+      success: results.filter((row) => row.status === "success").length,
+      warning: results.filter((row) => row.status === "warning").length,
+      error: results.filter((row) => row.status === "error").length
+    }
+  };
+}
+
+async function enqueueHsBatchLookupJob({
+  rows,
+  destinationCountry,
+  basisDate
+}: {
+  rows: HsBatchInputRow[];
+  destinationCountry: string;
+  basisDate: string;
+}) {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("백그라운드 일괄조회는 로그인 후 사용할 수 있습니다.");
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("company_id")
+    .eq("id", user.id)
+    .single();
+
+  if (profileError || !profile?.company_id) {
+    throw new Error(profileError?.message ?? "회사 정보를 확인할 수 없어 백그라운드 작업을 등록하지 못했습니다.");
+  }
+
+  return enqueueBackgroundJob(supabase, {
+    companyId: String(profile.company_id),
+    createdBy: user.id,
+    jobType: "hs_batch_lookup",
+    priority: 80,
+    maxAttempts: 2,
+    payload: createHsBatchLookupJobPayload({
+      basisDate,
+      destinationCountry,
+      rows
+    })
+  });
+}
+
 export async function lookupHsBatchAction(
   _previousState: HsBatchLookupActionState,
   formData: FormData
@@ -333,32 +422,35 @@ export async function lookupHsBatchAction(
 
   try {
     const rows = parseRows(parsed.data.rowsJson);
-    const cache = new Map<string, Promise<HsDirectLookupResult[]>>();
-    const aiEligibleRowNumbers = new Set(
-      rows
-        .filter((row) => row.productName?.trim())
-        .filter((row) => normalizeHsCode(row.hskCode).length !== 10)
-        .slice(0, maxAiAssistedBatchRows)
-        .map((row) => row.rowNumber)
-    );
-    const results = await Promise.all(
-      rows.map((row) =>
-        lookupRow({
-          row,
-          destinationCountry: parsed.data.destinationCountry,
-          basisDate: parsed.data.basisDate,
-          cache,
-          aiEnabled: aiEligibleRowNumbers.has(row.rowNumber)
-        }).catch((error) => buildErrorRow(row, error instanceof Error ? error.message : "조회 중 오류가 발생했습니다."))
-      )
-    );
+    if (hasSupabaseEnv() && isBackgroundQueueEnabled() && rows.length >= hsBatchBackgroundThreshold) {
+      const job = await enqueueHsBatchLookupJob({
+        rows,
+        destinationCountry: parsed.data.destinationCountry,
+        basisDate: parsed.data.basisDate
+      });
 
-    const summary = {
-      total: results.length,
-      success: results.filter((row) => row.status === "success").length,
-      warning: results.filter((row) => row.status === "warning").length,
-      error: results.filter((row) => row.status === "error").length
-    };
+      return {
+        status: "success",
+        message: `총 ${rows.length}행 일괄조회 작업을 백그라운드 큐에 등록했습니다. 작업 ID: ${job.jobId}`,
+        summary: {
+          total: rows.length,
+          success: 0,
+          warning: rows.length,
+          error: 0
+        },
+        queuedJob: {
+          jobId: job.jobId,
+          rowCount: rows.length,
+          status: job.status
+        }
+      };
+    }
+
+    const { results, summary } = await runHsBatchLookupRows({
+      rows,
+      destinationCountry: parsed.data.destinationCountry,
+      basisDate: parsed.data.basisDate
+    });
 
     return {
       status: "success",

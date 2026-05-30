@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type BackgroundJobType =
   | "document_extraction"
+  | "hs_batch_lookup"
   | "ai_product_search"
   | "report_generation"
   | "source_ingestion"
@@ -84,6 +85,17 @@ export type DocumentExtractionJobPayload = {
   fileName: string;
 };
 
+export type HsBatchLookupJobPayload = {
+  basisDate: string;
+  destinationCountry: string;
+  rows: Array<{
+    rowNumber: number;
+    hskCode: string;
+    productName?: string;
+    memo?: string;
+  }>;
+};
+
 export const claimBackgroundJobsRpcName = "claim_background_jobs";
 
 export function isBackgroundQueueEnabled() {
@@ -99,6 +111,20 @@ export function createDocumentExtractionJobPayload(payload: DocumentExtractionJo
     storagePath: payload.storagePath,
     mimeType: payload.mimeType,
     fileName: payload.fileName
+  };
+}
+
+export function createHsBatchLookupJobPayload(payload: HsBatchLookupJobPayload) {
+  return {
+    kind: "hs_batch_lookup",
+    basisDate: payload.basisDate,
+    destinationCountry: payload.destinationCountry,
+    rows: payload.rows.map((row) => ({
+      rowNumber: row.rowNumber,
+      hskCode: row.hskCode,
+      productName: row.productName ?? "",
+      memo: row.memo ?? ""
+    }))
   };
 }
 
