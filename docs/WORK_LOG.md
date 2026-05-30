@@ -1543,3 +1543,23 @@
 - Alias: `https://hsfinder.co.kr`
 - `vercel env run -e production -- npm run health:db`
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
+
+### 품명검색 후보 카드 판단 근거 보강
+
+- 이전 작업은 검색 버튼을 누른 직후의 `AI 분석 중` 대기 상태를 보강한 것이고, 이번 작업은 결과로 나온 후보 카드의 판단 근거와 다음 행동을 더 명확하게 만든 것이다.
+- 품명 기반 후보 카드에 `AI 검토 경로` 블록을 추가해 호, 소호, HSK 후보 정리 과정을 단계로 표시했다.
+- 후보 선택 시 기준일의 관세율, FTA, 수입요건, 원산지표시 정보를 예비 조회한다는 `선택 후 조회` 안내를 추가했다.
+- 기존 보완 필요 정보는 `갈림 조건` 블록으로 재구성해 재질, 용도, 기능, 리스크에 따라 후보가 달라질 수 있음을 더 직접적으로 보여준다.
+- 기존 HS6/계층 경로와 예비 후보 근거는 별도 근거 블록으로 유지해 사용자가 후보의 출처와 경로를 함께 확인할 수 있게 했다.
+
+검증:
+
+- `npm test -- lib/i18n/hs-direct.test.ts server/rules/hs-candidate.service.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `git diff --check`
+- Vercel production deployment: `customs-hscode-7t72p1kf2-koo-apps.vercel.app`
+- Alias: `https://hsfinder.co.kr`
+- `vercel env run -e production -- npm run health:db`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
