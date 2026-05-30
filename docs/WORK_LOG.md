@@ -842,3 +842,18 @@
 - `npm test -- lib/i18n/hs-direct.test.ts`
 - `npm run typecheck`
 - `npm run lint`
+
+### HS CODE 일괄 조회 1차 구현
+
+- `/hs/batch` 페이지를 추가해 XLSX/CSV 업로드와 탭/쉼표 붙여넣기 입력을 지원했다.
+- 필수값은 HS CODE로 두고, 10자리 HSK만 세율·요건 조회 대상으로 처리한다.
+- 인보이스 전체 행 조회를 전제로 같은 HS CODE가 여러 번 있어도 합치지 않고 입력 순서와 행 번호 그대로 결과를 출력한다.
+- 수입국가 필터 기준 기본관세, FTA 관세, 적용 가능 최저세율, 부가세, 수입요건, 원산지표시 요약을 표시한다.
+- 결과는 Excel에서 열 수 있는 `.xls` 다운로드 파일로 내보낸다.
+- 좌측 메뉴에 `HS 일괄 조회` 항목을 추가했다.
+
+검증:
+
+- `npm test -- features/hs-batch/input-parser.test.ts`
+- `npm run typecheck`
+- `npm run lint`

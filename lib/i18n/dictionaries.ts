@@ -5,6 +5,7 @@ type GreetingSlot = "morning" | "lunch" | "afternoon" | "afterHours";
 export type NavItemKey =
   | "dashboard"
   | "hsDirect"
+  | "hsBatch"
   | "hsOverseas"
   | "cargo"
   | "tradeNews"
@@ -61,6 +62,7 @@ const dictionaries = {
         dashboard: "대시보드",
         dutyEstimator: "납세액 계산",
         health: "운영 점검",
+        hsBatch: "HS 일괄 조회",
         hsDirect: "통합 조회",
         hsOverseas: "해외 HS CODE 조회",
         legalUpdates: "자료 관리",
@@ -100,6 +102,7 @@ const dictionaries = {
         dashboard: "Dashboard",
         dutyEstimator: "Duty Calculator",
         health: "Operations Health",
+        hsBatch: "Batch HS Lookup",
         hsDirect: "HS Lookup",
         hsOverseas: "Overseas HS Lookup",
         legalUpdates: "Data Management",
@@ -139,6 +142,7 @@ const dictionaries = {
         dashboard: "仪表板",
         dutyEstimator: "税费估算",
         health: "运营检查",
+        hsBatch: "HS 批量查询",
         hsDirect: "HS 综合查询",
         hsOverseas: "海外 HS 编码查询",
         legalUpdates: "资料管理",

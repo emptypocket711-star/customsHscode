@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Database,
   FileSearch,
+  FileSpreadsheet,
   Globe2,
   LayoutDashboard,
   Megaphone,
@@ -33,6 +34,7 @@ type NavItem = {
 const userNavItems: NavItem[] = [
   { href: "/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
   { href: "/hs/direct", labelKey: "hsDirect", icon: Search },
+  { href: "/hs/batch", labelKey: "hsBatch", icon: FileSpreadsheet },
   { href: "/hs/overseas", labelKey: "hsOverseas", icon: Globe2 },
   { href: "/cargo", labelKey: "cargo", icon: PackageSearch },
   { href: "/trade-news", labelKey: "tradeNews", icon: Newspaper },
