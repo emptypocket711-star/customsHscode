@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "smoke:production": "node scripts/smoke_production_routes.mjs",
+    "e2e:product-supplement": "node scripts/e2e_product_supplement_flow.mjs",
     "probe:pnct": "node scripts/probe_pnct_container.mjs",
     "loadtest:lookup": "node scripts/load_lookup_routes.mjs",
     "health": "npm run health:env && npm run health:db",
