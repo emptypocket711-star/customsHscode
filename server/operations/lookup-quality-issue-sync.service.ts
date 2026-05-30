@@ -22,18 +22,20 @@ export async function syncLookupQualityIssueEvents(
   options: {
     telemetryLimit?: number;
     threshold?: number;
+    issueType?: string;
   } = {}
 ): Promise<LookupQualityIssueSyncResult> {
   const telemetryLimit = options.telemetryLimit ?? 100;
   const threshold = options.threshold ?? 3;
+  const issueType = options.issueType ?? recurringLookupIssueType;
   const events = await listRecentLookupTelemetryEvents(supabase, telemetryLimit);
   const recurringIssues = summarizeRecurringLookupTelemetryIssues(events, threshold);
   const syncedIssues: OperationsIssueEventItem[] = [];
 
   for (const issue of recurringIssues) {
     syncedIssues.push(await upsertOperationsIssueEvent(supabase, {
-      issueType: recurringLookupIssueType,
-      issueKey: `${recurringLookupIssueType}:${issue.key}`,
+      issueType,
+      issueKey: `${issueType}:${issue.key}`,
       severity: "warning",
       source: "lookup_telemetry_events",
       title: `반복 조회 품질 이슈: ${issue.label}`,

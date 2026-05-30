@@ -83,6 +83,12 @@ vercel env run -e production -- npm run ops:job:operations-issues
 
 해결·제외 처리된 운영 이슈는 `operations-retention` job이 `OPERATIONS_ISSUE_RETENTION_DAYS` 기준으로 정리한다. 미해결 이슈는 정리 대상에서 제외된다.
 
+운영 이슈 E2E 리허설은 원문 없는 synthetic telemetry만 만들고 검증 후 정리한다.
+
+```bash
+vercel env run -e production -- npm run ops:job:operations-issues-rehearsal
+```
+
 ## 외부 연동 실패 점검
 
 반입계 출력, 터미널 원문 이동, 관세청 API001/API012 같은 외부 연동은 사용자 화면에 내부 오류 원문을 그대로 노출하지 않는다.

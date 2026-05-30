@@ -140,6 +140,11 @@
   - 상태 변경은 server action에서 개발자 권한을 확인한 뒤 service-role update로 수행하고 `audit_logs`에 이전/이후 상태를 기록한다.
   - `cleanup_operations_issue_events(retention_days)` RPC를 추가해 해결·제외 상태의 오래된 운영 이슈만 정리한다.
   - `operations-retention` job과 운영 점검 retention 카드에 운영 이슈 보존 기간, cutoff, 정리 후보 건수를 포함했다.
+- 운영 이슈 E2E 리허설 job을 추가했다.
+  - `/api/jobs/operations-issues-rehearsal` 보호 route가 원문 없는 synthetic 조회 telemetry 3건을 만들고 반복 이슈 동기화, 해결 처리, 다시 열기, cleanup을 한 번에 검증한다.
+  - 리허설 이슈는 `lookup_quality_rehearsal_*` issue type을 사용해 실제 운영 이슈 키와 충돌하지 않게 했다.
+  - 리허설 종료 시 synthetic telemetry와 rehearsal issue row를 삭제하도록 service-role delete policy/grant를 추가했다.
+  - `npm run ops:job:operations-issues-rehearsal` 수동 명령을 추가했다.
 - 운영 점검 화면에 수동 운영 명령 안내를 추가했다.
   - worker 즉시 실행, 실패 알림 리허설, 운영 이력 정리, 스키마 점검, production smoke 명령을 한 화면에 정리했다.
   - 명령은 `vercel env run -e production -- ...` 형식으로 표시해 secret 값을 화면에 노출하지 않고 Vercel 환경변수에서 주입되도록 했다.

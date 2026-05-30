@@ -23,6 +23,7 @@
     "ops:job:background": "node scripts/run_protected_job.mjs run",
     "ops:job:operations-retention": "node scripts/run_protected_job.mjs operations-retention",
     "ops:job:operations-issues": "node scripts/run_protected_job.mjs operations-issues",
+    "ops:job:operations-issues-rehearsal": "node scripts/run_protected_job.mjs operations-issues-rehearsal",
     "ops:job:background-failure-rehearsal": "node scripts/rehearse_background_worker_failure.mjs",
     "ops:exchange-rates:refresh-local": "node scripts/refresh_exchange_rates_once.mjs",
     "db:generate-api018": "python3 scripts/generate_customs_hs_code_search_seed.py",

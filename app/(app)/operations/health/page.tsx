@@ -80,6 +80,12 @@ const operationsManualCommands = [
     expected: "scannedEvents, recurringIssues, syncedIssues가 JSON으로 표시됩니다."
   },
   {
+    label: "운영 이슈 리허설",
+    command: "vercel env run -e production -- npm run ops:job:operations-issues-rehearsal",
+    purpose: "원문 없는 synthetic telemetry로 반복 이슈 생성, 상태 변경, cleanup 경로를 검증합니다.",
+    expected: "ok가 true이고 cleanupOk 값들이 true로 표시됩니다."
+  },
+  {
     label: "운영 스키마 점검",
     command: "vercel env run -e production -- npm run health:db",
     purpose: "현재 migration 파일 기준으로 production Supabase schema drift를 확인합니다.",

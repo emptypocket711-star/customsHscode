@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
-const allowedJobs = new Set(["cargo-watch", "exchange-rates", "trade-news", "run", "operations-retention", "operations-issues"]);
+const allowedJobs = new Set(["cargo-watch", "exchange-rates", "trade-news", "run", "operations-retention", "operations-issues", "operations-issues-rehearsal"]);
 const jobName = process.argv[2];
 
 if (!jobName || !allowedJobs.has(jobName)) {
-  console.error("Usage: node scripts/run_protected_job.mjs <cargo-watch|exchange-rates|trade-news|run|operations-retention|operations-issues>");
+  console.error("Usage: node scripts/run_protected_job.mjs <cargo-watch|exchange-rates|trade-news|run|operations-retention|operations-issues|operations-issues-rehearsal>");
   process.exit(1);
 }
 
