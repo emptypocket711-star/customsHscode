@@ -688,6 +688,20 @@ export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
               <p className="mt-1 text-sm text-slate-600">
                 완료 {state.summary?.success ?? 0}행 / 확인 필요 {state.summary?.warning ?? 0}행 / 오류 {state.summary?.error ?? 0}행
               </p>
+              <dl className="mt-3 grid gap-1.5 text-xs leading-5 text-slate-600 sm:grid-cols-3">
+                <div>
+                  <dt className="font-semibold text-slate-800">전체 결과</dt>
+                  <dd>조회값과 보완 필요 정보를 모두 확인하는 내부 검토용 시트입니다.</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-slate-800">보완 필요</dt>
+                  <dd>10자리 미확정, 조회 실패, 품명 보완 행만 따로 모은 확인용 시트입니다.</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-slate-800">업체 전달용</dt>
+                  <dd>한국어·영어·중문 보완 요청문을 바로 복사할 수 있는 전달용 시트입니다.</dd>
+                </div>
+              </dl>
             </div>
             <div className="flex flex-wrap gap-2">
               <button
