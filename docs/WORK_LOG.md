@@ -339,6 +339,14 @@
 - 운영 이슈 행 처리 정보 표시 운영 반영:
   - production 배포 `customs-hscode-bucyuwwef-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+- 운영 이슈 상태 변경 문구를 세분화했다.
+  - 이전 작업은 각 행의 담당자, 메모, 처리 사유 표시 구획을 나누는 가독성 보강이고, 이번 작업은 상태 변경 이력의 의미를 해결 처리, 제외 처리, 다시 열림으로 명확히 구분하는 상태 추적 보강이다.
+  - 상태 변경 helper가 현재 상태 기준 action label을 반환하도록 확장했다.
+  - 화면의 상태 변경 이력에 처리 문구, 변경 시각, 짧은 운영자 식별자를 함께 표시했다.
+  - 해결, 제외, 다시 열림 문구를 단위 테스트로 고정했다.
+- 운영 이슈 상태 변경 문구 운영 반영:
+  - production 배포 `customs-hscode-ceiq3qufs-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
