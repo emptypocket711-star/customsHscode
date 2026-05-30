@@ -461,6 +461,15 @@
 - 운영 이슈 처리 폼 레이아웃 운영 반영:
   - production 배포 `customs-hscode-8tsffdmvg-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` alias 연결과 production smoke 10개 경로 통과를 확인했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+- 운영 이슈 목록 행 스캔성을 개선했다.
+  - 이전 작업은 처리 폼 내부의 버튼, 입력 상태 칩, 긴 안내 문구가 안정적으로 보이도록 한 폼 레이아웃 정리이고, 이번 작업은 운영 이슈 목록 행 전체에서 상태, 반복, 발생 시각, 다음 조치, 담당 정보, 키를 빠르게 구분하도록 한 목록 스캔성 정리다.
+  - 상태 칸은 상태, 우선 확인, 심각도, 경과 배지를 세로 묶음으로 정리했다.
+  - 반복 횟수, 최초/최근 발생 시각, 다음 조치, issue key를 라벨 박스 단위로 분리해 행 안에서 정보 종류가 바로 보이게 했다.
+  - 담당자, 메모, 처리 사유, 상태 변경 이력의 긴 텍스트가 담당·메모 셀 안에서 줄바꿈되도록 정리했다.
+  - 저장 데이터, RLS, 상태 변경 권한 구조는 바꾸지 않았다.
+- 운영 이슈 목록 행 스캔성 운영 반영:
+  - production 배포 `customs-hscode-q9ar8m2bs-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` alias 연결과 production smoke 10개 경로 통과를 확인했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
