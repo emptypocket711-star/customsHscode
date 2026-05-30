@@ -326,6 +326,13 @@
 - 운영 이슈 결과 요약 운영 반영:
   - production 배포 `customs-hscode-plvwifxoe-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+- 운영 이슈 빠른 필터 액션 문구를 추가했다.
+  - 이전 작업은 현재 목록 기준의 표시/필터 제외/위험 건수를 보여주는 결과 요약 기능이고, 이번 작업은 빠른 필터 카드마다 선택 후 확인할 운영 조치를 표시하는 카드별 액션 안내 기능이다.
+  - 차단 미해결, 장기 미해결, 담당 미지정, 해결, 제외 프리셋에 서로 다른 운영 조치 문구를 추가했다.
+  - 빠른 필터 action label을 단위 테스트로 고정했다.
+- 운영 이슈 빠른 필터 액션 문구 운영 반영:
+  - production 배포 `customs-hscode-3dv64rr4v-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
