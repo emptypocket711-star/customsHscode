@@ -22,6 +22,7 @@ export type HsBatchResultRow = {
   inputHskCode: string;
   normalizedHskCode: string;
   productName: string;
+  basisDate?: string;
   matchedHskCode: string;
   matchedName: string;
   countryCode: string;
@@ -33,6 +34,12 @@ export type HsBatchResultRow = {
   originMarking: string;
   status: HsBatchLookupStatus;
   message: string;
+  candidateOptions?: Array<{
+    hskCode: string;
+    hs6: string;
+    koreanName: string;
+  }>;
+  missingQuestions?: string[];
 };
 
 export type HsBatchLookupActionState = {

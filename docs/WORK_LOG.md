@@ -2,6 +2,24 @@
 
 이 문서는 HS FINDER 개발 중 실제로 수행한 작업, 검증 결과, 커밋을 날짜별로 남긴다.
 
+## 2026-05-30
+
+### HS CODE 일괄 조회 입력·보완 UX 보강
+
+- 일괄조회 XLSX/CSV/붙여넣기 입력에서 실무형 컬럼명을 자동 인식하도록 보강했다.
+  - 예: `세번부호`, `거래품명`, `Commodity Code`, `Description`, `Remarks`
+  - CSV 업로드도 따옴표 안 쉼표가 포함된 품명을 깨뜨리지 않도록 같은 parser를 사용한다.
+- 4자리/6자리/8자리 HS 입력 행은 단순 오류로 끝내지 않고, published HS 데이터 기준 하위 HSK 10자리 후보를 표시한다.
+- 보완 필요 행의 화면, XLSX, 복사 안내문에 하위 후보와 보완 질문을 함께 포함한다.
+- 후보 링크는 조회기준일과 수입국가를 유지해 통합조회 상세로 이동한다.
+
+검증:
+
+- `npm test -- features/hs-batch/input-parser.test.ts server/actions/hs-batch.actions.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
 ## 2026-05-29
 
 ### 품명 검색 결과 UX

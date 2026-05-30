@@ -24,7 +24,7 @@ const templateColumns = [
 
 type XlsxResultColumn = {
   header: string;
-  key: keyof HsBatchResultRow | "guidance";
+  key: keyof HsBatchResultRow | "candidateOptionsText" | "missingQuestionsText" | "guidance";
   width: number;
 };
 
@@ -42,6 +42,8 @@ const resultColumns: XlsxResultColumn[] = [
   { header: "내국세", key: "internalTax", width: 18 },
   { header: "수입요건", key: "importRequirements", width: 54 },
   { header: "원산지표시", key: "originMarking", width: 34 },
+  { header: "하위 HSK 후보", key: "candidateOptionsText", width: 54 },
+  { header: "보완 질문", key: "missingQuestionsText", width: 54 },
   { header: "상태", key: "status", width: 12 },
   { header: "메시지", key: "message", width: 44 },
   { header: "업체 안내문", key: "guidance", width: 72 }
@@ -67,11 +69,26 @@ function hasVisibleRequirement(row: HsBatchResultRow) {
     && !row.importRequirements.includes("수입요건 조회 결과 없음");
 }
 
+function candidateOptionsText(row: HsBatchResultRow) {
+  return row.candidateOptions?.length
+    ? row.candidateOptions.map((candidate, index) => `${index + 1}. ${formatHsCode(candidate.hskCode)} ${candidate.koreanName}`).join("\n")
+    : "";
+}
+
+function missingQuestionsText(row: HsBatchResultRow) {
+  return row.missingQuestions?.length
+    ? row.missingQuestions.map((question, index) => `${index + 1}. ${question}`).join("\n")
+    : "";
+}
+
 function buildRowGuidance(row: HsBatchResultRow) {
   const normalizedInput = formatHsCode(row.normalizedHskCode || normalizeHsCode(row.inputHskCode));
   const itemName = row.productName || row.matchedName || "입력 품명 미기재";
 
   if (row.status !== "success") {
+    const candidates = candidateOptionsText(row);
+    const questions = missingQuestionsText(row);
+
     return [
       `[HS CODE 일괄 조회 보완 요청]`,
       `입력행: ${row.rowNumber}`,
@@ -80,10 +97,16 @@ function buildRowGuidance(row: HsBatchResultRow) {
       ``,
       `현재 상태: ${resultStatusLabel(row.status)}`,
       `확인 내용: ${row.message}`,
+      candidates ? `` : null,
+      candidates ? `하위 HSK 후보:` : null,
+      candidates || null,
+      questions ? `` : null,
+      questions ? `보완 확인사항:` : null,
+      questions || null,
       ``,
       `HS CODE 10자리 기준으로 관세율, 내국세, 수입요건을 다시 확인할 수 있습니다.`,
       `정확한 10자리 HS CODE 또는 품목 세부 정보를 보완해 주시면 재조회하겠습니다.`
-    ].join("\n");
+    ].filter((line): line is string => line !== null).join("\n");
   }
 
   const lines = [
@@ -134,6 +157,10 @@ function buildXlsxSheetData(results: HsBatchResultRow[]) {
           ? resultStatusLabel(result.status)
           : column.key === "guidance"
           ? buildRowGuidance(result)
+          : column.key === "candidateOptionsText"
+          ? candidateOptionsText(result)
+          : column.key === "missingQuestionsText"
+          ? missingQuestionsText(result)
           : column.key === "normalizedHskCode" && result.normalizedHskCode
           ? formatHsCode(result.normalizedHskCode)
           : result[column.key];
@@ -564,6 +591,8 @@ export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
                   <th className="px-3 py-2">내국세</th>
                   <th className="px-3 py-2">수입요건</th>
                   <th className="px-3 py-2">원산지표시</th>
+                  <th className="px-3 py-2">하위 후보</th>
+                  <th className="px-3 py-2">보완 질문</th>
                   <th className="px-3 py-2">메시지</th>
                   <th className="px-3 py-2">안내</th>
                 </tr>
@@ -589,6 +618,24 @@ export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
                       <td className="whitespace-nowrap px-3 py-2 text-slate-700">{row.internalTax}</td>
                       <td className="min-w-72 whitespace-pre-line px-3 py-2 text-slate-700">{row.importRequirements}</td>
                       <td className="min-w-48 px-3 py-2 text-slate-700">{row.originMarking}</td>
+                      <td className="min-w-72 px-3 py-2 text-slate-700">
+                        {row.candidateOptions?.length ? (
+                          <div className="grid gap-1.5">
+                            {row.candidateOptions.map((candidate) => (
+                              <a
+                                className="font-mono text-xs font-semibold text-blue-700 underline-offset-2 hover:underline"
+                                href={`/hs/direct?direction=import&destinationCountry=${encodeURIComponent(row.countryCode || "ALL")}&basisDate=${encodeURIComponent(row.basisDate || basisDate)}&query=${encodeURIComponent(candidate.hskCode)}`}
+                                key={candidate.hskCode}
+                              >
+                                {formatHsCode(candidate.hskCode)} <span className="font-sans font-medium text-slate-700">{candidate.koreanName}</span>
+                              </a>
+                            ))}
+                          </div>
+                        ) : "-"}
+                      </td>
+                      <td className="min-w-72 whitespace-pre-line px-3 py-2 text-slate-600">
+                        {row.missingQuestions?.length ? row.missingQuestions.map((question, questionIndex) => `${questionIndex + 1}. ${question}`).join("\n") : "-"}
+                      </td>
                       <td className="min-w-64 px-3 py-2 text-slate-500">{row.message}</td>
                       <td className="whitespace-nowrap px-3 py-2">
                         <button

@@ -88,6 +88,25 @@ function summarizeOriginMarking(result: HsDirectLookupResult) {
   return `대상${method}`;
 }
 
+function buildMissingQuestions(row: HsBatchInputRow) {
+  const questions = [
+    row.productName?.trim() ? null : "품명을 확인해 주세요.",
+    "제품의 재질 또는 성분을 확인해 주세요.",
+    "제품의 실제 용도와 사용 대상을 확인해 주세요.",
+    "세트/부분품/소모품 여부와 모델명 또는 규격을 확인해 주세요."
+  ].filter((question): question is string => Boolean(question));
+
+  return questions;
+}
+
+function summarizeCandidateOptions(candidates: HsDirectLookupResult[]) {
+  return candidates.slice(0, 6).map((candidate) => ({
+    hskCode: candidate.hskCode,
+    hs6: candidate.hs6,
+    koreanName: candidate.koreanName
+  }));
+}
+
 function buildSuccessRow({
   row,
   result,
@@ -113,6 +132,7 @@ function buildSuccessRow({
     inputHskCode: row.hskCode,
     normalizedHskCode: result.hskCode,
     productName: row.productName ?? "",
+    basisDate,
     matchedHskCode: formatHsCode(result.hskCode),
     matchedName: result.koreanName,
     countryCode: destinationCountry,
@@ -127,16 +147,27 @@ function buildSuccessRow({
   };
 }
 
-function buildErrorRow(row: HsBatchInputRow, message: string, status: HsBatchLookupStatus = "error"): HsBatchResultRow {
+function buildErrorRow(
+  row: HsBatchInputRow,
+  message: string,
+  status: HsBatchLookupStatus = "error",
+  options?: {
+    candidateOptions?: HsBatchResultRow["candidateOptions"];
+    countryCode?: string;
+    basisDate?: string;
+    missingQuestions?: string[];
+  }
+): HsBatchResultRow {
   const normalized = normalizeHsCode(row.hskCode);
   return {
     rowNumber: row.rowNumber,
     inputHskCode: row.hskCode,
     normalizedHskCode: normalized,
     productName: row.productName ?? "",
+    basisDate: options?.basisDate,
     matchedHskCode: normalized ? formatHsCode(normalized) : "",
     matchedName: "",
-    countryCode: "",
+    countryCode: options?.countryCode ?? "",
     basicTariff: "-",
     ftaTariff: "-",
     lowestTariff: "-",
@@ -144,8 +175,30 @@ function buildErrorRow(row: HsBatchInputRow, message: string, status: HsBatchLoo
     importRequirements: "-",
     originMarking: "-",
     status,
-    message
+    message,
+    candidateOptions: options?.candidateOptions,
+    missingQuestions: options?.missingQuestions
   };
+}
+
+async function findIncompleteCodeCandidates({
+  normalized,
+  basisDate,
+  cache
+}: {
+  normalized: string;
+  basisDate: string;
+  cache: Map<string, Promise<HsDirectLookupResult[]>>;
+}) {
+  if (![4, 6, 8].includes(normalized.length)) return [];
+
+  const lookupCode = normalized.length === 8 ? normalized.slice(0, 6) : normalized;
+  if (!cache.has(lookupCode)) {
+    cache.set(lookupCode, lookupHsDirect(lookupCode, basisDate));
+  }
+
+  const candidates = await cache.get(lookupCode);
+  return (candidates ?? []).filter((candidate) => candidate.hskCode.startsWith(normalized));
 }
 
 async function lookupRow({
@@ -161,7 +214,18 @@ async function lookupRow({
 }) {
   const normalized = normalizeHsCode(row.hskCode);
   if (normalized.length !== 10) {
-    return buildErrorRow(row, "HS CODE 10자리를 입력해 주세요. 4자리/6자리/8자리는 일괄조회에서 제외했습니다.", "warning");
+    const candidates = await findIncompleteCodeCandidates({ normalized, basisDate, cache });
+    const candidateOptions = summarizeCandidateOptions(candidates);
+    const candidateMessage = candidateOptions.length
+      ? `HS CODE ${normalized.length}자리 기준 하위 10자리 후보 ${candidateOptions.length}건을 확인했습니다. 하위 HSK 선택 후 다시 조회해 주세요.`
+      : "HS CODE 10자리를 입력해 주세요. 4자리/6자리/8자리는 일괄조회에서 제외했습니다.";
+
+    return buildErrorRow(row, candidateMessage, "warning", {
+      candidateOptions,
+      countryCode: destinationCountry,
+      basisDate,
+      missingQuestions: buildMissingQuestions(row)
+    });
   }
 
   if (!cache.has(normalized)) {
