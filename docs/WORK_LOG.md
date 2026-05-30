@@ -311,6 +311,14 @@
 - 운영 이슈 빈 상태 안내 운영 반영:
   - production 배포 `customs-hscode-6h9idz414-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+- 운영 이슈 담당 미지정 필터 안내를 보강했다.
+  - 이전 작업은 필터 결과가 비었을 때 다음 조치를 안내하는 빈 상태 기능이고, 이번 작업은 담당자 필터 입력 자체에서 `미지정` 조건의 의미를 명확히 하는 입력 안내 기능이다.
+  - `미지정`과 `__unassigned__` 판별 helper를 repository에 추가해 목록 필터링과 화면 안내가 같은 기준을 사용하게 했다.
+  - 담당자 입력 placeholder와 도움말을 보강해 담당자명 검색과 미배정 필터를 구분했다.
+  - 담당 미지정 판별 기준을 단위 테스트로 고정했다.
+- 운영 이슈 담당 미지정 필터 안내 운영 반영:
+  - production 배포 `customs-hscode-k5x6xyh2w-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
