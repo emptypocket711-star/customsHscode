@@ -31,6 +31,9 @@
 - `/hs/batch` 화면에서 최근 `hs_batch_lookup` 작업 상태를 다시 확인할 수 있게 했다.
   - 완료된 백그라운드 작업은 저장된 행별 결과로 기존 `전체 결과`, `보완 필요`, `업체 전달용` XLSX를 다시 다운로드할 수 있다.
   - 조회는 Supabase RLS를 통과한 현재 회사 범위의 작업만 표시한다.
+- `/api/jobs/run`을 실제 worker cron으로 호출할 수 있게 운영 진입점을 보강했다.
+  - 다른 job route와 동일하게 `JOB_WORKER_SECRET` 또는 `CRON_SECRET`, query secret, `GET`/`POST`를 지원한다.
+  - `vercel.json`에 `/api/jobs/run` 5분 주기 cron을 추가했다.
 
 검증:
 

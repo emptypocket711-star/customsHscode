@@ -8,15 +8,16 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function isAuthorized(request: NextRequest) {
-  const secret = process.env.JOB_WORKER_SECRET;
+  const secret = process.env.JOB_WORKER_SECRET || process.env.CRON_SECRET;
   if (!secret) return process.env.NODE_ENV !== "production";
 
   const authorization = request.headers.get("authorization");
   const workerSecret = request.headers.get("x-job-worker-secret");
-  return authorization === `Bearer ${secret}` || workerSecret === secret;
+  const querySecret = request.nextUrl.searchParams.get("secret");
+  return authorization === `Bearer ${secret}` || workerSecret === secret || querySecret === secret;
 }
 
-export async function POST(request: NextRequest) {
+async function handleRun(request: NextRequest) {
   if (!isAuthorized(request)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
@@ -41,4 +42,12 @@ export async function POST(request: NextRequest) {
   });
 
   return NextResponse.json(result);
+}
+
+export async function GET(request: NextRequest) {
+  return handleRun(request);
+}
+
+export async function POST(request: NextRequest) {
+  return handleRun(request);
 }
