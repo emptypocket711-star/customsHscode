@@ -347,6 +347,13 @@
 - 운영 이슈 상태 변경 문구 운영 반영:
   - production 배포 `customs-hscode-ceiq3qufs-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+- 운영 이슈 긴 텍스트 표시를 안정화했다.
+  - 이전 작업은 상태 변경 이력의 의미를 해결 처리, 제외 처리, 다시 열림으로 구분하는 상태 추적 보강이고, 이번 작업은 긴 제목, 요약, 조치, 드릴다운 샘플, 메모가 테이블 폭을 밀지 않도록 하는 레이아웃 안정화다.
+  - 제목/요약 셀 폭을 제한하고 주요 텍스트 셀에 줄바꿈 처리를 추가했다.
+  - 저장 데이터와 운영 이슈 처리 로직은 바꾸지 않았다.
+- 운영 이슈 긴 텍스트 표시 운영 반영:
+  - production 배포 `customs-hscode-c7idf9eho-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
