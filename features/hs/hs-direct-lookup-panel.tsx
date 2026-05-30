@@ -11,6 +11,7 @@ import { CountryComboboxField } from "@/features/hs/country-combobox-field";
 import { DestinationCountryPicker } from "@/features/hs/destination-country-picker";
 import { HsCopySummaryButton, type HsCopyGuideLanguage, type HsCopyGuideVariant, type HsCopySummaryTexts } from "@/features/hs/hs-copy-summary-button";
 import { HsDirectSubmitStatus } from "@/features/hs/hs-direct-submit-status";
+import { ProductSupplementResearchForm } from "@/features/hs/product-supplement-research-form";
 import { destinationAgreementRateDisplayItems, destinationDisplayAgreementRates, destinationDisplayBaseRate } from "@/features/hs/export-destination-tariff-display";
 import { DestinationAgreementRateDialog } from "@/features/hs/destination-agreement-rate-dialog";
 import { displayImportTariffLabel, filterImportTariffsForCountry, importTariffApplicationPriority, isCommonImportTariff } from "@/features/hs/import-tariff-display";
@@ -459,7 +460,7 @@ const copyGuideLabels: Record<HsCopyGuideLanguage, {
     productInfoInsufficient: "현재 제공된 품명만으로는 HS CODE 후보를 충분히 특정하기 어렵습니다.",
     productInfoInsufficientDetail: "아래 정보가 보완되면 HS CODE 후보, 관세율, 내국세, 수입요건을 다시 확인하겠습니다.",
     productName: "품명",
-    provisionalHsDirections: "예비 검토 가능한 HS 방향",
+    provisionalHsDirections: "검토 가능한 HS 방향",
     preliminaryNotice: "아래 내용은 제공된 정보 기준의 예비 안내입니다. 실제 수입신고 전에는 제품 상세자료와 원산지, 거래조건 기준으로 재확인이 필요합니다.",
     requestHints: "확인 요청자료",
     requirementsNeedReview: "수입요건 해당 여부와 제출서류는 제품 상세자료 확인 후 검토가 필요합니다.",
@@ -805,7 +806,7 @@ function productCandidateHierarchyLines(candidate: HsCandidateRecommendation, lo
 
 function productCandidateLookupBasisLabel(candidate: HsCandidateRecommendation) {
   if (candidate.lookupBasis === "user_hs_hint") return "입력 HS 힌트";
-  if (candidate.lookupBasis === "ai_hs_hint") return "AI 예비 후보";
+  if (candidate.lookupBasis === "ai_hs_hint") return "AI 추천";
   if (candidate.lookupBasis === "ai_term_match") return "AI 품명 단서";
   if (candidate.lookupBasis === "official_name_match") return "품명/제품 단서";
   if (candidate.lookupBasis === "customs_api") return "저장 HS 데이터";
@@ -849,11 +850,24 @@ function productCandidateBranchNotes(candidate: HsCandidateRecommendation) {
 
 function productCandidateCodeLevelLabel(candidate: HsCandidateRecommendation) {
   const codeLength = normalizeHsInput(candidate.hskCode).length;
-  if (codeLength >= 10) return "10자리 후보";
-  if (codeLength === 8) return "예비 HS8";
-  if (codeLength === 6) return "예비 HS6";
-  if (codeLength === 4) return "예비 HS4";
-  return "예비 HS";
+  if (codeLength >= 10) return "HSK 10자리";
+  if (codeLength === 8) return "HS8";
+  if (codeLength === 6) return "HS6";
+  if (codeLength === 4) return "HS4";
+  return "HS";
+}
+
+function productCandidateScoreLabel(candidate: HsCandidateRecommendation) {
+  return `점수 ${Math.round(candidate.confidenceScore * 100)}점`;
+}
+
+function productCandidateDisplayReason(reason: string) {
+  return reason
+    .replaceAll("예비 후보", "후보")
+    .replaceAll("예비 HS 방향", "HS 방향")
+    .replaceAll("예비 방향", "HS 방향")
+    .replaceAll("예비 분류", "분류")
+    .replaceAll("예비 검토", "검토");
 }
 
 function productCandidateDetailButtonText(candidate: HsCandidateRecommendation) {
@@ -910,83 +924,10 @@ function productSearchPresentationState(candidates: HsCandidateRecommendation[],
   return {
     tone: "info" as const,
     badge: "가장 유력",
-    title: "가장 유력한 예비 후보입니다",
+    title: "가장 유력한 HS CODE입니다",
     description: "입력 품명 기준으로 우선 검토할 HS 방향을 하나로 정리했습니다. 실제 재질, 용도, 구성 확인 후 하위 세번을 검토하세요.",
     questions
   };
-}
-
-type ProductClassificationStep = {
-  title: string;
-  badge: string;
-  description: string;
-  evidence: string[];
-};
-
-function uniqueFormattedCodes(codes: string[]) {
-  return Array.from(new Set(codes.map((code) => normalizeHsInput(code)).filter(Boolean))).map((code) => formatHsCode(code));
-}
-
-function buildProductClassificationSteps({
-  productName,
-  candidates,
-  clarification
-}: {
-  productName: string;
-  candidates: HsCandidateRecommendation[];
-  clarification: ProductClarificationResult | null;
-}): ProductClassificationStep[] {
-  const suggestedCodes = clarification?.suggestedCandidateCodes ?? [];
-  const candidateCodes = candidates.map((candidate) => candidate.hskCode);
-  const hs4Directions = uniqueFormattedCodes([...candidateCodes, ...suggestedCodes].map((code) => normalizeHsInput(code).slice(0, 4)).filter((code) => code.length === 4));
-  const hs6Directions = uniqueFormattedCodes([
-    ...candidates.map((candidate) => candidate.hs6),
-    ...suggestedCodes.map((code) => normalizeHsInput(code).slice(0, 6)).filter((code) => code.length === 6)
-  ]);
-  const topCandidates = candidates.slice(0, 3).map((candidate) => `${formatHsCode(candidate.hskCode)} ${candidate.koreanName}`);
-  const lookupBases = Array.from(new Set(candidates.map(productCandidateLookupBasisLabel)));
-  const missingQuestions = uniqueProductQuestions(candidates, clarification).slice(0, 3);
-
-  return [
-    {
-      title: "1단계. 제품 의미 해석",
-      badge: "품명 분석",
-      description: clarification?.summary || `"${productName}" 입력값에서 제품군, 용도, 재질 단서를 먼저 해석했습니다.`,
-      evidence: missingQuestions.length
-        ? missingQuestions.map((question) => `추가 확인 단서: ${question}`)
-        : ["입력 품명 기준으로 우선 검토할 제품 의미를 정리했습니다."]
-    },
-    {
-      title: "2단계. 류·호 후보 검토",
-      badge: "Chapter/Heading",
-      description: hs4Directions.length || hs6Directions.length
-        ? "제품 의미와 후보 근거를 바탕으로 검토 가능한 HS 류·호 방향을 좁혔습니다."
-        : "아직 류·호 방향을 표시하기에는 제품 정보가 부족합니다.",
-      evidence: [
-        hs4Directions.length ? `HS4 방향: ${hs4Directions.slice(0, 4).join(", ")}` : null,
-        hs6Directions.length ? `HS6 방향: ${hs6Directions.slice(0, 5).join(", ")}` : null,
-        lookupBases.length ? `근거 유형: ${lookupBases.join(", ")}` : null
-      ].filter((item): item is string => Boolean(item))
-    },
-    {
-      title: "3단계. HSK 후보 정리",
-      badge: "후보 산출",
-      description: candidates.length
-        ? `상위 ${candidates.length}개 예비 후보를 정리했습니다. 후보별로 근거와 보완 필요 정보를 함께 확인하세요.`
-        : "표시 가능한 HSK 후보를 만들기 전에 보완 정보가 더 필요합니다.",
-      evidence: topCandidates.length ? topCandidates : ["제품 설명, 사진, 카탈로그, 재질/용도 정보가 보완되면 후보를 다시 좁힐 수 있습니다."]
-    },
-    {
-      title: "4단계. 조회 연결 준비",
-      badge: candidates.length ? "조회 가능" : "보완 후 조회",
-      description: candidates.length
-        ? "선택한 후보를 기준으로 관세율, FTA, 수입요건, 원산지표시 조회로 이어질 수 있습니다."
-        : "보완 정보를 입력한 뒤 다시 검색하면 관세율·수입요건 조회로 연결됩니다.",
-      evidence: candidates.length
-        ? ["후보 카드의 `이 코드로 조회` 또는 `하위 10자리 후보 보기` 버튼으로 상세 조회를 진행하세요."]
-        : ["보완 요청문을 복사해 업체 또는 공급자에게 추가 자료를 요청할 수 있습니다."]
-    }
-  ];
 }
 
 function ProductClassificationFlowPanel({
@@ -998,8 +939,13 @@ function ProductClassificationFlowPanel({
   candidates: HsCandidateRecommendation[];
   clarification: ProductClarificationResult | null;
 }) {
-  const steps = buildProductClassificationSteps({ productName, candidates, clarification });
   const hasCandidates = candidates.length > 0;
+  const primary = candidates[0];
+  const summaryLines = [
+    clarification?.summary || `"${productName}" 품명의 제품 의미를 먼저 해석했습니다.`,
+    primary ? `가장 가까운 방향: ${formatHsCode(primary.hskCode)} ${primary.koreanName}` : "현재 입력값만으로는 표시할 HS CODE가 부족합니다.",
+    uniqueProductQuestions(candidates, clarification).length ? "보완사항을 입력하면 후보를 다시 좁힐 수 있습니다." : "상세 조회 전 실제 재질, 용도, 구성은 다시 확인하세요."
+  ];
 
   return (
     <section className="mt-5 overflow-hidden rounded-md border border-blue-200 bg-white">
@@ -1007,11 +953,11 @@ function ProductClassificationFlowPanel({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-sm font-semibold text-blue-950">AI HS 분류 검토 흐름</h2>
-              <Badge tone={hasCandidates ? "success" : "warning"}>{hasCandidates ? "예비 분류 완료" : "보완 필요"}</Badge>
+              <h2 className="text-sm font-semibold text-blue-950">AI 분류 흐름 요약</h2>
+              <Badge tone={hasCandidates ? "success" : "warning"}>{hasCandidates ? "분류 완료" : "보완 필요"}</Badge>
             </div>
             <p className="mt-1 text-xs leading-5 text-blue-900">
-              AI가 품명을 바로 확정하지 않고 제품 의미, HS 류·호, HSK 후보, 조회 연결 가능성을 순서대로 검토합니다.
+              제품 의미, HS 방향, 보완 필요 정보를 간단히 정리했습니다.
             </p>
           </div>
           <div className="rounded-md bg-white px-3 py-2 text-xs font-semibold text-blue-800 ring-1 ring-blue-100">
@@ -1019,26 +965,12 @@ function ProductClassificationFlowPanel({
           </div>
         </div>
       </div>
-      <div className="grid gap-3 p-3 lg:grid-cols-4">
-        {steps.map((step, index) => (
-          <article className="rounded-md border border-slate-200 bg-slate-50 p-3" key={step.title}>
-            <div className="flex items-center justify-between gap-2">
-              <span className="grid size-7 place-items-center rounded-full bg-blue-700 text-xs font-semibold text-white">{index + 1}</span>
-              <Badge tone="neutral">{step.badge}</Badge>
-            </div>
-            <h3 className="mt-3 text-sm font-semibold text-slate-950">{step.title}</h3>
-            <p className="mt-2 text-xs leading-5 text-slate-600">{step.description}</p>
-            {step.evidence.length ? (
-              <ul className="mt-3 grid gap-1 text-xs leading-5 text-slate-700">
-                {step.evidence.slice(0, 3).map((item) => (
-                  <li className="flex gap-1.5" key={item}>
-                    <span className="mt-2 size-1 shrink-0 rounded-full bg-blue-600" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </article>
+      <div className="grid gap-2 p-3 text-sm leading-6 text-slate-700 md:grid-cols-3">
+        {summaryLines.map((line, index) => (
+          <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2" key={`${line}-${index}`}>
+            <span className="mr-2 font-mono text-xs font-semibold text-blue-700">{index + 1}</span>
+            {line}
+          </div>
         ))}
       </div>
       <div className={cn(
@@ -1048,66 +980,16 @@ function ProductClassificationFlowPanel({
         <CheckCircle2 aria-hidden="true" className="mt-0.5 shrink-0" size={18} />
         <div className="min-w-0 flex-1">
           <p className="font-semibold">
-            {hasCandidates ? "AI 예비 분류 검토가 완료되었습니다." : "AI 예비 분류는 완료됐지만 후보 확정을 위한 정보가 부족합니다."}
+            {hasCandidates ? "AI 분류가 완료되었습니다." : "AI 분류는 진행했지만 보완 정보가 필요합니다."}
           </p>
           <p className="text-xs">
             {hasCandidates
-              ? "아래 후보 중 실제 물품과 가장 가까운 HS CODE를 선택하면 관세율, FTA, 수입요건, 원산지표시 예비 조회로 이어집니다. HSK 확정 전 재확인이 필요합니다."
+              ? "실제 물품과 가장 가까운 HS CODE를 선택하면 관세율, FTA, 수입요건, 원산지표시 조회로 이어집니다. 신고 전 제품 사양 기준 재확인이 필요합니다."
               : "아래 보완 항목을 확인한 뒤 품명, 재질, 용도, 모델 정보를 추가해 다시 검색하세요."}
           </p>
-          {hasCandidates ? (
-            <ol className="mt-3 grid gap-2 text-xs md:grid-cols-3">
-              {["후보 확인", "이 코드로 조회", "관세율·요건 예비진단"].map((step, index) => (
-                <li className="rounded-md border border-emerald-200 bg-white px-3 py-2 text-emerald-950" key={step}>
-                  <span className="mr-2 font-mono font-semibold text-emerald-700">{index + 1}</span>
-                  {step}
-                </li>
-              ))}
-            </ol>
-          ) : null}
         </div>
       </div>
     </section>
-  );
-}
-
-function ProductCandidateCompletionPanel({
-  basisDate,
-  candidateCount,
-  productName
-}: {
-  basisDate: string;
-  candidateCount: number;
-  productName: string;
-}) {
-  return (
-    <div className="border-t border-slate-200 bg-white px-3 py-3">
-      <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm leading-6 text-emerald-950">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="font-semibold">품명검색 예비 검토가 완료되었습니다.</p>
-            <p className="mt-1 text-xs leading-5 text-emerald-900">
-              입력 품명 `{productName}` 기준으로 {candidateCount}개 후보를 정리했습니다. 실제 재질, 용도, 기능이 가장 가까운 후보의 `이 코드로 조회`를 눌러 기준일 {basisDate}의 상세 예비진단으로 이동하세요.
-            </p>
-          </div>
-          <Badge tone="success">완료</Badge>
-        </div>
-        <div className="mt-3 grid gap-2 text-xs md:grid-cols-3">
-          <div className="rounded-md border border-emerald-100 bg-white px-3 py-2">
-            <p className="font-semibold text-emerald-900">1. 후보 비교</p>
-            <p className="mt-1 text-slate-600">AI 검토 경로와 갈림 조건을 실제 물품 정보와 대조합니다.</p>
-          </div>
-          <div className="rounded-md border border-emerald-100 bg-white px-3 py-2">
-            <p className="font-semibold text-emerald-900">2. 상세 조회</p>
-            <p className="mt-1 text-slate-600">가장 가까운 후보를 선택해 관세율, FTA, 수입요건을 조회합니다.</p>
-          </div>
-          <div className="rounded-md border border-emerald-100 bg-white px-3 py-2">
-            <p className="font-semibold text-emerald-900">3. 재확인</p>
-            <p className="mt-1 text-slate-600">HSK 확정 전에는 사양서와 공식 출처 기준으로 재확인이 필요합니다.</p>
-          </div>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -1255,35 +1137,6 @@ function displayValue(value?: string | null) {
   return value?.trim() ? value : "-";
 }
 
-function productRetrySearchHref({
-  basisDate,
-  destinationCountry,
-  direction,
-  originCountry,
-  productName,
-  question
-}: {
-  basisDate: string;
-  destinationCountry: string;
-  direction: "import" | "export";
-  originCountry: string;
-  productName: string;
-  question: string;
-}) {
-  const params = new URLSearchParams({
-    query: `${productName} ${question}`.trim(),
-    direction,
-    destinationCountry,
-    basisDate
-  });
-
-  if (originCountry) {
-    params.set("originCountry", originCountry);
-  }
-
-  return `/hs/direct?${params.toString()}`;
-}
-
 function hsLookupHref({
   hskCode,
   basisDate,
@@ -1368,9 +1221,9 @@ function ProductSearchSourceBanner({
     <section className="mt-4 rounded-md border border-blue-200 bg-blue-50 px-3 py-3 text-sm leading-6 text-blue-950">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="font-semibold">품명검색에서 선택한 AI 예비 후보입니다.</p>
+          <p className="font-semibold">품명검색에서 선택한 AI 추천 HS CODE입니다.</p>
           <p className="mt-1 text-xs leading-5 text-blue-900">
-            입력 품명 `{productName}` 기준으로 추천된 후보를 상세 조회하고 있습니다. 아래 관세율, FTA, 수입요건, 원산지표시는 이 HS CODE 기준의 예비 조회입니다.
+            입력 품명 `{productName}` 기준으로 추천된 HS CODE를 상세 조회하고 있습니다. 아래 관세율, FTA, 수입요건, 원산지표시는 이 HS CODE 기준 조회입니다.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -3101,7 +2954,7 @@ function AiClarificationPanel({
           )}>{analysis.summary || presentation.description}</p>
         </div>
         <Badge tone={analysis.confidence === "low" ? "warning" : "info"}>
-          {analysis.confidence === "low" ? "검토 필요" : "예비 검토"}
+          {analysis.confidence === "low" ? "검토 필요" : "검토"}
         </Badge>
       </div>
       <div className="grid gap-4 p-3 lg:grid-cols-[1fr_0.9fr]">
@@ -3133,37 +2986,15 @@ function AiClarificationPanel({
               현재 입력 기준으로는 우선 검토 후보를 표시할 수 있습니다. 실제 사양서나 용도 확인 후 하위 세번을 검토하세요.
             </div>
           )}
-          {retryQuestions.length ? (
-            <div className={cn(
-              "mt-3 rounded-md border bg-white p-3",
-              presentation.tone === "warning" ? "border-amber-100" : "border-blue-100"
-            )}>
-              <p className={cn(
-                "text-xs font-semibold",
-                presentation.tone === "warning" ? "text-amber-900" : "text-blue-900"
-              )}>보완 정보로 다시 검색</p>
-              <div className="mt-2 grid gap-2">
-                {retryQuestions.map((question) => (
-                  <Link
-                    className="inline-flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-800"
-                    data-navigation-progress="보완검색"
-                    href={productRetrySearchHref({
-                      basisDate,
-                      destinationCountry,
-                      direction,
-                      originCountry,
-                      productName,
-                      question
-                    })}
-                    key={question}
-                  >
-                    <span className="min-w-0 flex-1">{question}</span>
-                    <span className="shrink-0 text-blue-700">반영</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          ) : null}
+          <ProductSupplementResearchForm
+            basisDate={basisDate}
+            destinationCountry={destinationCountry}
+            direction={direction}
+            originCountry={originCountry}
+            productName={productName}
+            questions={retryQuestions}
+            tone={presentation.tone === "warning" ? "amber" : "blue"}
+          />
         </div>
         <div>
           <p className={cn(
@@ -3250,7 +3081,7 @@ function ProductNoResultPanel({
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200 px-3 py-2">
         <div>
           <h2 className="text-sm font-semibold text-amber-950">
-            {hasSuggestedCodes ? "예비 HS 방향 확인 필요" : "HS CODE 특정 정보 부족"}
+            {hasSuggestedCodes ? "HS 방향 확인 필요" : "HS CODE 특정 정보 부족"}
           </h2>
           <p className="mt-1 text-xs leading-5 text-amber-900">
             {clarification?.summary ?? "입력한 품명만으로는 표시 가능한 HS 후보를 만들기 어렵습니다. 제품코드, 약어, 짧은 품명은 실제 제품 정보 보완이 필요할 수 있습니다."}
@@ -3269,42 +3100,27 @@ function ProductNoResultPanel({
               </li>
             ))}
           </ol>
-          <div className="mt-3 rounded-md border border-amber-100 bg-amber-50 p-3">
-            <p className="text-xs font-semibold text-amber-900">보완 정보로 다시 검색</p>
-            <p className="mt-1 text-xs leading-5 text-amber-900">
-              아래 항목을 선택하면 기존 품명에 해당 보완 조건을 붙여 다시 예비 분류를 실행합니다.
-            </p>
-            <div className="mt-2 grid gap-2">
-              {questions.slice(0, 4).map((question) => (
-                <Link
-                  className="inline-flex items-center justify-between gap-3 rounded-md border border-amber-100 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-800"
-                  data-navigation-progress="보완검색"
-                  href={productRetrySearchHref({
-                    basisDate,
-                    destinationCountry,
-                    direction,
-                    originCountry,
-                    productName,
-                    question
-                  })}
-                  key={question}
-                >
-                  <span className="min-w-0 flex-1">{question}</span>
-                  <span className="shrink-0 text-blue-700">재검색</span>
-                </Link>
-              ))}
-            </div>
+          <div className="mt-3">
+            <ProductSupplementResearchForm
+              basisDate={basisDate}
+              destinationCountry={destinationCountry}
+              direction={direction}
+              originCountry={originCountry}
+              productName={productName}
+              questions={questions}
+              tone="amber"
+            />
           </div>
         </div>
         <div className="grid gap-3">
           {hasSuggestedCodes ? (
             <div className="rounded-md border border-amber-100 bg-white p-3">
-              <p className="text-xs font-semibold text-amber-900">AI가 제시한 예비 방향</p>
+              <p className="text-xs font-semibold text-amber-900">AI가 제시한 HS 방향</p>
               <div className="mt-2 grid gap-2">
                 {suggestedCodes.map((code) => (
                   <Link
                     className="flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm hover:border-blue-200 hover:bg-blue-50"
-                    data-navigation-progress="예비 HS 조회"
+                    data-navigation-progress="HS 조회"
                     href={hsLookupHref({
                       hskCode: code,
                       basisDate,
@@ -3320,7 +3136,7 @@ function ProductNoResultPanel({
                 ))}
               </div>
               <p className="mt-2 text-xs leading-5 text-slate-600">
-                위 코드는 확정 세번이 아니라 조회를 이어가기 위한 예비 방향입니다. 상세 화면에서 하위 10자리와 수입요건을 다시 확인하세요.
+                위 코드는 신고 확정값이 아니라 조회를 이어가기 위한 HS 방향입니다. 상세 화면에서 하위 10자리와 수입요건을 다시 확인하세요.
               </p>
             </div>
           ) : null}
@@ -3741,47 +3557,6 @@ export async function HsDirectLookupPanel({
           </div>
         ) : null}
 
-        {shouldLookupProduct ? (
-          <ProductClassificationFlowPanel
-            candidates={productCandidates}
-            clarification={aiClarification}
-            productName={searchQuery}
-          />
-        ) : null}
-
-        {shouldLookupProduct && productCandidates.length === 0 ? (
-          <ProductNoResultPanel
-            basisDate={resolvedBasisDate}
-            clarification={aiClarification}
-            destinationCountry={selectedDestinationCountry}
-            direction={lookupDirection}
-            originCountry={selectedOriginCountry}
-            productName={searchQuery}
-          />
-        ) : null}
-
-        {supplementGuidance ? (
-          <HsSupplementGuidancePanel
-            basisDate={resolvedBasisDate}
-            destinationCountry={selectedDestinationCountry}
-            direction={lookupDirection}
-            guidance={supplementGuidance}
-            originCountry={selectedOriginCountry}
-          />
-        ) : null}
-
-        {aiClarification && productCandidates.length ? (
-          <AiClarificationPanel
-            analysis={aiClarification}
-            basisDate={resolvedBasisDate}
-            candidates={productCandidates}
-            destinationCountry={selectedDestinationCountry}
-            direction={lookupDirection}
-            originCountry={selectedOriginCountry}
-            productName={searchQuery}
-          />
-        ) : null}
-
         {productCandidates.length ? (
           <div className="mt-5 overflow-hidden rounded-md border border-slate-200">
             <div className="flex flex-wrap items-center justify-between gap-2 bg-blue-700 px-3 py-2 text-sm font-semibold text-white">
@@ -3831,13 +3606,16 @@ export async function HsDirectLookupPanel({
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
                         <div className="text-xs font-semibold text-slate-500">
-                          {index === 0 && productCandidates.length === 1 ? "가장 유력한 예비 후보" : dictionary.product.rank(candidate.rank)}
+                          {index === 0 && productCandidates.length === 1 ? "가장 유력한 HS CODE" : dictionary.product.rank(candidate.rank)}
                         </div>
                         <Link className="mt-1 block font-mono text-lg font-semibold text-blue-700 underline-offset-2 hover:underline" data-navigation-progress="상세조회" href={detailHref}>
                           {formatHsCode(candidate.hskCode)}
                         </Link>
                       </div>
                       <div className="flex items-center gap-2">
+                        {productCandidates.length > 1 ? (
+                          <Badge tone="info">{productCandidateScoreLabel(candidate)}</Badge>
+                        ) : null}
                         <Badge tone={normalizeHsInput(candidate.hskCode).length >= 10 ? "success" : "warning"}>
                           {productCandidateCodeLevelLabel(candidate)}
                         </Badge>
@@ -3845,13 +3623,13 @@ export async function HsDirectLookupPanel({
                           {productCandidateLookupBasisLabel(candidate)}
                         </Badge>
                         <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
-                          {dictionary.product.referenceScore(candidate.confidenceScore)}
+                          {productCandidates.length > 1 ? dictionary.product.referenceScore(candidate.confidenceScore) : productCandidateScoreLabel(candidate)}
                         </span>
                       </div>
                     </div>
 
                     <h3 className="mt-3 text-base font-semibold text-slate-950">{candidate.koreanName}</h3>
-                    <p className="mt-1 text-sm leading-6 text-slate-600">{candidate.reason}</p>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">{productCandidateDisplayReason(candidate.reason)}</p>
 
                     <div className="mt-3 grid gap-3 rounded-md border border-blue-100 bg-blue-50 p-3">
                       <div>
@@ -3868,7 +3646,7 @@ export async function HsDirectLookupPanel({
                       <div>
                         <div className="text-xs font-semibold text-blue-900">선택 후 조회</div>
                         <p className="mt-1 text-xs leading-5 text-blue-950">
-                          이 후보를 선택하면 기준일 {candidate.basisDate}의 관세율, FTA, 수입요건, 원산지표시 정보를 예비 조회합니다.
+                          이 HS CODE를 선택하면 기준일 {candidate.basisDate}의 관세율, FTA, 수입요건, 원산지표시 정보를 조회합니다.
                         </p>
                       </div>
                     </div>
@@ -3917,12 +3695,48 @@ export async function HsDirectLookupPanel({
                 );
               })}
             </div>
-            <ProductCandidateCompletionPanel
-              basisDate={resolvedBasisDate}
-              candidateCount={productCandidates.length}
-              productName={searchQuery}
-            />
           </div>
+        ) : null}
+
+        {shouldLookupProduct ? (
+          <ProductClassificationFlowPanel
+            candidates={productCandidates}
+            clarification={aiClarification}
+            productName={searchQuery}
+          />
+        ) : null}
+
+        {shouldLookupProduct && productCandidates.length === 0 ? (
+          <ProductNoResultPanel
+            basisDate={resolvedBasisDate}
+            clarification={aiClarification}
+            destinationCountry={selectedDestinationCountry}
+            direction={lookupDirection}
+            originCountry={selectedOriginCountry}
+            productName={searchQuery}
+          />
+        ) : null}
+
+        {supplementGuidance ? (
+          <HsSupplementGuidancePanel
+            basisDate={resolvedBasisDate}
+            destinationCountry={selectedDestinationCountry}
+            direction={lookupDirection}
+            guidance={supplementGuidance}
+            originCountry={selectedOriginCountry}
+          />
+        ) : null}
+
+        {aiClarification && productCandidates.length ? (
+          <AiClarificationPanel
+            analysis={aiClarification}
+            basisDate={resolvedBasisDate}
+            candidates={productCandidates}
+            destinationCountry={selectedDestinationCountry}
+            direction={lookupDirection}
+            originCountry={selectedOriginCountry}
+            productName={searchQuery}
+          />
         ) : null}
 
         {showDomesticExportResults && hasQuery ? (
