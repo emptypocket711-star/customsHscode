@@ -436,6 +436,13 @@
 - 운영 이슈 처리 입력 확인 운영 반영:
   - production 배포 `customs-hscode-3lcvl2k57-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` alias 연결과 production smoke 10개 경로 통과를 확인했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+- 운영 이슈 상태별 권장 입력을 추가했다.
+  - 이전 작업은 담당자, 메모, 처리 사유의 작성됨/미입력 상태를 공통으로 보여준 입력 상태 보강이고, 이번 작업은 해결, 제외, 다시 열기 버튼별로 특히 권장되는 입력 항목을 다르게 표시하는 처리 의도별 안내 보강이다.
+  - 해결 처리는 메모와 처리 사유, 제외 처리는 처리 사유, 다시 열기는 담당자와 메모 입력을 권장한다.
+  - 저장 데이터, RLS, 상태 변경 권한 구조는 바꾸지 않았다.
+- 운영 이슈 상태별 권장 입력 운영 반영:
+  - production 배포 `customs-hscode-4so7qdjzb-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` alias 연결과 production smoke 10개 경로 통과를 확인했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
