@@ -15,6 +15,16 @@ export type EnvironmentHealthGroup = {
   items: EnvironmentHealthItem[];
 };
 
+export type ExternalIntegrationHealthItem = {
+  key: string;
+  label: string;
+  status: EnvStatus;
+  path: string;
+  message: string;
+  configuredKeys: string[];
+  missingKeys: string[];
+};
+
 function hasValue(key: string) {
   return Boolean(process.env[key]?.trim());
 }
@@ -49,6 +59,117 @@ function envItem({
     status: configured ? "ok" : required ? "missing" : "warning",
     valuePreview: previewValue(key)
   };
+}
+
+function configuredKeys(keys: string[]) {
+  return keys.filter(hasValue);
+}
+
+function missingKeys(keys: string[]) {
+  return keys.filter((key) => !hasValue(key));
+}
+
+function integrationItem(input: {
+  key: string;
+  label: string;
+  path: string;
+  requiredKeys?: string[];
+  optionalAnyKeys?: string[];
+  okMessage: string;
+  missingMessage: string;
+  warningMessage?: string;
+}): ExternalIntegrationHealthItem {
+  const requiredKeys = input.requiredKeys ?? [];
+  const optionalAnyKeys = input.optionalAnyKeys ?? [];
+  const missingRequiredKeys = missingKeys(requiredKeys);
+  const hasAnyOptional = optionalAnyKeys.length === 0 || optionalAnyKeys.some(hasValue);
+  const status: EnvStatus = missingRequiredKeys.length > 0
+    ? "missing"
+    : hasAnyOptional
+      ? "ok"
+      : "warning";
+
+  return {
+    key: input.key,
+    label: input.label,
+    status,
+    path: input.path,
+    message: status === "ok" ? input.okMessage : status === "warning" ? (input.warningMessage ?? input.missingMessage) : input.missingMessage,
+    configuredKeys: configuredKeys([...requiredKeys, ...optionalAnyKeys]),
+    missingKeys: status === "warning" ? optionalAnyKeys : missingRequiredKeys
+  };
+}
+
+export function getExternalIntegrationHealthItems(): ExternalIntegrationHealthItem[] {
+  return [
+    integrationItem({
+      key: "ai_product_search",
+      label: "품명 AI 검색",
+      path: "OpenAI 직접 호출",
+      requiredKeys: ["AI_PROVIDER", "OPENAI_API_KEY", "OPENAI_MODEL"],
+      okMessage: "GPT 기반 품명 후보 생성에 필요한 필수 설정이 준비되어 있습니다.",
+      missingMessage: "AI_PROVIDER, OPENAI_API_KEY, OPENAI_MODEL 중 누락된 값이 있어 품명 검색이 fallback될 수 있습니다."
+    }),
+    integrationItem({
+      key: "customs_api001",
+      label: "API001 화물통관진행",
+      path: hasValue("CUSTOMS_API_CARGO_PROGRESS_RELAY_URL") ? "relay 서버 경유" : "UNIPASS 직접 호출",
+      requiredKeys: hasValue("CUSTOMS_API_CARGO_PROGRESS_RELAY_URL")
+        ? ["CUSTOMS_API_CARGO_PROGRESS_RELAY_URL"]
+        : ["CUSTOMS_API_CARGO_PROGRESS_SERVICE_KEY"],
+      optionalAnyKeys: hasValue("CUSTOMS_API_CARGO_PROGRESS_RELAY_URL") ? ["CUSTOMS_API_CARGO_PROGRESS_RELAY_TOKEN"] : [],
+      okMessage: hasValue("CUSTOMS_API_CARGO_PROGRESS_RELAY_URL")
+        ? "Vercel 38010 포트 제한을 우회하는 relay 경로로 조회합니다."
+        : "직접 호출 설정입니다. Vercel에서 38010 포트 연결 실패가 반복되면 relay 전환이 필요합니다.",
+      warningMessage: "relay URL은 있으나 token이 없습니다. relay가 공개 endpoint라면 운영상 보호 설정을 권장합니다.",
+      missingMessage: "API001 조회에 필요한 relay URL 또는 서비스 키가 없습니다."
+    }),
+    integrationItem({
+      key: "customs_api012",
+      label: "API012 관세환율",
+      path: hasValue("CUSTOMS_API_EXCHANGE_RATE_RELAY_URL") ? "relay 서버 경유" : "UNIPASS 직접 호출",
+      requiredKeys: hasValue("CUSTOMS_API_EXCHANGE_RATE_RELAY_URL")
+        ? ["CUSTOMS_API_EXCHANGE_RATE_RELAY_URL"]
+        : ["CUSTOMS_API_EXCHANGE_RATE_SERVICE_KEY"],
+      optionalAnyKeys: hasValue("CUSTOMS_API_EXCHANGE_RATE_RELAY_URL") ? ["CUSTOMS_API_EXCHANGE_RATE_RELAY_TOKEN", "CUSTOMS_API_CARGO_PROGRESS_RELAY_TOKEN"] : [],
+      okMessage: hasValue("CUSTOMS_API_EXCHANGE_RATE_RELAY_URL")
+        ? "관세환율 조회가 relay 경로로 준비되어 있습니다."
+        : "관세환율 직접 호출 키가 있습니다. 38010 포트 오류가 있으면 relay를 추가하세요.",
+      warningMessage: "relay URL은 있으나 API012 전용 token 또는 cargo relay token fallback이 없습니다.",
+      missingMessage: "API012 조회에 필요한 relay URL 또는 서비스 키가 없습니다."
+    }),
+    integrationItem({
+      key: "kotra_trade_news",
+      label: "KOTRA 무역뉴스",
+      path: "공공데이터 OpenAPI",
+      requiredKeys: [],
+      optionalAnyKeys: [
+        "KOTRA_OPENAPI_SERVICE_KEY",
+        "KOTRA_OVERSEAS_MARKET_NEWS_SERVICE_KEY",
+        "KOTRA_USA_GLOBAL_ISSUE_SERVICE_KEY",
+        "KOTRA_TRADE_FRAUD_CASE_SERVICE_KEY"
+      ],
+      okMessage: "KOTRA 뉴스 수집용 인증키가 설정되어 있습니다.",
+      warningMessage: "KOTRA 인증키가 없어 RSS와 저장 캐시 중심으로만 뉴스가 표시됩니다.",
+      missingMessage: "KOTRA 인증키가 없습니다."
+    }),
+    integrationItem({
+      key: "transactional_email",
+      label: "알림 메일",
+      path: "Resend API",
+      requiredKeys: ["RESEND_API_KEY", "NOTIFICATION_FROM_EMAIL"],
+      okMessage: "사용자 알림 메일 발송 설정이 준비되어 있습니다.",
+      missingMessage: "RESEND_API_KEY 또는 NOTIFICATION_FROM_EMAIL이 없어 적하목록 알림 메일 발송이 실패할 수 있습니다."
+    }),
+    integrationItem({
+      key: "scheduled_jobs",
+      label: "정기 작업",
+      path: "Vercel Cron / job endpoint",
+      requiredKeys: ["JOB_WORKER_SECRET"],
+      okMessage: "정기 작업 endpoint 보호 키가 설정되어 있습니다.",
+      missingMessage: "JOB_WORKER_SECRET이 없으면 운영 job endpoint 보호와 수동 실행 검증이 약해집니다."
+    })
+  ];
 }
 
 export function getEnvironmentHealthGroups(): EnvironmentHealthGroup[] {

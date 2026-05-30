@@ -769,3 +769,16 @@
 - `npm test -- features/trade-news/trade-news-country-filter.test.ts`
 - `npm run typecheck`
 - `npm run lint`
+
+### 운영 외부 연동 준비 상태 요약 추가
+
+- 개발자 운영 점검 화면에 개별 환경변수 표와 별도로 `외부 연동 준비 상태` 카드를 추가했다.
+- 품명 AI 검색, API001 화물통관진행, API012 관세환율, KOTRA 무역뉴스, 알림 메일, 정기 작업을 기능 단위로 표시한다.
+- API001/API012는 relay 경유인지 UNIPASS 직접 호출인지 구분하고, 누락값과 운영상 확인이 필요한 값을 따로 보여준다.
+- KOTRA 키가 없는 경우에도 RSS/저장 캐시 기반 표시는 가능하다는 점을 warning 상태로 분리했다.
+
+검증:
+
+- `npm test -- server/operations/environment-health.service.test.ts`
+- `npm run typecheck`
+- `npm run lint`

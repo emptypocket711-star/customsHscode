@@ -3,7 +3,11 @@ import { PageHeading } from "@/components/page-heading";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { requireDeveloperRole } from "@/server/auth/role-guard";
-import { getEnvironmentHealthGroups, type EnvironmentHealthItem } from "@/server/operations/environment-health.service";
+import {
+  getEnvironmentHealthGroups,
+  getExternalIntegrationHealthItems,
+  type EnvironmentHealthItem
+} from "@/server/operations/environment-health.service";
 import { getProductionSchemaHealthReport } from "@/server/operations/schema-health.service";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import {
@@ -254,6 +258,7 @@ export default async function OperationsHealthPage() {
   }
 
   const groups = getEnvironmentHealthGroups();
+  const integrationHealthItems = getExternalIntegrationHealthItems();
   const [lookupTelemetryEvents, backgroundJobs, schemaHealthReport] = await Promise.all([
     loadLookupTelemetryEvents(),
     loadBackgroundJobOperations(),
@@ -306,6 +311,46 @@ export default async function OperationsHealthPage() {
           </CardBody>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader
+          title="외부 연동 준비 상태"
+          description="개별 환경변수가 아니라 실제 기능 단위로 호출 경로, 누락값, 운영 주의사항을 확인합니다."
+        />
+        <CardBody>
+          <div className="grid gap-3 lg:grid-cols-2">
+            {integrationHealthItems.map((item) => (
+              <div
+                className="rounded-lg border border-slate-200 bg-white p-4"
+                key={item.key}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-slate-950">{item.label}</p>
+                    <p className="mt-1 text-xs font-medium text-slate-500">{item.path}</p>
+                  </div>
+                  <Badge tone={statusTone(item.status)}>{statusLabel(item.status)}</Badge>
+                </div>
+                <p className="mt-3 text-sm leading-6 text-slate-600">{item.message}</p>
+                <div className="mt-3 grid gap-2 text-xs md:grid-cols-2">
+                  <div className="rounded-md bg-slate-50 px-3 py-2">
+                    <p className="font-semibold text-slate-500">설정됨</p>
+                    <p className="mt-1 break-all font-mono text-slate-700">
+                      {item.configuredKeys.length ? item.configuredKeys.join(", ") : "-"}
+                    </p>
+                  </div>
+                  <div className="rounded-md bg-slate-50 px-3 py-2">
+                    <p className="font-semibold text-slate-500">확인 필요</p>
+                    <p className="mt-1 break-all font-mono text-slate-700">
+                      {item.missingKeys.length ? item.missingKeys.join(", ") : "-"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardBody>
+      </Card>
 
       <Card>
         <CardHeader
