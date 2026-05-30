@@ -42,7 +42,8 @@ function statusActionHelp(status: OperationsIssueStatus) {
 
 const initialOperationsIssueStatusActionState: OperationsIssueStatusActionState = {
   status: "idle",
-  message: null
+  message: null,
+  nextStep: null
 };
 
 type OperationsIssueStatusFormProps = {
@@ -117,14 +118,20 @@ export function OperationsIssueStatusForm({ event }: OperationsIssueStatusFormPr
         ))}
       </div>
       {state.message ? (
-        <p
-          aria-live="polite"
-          className={state.status === "success"
-            ? "rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-800"
-            : "rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-800"}
-        >
-          {state.message}
-        </p>
+        <div aria-live="polite" className="grid gap-1">
+          <p
+            className={state.status === "success"
+              ? "rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-800"
+              : "rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-800"}
+          >
+            {state.message}
+          </p>
+          {state.status === "success" && state.nextStep ? (
+            <p className="rounded-md border border-blue-100 bg-blue-50 px-2 py-1 text-xs leading-5 text-blue-800">
+              {state.nextStep}
+            </p>
+          ) : null}
+        </div>
       ) : null}
     </form>
   );

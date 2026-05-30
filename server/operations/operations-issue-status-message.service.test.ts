@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildOperationsIssueStatusErrorMessage,
+  buildOperationsIssueStatusNextStep,
   buildOperationsIssueStatusSuccessMessage,
   operationsIssueStatusActionLabel
 } from "@/server/operations/operations-issue-status-message.service";
@@ -39,5 +40,16 @@ describe("operations issue status messages", () => {
       .toBe("운영 이슈 상태 변경 결과를 저장했습니다.");
     expect(buildOperationsIssueStatusErrorMessage(undefined, "입력값을 확인해 주세요."))
       .toBe("운영 이슈 상태 변경을 저장하지 못했습니다. 입력값을 확인해 주세요.");
+  });
+
+  it("builds status-specific next-step guidance", () => {
+    expect(buildOperationsIssueStatusNextStep("resolved"))
+      .toContain("재발 여부를 모니터링");
+    expect(buildOperationsIssueStatusNextStep("ignored"))
+      .toContain("제외 근거");
+    expect(buildOperationsIssueStatusNextStep("open"))
+      .toContain("우선순위");
+    expect(buildOperationsIssueStatusNextStep("invalid"))
+      .toContain("상태 변경 이력");
   });
 });

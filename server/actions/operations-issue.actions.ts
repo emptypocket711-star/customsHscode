@@ -8,6 +8,7 @@ import { recordAuditLog } from "@/server/audit/account-audit";
 import { isDeveloperEmail } from "@/server/auth/developer";
 import {
   buildOperationsIssueStatusErrorMessage,
+  buildOperationsIssueStatusNextStep,
   buildOperationsIssueStatusSuccessMessage
 } from "@/server/operations/operations-issue-status-message.service";
 import {
@@ -18,6 +19,7 @@ import {
 export type OperationsIssueStatusActionState = {
   status: "idle" | "success" | "error";
   message: string | null;
+  nextStep?: string | null;
 };
 
 const operationsIssueStatusSchema = z.object({
@@ -117,7 +119,8 @@ export async function updateOperationsIssueStatusWithStateAction(
 
     return {
       status: "success",
-      message: buildOperationsIssueStatusSuccessMessage(updated.status)
+      message: buildOperationsIssueStatusSuccessMessage(updated.status),
+      nextStep: buildOperationsIssueStatusNextStep(updated.status)
     };
   } catch (error) {
     const reason = error instanceof z.ZodError
@@ -128,7 +131,8 @@ export async function updateOperationsIssueStatusWithStateAction(
 
     return {
       status: "error",
-      message: buildOperationsIssueStatusErrorMessage(attemptedStatus, reason)
+      message: buildOperationsIssueStatusErrorMessage(attemptedStatus, reason),
+      nextStep: null
     };
   }
 }

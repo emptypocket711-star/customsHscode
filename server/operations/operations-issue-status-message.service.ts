@@ -24,3 +24,19 @@ export function buildOperationsIssueStatusErrorMessage(status: string | undefine
   const actionLabel = operationsIssueStatusActionLabel(status);
   return `운영 이슈 ${actionLabel}${objectParticle(actionLabel)} 저장하지 못했습니다. ${reason}`;
 }
+
+export function buildOperationsIssueStatusNextStep(status: string | undefined) {
+  if (status === "resolved") {
+    return "후속 확인: 원인 드릴다운과 최근 발생 시각을 다시 확인해 재발 여부를 모니터링합니다.";
+  }
+
+  if (status === "ignored") {
+    return "후속 확인: 제외 근거가 충분한지 확인하고 동일 이슈가 다시 열리면 담당자를 지정합니다.";
+  }
+
+  if (status === "open") {
+    return "후속 확인: 담당자와 메모를 기준으로 차단/장기 미해결 빠른 필터에서 우선순위를 다시 확인합니다.";
+  }
+
+  return "후속 확인: 운영 점검 화면에서 처리 결과와 상태 변경 이력을 다시 확인합니다.";
+}
