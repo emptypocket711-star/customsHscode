@@ -1045,18 +1045,68 @@ function ProductClassificationFlowPanel({
         hasCandidates ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-amber-200 bg-amber-50 text-amber-900"
       )}>
         <CheckCircle2 aria-hidden="true" className="mt-0.5 shrink-0" size={18} />
-        <div>
+        <div className="min-w-0 flex-1">
           <p className="font-semibold">
-            {hasCandidates ? "AI 예비 분류가 완료되었습니다." : "AI 예비 분류는 완료됐지만 후보 확정을 위한 정보가 부족합니다."}
+            {hasCandidates ? "AI 예비 분류 검토가 완료되었습니다." : "AI 예비 분류는 완료됐지만 후보 확정을 위한 정보가 부족합니다."}
           </p>
           <p className="text-xs">
             {hasCandidates
-              ? "아래 후보 중 제품 설명과 가장 가까운 HS CODE를 선택해 관세율과 수입요건을 예비 조회하세요. HSK 확정 전 재확인이 필요합니다."
+              ? "아래 후보 중 실제 물품과 가장 가까운 HS CODE를 선택하면 관세율, FTA, 수입요건, 원산지표시 예비 조회로 이어집니다. HSK 확정 전 재확인이 필요합니다."
               : "아래 보완 항목을 확인한 뒤 품명, 재질, 용도, 모델 정보를 추가해 다시 검색하세요."}
           </p>
+          {hasCandidates ? (
+            <ol className="mt-3 grid gap-2 text-xs md:grid-cols-3">
+              {["후보 확인", "이 코드로 조회", "관세율·요건 예비진단"].map((step, index) => (
+                <li className="rounded-md border border-emerald-200 bg-white px-3 py-2 text-emerald-950" key={step}>
+                  <span className="mr-2 font-mono font-semibold text-emerald-700">{index + 1}</span>
+                  {step}
+                </li>
+              ))}
+            </ol>
+          ) : null}
         </div>
       </div>
     </section>
+  );
+}
+
+function ProductCandidateCompletionPanel({
+  basisDate,
+  candidateCount,
+  productName
+}: {
+  basisDate: string;
+  candidateCount: number;
+  productName: string;
+}) {
+  return (
+    <div className="border-t border-slate-200 bg-white px-3 py-3">
+      <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm leading-6 text-emerald-950">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="font-semibold">품명검색 예비 검토가 완료되었습니다.</p>
+            <p className="mt-1 text-xs leading-5 text-emerald-900">
+              입력 품명 `{productName}` 기준으로 {candidateCount}개 후보를 정리했습니다. 실제 재질, 용도, 기능이 가장 가까운 후보의 `이 코드로 조회`를 눌러 기준일 {basisDate}의 상세 예비진단으로 이동하세요.
+            </p>
+          </div>
+          <Badge tone="success">완료</Badge>
+        </div>
+        <div className="mt-3 grid gap-2 text-xs md:grid-cols-3">
+          <div className="rounded-md border border-emerald-100 bg-white px-3 py-2">
+            <p className="font-semibold text-emerald-900">1. 후보 비교</p>
+            <p className="mt-1 text-slate-600">AI 검토 경로와 갈림 조건을 실제 물품 정보와 대조합니다.</p>
+          </div>
+          <div className="rounded-md border border-emerald-100 bg-white px-3 py-2">
+            <p className="font-semibold text-emerald-900">2. 상세 조회</p>
+            <p className="mt-1 text-slate-600">가장 가까운 후보를 선택해 관세율, FTA, 수입요건을 조회합니다.</p>
+          </div>
+          <div className="rounded-md border border-emerald-100 bg-white px-3 py-2">
+            <p className="font-semibold text-emerald-900">3. 재확인</p>
+            <p className="mt-1 text-slate-600">HSK 확정 전에는 사양서와 공식 출처 기준으로 재확인이 필요합니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -3743,6 +3793,11 @@ export async function HsDirectLookupPanel({
                 );
               })}
             </div>
+            <ProductCandidateCompletionPanel
+              basisDate={resolvedBasisDate}
+              candidateCount={productCandidates.length}
+              productName={searchQuery}
+            />
           </div>
         ) : null}
 
