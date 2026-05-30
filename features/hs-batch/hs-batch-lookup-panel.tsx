@@ -90,7 +90,7 @@ function aiSuggestedCodesText(row: HsBatchResultRow) {
 }
 
 function localizedQuestions(row: HsBatchResultRow, language: GuidanceLanguage) {
-  if (row.missingQuestions?.length) return row.missingQuestions;
+  if (language === "ko" && row.missingQuestions?.length) return row.missingQuestions;
   if (language === "en") {
     return [
       "Please confirm the product material or composition.",
@@ -112,11 +112,39 @@ function localizedQuestions(row: HsBatchResultRow, language: GuidanceLanguage) {
   ];
 }
 
+function localizedCandidateOptionsText(row: HsBatchResultRow, language: GuidanceLanguage) {
+  if (!row.candidateOptions?.length) return "";
+
+  return row.candidateOptions.map((candidate, index) => {
+    if (language === "en") {
+      return `${index + 1}. ${formatHsCode(candidate.hskCode)} (Korean HSK 10-digit candidate; please confirm against the final product details.)`;
+    }
+    if (language === "zh") {
+      return `${index + 1}. ${formatHsCode(candidate.hskCode)}（韩国 HSK 10 位候选，请根据最终产品资料确认。）`;
+    }
+    return `${index + 1}. ${formatHsCode(candidate.hskCode)} ${candidate.koreanName}`;
+  }).join("\n");
+}
+
+function localizedAiSuggestedCodesText(row: HsBatchResultRow, language: GuidanceLanguage) {
+  if (!row.aiSuggestedCodes?.length) return "";
+
+  return row.aiSuggestedCodes.map((candidate, index) => {
+    if (language === "en") {
+      return `${index + 1}. ${formatHsCode(candidate.code)} (preliminary HS direction; not a final Korean HSK classification.)`;
+    }
+    if (language === "zh") {
+      return `${index + 1}. ${formatHsCode(candidate.code)}（AI 初步 HS 方向，并非最终韩国 HSK 归类结论。）`;
+    }
+    return `${index + 1}. ${formatHsCode(candidate.code)} ${candidate.reason}`;
+  }).join("\n");
+}
+
 function buildSupplementRequest(row: HsBatchResultRow, language: GuidanceLanguage) {
   const normalizedInput = formatHsCode(row.normalizedHskCode || normalizeHsCode(row.inputHskCode));
   const itemName = row.productName || row.matchedName || "입력 품명 미기재";
-  const candidates = candidateOptionsText(row);
-  const aiCodes = aiSuggestedCodesText(row);
+  const candidates = localizedCandidateOptionsText(row, language);
+  const aiCodes = localizedAiSuggestedCodesText(row, language);
   const questions = localizedQuestions(row, language).map((question, index) => `${index + 1}. ${question}`).join("\n");
 
   if (language === "en") {
@@ -127,7 +155,7 @@ function buildSupplementRequest(row: HsBatchResultRow, language: GuidanceLanguag
       `Input HS code: ${normalizedInput || row.inputHskCode || "Not provided"}`,
       ``,
       `Current status: Additional review needed`,
-      `Review note: ${row.message}`,
+      `Review note: A 10-digit Korean HSK code and product details must be confirmed before checking tariff rates, internal taxes, and Korean import requirements.`,
       candidates ? `` : null,
       candidates ? `Possible Korean HSK 10-digit candidates:` : null,
       candidates || null,
@@ -150,7 +178,7 @@ function buildSupplementRequest(row: HsBatchResultRow, language: GuidanceLanguag
       `输入 HS 编码: ${normalizedInput || row.inputHskCode || "未提供"}`,
       ``,
       `当前状态: 需要补充确认`,
-      `确认内容: ${row.message}`,
+      `确认内容: 需要确认韩国 10 位 HSK 编码及产品详细资料后，才能重新查询关税、国内税和韩国进口要求。`,
       candidates ? `` : null,
       candidates ? `韩国 HSK 10 位候选:` : null,
       candidates || null,
