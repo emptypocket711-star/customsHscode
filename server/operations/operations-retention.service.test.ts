@@ -4,8 +4,17 @@ import {
   cleanupOperationsAlertEvents,
   cleanupOperationsRetention,
   getBackgroundJobHistoryRetentionDays,
-  getOperationsAlertRetentionDays
+  getOperationsAlertRetentionDays,
+  getOperationsRetentionStatus
 } from "@/server/operations/operations-retention.service";
+
+function createCountBuilder(count: number) {
+  return {
+    select: vi.fn().mockReturnThis(),
+    lt: vi.fn().mockResolvedValue({ count, error: null }),
+    in: vi.fn().mockReturnThis()
+  };
+}
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -100,5 +109,40 @@ describe("operations retention service", () => {
         deletedJobs: 1
       }
     });
+  });
+
+  it("reports retention status with configured cutoffs and prune candidates", async () => {
+    vi.stubEnv("OPERATIONS_ALERT_RETENTION_DAYS", "30");
+    vi.stubEnv("BACKGROUND_JOB_HISTORY_RETENTION_DAYS", "45");
+    const alertEvents = createCountBuilder(2);
+    const jobRuns = createCountBuilder(3);
+    const jobs = createCountBuilder(4);
+    const supabase = {
+      from: vi.fn((table: string) => {
+        if (table === "operations_alert_events") return alertEvents;
+        if (table === "background_job_runs") return jobRuns;
+        if (table === "background_jobs") return jobs;
+        throw new Error(`Unexpected table ${table}`);
+      })
+    };
+
+    await expect(getOperationsRetentionStatus(supabase as never, {
+      now: new Date("2026-05-30T00:00:00.000Z")
+    })).resolves.toEqual({
+      checkedAt: "2026-05-30T00:00:00.000Z",
+      operationsAlertEvents: {
+        retentionDays: 30,
+        cutoffAt: "2026-04-30T00:00:00.000Z",
+        pruneCandidateCount: 2
+      },
+      backgroundJobHistory: {
+        retentionDays: 45,
+        cutoffAt: "2026-04-15T00:00:00.000Z",
+        runPruneCandidateCount: 3,
+        jobPruneCandidateCount: 4
+      }
+    });
+
+    expect(jobs.in).toHaveBeenCalledWith("status", ["succeeded", "canceled", "dead"]);
   });
 });

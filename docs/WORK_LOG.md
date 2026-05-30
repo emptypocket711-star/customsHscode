@@ -106,6 +106,10 @@
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
   - production 배포 후 `npm run ops:job:operations-retention`을 실행해 운영 알림 이력 deletedCount 0, background job runs deletedRuns 0, 완료 job deletedJobs 0을 확인했다.
   - production smoke 10개 경로 모두 통과했다.
+- 운영 점검 화면에 retention 상태를 추가했다.
+  - 운영 알림 이력, worker 실행 이력, 완료 작업 이력의 보존 기간과 cutoff, 현재 정리 후보 건수를 표시한다.
+  - 완료 작업 이력은 성공·취소·최종 실패만 정리 대상이라는 운영 조건을 화면에 명시했다.
+  - 정리 후보 총합을 카드 badge로 표시해 수동 또는 cron 정리 필요 여부를 빠르게 볼 수 있게 했다.
 
 검증:
 
@@ -142,6 +146,11 @@
 - `vercel env run -e production -- npm run health:db`
 - `vercel env run -e production -- npm run ops:job:operations-retention`
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
+- `npm test -- server/operations/operations-retention.service.test.ts`
+- `npm test`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
 - 운영 E2E: 임시 계정 기반 82행 큐 등록 → worker 처리 → 결과 UI/XLSX 버튼 확인
 - `npm test -- server/repositories/background-job.repository.test.ts`
 - `vercel env run -e production -- npm run ops:job:background`

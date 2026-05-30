@@ -8,6 +8,10 @@ import {
   getExternalIntegrationHealthItems,
   type EnvironmentHealthItem
 } from "@/server/operations/environment-health.service";
+import {
+  getOperationsRetentionStatus,
+  type OperationsRetentionStatus
+} from "@/server/operations/operations-retention.service";
 import { getProductionSchemaHealthReport } from "@/server/operations/schema-health.service";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import {
@@ -141,6 +145,10 @@ function formatPercent(part: number, total: number) {
 
 function formatMs(value: number | null) {
   return value === null ? "-" : `${Math.round(value)}ms`;
+}
+
+function retentionTone(count: number) {
+  return count > 0 ? "warning" : "success";
 }
 
 function normalizationStatusLabel(status: string | null) {
@@ -293,6 +301,13 @@ async function loadOperationsAlertEvents() {
   return listRecentOperationsAlertEvents(supabase, 20).catch(() => []);
 }
 
+async function loadOperationsRetentionStatus(): Promise<OperationsRetentionStatus | null> {
+  if (!hasSupabaseEnv()) return null;
+
+  const supabase = await createSupabaseServerClient();
+  return getOperationsRetentionStatus(supabase).catch(() => null);
+}
+
 export default async function OperationsHealthPage() {
   const guard = await requireDeveloperRole();
 
@@ -302,11 +317,12 @@ export default async function OperationsHealthPage() {
 
   const groups = getEnvironmentHealthGroups();
   const integrationHealthItems = getExternalIntegrationHealthItems();
-  const [lookupTelemetryEvents, backgroundJobs, backgroundJobRuns, operationsAlertEvents, schemaHealthReport] = await Promise.all([
+  const [lookupTelemetryEvents, backgroundJobs, backgroundJobRuns, operationsAlertEvents, operationsRetentionStatus, schemaHealthReport] = await Promise.all([
     loadLookupTelemetryEvents(),
     loadBackgroundJobOperations(),
     loadBackgroundJobRuns(),
     loadOperationsAlertEvents(),
+    loadOperationsRetentionStatus(),
     getProductionSchemaHealthReport()
   ]);
   const lookupIssueCount = lookupTelemetryEvents.filter(isLookupTelemetryIssue).length;
@@ -319,6 +335,11 @@ export default async function OperationsHealthPage() {
   const backgroundJobSummary = summarizeBackgroundJobOperations(backgroundJobs);
   const backgroundJobRunSummary = summarizeBackgroundJobRuns(backgroundJobRuns);
   const operationsAlertSummary = summarizeOperationsAlertEvents(operationsAlertEvents);
+  const totalRetentionCandidates = operationsRetentionStatus
+    ? operationsRetentionStatus.operationsAlertEvents.pruneCandidateCount
+      + operationsRetentionStatus.backgroundJobHistory.runPruneCandidateCount
+      + operationsRetentionStatus.backgroundJobHistory.jobPruneCandidateCount
+    : 0;
   const items = groups.flatMap((group) => group.items);
   const missingRequiredCount = items.filter((item) => item.status === "missing").length;
   const configuredCount = items.filter((item) => item.status === "ok").length;
@@ -455,6 +476,69 @@ export default async function OperationsHealthPage() {
             <div className="p-5 text-sm text-emerald-700">
               운영 DB 스키마가 현재 migration 기준과 일치합니다. 최근 점검: {formatDate(schemaHealthReport.checkedAt)}
             </div>
+          )}
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="운영 이력 보존 상태"
+          description="운영 알림, worker 실행 이력, 완료된 백그라운드 작업의 보존 기간과 정리 후보 건수를 확인합니다."
+          action={<Badge tone={totalRetentionCandidates > 0 ? "warning" : "success"}>정리 후보 {totalRetentionCandidates}건</Badge>}
+        />
+        <CardBody>
+          {operationsRetentionStatus ? (
+            <div className="grid gap-3 lg:grid-cols-3">
+              <div className="rounded-lg border border-slate-200 bg-white p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-slate-950">운영 알림 이력</p>
+                    <p className="mt-1 text-xs text-slate-500">보존 {operationsRetentionStatus.operationsAlertEvents.retentionDays}일</p>
+                  </div>
+                  <Badge tone={retentionTone(operationsRetentionStatus.operationsAlertEvents.pruneCandidateCount)}>
+                    후보 {operationsRetentionStatus.operationsAlertEvents.pruneCandidateCount}건
+                  </Badge>
+                </div>
+                <p className="mt-3 text-xs leading-5 text-slate-600">
+                  cutoff: {formatDate(operationsRetentionStatus.operationsAlertEvents.cutoffAt)}
+                </p>
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-white p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-slate-950">worker 실행 이력</p>
+                    <p className="mt-1 text-xs text-slate-500">보존 {operationsRetentionStatus.backgroundJobHistory.retentionDays}일</p>
+                  </div>
+                  <Badge tone={retentionTone(operationsRetentionStatus.backgroundJobHistory.runPruneCandidateCount)}>
+                    후보 {operationsRetentionStatus.backgroundJobHistory.runPruneCandidateCount}건
+                  </Badge>
+                </div>
+                <p className="mt-3 text-xs leading-5 text-slate-600">
+                  cutoff: {formatDate(operationsRetentionStatus.backgroundJobHistory.cutoffAt)}
+                </p>
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-white p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-slate-950">완료 작업 이력</p>
+                    <p className="mt-1 text-xs text-slate-500">성공·취소·최종 실패만 정리</p>
+                  </div>
+                  <Badge tone={retentionTone(operationsRetentionStatus.backgroundJobHistory.jobPruneCandidateCount)}>
+                    후보 {operationsRetentionStatus.backgroundJobHistory.jobPruneCandidateCount}건
+                  </Badge>
+                </div>
+                <p className="mt-3 text-xs leading-5 text-slate-600">
+                  대기·실행 중·재시도 대기 작업은 정리 대상에서 제외됩니다.
+                </p>
+              </div>
+              <p className="text-xs text-slate-500 lg:col-span-3">
+                최근 확인: {formatDate(operationsRetentionStatus.checkedAt)}. 정리는 `/api/jobs/operations-retention` cron 또는 수동 실행 시 반영됩니다.
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-slate-600">
+              운영 이력 보존 상태를 불러오지 못했습니다. Supabase 환경변수와 retention RPC 배포 상태를 확인해 주세요.
+            </p>
           )}
         </CardBody>
       </Card>
