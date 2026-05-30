@@ -111,6 +111,7 @@ export type OperationsIssueAgeStatus = {
 export type OperationsIssueStatusChangeSummary = {
   changedAt: string;
   changedByLabel: string;
+  changeLabel: string;
 };
 
 export type OperationsIssueResolutionSummary = {
@@ -450,10 +451,16 @@ export function getOperationsIssueStatusChangeSummary(
 
   const actorId = event.statusUpdatedBy?.trim();
   const changedByLabel = actorId ? `운영자 ${actorId.slice(0, 8)}` : "변경자 기록 없음";
+  const changeLabel = event.status === "resolved"
+    ? "해결 처리"
+    : event.status === "ignored"
+      ? "제외 처리"
+      : "다시 열림";
 
   return {
     changedAt: event.statusUpdatedAt,
-    changedByLabel
+    changedByLabel,
+    changeLabel
   };
 }
 

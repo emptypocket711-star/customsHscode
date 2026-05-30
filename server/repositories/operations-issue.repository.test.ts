@@ -290,20 +290,30 @@ describe("operations issue repository helpers", () => {
 
   it("summarizes operations issue status change attribution without exposing full actor ids", () => {
     expect(getOperationsIssueStatusChangeSummary(issue({
+      status: "resolved",
       statusUpdatedAt: "2026-05-30T04:00:00.000Z",
       statusUpdatedBy: "7a9f1c20-1234-5678-9012-abcdefabcdef"
     }))).toEqual({
       changedAt: "2026-05-30T04:00:00.000Z",
-      changedByLabel: "운영자 7a9f1c20"
+      changedByLabel: "운영자 7a9f1c20",
+      changeLabel: "해결 처리"
     });
 
     expect(getOperationsIssueStatusChangeSummary(issue({
+      status: "ignored",
       statusUpdatedAt: "2026-05-30T04:00:00.000Z",
       statusUpdatedBy: null
     }))).toEqual({
       changedAt: "2026-05-30T04:00:00.000Z",
-      changedByLabel: "변경자 기록 없음"
+      changedByLabel: "변경자 기록 없음",
+      changeLabel: "제외 처리"
     });
+
+    expect(getOperationsIssueStatusChangeSummary(issue({
+      status: "open",
+      statusUpdatedAt: "2026-05-30T04:00:00.000Z",
+      statusUpdatedBy: "7a9f1c20-1234-5678-9012-abcdefabcdef"
+    }))?.changeLabel).toBe("다시 열림");
 
     expect(getOperationsIssueStatusChangeSummary(issue({
       statusUpdatedAt: null,

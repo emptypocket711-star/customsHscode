@@ -1479,7 +1479,9 @@ export default async function OperationsHealthPage({
                             </div>
                             {statusChangeSummary ? (
                               <p className="mt-2 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-slate-500">
-                                상태 변경 {formatDate(statusChangeSummary.changedAt)}
+                                <span className="font-semibold text-slate-700">{statusChangeSummary.changeLabel}</span>
+                                <br />
+                                {formatDate(statusChangeSummary.changedAt)}
                                 <br />
                                 {statusChangeSummary.changedByLabel}
                               </p>
