@@ -3590,8 +3590,20 @@ export async function HsDirectLookupPanel({
     basisDate: resolvedBasisDate,
     destinationHsCode
   });
-  const initiallyVisibleProductCandidates = productCandidates.slice(0, 3);
-  const additionalProductCandidates = productCandidates.slice(3);
+  const productCandidateGroups = Array.from(productCandidates.reduce((groups, candidate) => {
+    const groupKey = candidate.hs6 || normalizeHsInput(candidate.hskCode).slice(0, 6) || candidate.hskCode;
+    const group = groups.get(groupKey) ?? [];
+
+    group.push(candidate);
+    groups.set(groupKey, group);
+    return groups;
+  }, new Map<string, HsCandidateRecommendation[]>()).values()).map((group) => ({
+    representative: group[0],
+    related: group.slice(1)
+  }));
+  const initiallyVisibleProductCandidateGroups = productCandidateGroups.slice(0, 3);
+  const additionalProductCandidateGroups = productCandidateGroups.slice(3);
+  const additionalProductCandidateCount = additionalProductCandidateGroups.reduce((count, group) => count + 1 + group.related.length, 0);
 
   return (
     <Card>
@@ -3647,7 +3659,8 @@ export async function HsDirectLookupPanel({
               ) : null}
             </div>
             <div className="grid gap-3 bg-slate-50 p-3 lg:grid-cols-2">
-              {initiallyVisibleProductCandidates.map((candidate, index) => {
+              {initiallyVisibleProductCandidateGroups.map((candidateGroup, index) => {
+                const candidate = candidateGroup.representative;
                 const lookup = productCandidateLookupByHsk.get(candidate.hskCode);
                 const hierarchyLines = productCandidateHierarchyLines(candidate, lookup);
                 const routeSummary = productCandidateRouteSummary(candidate, lookup);
@@ -3708,6 +3721,9 @@ export async function HsDirectLookupPanel({
                         <Badge tone={candidate.lookupBasis === "user_hs_hint" ? "info" : candidate.lookupBasis === "ambiguous_abbreviation" ? "warning" : "neutral"}>
                           {productCandidateLookupBasisLabel(candidate)}
                         </Badge>
+                        {candidateGroup.related.length ? (
+                          <Badge tone="neutral">같은 소호 {candidateGroup.related.length + 1}개 묶음</Badge>
+                        ) : null}
                         {productCandidates.length === 1 ? (
                           <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
                             {productCandidateScoreLabel(candidate)}
@@ -3772,17 +3788,44 @@ export async function HsDirectLookupPanel({
                           </div>
                         </div>
                       </div>
+                      {candidateGroup.related.length ? (
+                        <div className="border-t border-slate-200 px-3 py-3">
+                          <p className="text-xs font-semibold text-slate-600">같은 소호의 다른 후보</p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {candidateGroup.related.map((relatedCandidate) => (
+                              <Link
+                                className="rounded-md border border-slate-200 bg-white px-2 py-1 font-mono text-xs font-semibold text-blue-700 hover:bg-blue-50"
+                                data-navigation-progress="상세조회"
+                                href={hsLookupHref({
+                                  hskCode: relatedCandidate.hskCode,
+                                  direction: lookupDirection,
+                                  destinationCountry: selectedDestinationCountry,
+                                  originCountry: selectedOriginCountry,
+                                  basisDate: relatedCandidate.basisDate,
+                                  source: "product_search",
+                                  sourceCandidateRank: relatedCandidate.rank,
+                                  sourceProductName: displaySearchQuery
+                                })}
+                                key={relatedCandidate.hskCode}
+                              >
+                                {formatHsCode(relatedCandidate.hskCode)} · {productCandidateScoreLabel(relatedCandidate)}
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
                     </details>
                   </article>
                 );
               })}
-              {additionalProductCandidates.length ? (
+              {additionalProductCandidateGroups.length ? (
                 <details className="rounded-md border border-slate-200 bg-white lg:col-span-2">
                   <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-700">
-                    다른 가능성 {additionalProductCandidates.length}개 더 보기
+                    다른 가능성 {additionalProductCandidateCount}개 더 보기
                   </summary>
                   <div className="grid gap-3 border-t border-slate-200 bg-slate-50 p-3 lg:grid-cols-2">
-                    {additionalProductCandidates.map((candidate) => {
+                    {additionalProductCandidateGroups.map((candidateGroup) => {
+                      const candidate = candidateGroup.representative;
                       const lookup = productCandidateLookupByHsk.get(candidate.hskCode);
                       const hierarchyLines = productCandidateHierarchyLines(candidate, lookup);
                       const routeSummary = productCandidateRouteSummary(candidate, lookup);
@@ -3827,6 +3870,9 @@ export async function HsDirectLookupPanel({
                               <Badge tone={candidate.lookupBasis === "user_hs_hint" ? "info" : candidate.lookupBasis === "ambiguous_abbreviation" ? "warning" : "neutral"}>
                                 {productCandidateLookupBasisLabel(candidate)}
                               </Badge>
+                              {candidateGroup.related.length ? (
+                                <Badge tone="neutral">같은 소호 {candidateGroup.related.length + 1}개 묶음</Badge>
+                              ) : null}
                             </div>
                           </div>
 
@@ -3885,6 +3931,32 @@ export async function HsDirectLookupPanel({
                                   ))}
                                 </div>
                               </div>
+                              {candidateGroup.related.length ? (
+                                <div className="border-t border-slate-200 px-3 py-3">
+                                  <p className="text-xs font-semibold text-slate-600">같은 소호의 다른 후보</p>
+                                  <div className="mt-2 flex flex-wrap gap-2">
+                                    {candidateGroup.related.map((relatedCandidate) => (
+                                      <Link
+                                        className="rounded-md border border-slate-200 bg-white px-2 py-1 font-mono text-xs font-semibold text-blue-700 hover:bg-blue-50"
+                                        data-navigation-progress="상세조회"
+                                        href={hsLookupHref({
+                                          hskCode: relatedCandidate.hskCode,
+                                          direction: lookupDirection,
+                                          destinationCountry: selectedDestinationCountry,
+                                          originCountry: selectedOriginCountry,
+                                          basisDate: relatedCandidate.basisDate,
+                                          source: "product_search",
+                                          sourceCandidateRank: relatedCandidate.rank,
+                                          sourceProductName: displaySearchQuery
+                                        })}
+                                        key={relatedCandidate.hskCode}
+                                      >
+                                        {formatHsCode(relatedCandidate.hskCode)} · {productCandidateScoreLabel(relatedCandidate)}
+                                      </Link>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : null}
                             </div>
                           </details>
                         </article>
