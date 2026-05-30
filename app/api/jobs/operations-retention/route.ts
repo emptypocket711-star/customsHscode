@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServiceRoleClient, hasSupabaseServiceRoleEnv } from "@/lib/supabase/service-role";
-import { cleanupOperationsAlertEvents } from "@/server/operations/operations-retention.service";
+import { cleanupOperationsRetention } from "@/server/operations/operations-retention.service";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,13 +16,13 @@ function isAuthorized(request: NextRequest) {
   return authorization === `Bearer ${secret}` || workerSecret === secret || querySecret === secret;
 }
 
-function parseRetentionDays(request: NextRequest) {
-  const value = request.nextUrl.searchParams.get("retentionDays");
+function parseRetentionDays(request: NextRequest, key: string) {
+  const value = request.nextUrl.searchParams.get(key);
   if (!value) return undefined;
 
   const parsed = Number(value);
   if (!Number.isFinite(parsed) || parsed < 1) {
-    throw new Error("retentionDays must be at least 1.");
+    throw new Error(`${key} must be at least 1.`);
   }
 
   return Math.floor(parsed);
@@ -41,11 +41,16 @@ async function handleRetention(request: NextRequest) {
   }
 
   try {
-    const retentionDays = parseRetentionDays(request);
-    const result = await cleanupOperationsAlertEvents(createSupabaseServiceRoleClient(), { retentionDays });
+    const retentionDays = parseRetentionDays(request, "retentionDays");
+    const operationsAlertRetentionDays = parseRetentionDays(request, "operationsAlertRetentionDays") ?? retentionDays;
+    const backgroundJobHistoryRetentionDays = parseRetentionDays(request, "backgroundJobHistoryRetentionDays") ?? retentionDays;
+    const result = await cleanupOperationsRetention(createSupabaseServiceRoleClient(), {
+      operationsAlertRetentionDays,
+      backgroundJobHistoryRetentionDays
+    });
     return NextResponse.json({
       kind: "operations_retention",
-      operationsAlertEvents: result
+      ...result
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Operations retention cleanup failed.";

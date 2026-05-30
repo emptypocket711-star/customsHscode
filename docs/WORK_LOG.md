@@ -95,6 +95,15 @@
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
   - production 배포 후 `npm run ops:job:operations-retention`을 실행해 200 OK, retentionDays 90, deletedCount 0을 확인했다.
   - production smoke 10개 경로 모두 통과했다.
+- 백그라운드 작업/worker 실행 이력 보존 정책을 추가했다.
+  - `cleanup_background_job_history(retention_days)` RPC를 추가해 오래된 `background_job_runs`와 완료 상태의 `background_jobs`를 삭제한다.
+  - `background_jobs`는 `succeeded`, `canceled`, `dead` 상태만 삭제 대상으로 삼고, `queued`, `running`, `failed` 재시도 대상 작업은 삭제하지 않는다.
+  - 삭제 기준일은 `background_job_runs.created_at`과 `background_jobs`의 `finished_at`, `updated_at`, `created_at` 순서의 fallback 기준이다.
+  - 기본 보존 기간은 90일이며 `BACKGROUND_JOB_HISTORY_RETENTION_DAYS`로 조정할 수 있다.
+  - `/api/jobs/operations-retention`이 운영 알림 이력 정리와 background job history 정리를 함께 실행하도록 확장했다.
+- 운영 반영:
+  - Supabase production DB에 `20260530005000_cleanup_background_job_history.sql` migration을 적용했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
@@ -123,6 +132,12 @@
 - `vercel env run -e production -- npm run health:db`
 - `vercel env run -e production -- npm run ops:job:operations-retention`
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
+- `npm test -- server/operations/operations-retention.service.test.ts`
+- `npm test`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `vercel env run -e production -- npm run health:db`
 - 운영 E2E: 임시 계정 기반 82행 큐 등록 → worker 처리 → 결과 UI/XLSX 버튼 확인
 - `npm test -- server/repositories/background-job.repository.test.ts`
 - `vercel env run -e production -- npm run ops:job:background`
