@@ -319,6 +319,13 @@
 - 운영 이슈 담당 미지정 필터 안내 운영 반영:
   - production 배포 `customs-hscode-k5x6xyh2w-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+- 운영 이슈 결과 요약을 추가했다.
+  - 이전 작업은 담당자 필터 입력에서 `미지정` 조건의 의미를 안내하는 입력 보강이고, 이번 작업은 현재 목록에 실제로 표시되는 운영 이슈 수와 위험 건수를 한눈에 보는 결과 기준 요약 기능이다.
+  - 필터 적용 후 표시 건수, 필터 제외 건수, 미해결, 차단, 주의 건수를 목록 상단에 표시했다.
+  - 결과 요약 metric 계산을 repository helper로 분리하고 단위 테스트로 고정했다.
+- 운영 이슈 결과 요약 운영 반영:
+  - production 배포 `customs-hscode-plvwifxoe-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
