@@ -1562,7 +1562,15 @@ export default async function OperationsHealthPage({
                             <span title={event.issueKey}>{shortOperationsIssueKey(event.issueKey)}</span>
                           </td>
                           <td className="px-5 py-4">
-                            <OperationsIssueStatusForm event={event} />
+                            <OperationsIssueStatusForm
+                              event={event}
+                              triageFocus={isTriageFocus && operationsIssueTriageFocus
+                                ? {
+                                    reasonLabel: operationsIssueTriageFocus.reasonLabel,
+                                    actionLabel: operationsIssueTriageFocus.actionLabel
+                                  }
+                                : null}
+                            />
                           </td>
                         </tr>
                       );

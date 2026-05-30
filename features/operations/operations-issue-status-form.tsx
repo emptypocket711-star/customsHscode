@@ -48,9 +48,13 @@ const initialOperationsIssueStatusActionState: OperationsIssueStatusActionState 
 
 type OperationsIssueStatusFormProps = {
   event: Pick<OperationsIssueEventItem, "id" | "status" | "assignedToLabel" | "operatorNote" | "resolutionReason">;
+  triageFocus?: {
+    reasonLabel: string;
+    actionLabel: string;
+  } | null;
 };
 
-export function OperationsIssueStatusForm({ event }: OperationsIssueStatusFormProps) {
+export function OperationsIssueStatusForm({ event, triageFocus }: OperationsIssueStatusFormProps) {
   const [state, formAction, pending] = useActionState(
     updateOperationsIssueStatusWithStateAction,
     initialOperationsIssueStatusActionState
@@ -65,6 +69,13 @@ export function OperationsIssueStatusForm({ event }: OperationsIssueStatusFormPr
   return (
     <form action={formAction} className="grid min-w-[260px] gap-2">
       <input name="issueId" type="hidden" value={event.id} />
+      {triageFocus ? (
+        <div className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs leading-5 text-amber-900">
+          <p className="font-semibold">우선 확인 대상 · {triageFocus.reasonLabel}</p>
+          <p className="mt-1">{triageFocus.actionLabel}</p>
+          <p className="mt-1 text-amber-800">처리 전 담당자와 메모에 확인 결과를 남깁니다.</p>
+        </div>
+      ) : null}
       <p className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs leading-5 text-slate-600">
         {statusActionHelp(primaryNextStatus)}
       </p>
