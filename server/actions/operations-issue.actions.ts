@@ -1,0 +1,78 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServiceRoleClient } from "@/lib/supabase/service-role";
+import { recordAuditLog } from "@/server/audit/account-audit";
+import { isDeveloperEmail } from "@/server/auth/developer";
+import {
+  updateOperationsIssueStatus,
+  type OperationsIssueStatus
+} from "@/server/repositories/operations-issue.repository";
+
+const operationsIssueStatusSchema = z.object({
+  issueId: z.uuid(),
+  status: z.enum(["open", "resolved", "ignored"])
+});
+
+function stringValue(formData: FormData, key: string) {
+  const value = formData.get(key);
+  return typeof value === "string" ? value : undefined;
+}
+
+async function requireCurrentDeveloper() {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user?.id || !isDeveloperEmail(user.email)) {
+    throw new Error("개발자 계정만 운영 이슈 상태를 변경할 수 있습니다.");
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (profile?.role !== "developer") {
+    throw new Error("개발자 권한 프로필이 필요합니다.");
+  }
+
+  return user;
+}
+
+export async function updateOperationsIssueStatusAction(formData: FormData) {
+  const actor = await requireCurrentDeveloper();
+  const parsed = operationsIssueStatusSchema.parse({
+    issueId: stringValue(formData, "issueId"),
+    status: stringValue(formData, "status")
+  });
+  const admin = createSupabaseServiceRoleClient();
+  const { data: beforeIssue } = await admin
+    .from("operations_issue_events")
+    .select("id,issue_key,status,severity,title,occurrence_count,resolved_at")
+    .eq("id", parsed.issueId)
+    .maybeSingle();
+  const updated = await updateOperationsIssueStatus(admin, {
+    issueId: parsed.issueId,
+    status: parsed.status as OperationsIssueStatus
+  });
+
+  await recordAuditLog({
+    action: "operations_issue_status_update",
+    actorId: actor.id,
+    targetTable: "operations_issue_events",
+    targetId: parsed.issueId,
+    before: beforeIssue,
+    after: {
+      issueKey: updated.issueKey,
+      status: updated.status,
+      resolvedAt: updated.resolvedAt
+    }
+  });
+
+  revalidatePath("/operations/health");
+}

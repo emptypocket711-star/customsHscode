@@ -44,9 +44,11 @@ async function handleRetention(request: NextRequest) {
     const retentionDays = parseRetentionDays(request, "retentionDays");
     const operationsAlertRetentionDays = parseRetentionDays(request, "operationsAlertRetentionDays") ?? retentionDays;
     const backgroundJobHistoryRetentionDays = parseRetentionDays(request, "backgroundJobHistoryRetentionDays") ?? retentionDays;
+    const operationsIssueRetentionDays = parseRetentionDays(request, "operationsIssueRetentionDays") ?? retentionDays;
     const result = await cleanupOperationsRetention(createSupabaseServiceRoleClient(), {
       operationsAlertRetentionDays,
-      backgroundJobHistoryRetentionDays
+      backgroundJobHistoryRetentionDays,
+      operationsIssueRetentionDays
     });
     return NextResponse.json({
       kind: "operations_retention",

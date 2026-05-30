@@ -3,6 +3,7 @@ import { PageHeading } from "@/components/page-heading";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { requireDeveloperRole } from "@/server/auth/role-guard";
+import { updateOperationsIssueStatusAction } from "@/server/actions/operations-issue.actions";
 import {
   getEnvironmentHealthGroups,
   getExternalIntegrationHealthItems,
@@ -461,6 +462,7 @@ export default async function OperationsHealthPage() {
     ? operationsRetentionStatus.operationsAlertEvents.pruneCandidateCount
       + operationsRetentionStatus.backgroundJobHistory.runPruneCandidateCount
       + operationsRetentionStatus.backgroundJobHistory.jobPruneCandidateCount
+      + operationsRetentionStatus.operationsIssueEvents.pruneCandidateCount
     : 0;
   const items = groups.flatMap((group) => group.items);
   const missingRequiredCount = items.filter((item) => item.status === "missing").length;
@@ -709,7 +711,7 @@ export default async function OperationsHealthPage() {
         />
         <CardBody>
           {operationsRetentionStatus ? (
-            <div className="grid gap-3 lg:grid-cols-3">
+            <div className="grid gap-3 lg:grid-cols-4">
               <div className="rounded-lg border border-slate-200 bg-white p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -752,7 +754,21 @@ export default async function OperationsHealthPage() {
                   대기·실행 중·재시도 대기 작업은 정리 대상에서 제외됩니다.
                 </p>
               </div>
-              <p className="text-xs text-slate-500 lg:col-span-3">
+              <div className="rounded-lg border border-slate-200 bg-white p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-slate-950">운영 이슈 이력</p>
+                    <p className="mt-1 text-xs text-slate-500">보존 {operationsRetentionStatus.operationsIssueEvents.retentionDays}일</p>
+                  </div>
+                  <Badge tone={retentionTone(operationsRetentionStatus.operationsIssueEvents.pruneCandidateCount)}>
+                    후보 {operationsRetentionStatus.operationsIssueEvents.pruneCandidateCount}건
+                  </Badge>
+                </div>
+                <p className="mt-3 text-xs leading-5 text-slate-600">
+                  해결·제외 상태만 정리 대상입니다. cutoff: {formatDate(operationsRetentionStatus.operationsIssueEvents.cutoffAt)}
+                </p>
+              </div>
+              <p className="text-xs text-slate-500 lg:col-span-4">
                 최근 확인: {formatDate(operationsRetentionStatus.checkedAt)}. 정리는 `/api/jobs/operations-retention` cron 또는 수동 실행 시 반영됩니다.
               </p>
             </div>
@@ -958,6 +974,7 @@ export default async function OperationsHealthPage() {
                     <th className="px-5 py-3">수신자</th>
                     <th className="px-5 py-3">사유</th>
                     <th className="px-5 py-3">키</th>
+                    <th className="px-5 py-3">처리</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -1047,6 +1064,37 @@ export default async function OperationsHealthPage() {
                       </td>
                       <td className="max-w-[320px] px-5 py-4 text-xs leading-5 text-slate-600">{event.action}</td>
                       <td className="max-w-[280px] truncate px-5 py-4 font-mono text-xs text-slate-500">{event.issueKey}</td>
+                      <td className="px-5 py-4">
+                        <div className="flex flex-wrap gap-2">
+                          {event.status !== "resolved" ? (
+                            <form action={updateOperationsIssueStatusAction}>
+                              <input name="issueId" type="hidden" value={event.id} />
+                              <input name="status" type="hidden" value="resolved" />
+                              <button className="rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 transition hover:bg-emerald-100" type="submit">
+                                해결
+                              </button>
+                            </form>
+                          ) : null}
+                          {event.status !== "ignored" ? (
+                            <form action={updateOperationsIssueStatusAction}>
+                              <input name="issueId" type="hidden" value={event.id} />
+                              <input name="status" type="hidden" value="ignored" />
+                              <button className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100" type="submit">
+                                제외
+                              </button>
+                            </form>
+                          ) : null}
+                          {event.status !== "open" ? (
+                            <form action={updateOperationsIssueStatusAction}>
+                              <input name="issueId" type="hidden" value={event.id} />
+                              <input name="status" type="hidden" value="open" />
+                              <button className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 transition hover:bg-amber-100" type="submit">
+                                다시 열기
+                              </button>
+                            </form>
+                          ) : null}
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

@@ -135,6 +135,11 @@
   - `/api/jobs/operations-issues` 보호 job이 최근 조회 telemetry를 스캔하고 반복 이슈를 `lookup_quality_recurring:*` 키로 upsert한다.
   - `npm run ops:job:operations-issues` 수동 명령과 30분 주기 Vercel Cron을 추가했다.
   - 운영 점검 화면에 `운영 이슈 처리 상태` 섹션을 추가해 반복 이슈가 저장된 뒤 처리 상태와 조치 내용을 볼 수 있게 했다.
+- 운영 이슈 상태 처리와 보존 정책을 추가했다.
+  - 개발자 운영 점검 화면에서 운영 이슈를 `해결`, `제외`, `다시 열기` 처리할 수 있게 했다.
+  - 상태 변경은 server action에서 개발자 권한을 확인한 뒤 service-role update로 수행하고 `audit_logs`에 이전/이후 상태를 기록한다.
+  - `cleanup_operations_issue_events(retention_days)` RPC를 추가해 해결·제외 상태의 오래된 운영 이슈만 정리한다.
+  - `operations-retention` job과 운영 점검 retention 카드에 운영 이슈 보존 기간, cutoff, 정리 후보 건수를 포함했다.
 - 운영 점검 화면에 수동 운영 명령 안내를 추가했다.
   - worker 즉시 실행, 실패 알림 리허설, 운영 이력 정리, 스키마 점검, production smoke 명령을 한 화면에 정리했다.
   - 명령은 `vercel env run -e production -- ...` 형식으로 표시해 secret 값을 화면에 노출하지 않고 Vercel 환경변수에서 주입되도록 했다.
@@ -164,6 +169,7 @@
 
 - `npm test -- server/observability/lookup-telemetry.test.ts`
 - `npm test -- server/observability/lookup-telemetry.test.ts server/repositories/operations-issue.repository.test.ts`
+- `npm test -- server/operations/operations-retention.service.test.ts server/repositories/operations-issue.repository.test.ts`
 - `npm test -- features/hs-batch/input-parser.test.ts server/actions/hs-batch.actions.test.ts`
 - `npm test -- server/actions/hs-batch.actions.test.ts server/repositories/background-job.repository.test.ts server/jobs/hs-batch-lookup-job.handler.test.ts server/jobs/background-worker.service.test.ts`
 - `npm test -- server/repositories/background-job.repository.test.ts server/jobs/hs-batch-lookup-job.handler.test.ts server/actions/hs-batch.actions.test.ts`

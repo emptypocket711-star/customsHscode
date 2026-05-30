@@ -55,6 +55,11 @@ export type UpsertOperationsIssueEventInput = {
   metadata: Record<string, unknown>;
 };
 
+export type UpdateOperationsIssueStatusInput = {
+  issueId: string;
+  status: OperationsIssueStatus;
+};
+
 export type OperationsIssueEventSummary = {
   total: number;
   open: number;
@@ -165,6 +170,28 @@ export async function upsertOperationsIssueEvent(
       ...payload,
       status: "open"
     })
+    .select(operationsIssueEventSelect)
+    .single();
+
+  if (error) throw new Error(error.message);
+  return mapOperationsIssueEvent(data as unknown as OperationsIssueEventRow);
+}
+
+export async function updateOperationsIssueStatus(
+  supabase: SupabaseClient,
+  input: UpdateOperationsIssueStatusInput
+): Promise<OperationsIssueEventItem> {
+  const resolvedAt = input.status === "resolved" || input.status === "ignored"
+    ? new Date().toISOString()
+    : null;
+  const { data, error } = await supabase
+    .from("operations_issue_events")
+    .update({
+      status: input.status,
+      resolved_at: resolvedAt,
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", input.issueId)
     .select(operationsIssueEventSelect)
     .single();
 

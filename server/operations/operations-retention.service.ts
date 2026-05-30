@@ -2,8 +2,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 const defaultOperationsAlertRetentionDays = 90;
 const defaultBackgroundJobHistoryRetentionDays = 90;
+const defaultOperationsIssueRetentionDays = 180;
 const cleanupOperationsAlertEventsRpcName = "cleanup_operations_alert_events";
 const cleanupBackgroundJobHistoryRpcName = "cleanup_background_job_history";
+const cleanupOperationsIssueEventsRpcName = "cleanup_operations_issue_events";
 
 export type OperationsRetentionStatus = {
   checkedAt: string;
@@ -17,6 +19,11 @@ export type OperationsRetentionStatus = {
     cutoffAt: string;
     runPruneCandidateCount: number;
     jobPruneCandidateCount: number;
+  };
+  operationsIssueEvents: {
+    retentionDays: number;
+    cutoffAt: string;
+    pruneCandidateCount: number;
   };
 };
 
@@ -32,6 +39,10 @@ export function getOperationsAlertRetentionDays() {
 
 export function getBackgroundJobHistoryRetentionDays() {
   return positiveIntegerEnv("BACKGROUND_JOB_HISTORY_RETENTION_DAYS", defaultBackgroundJobHistoryRetentionDays);
+}
+
+export function getOperationsIssueRetentionDays() {
+  return positiveIntegerEnv("OPERATIONS_ISSUE_RETENTION_DAYS", defaultOperationsIssueRetentionDays);
 }
 
 export async function cleanupOperationsAlertEvents(
@@ -84,21 +95,43 @@ export async function cleanupBackgroundJobHistory(
   };
 }
 
+export async function cleanupOperationsIssueEvents(
+  supabase: SupabaseClient,
+  input: {
+    retentionDays?: number;
+  } = {}
+) {
+  const retentionDays = input.retentionDays ?? getOperationsIssueRetentionDays();
+  const { data, error } = await supabase.rpc(cleanupOperationsIssueEventsRpcName, {
+    p_retention_days: retentionDays
+  });
+
+  if (error) throw new Error(error.message);
+
+  return {
+    retentionDays,
+    deletedCount: typeof data === "number" ? data : 0
+  };
+}
+
 export async function cleanupOperationsRetention(
   supabase: SupabaseClient,
   input: {
     operationsAlertRetentionDays?: number;
     backgroundJobHistoryRetentionDays?: number;
+    operationsIssueRetentionDays?: number;
   } = {}
 ) {
-  const [operationsAlertEvents, backgroundJobHistory] = await Promise.all([
+  const [operationsAlertEvents, backgroundJobHistory, operationsIssueEvents] = await Promise.all([
     cleanupOperationsAlertEvents(supabase, { retentionDays: input.operationsAlertRetentionDays }),
-    cleanupBackgroundJobHistory(supabase, { retentionDays: input.backgroundJobHistoryRetentionDays })
+    cleanupBackgroundJobHistory(supabase, { retentionDays: input.backgroundJobHistoryRetentionDays }),
+    cleanupOperationsIssueEvents(supabase, { retentionDays: input.operationsIssueRetentionDays })
   ]);
 
   return {
     operationsAlertEvents,
-    backgroundJobHistory
+    backgroundJobHistory,
+    operationsIssueEvents
   };
 }
 
@@ -121,10 +154,12 @@ export async function getOperationsRetentionStatus(
   const now = input.now ?? new Date();
   const operationsAlertRetentionDays = getOperationsAlertRetentionDays();
   const backgroundJobHistoryRetentionDays = getBackgroundJobHistoryRetentionDays();
+  const operationsIssueRetentionDays = getOperationsIssueRetentionDays();
   const operationsAlertCutoffAt = cutoffIso(operationsAlertRetentionDays, now);
   const backgroundJobHistoryCutoffAt = cutoffIso(backgroundJobHistoryRetentionDays, now);
+  const operationsIssueCutoffAt = cutoffIso(operationsIssueRetentionDays, now);
 
-  const [operationsAlertEventCount, backgroundJobRunCount, backgroundJobCount] = await Promise.all([
+  const [operationsAlertEventCount, backgroundJobRunCount, backgroundJobCount, operationsIssueCount] = await Promise.all([
     countRows(supabase
       .from("operations_alert_events")
       .select("id", { count: "exact", head: true })
@@ -137,7 +172,12 @@ export async function getOperationsRetentionStatus(
       .from("background_jobs")
       .select("id", { count: "exact", head: true })
       .in("status", ["succeeded", "canceled", "dead"])
-      .lt("updated_at", backgroundJobHistoryCutoffAt))
+      .lt("updated_at", backgroundJobHistoryCutoffAt)),
+    countRows(supabase
+      .from("operations_issue_events")
+      .select("id", { count: "exact", head: true })
+      .in("status", ["resolved", "ignored"])
+      .lt("updated_at", operationsIssueCutoffAt))
   ]);
 
   return {
@@ -152,6 +192,11 @@ export async function getOperationsRetentionStatus(
       cutoffAt: backgroundJobHistoryCutoffAt,
       runPruneCandidateCount: backgroundJobRunCount,
       jobPruneCandidateCount: backgroundJobCount
+    },
+    operationsIssueEvents: {
+      retentionDays: operationsIssueRetentionDays,
+      cutoffAt: operationsIssueCutoffAt,
+      pruneCandidateCount: operationsIssueCount
     }
   };
 }
