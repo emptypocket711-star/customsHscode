@@ -1629,6 +1629,23 @@ type ExportLookupSource = {
   hs6?: string;
 };
 
+type HsLookupMode = "none" | "hs4_explorer" | "hs6_explorer" | "hsk_detail";
+
+function hsLookupModeForCode(value: string): HsLookupMode {
+  const normalized = normalizeHsInput(value);
+
+  if (!normalized) return "none";
+  if (normalized.length < 6) return "hs4_explorer";
+  if (normalized.length === 6) return "hs6_explorer";
+  return "hsk_detail";
+}
+
+function hsExplorerModeLabel(mode: HsLookupMode) {
+  if (mode === "hs4_explorer") return "HS 4자리 호 탐색";
+  if (mode === "hs6_explorer") return "HS 6자리 소호 탐색";
+  return "HSK 10자리 상세조회";
+}
+
 function FavoriteStatusMessage({ status }: { status?: string }) {
   if (!status) return null;
 
@@ -1727,6 +1744,49 @@ function buildHsPrefixTreeItems(results: Hs6NavigationSource[]): HsPrefixTreeIte
       };
     })
     .sort((a, b) => a.hs4.localeCompare(b.hs4));
+}
+
+function HsPrefixExplorerSummary({
+  activeHs6,
+  hs6Count,
+  mode,
+  normalizedQuery,
+  resultCount
+}: {
+  activeHs6: string;
+  hs6Count: number;
+  mode: HsLookupMode;
+  normalizedQuery: string;
+  resultCount: number;
+}) {
+  const label = hsExplorerModeLabel(mode);
+  const queryLabel = formatHsCode(normalizedQuery);
+
+  return (
+    <div className="grid gap-3 border-b border-slate-200 bg-slate-50 px-3 py-3 text-sm lg:grid-cols-[1fr_1fr_1fr]">
+      <div>
+        <div className="text-xs font-semibold text-slate-500">조회 모드</div>
+        <div className="mt-1 font-semibold text-slate-950">{label}</div>
+      </div>
+      <div>
+        <div className="text-xs font-semibold text-slate-500">입력 코드</div>
+        <div className="mt-1 font-mono font-semibold text-slate-950">{queryLabel}</div>
+      </div>
+      <div>
+        <div className="text-xs font-semibold text-slate-500">표시 범위</div>
+        <div className="mt-1 text-slate-700">
+          {mode === "hs4_explorer"
+            ? `하위 HS6 ${hs6Count}개 / HSK ${resultCount}개`
+            : `선택 HS6 ${formatHsCode(activeHs6)} / HSK ${resultCount}개`}
+        </div>
+      </div>
+      <p className="rounded-md border border-slate-200 bg-white px-3 py-2 leading-6 text-slate-700 lg:col-span-3">
+        {mode === "hs4_explorer"
+          ? "4자리 호는 최종 신고 세번이 아니므로, 하위 6자리 소호와 10자리 HSK를 좁혀 선택하는 탐색 화면으로 표시합니다."
+          : "6자리 소호는 국제 공통 기준입니다. 실제 국내 신고에는 하위 10자리 HSK 선택이 필요하므로 아래 후보 중 실제 품명과 가장 가까운 항목을 선택해 상세조회합니다."}
+      </p>
+    </div>
+  );
 }
 
 function DestinationAdditionalTariffSummary({ rows }: { rows: ExportDestinationAdditionalTariffItem[] }) {
@@ -3420,9 +3480,9 @@ export async function HsDirectLookupPanel({
       hs6: result.hs6
     }));
   const normalizedQuery = normalizeHsInput(parsed?.success ? parsed.data.hskCode : searchQuery);
-  const isHs6Lookup = normalizedQuery.length > 0 && normalizedQuery.length <= 6;
-  const isHsHeadingLookup = normalizedQuery.length > 0 && normalizedQuery.length < 6;
-  const shouldLoadImportDetailData = lookupDirection === "import" && !isHs6Lookup && results.length > 0;
+  const hsLookupMode = hsLookupModeForCode(normalizedQuery);
+  const isHsPrefixExplorer = hsLookupMode === "hs4_explorer" || hsLookupMode === "hs6_explorer";
+  const shouldLoadImportDetailData = lookupDirection === "import" && hsLookupMode === "hsk_detail" && results.length > 0;
   const [
     productCandidateInternalTaxByHsk,
     exportDomesticResults,
@@ -4090,14 +4150,21 @@ export async function HsDirectLookupPanel({
           </div>
         ) : null}
 
-        {lookupDirection === "import" && isHs6Lookup && results.length ? (
+        {lookupDirection === "import" && isHsPrefixExplorer && results.length ? (
           <div className="mt-5 overflow-hidden rounded-md border border-slate-200">
-            <div className="flex flex-wrap items-center justify-between gap-2 bg-blue-700 px-3 py-2 text-sm font-semibold text-white">
-              <span>{formatHsCode(normalizedQuery)} 조회 결과</span>
-              <span className="text-xs font-medium text-blue-100">
-                HS6 {hs6NavigationItems.length}개 / HSK {results.length}개
+            <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-900 px-3 py-2 text-sm font-semibold text-white">
+              <span>{formatHsCode(normalizedQuery)} 하위 HSK 탐색 결과</span>
+              <span className="text-xs font-medium text-slate-200">
+                {hsLookupMode === "hs4_explorer" ? `HS6 ${hs6NavigationItems.length}개 / ` : ""}HSK {results.length}개
               </span>
             </div>
+            <HsPrefixExplorerSummary
+              activeHs6={activeHs6}
+              hs6Count={hs6NavigationItems.length}
+              mode={hsLookupMode}
+              normalizedQuery={normalizedQuery}
+              resultCount={results.length}
+            />
             {lookupHierarchyPath.length ? (
               <div className="grid gap-1 border-b border-slate-200 bg-white px-3 py-2">
                 <div className="text-xs font-semibold text-slate-500">상위 HS CODE</div>
@@ -4136,7 +4203,7 @@ export async function HsDirectLookupPanel({
                       const importTariffs = filterImportTariffsForCountry(result.tariffPreviews, selectedDestinationCountry);
                       const basicRate = importTariffs.find((tariff) => isBasicTariffLabel(displayImportTariffLabel(tariff, selectedDestinationCountry)))?.rateText ?? "-";
                       const preferentialSummary = preferentialTariffSummary(importTariffs, selectedDestinationCountry);
-                      const startsHs6Group = isHsHeadingLookup && result.hs6 !== results[index - 1]?.hs6;
+                      const startsHs6Group = hsLookupMode === "hs4_explorer" && result.hs6 !== results[index - 1]?.hs6;
                       const hs6Count = startsHs6Group ? hs6NavigationCountByCode.get(result.hs6) ?? 0 : 0;
                       const hs6Label = hs6NavigationLabelByCode.get(result.hs6) ?? result.koreanName;
 
@@ -4201,7 +4268,7 @@ export async function HsDirectLookupPanel({
           </div>
         ) : null}
 
-        {lookupDirection === "import" && !isHs6Lookup && results.length ? (
+        {lookupDirection === "import" && !isHsPrefixExplorer && results.length ? (
           <div className="mt-5 grid gap-4">
             {results.map((result) => {
               const countryFilteredTariffs = filterImportTariffsForCountry(result.tariffPreviews, selectedDestinationCountry);
