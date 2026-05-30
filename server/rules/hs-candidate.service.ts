@@ -1118,6 +1118,41 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       });
       return [];
     }
+    const officialAiHintRows = normalization?.candidateHsCodes.length
+      ? await findHsMasterRowsByCodeHintPrefixes(
+        supabase,
+        augmentedInput,
+        normalization.candidateHsCodes
+      ).catch(() => [])
+      : [];
+    const officialAiHintCandidates = officialAiHintRows.length
+      ? rankOfficialHsMasterRows(
+        augmentedInput,
+        normalization,
+        hsMasterSearchTerms(analyzeProductNameInput(augmentedInput), normalization),
+        [],
+        officialAiHintRows
+      )
+      : [];
+    if (officialAiHintCandidates.length && !shouldKeepAiAlternatives) {
+      const candidates = focusHighCertaintySingleRecommendation(pruneByUserHsHints(input, pruneWeakProductRecommendations(officialAiHintCandidates, {
+        keepAmbiguousAlternatives: shouldKeepAiAlternatives
+      })), normalization, { keepAmbiguousAlternatives: shouldKeepAiAlternatives });
+      logLookupTelemetry("product_candidates_recommended", {
+        ...productInputShape(input),
+        route: "hs_product_ai",
+        status: "success",
+        sourceMode: "supabase_gpt_official_prefix",
+        durationMs: Date.now() - startedAt,
+        resultCount: candidates.length,
+        aiHintCount: 0,
+        officialCandidateCount: officialAiHintCandidates.length,
+        fallbackCandidateCount: 0,
+        ...candidateTelemetryShape(candidates),
+        ...productNormalizationTelemetryShape(normalization, { normalizationErrorType, normalizationStatus })
+      });
+      return candidates;
+    }
     const deterministicFastCandidates = !shouldKeepAiAlternatives ? recommendHsCandidates(augmentedInput) : [];
     if (deterministicFastCandidates.length) {
       const officialRows = await findHsMasterRowsByExactCodes(
@@ -1146,22 +1181,6 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
         return candidates;
       }
     }
-    const officialAiHintRows = normalization?.candidateHsCodes.length
-      ? await findHsMasterRowsByCodeHintPrefixes(
-        supabase,
-        augmentedInput,
-        normalization.candidateHsCodes
-      ).catch(() => [])
-      : [];
-    const officialAiHintCandidates = officialAiHintRows.length
-      ? rankOfficialHsMasterRows(
-        augmentedInput,
-        normalization,
-        hsMasterSearchTerms(analyzeProductNameInput(augmentedInput), normalization),
-        [],
-        officialAiHintRows
-      )
-      : [];
     const aiHintCandidates = normalization
       ? recommendAiHsCodeHintCandidates(augmentedInput, normalization, officialAiHintCandidates)
       : [];

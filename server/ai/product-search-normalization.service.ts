@@ -5,7 +5,7 @@ import { redactSensitiveText } from "@/server/ai/redaction";
 import { cachedLookup, lookupCacheKey } from "@/server/cache/lookup-cache";
 import { logLookupTelemetry, productInputShape } from "@/server/observability/lookup-telemetry";
 
-const productSearchNormalizationVersion = "product-search-normalization-v20";
+const productSearchNormalizationVersion = "product-search-normalization-v21";
 
 function productInputText(input: ProductHsRecommendationInput) {
   const hsCodeHints = extractHsCodeHintsFromProductInput(input);
@@ -339,10 +339,10 @@ export async function normalizeProductSearchInput(input: ProductHsRecommendation
           reason: "사용자가 입력값에 함께 제공한 HS CODE 힌트입니다.",
           requiredInfo: ["국내 HSK인지 해외 수입국 세번인지 확인", "품명·용도·재질과 해당 코드 설명의 일치 여부 확인"]
         })),
+        ...contextHints,
         ...primaryCandidateReason,
         ...(strictClarificationWithoutHsBoundary ? [] : normalization.candidateHsCodeReasons),
         ...(needsClarificationFirst ? [] : acronymHints),
-        ...contextHints
       ].filter((item, index, items) => items.findIndex((candidate) => candidate.code === item.code) === index).slice(0, 10);
     const primaryCandidateCode = normalization.primaryCandidate?.code ?? "";
     const prioritizedHsCodes = prioritizePrincipalArticleHsHints({
@@ -351,10 +351,10 @@ export async function normalizeProductSearchInput(input: ProductHsRecommendation
       userProvidedHsCodes,
       candidateHsCodes: [
         ...userProvidedHsCodes,
+        ...contextHints.map((hint) => hint.code),
         ...(primaryCandidateCode ? [primaryCandidateCode] : []),
         ...(strictClarificationWithoutHsBoundary ? [] : normalization.candidateHsCodes),
-        ...(needsClarificationFirst ? [] : acronymHints.map((hint) => hint.code)),
-        ...contextHints.map((hint) => hint.code)
+        ...(needsClarificationFirst ? [] : acronymHints.map((hint) => hint.code))
       ],
       candidateHsCodeReasons
     });
