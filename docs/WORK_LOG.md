@@ -376,6 +376,13 @@
 - 운영 이슈 처리 폼 안내 운영 반영:
   - production 배포 `customs-hscode-ets6uph37-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+- 운영 이슈 처리 버튼 안내를 보강했다.
+  - 이전 작업은 처리 폼 상단과 입력칸 placeholder로 작성할 근거를 안내하는 입력 UX 보강이고, 이번 작업은 해결, 제외, 다시 열기 버튼 자체에 변경될 상태 설명을 붙이는 버튼 조작 피드백 보강이다.
+  - 각 버튼 아래에 `상태를 해결로 변경`, `운영 대상에서 제외`, `미해결 상태로 재전환` 문구를 표시했다.
+  - 저장 데이터와 상태 변경 server action 로직은 바꾸지 않았다.
+- 운영 이슈 처리 버튼 안내 운영 반영:
+  - production 배포 `customs-hscode-af2qyljbr-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
