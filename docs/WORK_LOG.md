@@ -58,6 +58,9 @@
   - `/api/jobs/run`에서 실패 job이 있거나 route-level 오류가 발생하면 `OPERATIONS_ALERT_EMAIL` 또는 `DEVELOPER_ALERT_EMAIL`로 운영자 메일을 보낸다.
   - 알림 본문에는 worker id, 처리 건수, 실패 job id/reason만 포함하고 payload, 문서 원문, invoice 내용은 포함하지 않는다.
   - 운영 점검 화면의 외부 연동 준비 상태에 `운영 실패 알림` 항목을 추가했다.
+- 운영 반영:
+  - Vercel production에 `OPERATIONS_ALERT_EMAIL`을 추가하고 production을 재배포했다.
+  - 재배포 후 `/api/jobs/run` 수동 실행 결과 200 OK, claimed 0건을 확인했다.
 
 검증:
 
