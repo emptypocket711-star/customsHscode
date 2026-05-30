@@ -3522,6 +3522,8 @@ export async function HsDirectLookupPanel({
     basisDate: resolvedBasisDate,
     destinationHsCode
   });
+  const initiallyVisibleProductCandidates = productCandidates.slice(0, 3);
+  const additionalProductCandidates = productCandidates.slice(3);
 
   return (
     <Card>
@@ -3575,11 +3577,12 @@ export async function HsDirectLookupPanel({
               ) : null}
             </div>
             <div className="grid gap-3 bg-slate-50 p-3 lg:grid-cols-2">
-              {productCandidates.map((candidate, index) => {
+              {initiallyVisibleProductCandidates.map((candidate, index) => {
                 const lookup = productCandidateLookupByHsk.get(candidate.hskCode);
                 const hierarchyLines = productCandidateHierarchyLines(candidate, lookup);
                 const routeSummary = productCandidateRouteSummary(candidate, lookup);
                 const branchNotes = productCandidateBranchNotes(candidate);
+                const isPrimaryCandidate = index === 0;
                 const detailHref = hsLookupHref({
                   hskCode: candidate.hskCode,
                   direction: lookupDirection,
@@ -3602,13 +3605,26 @@ export async function HsDirectLookupPanel({
                 });
 
                 return (
-                  <article className="rounded-md border border-slate-200 bg-white p-4" key={candidate.hskCode}>
+                  <article
+                    className={cn(
+                      "rounded-md border bg-white p-4",
+                      isPrimaryCandidate ? "border-blue-300 shadow-sm lg:col-span-2 lg:p-5" : "border-slate-200"
+                    )}
+                    key={candidate.hskCode}
+                  >
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
-                        <div className="text-xs font-semibold text-slate-500">
-                          {index === 0 && productCandidates.length === 1 ? "가장 유력한 HS CODE" : dictionary.product.rank(candidate.rank)}
+                        <div className={cn("text-xs font-semibold", isPrimaryCandidate ? "text-blue-700" : "text-slate-500")}>
+                          {isPrimaryCandidate ? "1순위 추천 HS CODE" : `다른 가능성 ${dictionary.product.rank(candidate.rank)}`}
                         </div>
-                        <Link className="mt-1 block font-mono text-lg font-semibold text-blue-700 underline-offset-2 hover:underline" data-navigation-progress="상세조회" href={detailHref}>
+                        <Link
+                          className={cn(
+                            "mt-1 block font-mono font-semibold text-blue-700 underline-offset-2 hover:underline",
+                            isPrimaryCandidate ? "text-2xl" : "text-lg"
+                          )}
+                          data-navigation-progress="상세조회"
+                          href={detailHref}
+                        >
                           {formatHsCode(candidate.hskCode)}
                         </Link>
                       </div>
@@ -3622,9 +3638,11 @@ export async function HsDirectLookupPanel({
                         <Badge tone={candidate.lookupBasis === "user_hs_hint" ? "info" : candidate.lookupBasis === "ambiguous_abbreviation" ? "warning" : "neutral"}>
                           {productCandidateLookupBasisLabel(candidate)}
                         </Badge>
-                        <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
-                          {productCandidates.length > 1 ? dictionary.product.referenceScore(candidate.confidenceScore) : productCandidateScoreLabel(candidate)}
-                        </span>
+                        {productCandidates.length === 1 ? (
+                          <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
+                            {productCandidateScoreLabel(candidate)}
+                          </span>
+                        ) : null}
                       </div>
                     </div>
 
@@ -3688,6 +3706,123 @@ export async function HsDirectLookupPanel({
                   </article>
                 );
               })}
+              {additionalProductCandidates.length ? (
+                <details className="rounded-md border border-slate-200 bg-white lg:col-span-2">
+                  <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-700">
+                    다른 가능성 {additionalProductCandidates.length}개 더 보기
+                  </summary>
+                  <div className="grid gap-3 border-t border-slate-200 bg-slate-50 p-3 lg:grid-cols-2">
+                    {additionalProductCandidates.map((candidate) => {
+                      const lookup = productCandidateLookupByHsk.get(candidate.hskCode);
+                      const hierarchyLines = productCandidateHierarchyLines(candidate, lookup);
+                      const routeSummary = productCandidateRouteSummary(candidate, lookup);
+                      const branchNotes = productCandidateBranchNotes(candidate);
+                      const detailHref = hsLookupHref({
+                        hskCode: candidate.hskCode,
+                        direction: lookupDirection,
+                        destinationCountry: selectedDestinationCountry,
+                        originCountry: selectedOriginCountry,
+                        basisDate: candidate.basisDate,
+                        source: "product_search",
+                        sourceCandidateRank: candidate.rank,
+                        sourceProductName: searchQuery
+                      });
+                      const hs6Href = hsLookupHref({
+                        hskCode: candidate.hs6,
+                        direction: lookupDirection,
+                        destinationCountry: selectedDestinationCountry,
+                        originCountry: selectedOriginCountry,
+                        basisDate: candidate.basisDate,
+                        source: "product_search",
+                        sourceCandidateRank: candidate.rank,
+                        sourceProductName: searchQuery
+                      });
+
+                      return (
+                        <article className="rounded-md border border-slate-200 bg-white p-4" key={candidate.hskCode}>
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <div>
+                              <div className="text-xs font-semibold text-slate-500">
+                                다른 가능성 {dictionary.product.rank(candidate.rank)}
+                              </div>
+                              <Link className="mt-1 block font-mono text-lg font-semibold text-blue-700 underline-offset-2 hover:underline" data-navigation-progress="상세조회" href={detailHref}>
+                                {formatHsCode(candidate.hskCode)}
+                              </Link>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge tone="info">{productCandidateScoreLabel(candidate)}</Badge>
+                              <Badge tone={normalizeHsInput(candidate.hskCode).length >= 10 ? "success" : "warning"}>
+                                {productCandidateCodeLevelLabel(candidate)}
+                              </Badge>
+                              <Badge tone={candidate.lookupBasis === "user_hs_hint" ? "info" : candidate.lookupBasis === "ambiguous_abbreviation" ? "warning" : "neutral"}>
+                                {productCandidateLookupBasisLabel(candidate)}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          <h3 className="mt-3 text-base font-semibold text-slate-950">{candidate.koreanName}</h3>
+                          <p className="mt-1 text-sm leading-6 text-slate-600">{productCandidateDisplayReason(candidate.reason)}</p>
+
+                          <Link
+                            className="focus-ring mt-4 inline-flex w-full items-center justify-center rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-800"
+                            data-navigation-progress="상세조회"
+                            href={detailHref}
+                          >
+                            {normalizeHsInput(candidate.hskCode).length >= 10 ? "이 코드로 조회" : productCandidateDetailButtonText(candidate)}
+                          </Link>
+
+                          <details className="mt-3 rounded-md border border-slate-200 bg-slate-50">
+                            <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-slate-700">
+                              추천 근거와 갈림 조건 보기
+                            </summary>
+                            <div className="grid gap-3 border-t border-slate-200 p-3 text-sm lg:grid-cols-2">
+                              <div>
+                                <div className="text-xs font-semibold text-blue-900">AI 검토 경로</div>
+                                <ol className="mt-2 grid gap-1 text-xs leading-5 text-blue-950">
+                                  {routeSummary.map((line, stepIndex) => (
+                                    <li className="flex gap-2" key={line}>
+                                      <span className="font-mono font-semibold text-blue-700">{stepIndex + 1}</span>
+                                      <span>{line}</span>
+                                    </li>
+                                  ))}
+                                </ol>
+                                <div className="mt-3 text-xs font-semibold text-slate-500">{dictionary.product.evidence}</div>
+                                <p className="mt-1 leading-6 text-slate-700">{productCandidateEvidenceText(candidate)}</p>
+                              </div>
+
+                              <div>
+                                <div className="text-xs font-semibold text-amber-900">갈림 조건</div>
+                                {branchNotes.length ? (
+                                  <ul className="mt-1 grid gap-1 leading-6 text-slate-700">
+                                    {branchNotes.map((question) => (
+                                      <li key={question}>- {question}</li>
+                                    ))}
+                                  </ul>
+                                ) : (
+                                  <p className="mt-1 leading-6 text-slate-700">
+                                    입력 정보 기준으로 우선 후보를 표시했습니다. 실제 사양과 용도 확인 후 하위 세번을 검토하세요.
+                                  </p>
+                                )}
+                                <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+                                  <span className="text-xs font-semibold text-slate-500">{dictionary.product.hs6}</span>
+                                  <Link className="font-mono font-semibold text-blue-700 underline-offset-2 hover:underline" data-navigation-progress="상세조회" href={hs6Href}>
+                                    {formatHsCode(candidate.hs6)}
+                                  </Link>
+                                </div>
+                                <div className="mt-2 grid gap-1 text-xs leading-5 text-slate-600">
+                                  {hierarchyLines.map((line) => (
+                                    <div key={line}>{line}</div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </details>
+                        </article>
+                      );
+                    })}
+                  </div>
+                </details>
+              ) : null}
             </div>
           </div>
         ) : null}
