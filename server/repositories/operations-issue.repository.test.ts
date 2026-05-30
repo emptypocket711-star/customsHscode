@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   filterOperationsIssueEvents,
   getOpenOperationsIssueAgeStatus,
+  getOperationsIssueStatusChangeSummary,
   sortOperationsIssueEventsForTriage,
   summarizeOpenOperationsIssuesByOwner,
   summarizeOperationsIssueEvents,
@@ -239,5 +240,28 @@ describe("operations issue repository helpers", () => {
       "resolved-recent",
       "ignored"
     ]);
+  });
+
+  it("summarizes operations issue status change attribution without exposing full actor ids", () => {
+    expect(getOperationsIssueStatusChangeSummary(issue({
+      statusUpdatedAt: "2026-05-30T04:00:00.000Z",
+      statusUpdatedBy: "7a9f1c20-1234-5678-9012-abcdefabcdef"
+    }))).toEqual({
+      changedAt: "2026-05-30T04:00:00.000Z",
+      changedByLabel: "운영자 7a9f1c20"
+    });
+
+    expect(getOperationsIssueStatusChangeSummary(issue({
+      statusUpdatedAt: "2026-05-30T04:00:00.000Z",
+      statusUpdatedBy: null
+    }))).toEqual({
+      changedAt: "2026-05-30T04:00:00.000Z",
+      changedByLabel: "변경자 기록 없음"
+    });
+
+    expect(getOperationsIssueStatusChangeSummary(issue({
+      statusUpdatedAt: null,
+      statusUpdatedBy: "7a9f1c20-1234-5678-9012-abcdefabcdef"
+    }))).toBeNull();
   });
 });

@@ -107,6 +107,11 @@ export type OperationsIssueAgeStatus = {
   label: string;
 };
 
+export type OperationsIssueStatusChangeSummary = {
+  changedAt: string;
+  changedByLabel: string;
+};
+
 const operationsIssueStatusPriority: Record<OperationsIssueStatus, number> = {
   open: 0,
   resolved: 1,
@@ -376,6 +381,20 @@ export function sortOperationsIssueEventsForTriage(
 
     return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
   });
+}
+
+export function getOperationsIssueStatusChangeSummary(
+  event: OperationsIssueEventItem
+): OperationsIssueStatusChangeSummary | null {
+  if (!event.statusUpdatedAt) return null;
+
+  const actorId = event.statusUpdatedBy?.trim();
+  const changedByLabel = actorId ? `운영자 ${actorId.slice(0, 8)}` : "변경자 기록 없음";
+
+  return {
+    changedAt: event.statusUpdatedAt,
+    changedByLabel
+  };
 }
 
 export function summarizeOpenOperationsIssuesByOwner(

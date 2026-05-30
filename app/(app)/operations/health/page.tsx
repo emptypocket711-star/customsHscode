@@ -29,6 +29,7 @@ import {
 import {
   filterOperationsIssueEvents,
   getOpenOperationsIssueAgeStatus,
+  getOperationsIssueStatusChangeSummary,
   listRecentOperationsIssueEvents,
   sortOperationsIssueEventsForTriage,
   summarizeOpenOperationsIssuesByOwner,
@@ -1230,6 +1231,7 @@ export default async function OperationsHealthPage({
                   {filteredOperationsIssueEvents.map((event: OperationsIssueEventItem) => {
                       const drilldown = operationsIssueDrilldowns.get(event.id);
                       const ageStatus = operationsIssueAgeStatuses.get(event.id);
+                      const statusChangeSummary = getOperationsIssueStatusChangeSummary(event);
 
                       return (
                         <tr key={event.id} className={event.status === "open" ? "bg-amber-50/45" : undefined}>
@@ -1289,9 +1291,15 @@ export default async function OperationsHealthPage({
                               <span className="font-semibold text-slate-500">처리 사유</span>
                               <span className="ml-2 text-slate-700">{event.resolutionReason || "-"}</span>
                             </p>
-                            <p className="mt-1 text-slate-500">
-                              상태 변경 {event.statusUpdatedAt ? formatDate(event.statusUpdatedAt) : "-"}
-                            </p>
+                            {statusChangeSummary ? (
+                              <p className="mt-2 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-slate-500">
+                                상태 변경 {formatDate(statusChangeSummary.changedAt)}
+                                <br />
+                                {statusChangeSummary.changedByLabel}
+                              </p>
+                            ) : (
+                              <p className="mt-1 text-slate-500">상태 변경 -</p>
+                            )}
                           </td>
                           <td className="max-w-[280px] truncate px-5 py-4 font-mono text-xs text-slate-500">{event.issueKey}</td>
                           <td className="px-5 py-4">
