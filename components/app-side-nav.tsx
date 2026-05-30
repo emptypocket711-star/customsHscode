@@ -6,7 +6,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Database,
-  FileSearch,
   FileSpreadsheet,
   Globe2,
   LayoutDashboard,
@@ -46,8 +45,7 @@ const operationNavItems: NavItem[] = [
   { href: "/operations/users", labelKey: "users", icon: Users },
   { href: "/operations/notices", labelKey: "notices", icon: Megaphone },
   { href: "/operations/health", labelKey: "health", icon: ShieldCheck },
-  { href: "/legal-updates", labelKey: "legalUpdates", icon: Database },
-  { href: "/staff/review", labelKey: "staffReview", icon: FileSearch }
+  { href: "/legal-updates", labelKey: "legalUpdates", icon: Database }
 ];
 
 function isActivePath(pathname: string, href: string) {

@@ -16,8 +16,10 @@ describe("billing service", () => {
 
   it("does not describe paid reports as legal confirmation", () => {
     const dashboard = getBillingDashboard();
+    const policyText = dashboard.policyNotes.join(" ");
 
-    expect(dashboard.policyNotes.join(" ")).toContain("우회하지 않습니다");
-    expect(dashboard.policyNotes.join(" ")).not.toContain("보장");
+    expect(policyText).toContain("예비 조회");
+    expect(policyText).not.toContain("보장");
+    expect(policyText).not.toContain("검토 크레딧");
   });
 });

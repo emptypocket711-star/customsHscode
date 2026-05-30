@@ -13,10 +13,8 @@ export type BillingDashboard = {
   usage: {
     caseUsagePercent: number;
     reportCreditUsagePercent: number;
-    staffReviewUsagePercent: number;
     remainingCases: number;
     remainingReportCredits: number;
-    remainingStaffReviewCredits: number;
   };
   policyNotes: string[];
 };
@@ -41,14 +39,12 @@ export function getBillingDashboard(): BillingDashboard {
     usage: {
       caseUsagePercent: percent(mockCompanySubscription.usedCases, currentPlan.caseLimit),
       reportCreditUsagePercent: percent(mockCompanySubscription.usedReportCredits, currentPlan.reportCredits),
-      staffReviewUsagePercent: percent(mockCompanySubscription.usedStaffReviewCredits, currentPlan.staffReviewCredits),
       remainingCases: Math.max(0, currentPlan.caseLimit - mockCompanySubscription.usedCases),
-      remainingReportCredits: Math.max(0, currentPlan.reportCredits - mockCompanySubscription.usedReportCredits),
-      remainingStaffReviewCredits: Math.max(0, currentPlan.staffReviewCredits - mockCompanySubscription.usedStaffReviewCredits)
+      remainingReportCredits: Math.max(0, currentPlan.reportCredits - mockCompanySubscription.usedReportCredits)
     },
     policyNotes: [
-      "리포트 크레딧은 source-locked report 생성에 사용되며 담당자 검토 상태를 우회하지 않습니다.",
-      "staff review credit은 담당자 승인 워크플로를 추적하기 위한 과금 단위이며 법적 확정을 의미하지 않습니다.",
+      "리포트 크레딧은 예비 요약과 출처 잠금 미리보기 생성에 사용하는 사용량 단위입니다.",
+      "요금제는 HS CODE 확정이나 전문가 검토를 포함하지 않으며, 결과는 셀프서브 예비 조회로 제공됩니다.",
       "케이스 한도 초과 시 신규 예비진단 요청 생성 전에 플랜 변경 또는 크레딧 충전이 필요합니다."
     ]
   };

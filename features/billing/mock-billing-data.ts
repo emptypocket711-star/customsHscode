@@ -4,7 +4,6 @@ export type BillingPlan = {
   monthlyPriceKrw: number;
   caseLimit: number;
   reportCredits: number;
-  staffReviewCredits: number;
   features: string[];
   recommendedFor: string;
 };
@@ -18,7 +17,6 @@ export type CompanySubscription = {
   currentPeriodEnd: string;
   usedCases: number;
   usedReportCredits: number;
-  usedStaffReviewCredits: number;
 };
 
 export type CheckoutIntent = {
@@ -36,8 +34,7 @@ export const mockBillingPlans: BillingPlan[] = [
     monthlyPriceKrw: 99000,
     caseLimit: 30,
     reportCredits: 10,
-    staffReviewCredits: 3,
-    features: ["HS CODE 직접조회", "품명 기반 HS 후보", "수입/수출 예비진단", "source-locked report preview"],
+    features: ["HS CODE 직접조회", "품명 기반 HS 후보", "수입/수출 예비진단", "업체 안내문 복사"],
     recommendedFor: "소규모 수입업체 또는 해외구매대행"
   },
   {
@@ -46,8 +43,7 @@ export const mockBillingPlans: BillingPlan[] = [
     monthlyPriceKrw: 299000,
     caseLimit: 120,
     reportCredits: 50,
-    staffReviewCredits: 15,
-    features: ["선적서류 진단", "리포트 source lock", "법령 변경 영향 알림", "담당자 검토 큐"],
+    features: ["HS CODE 일괄 조회", "XLSX 결과 다운로드", "업체 전달용 보완 요청문", "적하목록 감시"],
     recommendedFor: "제조업 무역팀 또는 중소 수출입 업체"
   },
   {
@@ -56,8 +52,7 @@ export const mockBillingPlans: BillingPlan[] = [
     monthlyPriceKrw: 790000,
     caseLimit: 500,
     reportCredits: 250,
-    staffReviewCredits: 80,
-    features: ["다중 고객사 케이스", "대량 문서 진단", "검토 승인 워크플로", "감사 로그"],
+    features: ["다중 사용자", "대량 일괄 조회", "고객사별 반복 품목 관리", "운영 로그"],
     recommendedFor: "관세사무소와 물류/포워딩 팀"
   }
 ];
@@ -70,8 +65,7 @@ export const mockCompanySubscription: CompanySubscription = {
   currentPeriodStart: "2026-05-01",
   currentPeriodEnd: "2026-05-31",
   usedCases: 47,
-  usedReportCredits: 18,
-  usedStaffReviewCredits: 4
+  usedReportCredits: 18
 };
 
 export const mockCheckoutIntents: CheckoutIntent[] = [

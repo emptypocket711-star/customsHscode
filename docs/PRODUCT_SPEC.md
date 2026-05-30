@@ -47,6 +47,7 @@ User uploads documents and app extracts data.
 
 The customer-facing integrated lookup screen is informational and self-service. It should not present staff review workflow, advisory wording, or source-reference explanations as the primary UX.
 
+- HS confirmation requests, paid staff review credits, and review monetization are dormant internal capabilities until a customs-office review partner and pricing policy are defined.
 - HS6/HSK hierarchy
 - Korean and English item names
 - quantity and weight units

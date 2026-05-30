@@ -55,7 +55,7 @@ export async function createHsSearchRequestAction(
 
     return {
       status: "success",
-      message: "HS 예비진단 요청이 생성되었습니다. 담당자 검토 후 결과가 확정됩니다.",
+      message: "HS 예비진단 요청이 생성되었습니다. 결과는 출처 기준의 예비 조회로 제공되며 HSK 확정 전 재확인이 필요합니다.",
       requestId
     };
   } catch (error) {

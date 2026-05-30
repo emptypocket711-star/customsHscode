@@ -185,6 +185,7 @@
    - 기업회원
    - 관세사무소/포워딩용 다중 사용자
    - 개발자/관리자 권한
+   - HS 확정 요청, 담당자 검토 크레딧, 검토 유료화는 협업 관세사무소와 가격 정책이 정해질 때까지 고객 화면에서 숨김
 3. 운영 로그 기반 품질 개선
    - 무결과 검색어
    - GPT 실패 로그
@@ -290,7 +291,7 @@
 - GPT product-name normalization returns provisional HS4/HS6/HSK lookup hints first, then official HS/tariff/requirement data is used for detail expansion and downstream checks
 - invoice HS code conflict check against product description
 - redacted prompt/audit logging without confidential document contents
-- staff-review handoff for user-selected HS confirmation requests
+- staff-review handoff remains dormant until a review partner and pricing policy exist
 
 ## Launch Backlog
 

@@ -33,7 +33,7 @@ export function BillingDashboard() {
       <Card>
         <CardHeader
           title="현재 구독"
-          description="케이스, 리포트, 담당자 검토 크레딧 사용량을 표시합니다. 결제 상태는 법률 판단 상태와 분리됩니다."
+          description="케이스, 리포트 크레딧, 일괄 조회 사용량을 표시합니다. 결제 상태는 예비진단 결과와 분리됩니다."
           action={<Badge tone="info">{dashboard.subscription.status}</Badge>}
         />
         <CardBody>
@@ -65,11 +65,6 @@ export function BillingDashboard() {
                 label="리포트 크레딧"
                 value={dashboard.usage.reportCreditUsagePercent}
               />
-              <UsageBar
-                detail={`${dashboard.subscription.usedStaffReviewCredits}/${dashboard.currentPlan.staffReviewCredits}`}
-                label="담당자 검토 크레딧"
-                value={dashboard.usage.staffReviewUsagePercent}
-              />
             </div>
           </div>
         </CardBody>
@@ -88,7 +83,6 @@ export function BillingDashboard() {
               <dl className="mt-4 grid gap-2 text-sm">
                 <div className="flex justify-between gap-3"><dt className="text-slate-500">케이스</dt><dd className="font-medium">{plan.caseLimit}</dd></div>
                 <div className="flex justify-between gap-3"><dt className="text-slate-500">리포트</dt><dd className="font-medium">{plan.reportCredits}</dd></div>
-                <div className="flex justify-between gap-3"><dt className="text-slate-500">검토</dt><dd className="font-medium">{plan.staffReviewCredits}</dd></div>
               </dl>
               <ul className="mt-4 grid gap-2">
                 {plan.features.map((feature) => (
