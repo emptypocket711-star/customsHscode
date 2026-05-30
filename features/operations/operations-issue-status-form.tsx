@@ -28,6 +28,12 @@ function statusButtonClassName(status: OperationsIssueStatus) {
   return "rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60";
 }
 
+function statusActionHelp(status: OperationsIssueStatus) {
+  if (status === "resolved") return "해결 처리 전 원인, 조치, 재발 방지 여부를 메모와 처리 사유에 남깁니다.";
+  if (status === "ignored") return "제외 처리 전 운영 대상에서 제외하는 근거를 처리 사유에 남깁니다.";
+  return "다시 열기 전 재확인 사유와 다음 담당 조치를 메모에 남깁니다.";
+}
+
 const initialOperationsIssueStatusActionState: OperationsIssueStatusActionState = {
   status: "idle",
   message: null
@@ -47,10 +53,14 @@ export function OperationsIssueStatusForm({ event }: OperationsIssueStatusFormPr
     event.status !== "ignored" ? "ignored" : null,
     event.status !== "open" ? "open" : null
   ].filter((status): status is OperationsIssueStatus => Boolean(status));
+  const primaryNextStatus = nextStatuses[0] ?? "resolved";
 
   return (
     <form action={formAction} className="grid min-w-[260px] gap-2">
       <input name="issueId" type="hidden" value={event.id} />
+      <p className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs leading-5 text-slate-600">
+        {statusActionHelp(primaryNextStatus)}
+      </p>
       <label className="grid gap-1 text-xs font-semibold text-slate-600">
         담당자
         <input
@@ -59,8 +69,9 @@ export function OperationsIssueStatusForm({ event }: OperationsIssueStatusFormPr
           disabled={pending}
           maxLength={120}
           name="assignedToLabel"
-          placeholder="예: 운영 담당자"
+          placeholder="예: 김운영, 플랫폼 운영"
         />
+        <span className="font-normal text-slate-500">미입력 시 담당 미지정 이슈로 남습니다.</span>
       </label>
       <label className="grid gap-1 text-xs font-semibold text-slate-600">
         메모
@@ -70,7 +81,7 @@ export function OperationsIssueStatusForm({ event }: OperationsIssueStatusFormPr
           disabled={pending}
           maxLength={1000}
           name="operatorNote"
-          placeholder="확인한 원인 또는 후속 작업"
+          placeholder="확인한 원인, 후속 작업, 담당자 인계 내용을 기록"
         />
       </label>
       <label className="grid gap-1 text-xs font-semibold text-slate-600">
@@ -81,7 +92,7 @@ export function OperationsIssueStatusForm({ event }: OperationsIssueStatusFormPr
           disabled={pending}
           maxLength={1000}
           name="resolutionReason"
-          placeholder="해결·제외·재오픈 판단 근거"
+          placeholder="해결, 제외, 다시 열기 판단 근거"
         />
       </label>
       <div className="flex flex-wrap gap-2">
