@@ -3631,59 +3631,6 @@ export async function HsDirectLookupPanel({
                     <h3 className="mt-3 text-base font-semibold text-slate-950">{candidate.koreanName}</h3>
                     <p className="mt-1 text-sm leading-6 text-slate-600">{productCandidateDisplayReason(candidate.reason)}</p>
 
-                    <div className="mt-3 grid gap-3 rounded-md border border-blue-100 bg-blue-50 p-3">
-                      <div>
-                        <div className="text-xs font-semibold text-blue-900">AI 검토 경로</div>
-                        <ol className="mt-2 grid gap-1 text-xs leading-5 text-blue-950">
-                          {routeSummary.map((line, stepIndex) => (
-                            <li className="flex gap-2" key={line}>
-                              <span className="font-mono font-semibold text-blue-700">{stepIndex + 1}</span>
-                              <span>{line}</span>
-                            </li>
-                          ))}
-                        </ol>
-                      </div>
-                      <div>
-                        <div className="text-xs font-semibold text-blue-900">선택 후 조회</div>
-                        <p className="mt-1 text-xs leading-5 text-blue-950">
-                          이 HS CODE를 선택하면 기준일 {candidate.basisDate}의 관세율, FTA, 수입요건, 원산지표시 정보를 조회합니다.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 grid gap-3 text-sm lg:grid-cols-2">
-                      <div className="rounded-md border border-slate-100 bg-slate-50 p-3">
-                        <div className="text-xs font-semibold text-slate-500">{dictionary.product.evidence}</div>
-                        <p className="mt-1 leading-6 text-slate-700">{productCandidateEvidenceText(candidate)}</p>
-                        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-                          <span className="text-xs font-semibold text-slate-500">{dictionary.product.hs6}</span>
-                          <Link className="font-mono font-semibold text-blue-700 underline-offset-2 hover:underline" data-navigation-progress="상세조회" href={hs6Href}>
-                            {formatHsCode(candidate.hs6)}
-                          </Link>
-                        </div>
-                        <div className="mt-2 grid gap-1 text-xs leading-5 text-slate-600">
-                          {hierarchyLines.map((line) => (
-                            <div key={line}>{line}</div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="rounded-md border border-amber-100 bg-amber-50 p-3">
-                        <div className="text-xs font-semibold text-amber-900">갈림 조건</div>
-                        {branchNotes.length ? (
-                          <ul className="mt-1 grid gap-1 leading-6 text-slate-700">
-                            {branchNotes.map((question) => (
-                              <li key={question}>- {question}</li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="mt-1 leading-6 text-slate-700">
-                            입력 정보 기준으로 우선 후보를 표시했습니다. 실제 사양과 용도 확인 후 하위 세번을 검토하세요.
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
                     <Link
                       className="focus-ring mt-4 inline-flex w-full items-center justify-center rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-800"
                       data-navigation-progress="상세조회"
@@ -3691,6 +3638,53 @@ export async function HsDirectLookupPanel({
                     >
                       {normalizeHsInput(candidate.hskCode).length >= 10 ? "이 코드로 조회" : productCandidateDetailButtonText(candidate)}
                     </Link>
+
+                    <details className="mt-3 rounded-md border border-slate-200 bg-slate-50">
+                      <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-slate-700">
+                        추천 근거와 갈림 조건 보기
+                      </summary>
+                      <div className="grid gap-3 border-t border-slate-200 p-3 text-sm lg:grid-cols-2">
+                        <div>
+                          <div className="text-xs font-semibold text-blue-900">AI 검토 경로</div>
+                          <ol className="mt-2 grid gap-1 text-xs leading-5 text-blue-950">
+                            {routeSummary.map((line, stepIndex) => (
+                              <li className="flex gap-2" key={line}>
+                                <span className="font-mono font-semibold text-blue-700">{stepIndex + 1}</span>
+                                <span>{line}</span>
+                              </li>
+                            ))}
+                          </ol>
+                          <div className="mt-3 text-xs font-semibold text-slate-500">{dictionary.product.evidence}</div>
+                          <p className="mt-1 leading-6 text-slate-700">{productCandidateEvidenceText(candidate)}</p>
+                        </div>
+
+                        <div>
+                          <div className="text-xs font-semibold text-amber-900">갈림 조건</div>
+                          {branchNotes.length ? (
+                            <ul className="mt-1 grid gap-1 leading-6 text-slate-700">
+                              {branchNotes.map((question) => (
+                                <li key={question}>- {question}</li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="mt-1 leading-6 text-slate-700">
+                              입력 정보 기준으로 우선 후보를 표시했습니다. 실제 사양과 용도 확인 후 하위 세번을 검토하세요.
+                            </p>
+                          )}
+                          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+                            <span className="text-xs font-semibold text-slate-500">{dictionary.product.hs6}</span>
+                            <Link className="font-mono font-semibold text-blue-700 underline-offset-2 hover:underline" data-navigation-progress="상세조회" href={hs6Href}>
+                              {formatHsCode(candidate.hs6)}
+                            </Link>
+                          </div>
+                          <div className="mt-2 grid gap-1 text-xs leading-5 text-slate-600">
+                            {hierarchyLines.map((line) => (
+                              <div key={line}>{line}</div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </details>
                   </article>
                 );
               })}
