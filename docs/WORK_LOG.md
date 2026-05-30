@@ -470,6 +470,14 @@
 - 운영 이슈 목록 행 스캔성 운영 반영:
   - production 배포 `customs-hscode-q9ar8m2bs-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` alias 연결과 production smoke 10개 경로 통과를 확인했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+- 운영 이슈 상단 의사결정 흐름을 정리했다.
+  - 이전 작업은 목록 행 내부에서 상태, 반복, 발생 시각, 다음 조치, 담당 정보, 키를 빠르게 구분하도록 한 행 스캔성 정리이고, 이번 작업은 목록 상단에서 우선 확인, 담당 분배, 목록 좁히기, 현재 목록 기준 순서로 처리 대상을 고르게 하는 의사결정 흐름 정리다.
+  - 운영 판단 흐름 요약을 추가해 우선 확인 대상, 담당 분배 상태, 현재 표시 건수와 필터 적용 여부를 먼저 보이게 했다.
+  - 담당자별 미해결 요약, 빠른 필터, 현재 목록 기준 제목을 단계형 문구로 정리했다.
+  - 저장 데이터, RLS, 상태 변경 권한 구조는 바꾸지 않았다.
+- 운영 이슈 상단 의사결정 흐름 운영 반영:
+  - production 배포 `customs-hscode-ct5me5fri-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` alias 연결과 production smoke 10개 경로 통과를 확인했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
