@@ -1467,11 +1467,24 @@ export default async function OperationsHealthPage({
                       const drilldown = operationsIssueDrilldowns.get(event.id);
                       const ageStatus = operationsIssueAgeStatuses.get(event.id);
                       const statusChangeSummary = getOperationsIssueStatusChangeSummary(event);
+                      const isTriageFocus = operationsIssueTriageFocus?.eventId === event.id;
 
                       return (
-                        <tr key={event.id} className={event.status === "open" ? "bg-amber-50/45" : undefined}>
+                        <tr
+                          key={event.id}
+                          className={isTriageFocus
+                            ? "border-l-4 border-amber-400 bg-amber-100/70"
+                            : event.status === "open"
+                              ? "bg-amber-50/45"
+                              : undefined}
+                        >
                           <td className="px-5 py-4">
                             <Badge tone={operationsIssueStatusTone(event.status)}>{operationsIssueStatusLabel(event.status)}</Badge>
+                            {isTriageFocus ? (
+                              <p className="mt-2">
+                                <Badge tone="warning">우선 확인</Badge>
+                              </p>
+                            ) : null}
                             <p className="mt-2 text-xs font-semibold text-slate-500">{operationsIssueSeverityLabel(event.severity)}</p>
                             {ageStatus ? (
                               <p className="mt-2">
@@ -1480,6 +1493,11 @@ export default async function OperationsHealthPage({
                             ) : null}
                           </td>
                           <td className="max-w-[420px] px-5 py-4">
+                            {isTriageFocus ? (
+                              <p className="mb-2 rounded-md border border-amber-200 bg-white/80 px-2 py-1 text-xs font-semibold text-amber-900">
+                                상단 우선 확인 대상 · {operationsIssueTriageFocus.reasonLabel}
+                              </p>
+                            ) : null}
                             <p className="break-words font-semibold text-slate-950">{event.title}</p>
                             <p className="mt-1 break-words text-xs leading-5 text-slate-600">{event.summary}</p>
                             {drilldown ? (
