@@ -77,6 +77,55 @@ export type BackgroundJobOperationsSummary = {
   dead: number;
 };
 
+export type BackgroundJobRunRecordInput = {
+  workerId: string;
+  route?: string;
+  status: "succeeded" | "failed";
+  claimedCount: number;
+  succeededCount: number;
+  failedCount: number;
+  durationMs: number;
+  errorMessage?: string | null;
+  result?: Record<string, unknown>;
+};
+
+export type BackgroundJobRunItem = {
+  id: string;
+  workerId: string;
+  route: string;
+  status: "succeeded" | "failed";
+  claimedCount: number;
+  succeededCount: number;
+  failedCount: number;
+  durationMs: number;
+  errorMessage: string | null;
+  createdAt: string;
+};
+
+type BackgroundJobRunRow = {
+  id: string;
+  worker_id: string;
+  route: string;
+  status: "succeeded" | "failed";
+  claimed_count: number;
+  succeeded_count: number;
+  failed_count: number;
+  duration_ms: number;
+  error_message: string | null;
+  created_at: string;
+};
+
+export type BackgroundJobRunSummary = {
+  total: number;
+  succeededRuns: number;
+  failedRuns: number;
+  claimedJobs: number;
+  succeededJobs: number;
+  failedJobs: number;
+  latestRunAt: string | null;
+  latestStatus: "succeeded" | "failed" | null;
+};
+
 export type EnqueueBackgroundJobInput = {
   companyId: string;
   createdBy: string;
@@ -344,6 +393,56 @@ export async function listRecentBackgroundJobOperations(
   return ((data ?? []) as BackgroundJobOperationsRow[]).map(mapBackgroundJobOperationsRow);
 }
 
+function mapBackgroundJobRunRow(row: BackgroundJobRunRow): BackgroundJobRunItem {
+  return {
+    id: row.id,
+    workerId: row.worker_id,
+    route: row.route,
+    status: row.status,
+    claimedCount: row.claimed_count,
+    succeededCount: row.succeeded_count,
+    failedCount: row.failed_count,
+    durationMs: row.duration_ms,
+    errorMessage: row.error_message,
+    createdAt: row.created_at
+  };
+}
+
+export async function recordBackgroundJobRun(
+  supabase: SupabaseClient,
+  input: BackgroundJobRunRecordInput
+) {
+  const { error } = await supabase
+    .from("background_job_runs")
+    .insert({
+      worker_id: input.workerId,
+      route: input.route ?? "/api/jobs/run",
+      status: input.status,
+      claimed_count: input.claimedCount,
+      succeeded_count: input.succeededCount,
+      failed_count: input.failedCount,
+      duration_ms: input.durationMs,
+      error_message: input.errorMessage ? input.errorMessage.slice(0, 2000) : null,
+      result: input.result ?? {}
+    });
+
+  if (error) throw new Error(error.message);
+}
+
+export async function listRecentBackgroundJobRuns(
+  supabase: SupabaseClient,
+  limit = 20
+): Promise<BackgroundJobRunItem[]> {
+  const { data, error } = await supabase
+    .from("background_job_runs")
+    .select("id,worker_id,route,status,claimed_count,succeeded_count,failed_count,duration_ms,error_message,created_at")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as BackgroundJobRunRow[]).map(mapBackgroundJobRunRow);
+}
+
 export async function listRecentHsBatchLookupJobs(
   supabase: SupabaseClient,
   limit = 10
@@ -381,5 +480,30 @@ export function summarizeBackgroundJobOperations(jobs: BackgroundJobOperationsIt
     retryWaiting: 0,
     failed: 0,
     dead: 0
+  });
+}
+
+export function summarizeBackgroundJobRuns(runs: BackgroundJobRunItem[]): BackgroundJobRunSummary {
+  return runs.reduce<BackgroundJobRunSummary>((summary, run, index) => {
+    summary.total += 1;
+    summary.claimedJobs += run.claimedCount;
+    summary.succeededJobs += run.succeededCount;
+    summary.failedJobs += run.failedCount;
+    if (run.status === "succeeded") summary.succeededRuns += 1;
+    if (run.status === "failed") summary.failedRuns += 1;
+    if (index === 0) {
+      summary.latestRunAt = run.createdAt;
+      summary.latestStatus = run.status;
+    }
+    return summary;
+  }, {
+    total: 0,
+    succeededRuns: 0,
+    failedRuns: 0,
+    claimedJobs: 0,
+    succeededJobs: 0,
+    failedJobs: 0,
+    latestRunAt: null,
+    latestStatus: null
   });
 }

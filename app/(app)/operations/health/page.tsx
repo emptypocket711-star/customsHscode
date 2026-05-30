@@ -11,8 +11,11 @@ import {
 import { getProductionSchemaHealthReport } from "@/server/operations/schema-health.service";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import {
+  listRecentBackgroundJobRuns,
   listRecentBackgroundJobOperations,
+  summarizeBackgroundJobRuns,
   summarizeBackgroundJobOperations,
+  type BackgroundJobRunItem,
   type BackgroundJobOperationsItem
 } from "@/server/repositories/background-job.repository";
 import {
@@ -83,6 +86,16 @@ function backgroundJobStatusTone(status: string) {
   if (status === "succeeded") return "success";
   if (status === "failed" || status === "dead") return "warning";
   return "neutral";
+}
+
+function backgroundJobRunStatusLabel(status: string) {
+  if (status === "succeeded") return "정상";
+  if (status === "failed") return "실패";
+  return status;
+}
+
+function backgroundJobRunStatusTone(status: string) {
+  return status === "failed" ? "warning" : "success";
 }
 
 function eventTone(event: LookupTelemetryEvent) {
@@ -250,6 +263,13 @@ async function loadBackgroundJobOperations() {
   return listRecentBackgroundJobOperations(supabase, 20).catch(() => []);
 }
 
+async function loadBackgroundJobRuns() {
+  if (!hasSupabaseEnv()) return [];
+
+  const supabase = await createSupabaseServerClient();
+  return listRecentBackgroundJobRuns(supabase, 20).catch(() => []);
+}
+
 export default async function OperationsHealthPage() {
   const guard = await requireDeveloperRole();
 
@@ -259,9 +279,10 @@ export default async function OperationsHealthPage() {
 
   const groups = getEnvironmentHealthGroups();
   const integrationHealthItems = getExternalIntegrationHealthItems();
-  const [lookupTelemetryEvents, backgroundJobs, schemaHealthReport] = await Promise.all([
+  const [lookupTelemetryEvents, backgroundJobs, backgroundJobRuns, schemaHealthReport] = await Promise.all([
     loadLookupTelemetryEvents(),
     loadBackgroundJobOperations(),
+    loadBackgroundJobRuns(),
     getProductionSchemaHealthReport()
   ]);
   const lookupIssueCount = lookupTelemetryEvents.filter(isLookupTelemetryIssue).length;
@@ -272,6 +293,7 @@ export default async function OperationsHealthPage() {
   const lookupDailySummary = summarizeLookupTelemetryByDay(lookupTelemetryEvents);
   const lookupRouteSummary = summarizeLookupTelemetryByRoute(lookupTelemetryEvents);
   const backgroundJobSummary = summarizeBackgroundJobOperations(backgroundJobs);
+  const backgroundJobRunSummary = summarizeBackgroundJobRuns(backgroundJobRuns);
   const items = groups.flatMap((group) => group.items);
   const missingRequiredCount = items.filter((item) => item.status === "missing").length;
   const configuredCount = items.filter((item) => item.status === "ok").length;
@@ -476,6 +498,85 @@ export default async function OperationsHealthPage() {
           ) : (
             <div className="p-5 text-sm text-slate-600">
               최근 백그라운드 작업이 없습니다. `BACKGROUND_JOBS_ENABLED=true`와 worker/cron 설정 후 작업 이력이 표시됩니다.
+            </div>
+          )}
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="백그라운드 worker 실행 이력"
+          description="Vercel Cron 또는 수동 실행으로 `/api/jobs/run`이 호출된 시각, 처리 건수, 실패 여부를 확인합니다."
+          action={<Badge tone={backgroundJobRunSummary.failedRuns > 0 ? "warning" : "success"}>실패 실행 {backgroundJobRunSummary.failedRuns}건</Badge>}
+        />
+        <CardBody className="p-0">
+          <div className="grid gap-2 border-b border-slate-200 bg-slate-50 p-3 text-sm md:grid-cols-5">
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">최근 실행</p>
+              <p className="mt-1 font-semibold text-slate-950">{backgroundJobRunSummary.total}건</p>
+            </div>
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">마지막 실행</p>
+              <p className="mt-1 font-semibold text-slate-950">
+                {backgroundJobRunSummary.latestRunAt ? formatDate(backgroundJobRunSummary.latestRunAt) : "-"}
+              </p>
+            </div>
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">마지막 상태</p>
+              <p className="mt-1">
+                <Badge tone={backgroundJobRunSummary.latestStatus === "failed" ? "warning" : "success"}>
+                  {backgroundJobRunSummary.latestStatus ? backgroundJobRunStatusLabel(backgroundJobRunSummary.latestStatus) : "-"}
+                </Badge>
+              </p>
+            </div>
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">처리 작업</p>
+              <p className="mt-1 font-semibold text-blue-700">{backgroundJobRunSummary.claimedJobs}건</p>
+            </div>
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">작업 실패</p>
+              <p className={backgroundJobRunSummary.failedJobs > 0 ? "mt-1 font-semibold text-amber-700" : "mt-1 font-semibold text-emerald-700"}>
+                {backgroundJobRunSummary.failedJobs}건
+              </p>
+            </div>
+          </div>
+          {backgroundJobRuns.length ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-[980px] text-left text-sm">
+                <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
+                  <tr>
+                    <th className="px-5 py-3">실행 시간</th>
+                    <th className="px-5 py-3">상태</th>
+                    <th className="px-5 py-3">worker</th>
+                    <th className="px-5 py-3">처리</th>
+                    <th className="px-5 py-3">소요</th>
+                    <th className="px-5 py-3">오류</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {backgroundJobRuns.map((run: BackgroundJobRunItem) => (
+                    <tr key={run.id} className={run.status === "failed" ? "bg-amber-50/45" : undefined}>
+                      <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-600">{formatDate(run.createdAt)}</td>
+                      <td className="px-5 py-4">
+                        <Badge tone={backgroundJobRunStatusTone(run.status)}>{backgroundJobRunStatusLabel(run.status)}</Badge>
+                      </td>
+                      <td className="px-5 py-4">
+                        <p className="font-mono text-xs font-semibold text-slate-800">{run.workerId}</p>
+                        <p className="mt-1 text-xs text-slate-500">{run.route}</p>
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-4 text-slate-700">
+                        claimed {run.claimedCount} / 성공 {run.succeededCount} / 실패 {run.failedCount}
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-600">{formatMs(run.durationMs)}</td>
+                      <td className="max-w-[360px] truncate px-5 py-4 text-xs font-medium text-slate-600">{run.errorMessage ?? "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="p-5 text-sm text-slate-600">
+              아직 worker 실행 이력이 없습니다. `/api/jobs/run` cron 또는 수동 실행 후 표시됩니다.
             </div>
           )}
         </CardBody>

@@ -45,6 +45,10 @@
   - 처리 결과 요약: 총 82행, 성공 55행, 확인 필요 27행, 오류 0행.
   - `/hs/batch` 최근 백그라운드 조회 섹션에서 82행 작업과 XLSX 다운로드 버튼 노출을 확인했다.
   - 검증 후 테스트 계정, profile/company, background job 데이터를 삭제했다.
+- 백그라운드 worker 실행 이력 저장을 추가했다.
+  - `background_job_runs` 테이블에 `/api/jobs/run` 호출 단위의 worker id, 상태, claimed/succeeded/failed 건수, 소요시간, 오류 메시지를 저장한다.
+  - 운영 점검 화면에 최근 worker 실행 이력, 마지막 실행 시각, 마지막 상태, 처리/실패 건수를 표시한다.
+  - 개별 job 상태와 별도로 cron route 자체의 실행 여부를 확인할 수 있게 했다.
 
 검증:
 
@@ -57,6 +61,7 @@
 - `npm run build`
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 - 운영 E2E: 임시 계정 기반 82행 큐 등록 → worker 처리 → 결과 UI/XLSX 버튼 확인
+- `npm test -- server/repositories/background-job.repository.test.ts`
 
 ## 2026-05-29
 

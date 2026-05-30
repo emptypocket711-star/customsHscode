@@ -5,7 +5,9 @@ import {
   createHsBatchLookupJobPayload,
   isBackgroundQueueEnabled,
   listRecentHsBatchLookupJobs,
+  summarizeBackgroundJobRuns,
   summarizeBackgroundJobOperations,
+  type BackgroundJobRunItem,
   type BackgroundJobOperationsItem
 } from "@/server/repositories/background-job.repository";
 
@@ -88,6 +90,40 @@ describe("background job repository helpers", () => {
       failed: 1,
       retryWaiting: 1,
       dead: 1
+    });
+  });
+
+  it("summarizes background worker run history", () => {
+    const base = {
+      id: "00000000-0000-0000-0000-000000000101",
+      workerId: "api-worker-test",
+      route: "/api/jobs/run",
+      durationMs: 1200,
+      errorMessage: null,
+      createdAt: "2026-05-30T00:02:00Z"
+    } satisfies Omit<BackgroundJobRunItem, "status" | "claimedCount" | "succeededCount" | "failedCount">;
+
+    expect(summarizeBackgroundJobRuns([
+      { ...base, status: "succeeded", claimedCount: 2, succeededCount: 2, failedCount: 0 },
+      {
+        ...base,
+        id: "00000000-0000-0000-0000-000000000102",
+        status: "failed",
+        claimedCount: 1,
+        succeededCount: 0,
+        failedCount: 1,
+        errorMessage: "One or more background jobs failed.",
+        createdAt: "2026-05-30T00:01:00Z"
+      }
+    ])).toEqual({
+      total: 2,
+      succeededRuns: 1,
+      failedRuns: 1,
+      claimedJobs: 3,
+      succeededJobs: 2,
+      failedJobs: 1,
+      latestRunAt: "2026-05-30T00:02:00Z",
+      latestStatus: "succeeded"
     });
   });
 
