@@ -83,6 +83,10 @@ function envNumber(name: string, fallback: number) {
   return Number.isFinite(value) && value > 0 ? value : fallback;
 }
 
+function cappedEnvNumber(name: string, fallback: number, max: number) {
+  return Math.min(envNumber(name, fallback), max);
+}
+
 export class MockAiProvider implements AiProvider {
   name: AiProviderName = "mock";
   model = "mock-clarification-v1";
@@ -642,7 +646,8 @@ export class OpenAiProvider implements AiProvider {
   private readonly apiKey: string | undefined;
   private readonly timeoutMs = envNumber("OPENAI_TIMEOUT_MS", 15_000);
   private readonly clarificationTimeoutMs = envNumber("OPENAI_CLARIFICATION_TIMEOUT_MS", 2_000);
-  private readonly productSearchTimeoutMs = envNumber("OPENAI_PRODUCT_SEARCH_TIMEOUT_MS", 30_000);
+  private readonly productSearchTimeoutMs = cappedEnvNumber("OPENAI_PRODUCT_SEARCH_TIMEOUT_MS", 5_000, 5_000);
+  private readonly productSearchRetryTimeoutMs = cappedEnvNumber("OPENAI_PRODUCT_SEARCH_RETRY_TIMEOUT_MS", 2_000, 2_000);
 
   constructor(apiKey = process.env.OPENAI_API_KEY) {
     this.apiKey = apiKey;
@@ -740,7 +745,7 @@ export class OpenAiProvider implements AiProvider {
         aiProductSearchNormalizationInstructions(),
         2600
       ),
-      this.productSearchTimeoutMs
+      this.productSearchRetryTimeoutMs
     );
 
     if (!response) return fallback;

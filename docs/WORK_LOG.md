@@ -1670,6 +1670,7 @@
 - 품명검색 OpenAI Responses API 요청에서 `web_search` 도구를 붙이는 조건과 웹 실패 후 재시도 분기를 삭제했다.
 - 모델명, SKU, 짧은 한글 품명, 외국어 품명도 모두 GPT API 일반 응답만 사용한다.
 - 제품이 visible input만으로 식별되지 않으면 웹 검색을 하지 않고 제품 category, use, material, catalog, photo, specification 추가 입력을 요청하도록 프롬프트를 정리했다.
+- 실사이트 측정에서 웹 도구 제거 후에도 `립밤` 결과가 약 49.2초 걸려, GPT-only 품명 정규화 대기 상한을 5초로 제한하고 no-candidate GPT 재시도 상한을 2초로 분리했다.
 - 운영 확장 문서의 품명검색 캐시/타임아웃 설명도 웹 보조가 아닌 GPT API 전용 정책으로 갱신했다.
 
 검증:
