@@ -290,9 +290,22 @@
 - 운영 이슈 활성 필터 요약 운영 반영:
   - production 배포 `customs-hscode-o72g7meb8-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+- 운영 이슈 필터 해제를 추가했다.
+  - 이전 작업은 현재 적용 중인 필터를 칩으로 보여주는 기준 표시 기능이고, 이번 작업은 각 칩에서 해당 조건만 해제해 나머지 필터 조건을 유지하는 필터 조작 기능이다.
+  - 활성 필터 칩마다 `해제` 링크를 추가하고, 전체 조건 제거용 `전체 초기화` 링크를 함께 표시한다.
+  - 필터 해제는 URL 파라미터만 조정하며 운영 이슈 데이터는 변경하지 않는다.
+- 운영 이슈 필터 해제 운영 반영:
+  - production 배포 `customs-hscode-oher2cjoq-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
+- `npm test -- server/repositories/operations-issue.repository.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `vercel env run -e production -- npm run health:db`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 - `npm test -- server/repositories/operations-issue.repository.test.ts`
 - `npm run typecheck`
 - `npm run lint`
