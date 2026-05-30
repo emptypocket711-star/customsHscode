@@ -304,6 +304,13 @@
 - 운영 이슈 빠른 필터 강조 운영 반영:
   - production 배포 `customs-hscode-2gh7lmaap-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+- 운영 이슈 빈 상태 안내를 세분화했다.
+  - 이전 작업은 현재 필터와 빠른 필터 프리셋이 같은지 강조하는 표시 기능이고, 이번 작업은 필터 결과가 0건일 때 운영자가 다음 조치를 바로 선택할 수 있게 하는 빈 상태 안내 기능이다.
+  - 필터 결과 0건과 저장된 운영 이슈 없음 상태를 다른 문구로 구분했다.
+  - 필터 결과 0건일 때 `전체 초기화`와 `미해결 전체 보기` 링크를 제공해 조건을 빠르게 다시 조정할 수 있게 했다.
+- 운영 이슈 빈 상태 안내 운영 반영:
+  - production 배포 `customs-hscode-6h9idz414-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
@@ -312,6 +319,7 @@
 - `npm run lint`
 - `npm run build`
 - `vercel env run -e production -- npm run health:db`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 - `npm test -- server/repositories/operations-issue.repository.test.ts`
 - `npm run typecheck`
