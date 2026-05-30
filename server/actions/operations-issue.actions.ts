@@ -29,6 +29,13 @@ function stringValue(formData: FormData, key: string) {
   return typeof value === "string" ? value : undefined;
 }
 
+function operationsIssueStatusActionLabel(status: string | undefined) {
+  if (status === "resolved") return "해결 처리";
+  if (status === "ignored") return "제외 처리";
+  if (status === "open") return "다시 열기";
+  return "상태 변경";
+}
+
 async function requireCurrentDeveloper() {
   const supabase = await createSupabaseServerClient();
   const {
@@ -106,20 +113,18 @@ export async function updateOperationsIssueStatusWithStateAction(
   _previousState: OperationsIssueStatusActionState,
   formData: FormData
 ): Promise<OperationsIssueStatusActionState> {
+  const attemptedActionLabel = operationsIssueStatusActionLabel(stringValue(formData, "status"));
+
   try {
     const updated = await updateOperationsIssueStatusFromForm(formData);
-    const statusLabel = updated.status === "resolved"
-      ? "해결"
-      : updated.status === "ignored"
-        ? "제외"
-        : "미해결";
+    const actionLabel = operationsIssueStatusActionLabel(updated.status);
 
     return {
       status: "success",
-      message: `운영 이슈 상태를 ${statusLabel}로 저장했습니다.`
+      message: `운영 이슈 ${actionLabel} 결과를 저장했습니다.`
     };
   } catch (error) {
-    const message = error instanceof z.ZodError
+    const reason = error instanceof z.ZodError
       ? "입력값을 확인해 주세요. 담당자 120자, 메모와 처리 사유는 각각 1000자 이내여야 합니다."
       : error instanceof Error
         ? error.message
@@ -127,7 +132,7 @@ export async function updateOperationsIssueStatusWithStateAction(
 
     return {
       status: "error",
-      message
+      message: `운영 이슈 ${attemptedActionLabel}을 저장하지 못했습니다. ${reason}`
     };
   }
 }
