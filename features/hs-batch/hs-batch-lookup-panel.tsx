@@ -34,14 +34,22 @@ const resultColumns: Array<{ header: string; key: keyof HsBatchResultRow; width:
   { header: "메시지", key: "message", width: 44 }
 ];
 
+type ResultFilter = "all" | "success" | "warning" | "error";
+
+const resultFilterLabels: Record<ResultFilter, string> = {
+  all: "전체",
+  success: "완료",
+  warning: "보완 필요",
+  error: "오류"
+};
+
 function resultStatusLabel(status: HsBatchResultRow["status"]) {
   if (status === "success") return "완료";
   if (status === "warning") return "확인 필요";
   return "오류";
 }
 
-async function downloadResults(results: HsBatchResultRow[]) {
-  const writeXlsxFile = (await import("write-excel-file/browser")).default;
+function buildXlsxSheetData(results: HsBatchResultRow[]) {
   const headerStyle = {
     backgroundColor: "#1D4ED8",
     fontWeight: "bold" as const,
@@ -55,7 +63,8 @@ async function downloadResults(results: HsBatchResultRow[]) {
     borderStyle: "thin" as const,
     wrap: true
   };
-  const rows = [
+
+  return [
     resultColumns.map((column) => ({ value: column.header, type: String, ...headerStyle })),
     ...results.map((result) =>
       resultColumns.map((column) => {
@@ -74,12 +83,31 @@ async function downloadResults(results: HsBatchResultRow[]) {
       })
     )
   ];
+}
 
-  await writeXlsxFile(rows, {
+async function downloadResults(results: HsBatchResultRow[]) {
+  const writeXlsxFile = (await import("write-excel-file/browser")).default;
+  const needsAttention = results.filter((result) => result.status !== "success");
+  const sheetOptions = {
     columns: resultColumns.map((column) => ({ width: column.width })),
-    sheet: "HS 일괄조회",
     stickyRowsCount: 1
-  }).toFile(`hs-batch-result-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+  const sheets = [
+    {
+      data: buildXlsxSheetData(results),
+      sheet: "전체 결과",
+      ...sheetOptions
+    },
+    ...(needsAttention.length
+      ? [{
+          data: buildXlsxSheetData(needsAttention),
+          sheet: "보완 필요",
+          ...sheetOptions
+        }]
+      : [])
+  ];
+
+  await writeXlsxFile(sheets).toFile(`hs-batch-result-${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
 
 function statusBadgeClass(status: HsBatchResultRow["status"]) {
@@ -94,11 +122,26 @@ export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
   const [rows, setRows] = useState<HsBatchInputRow[]>(() => parseDelimitedText(sampleText));
   const [parseMessage, setParseMessage] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [resultFilter, setResultFilter] = useState<ResultFilter>("all");
 
   const rowSummary = useMemo(() => {
     const valid10 = rows.filter((row) => normalizeHsCode(row.hskCode).length === 10).length;
     return { total: rows.length, valid10, invalid: rows.length - valid10 };
   }, [rows]);
+  const resultCounts = useMemo(() => {
+    const results = state.results ?? [];
+    return {
+      all: results.length,
+      success: results.filter((row) => row.status === "success").length,
+      warning: results.filter((row) => row.status === "warning").length,
+      error: results.filter((row) => row.status === "error").length
+    };
+  }, [state.results]);
+  const filteredResults = useMemo(() => {
+    const results = state.results ?? [];
+    if (resultFilter === "all") return results;
+    return results.filter((row) => row.status === resultFilter);
+  }, [resultFilter, state.results]);
 
   async function handleFile(file: File | null) {
     if (!file) return;
@@ -279,6 +322,31 @@ export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
               {exporting ? "XLSX 생성 중" : "XLSX 다운로드"}
             </button>
           </div>
+          <div className="flex flex-wrap gap-2 border-b border-slate-200 px-5 py-3">
+            {(["all", "success", "warning", "error"] as const).map((filter) => {
+              const active = resultFilter === filter;
+              return (
+                <button
+                  aria-pressed={active}
+                  className={
+                    active
+                      ? "focus-ring rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white"
+                      : "focus-ring rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  }
+                  key={filter}
+                  onClick={() => setResultFilter(filter)}
+                  type="button"
+                >
+                  {resultFilterLabels[filter]} {resultCounts[filter]}
+                </button>
+              );
+            })}
+          </div>
+          {resultFilter !== "all" && filteredResults.length === 0 ? (
+            <div className="px-5 py-8 text-center text-sm text-slate-500">
+              선택한 상태의 조회 결과가 없습니다.
+            </div>
+          ) : null}
           <div className="overflow-x-auto">
             <table className="min-w-[1320px] text-left text-sm">
               <thead className="bg-slate-50 text-xs font-semibold text-slate-500">
@@ -298,7 +366,7 @@ export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {state.results.map((row, index) => (
+                {filteredResults.map((row, index) => (
                   <tr key={`${row.rowNumber}-${row.inputHskCode}-${index}`} className="align-top">
                     <td className="whitespace-nowrap px-3 py-2 text-slate-500">{row.rowNumber}</td>
                     <td className="whitespace-nowrap px-3 py-2">
