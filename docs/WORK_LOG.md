@@ -120,6 +120,12 @@
 - 운영 점검 화면 상세 섹션 탐색을 보강했다.
   - `상세 점검 바로가기` 카드를 추가해 수동 명령, 외부 연동, DB 스키마, 보존 상태, 작업 큐, worker 실행, 운영 알림, 조회 품질 섹션으로 바로 이동할 수 있게 했다.
   - 공통 `Card` 컴포넌트가 section HTML 속성을 받을 수 있게 확장해 각 상세 카드에 안정적인 anchor id를 부여했다.
+- 운영 점검 화면의 조회 품질 로그 분류를 보강했다.
+  - 조회 telemetry를 오류, fallback, GPT 단계, 무결과, 제품코드, HS6 예비, 10자리 확장, 확인 필요, 정상 버킷으로 분류한다.
+  - 조회 품질 섹션 상단에 `빠른 분류` 카드를 추가해 최근 로그의 유형별 건수와 운영 조치 문구를 바로 볼 수 있게 했다.
+  - 이슈가 있는 경우 `우선 점검 로그`를 별도로 표시해 원본 테이블을 뒤지지 않아도 진단, 경로, 결과 수, 후보 단계별 수치, 조치 방향을 확인할 수 있게 했다.
+  - 이슈가 없을 때는 최근 정상 로그 샘플을 표시해 telemetry 기록 자체가 정상적으로 들어오는지 확인할 수 있게 했다.
+  - 원본 테이블에도 `분류` 컬럼을 추가해 전체 로그와 빠른 분류 카드가 같은 기준으로 읽히도록 했다.
 - 운영 점검 화면에 수동 운영 명령 안내를 추가했다.
   - worker 즉시 실행, 실패 알림 리허설, 운영 이력 정리, 스키마 점검, production smoke 명령을 한 화면에 정리했다.
   - 명령은 `vercel env run -e production -- ...` 형식으로 표시해 secret 값을 화면에 노출하지 않고 Vercel 환경변수에서 주입되도록 했다.
@@ -130,6 +136,7 @@
 
 검증:
 
+- `npm test -- server/observability/lookup-telemetry.test.ts`
 - `npm test -- features/hs-batch/input-parser.test.ts server/actions/hs-batch.actions.test.ts`
 - `npm test -- server/actions/hs-batch.actions.test.ts server/repositories/background-job.repository.test.ts server/jobs/hs-batch-lookup-job.handler.test.ts server/jobs/background-worker.service.test.ts`
 - `npm test -- server/repositories/background-job.repository.test.ts server/jobs/hs-batch-lookup-job.handler.test.ts server/actions/hs-batch.actions.test.ts`

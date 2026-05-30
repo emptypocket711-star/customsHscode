@@ -144,6 +144,128 @@ export function lookupTelemetryIssueAction(diagnosis: string) {
   return actions[diagnosis] ?? actions["확인 필요"];
 }
 
+export type LookupTelemetryBucketKey =
+  | "error"
+  | "fallback"
+  | "gpt"
+  | "zero_result"
+  | "product_code"
+  | "hs6_only"
+  | "hsk10_expansion"
+  | "review"
+  | "normal";
+
+export type LookupTelemetryBucket = {
+  key: LookupTelemetryBucketKey;
+  label: string;
+  tone: "success" | "warning" | "info" | "neutral";
+  action: string;
+};
+
+const lookupTelemetryBuckets = [
+  {
+    key: "error",
+    label: "오류",
+    tone: "warning",
+    action: "서버 오류, provider 오류, 환경변수 누락을 먼저 확인합니다."
+  },
+  {
+    key: "fallback",
+    label: "Fallback",
+    tone: "warning",
+    action: "Supabase, 검색 인덱스, 외부 의존 경로 실패 빈도를 확인합니다."
+  },
+  {
+    key: "gpt",
+    label: "GPT 단계",
+    tone: "warning",
+    action: "GPT 호출 실패, 후보 없음, 후처리 소실 여부를 묶어서 확인합니다."
+  },
+  {
+    key: "zero_result",
+    label: "무결과",
+    tone: "warning",
+    action: "AI 후보와 공식 후보 결합 후 최종 후보가 남는지 확인합니다."
+  },
+  {
+    key: "product_code",
+    label: "제품코드",
+    tone: "warning",
+    action: "브랜드/모델 코드 단독 입력이면 제품명, 용도, 스펙 보완 요청 흐름을 확인합니다."
+  },
+  {
+    key: "hs6_only",
+    label: "HS6 예비",
+    tone: "warning",
+    action: "HS6 예비후보에서 HSK 10자리 후보로 확장되는지 확인합니다."
+  },
+  {
+    key: "hsk10_expansion",
+    label: "10자리 확장",
+    tone: "warning",
+    action: "하위 세번 확장과 사용자 선택 UI가 막히지 않는지 확인합니다."
+  },
+  {
+    key: "review",
+    label: "확인 필요",
+    tone: "warning",
+    action: "반복되는 패턴인지 확인하고 단계별 후보 수치를 비교합니다."
+  },
+  {
+    key: "normal",
+    label: "정상",
+    tone: "success",
+    action: "추가 조치가 필요 없습니다."
+  }
+] satisfies LookupTelemetryBucket[];
+
+const lookupTelemetryBucketByKey = new Map<LookupTelemetryBucketKey, LookupTelemetryBucket>(
+  lookupTelemetryBuckets.map((bucket) => [bucket.key, bucket])
+);
+
+function bucketForKey(key: LookupTelemetryBucketKey) {
+  return lookupTelemetryBucketByKey.get(key) ?? lookupTelemetryBucketByKey.get("review")!;
+}
+
+export function classifyLookupTelemetryBucket(event: LookupTelemetryEvent): LookupTelemetryBucket {
+  const diagnosis = classifyLookupTelemetryIssue(event);
+
+  if (diagnosis === "오류") return bucketForKey("error");
+  if (diagnosis === "Fallback 처리") return bucketForKey("fallback");
+  if (diagnosis === "GPT 호출 실패" || diagnosis === "GPT 후보 없음" || diagnosis === "GPT 후보 후처리 확인") return bucketForKey("gpt");
+  if (diagnosis === "최종 후보 0건") return bucketForKey("zero_result");
+  if (diagnosis === "제품코드 식별 실패") return bucketForKey("product_code");
+  if (diagnosis === "HS6 예비후보만 표시") return bucketForKey("hs6_only");
+  if (diagnosis === "10자리 확장 필요") return bucketForKey("hsk10_expansion");
+  if (diagnosis === "정상") return bucketForKey("normal");
+  return bucketForKey("review");
+}
+
+export type LookupTelemetryBucketSummary = LookupTelemetryBucket & {
+  count: number;
+  issueCount: number;
+};
+
+export function summarizeLookupTelemetryBuckets(events: LookupTelemetryEvent[]): LookupTelemetryBucketSummary[] {
+  const summaries = new Map<LookupTelemetryBucketKey, LookupTelemetryBucketSummary>();
+
+  for (const bucket of lookupTelemetryBuckets) {
+    summaries.set(bucket.key, { ...bucket, count: 0, issueCount: 0 });
+  }
+
+  for (const event of events) {
+    const bucket = classifyLookupTelemetryBucket(event);
+    const current = summaries.get(bucket.key) ?? { ...bucket, count: 0, issueCount: 0 };
+    current.count += 1;
+    current.issueCount += isLookupTelemetryIssue(event) ? 1 : 0;
+    summaries.set(bucket.key, current);
+  }
+
+  return lookupTelemetryBuckets
+    .map((bucket) => summaries.get(bucket.key) ?? { ...bucket, count: 0, issueCount: 0 })
+    .filter((summary) => summary.count > 0);
+}
+
 export type LookupTelemetryDiagnosisSummary = {
   diagnosis: string;
   count: number;

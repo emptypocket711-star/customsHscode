@@ -26,9 +26,11 @@ import {
   type BackgroundJobOperationsItem
 } from "@/server/repositories/background-job.repository";
 import {
+  classifyLookupTelemetryBucket,
   classifyLookupTelemetryIssue,
   isLookupTelemetryIssue,
   listRecentLookupTelemetryEvents,
+  summarizeLookupTelemetryBuckets,
   summarizeLookupTelemetryDiagnostics,
   type LookupTelemetryEvent
 } from "@/server/repositories/lookup-telemetry.repository";
@@ -405,9 +407,12 @@ export default async function OperationsHealthPage() {
   const lookupSuccessCount = lookupTelemetryEvents.length - lookupIssueCount;
   const zeroResultCount = lookupTelemetryEvents.filter((event) => event.resultCount === 0).length;
   const lookupDiagnosisSummary = summarizeLookupTelemetryDiagnostics(lookupTelemetryEvents);
+  const lookupBucketSummary = summarizeLookupTelemetryBuckets(lookupTelemetryEvents);
   const lookupIssueSummary = lookupDiagnosisSummary.filter((item) => item.issueCount > 0).slice(0, 4);
   const lookupDailySummary = summarizeLookupTelemetryByDay(lookupTelemetryEvents);
   const lookupRouteSummary = summarizeLookupTelemetryByRoute(lookupTelemetryEvents);
+  const priorityLookupEvents = lookupTelemetryEvents.filter(isLookupTelemetryIssue).slice(0, 8);
+  const normalLookupSamples = lookupTelemetryEvents.filter((event) => !isLookupTelemetryIssue(event)).slice(0, 3);
   const backgroundJobSummary = summarizeBackgroundJobOperations(backgroundJobs);
   const backgroundJobRunSummary = summarizeBackgroundJobRuns(backgroundJobRuns);
   const operationsAlertSummary = summarizeOperationsAlertEvents(operationsAlertEvents);
@@ -953,6 +958,77 @@ export default async function OperationsHealthPage() {
                   <p className="mt-1 font-semibold text-slate-950">{zeroResultCount}건</p>
                 </div>
               </div>
+              {lookupBucketSummary.length ? (
+                <div className="border-b border-slate-200 bg-white p-3">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs font-semibold text-slate-500">빠른 분류</p>
+                    <p className="text-xs text-slate-500">최근 {lookupTelemetryEvents.length}건 기준</p>
+                  </div>
+                  <div className="grid gap-2 md:grid-cols-3 xl:grid-cols-5">
+                    {lookupBucketSummary.map((summary) => (
+                      <div
+                        className={summary.issueCount > 0 ? "rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm" : "rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm"}
+                        key={summary.key}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="font-semibold text-slate-950">{summary.label}</p>
+                          <Badge tone={summary.tone}>{summary.count}건</Badge>
+                        </div>
+                        <p className="mt-1 text-xs leading-5 text-slate-600">{summary.action}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {priorityLookupEvents.length ? (
+                <div className="border-b border-slate-200 bg-amber-50/40 p-3">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs font-semibold text-amber-900">우선 점검 로그</p>
+                    <Badge tone="warning">최근 이슈 {priorityLookupEvents.length}건</Badge>
+                  </div>
+                  <div className="grid gap-2 lg:grid-cols-2">
+                    {priorityLookupEvents.map((event) => {
+                      const bucket = classifyLookupTelemetryBucket(event);
+                      const diagnosis = classifyLookupTelemetryIssue(event);
+                      const counts = formatCandidateCounts(event);
+
+                      return (
+                        <div className="rounded-md border border-amber-200 bg-white px-3 py-3 text-sm" key={event.id}>
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <div>
+                              <p className="font-semibold text-slate-950">{diagnosis}</p>
+                              <p className="mt-1 font-mono text-xs text-slate-500">{formatDate(event.createdAt)} · {event.route ?? event.eventType}</p>
+                            </div>
+                            <Badge tone={bucket.tone}>{bucket.label}</Badge>
+                          </div>
+                          <p className="mt-2 text-xs leading-5 text-slate-600">
+                            상태 {telemetryStatusLabel(event.status)} · 결과 {event.resultCount ?? payloadValue(event.payload, "candidateCount")}건 · 처리 {event.durationMs ?? payloadValue(event.payload, "durationMs")}ms
+                            <br />
+                            AI {payloadValue(event.payload, "normalizationCandidateCount")} · 공식 {payloadValue(event.payload, "officialCandidateCount")} · HS6 {counts.finalHs6} · 10자리 {counts.finalHsk10}
+                          </p>
+                          <p className="mt-2 text-xs leading-5 text-amber-900">{bucket.action}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : normalLookupSamples.length ? (
+                <div className="border-b border-slate-200 bg-emerald-50/40 p-3">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs font-semibold text-emerald-900">정상 로그 샘플</p>
+                    <Badge tone="success">최근 정상 {normalLookupSamples.length}건</Badge>
+                  </div>
+                  <div className="grid gap-2 lg:grid-cols-3">
+                    {normalLookupSamples.map((event) => (
+                      <div className="rounded-md border border-emerald-200 bg-white px-3 py-2 text-xs leading-5 text-slate-600" key={event.id}>
+                        <p className="font-semibold text-slate-950">{eventLabel(event.eventType)}</p>
+                        <p className="font-mono text-slate-500">{formatDate(event.createdAt)} · {event.route ?? "-"}</p>
+                        <p>결과 {event.resultCount ?? payloadValue(event.payload, "candidateCount")}건 · 처리 {event.durationMs ?? payloadValue(event.payload, "durationMs")}ms</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
               {lookupIssueSummary.length ? (
                 <div className="grid gap-2 border-b border-slate-200 bg-white p-3 text-sm lg:grid-cols-2">
                   {lookupIssueSummary.map((summary) => (
@@ -1004,12 +1080,13 @@ export default async function OperationsHealthPage() {
                 </div>
               ) : null}
               <div className="overflow-x-auto">
-                <table className="min-w-[1320px] text-left text-sm">
+                <table className="min-w-[1420px] text-left text-sm">
                   <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
                     <tr>
                       <th className="px-5 py-3">시간</th>
                       <th className="px-5 py-3">이벤트</th>
                       <th className="px-5 py-3">상태</th>
+                      <th className="px-5 py-3">분류</th>
                       <th className="px-5 py-3">결과</th>
                       <th className="px-5 py-3">진단</th>
                       <th className="px-5 py-3">GPT 단계</th>
@@ -1022,6 +1099,7 @@ export default async function OperationsHealthPage() {
                   <tbody className="divide-y divide-slate-100">
                     {lookupTelemetryEvents.map((event) => {
                       const counts = formatCandidateCounts(event);
+                      const bucket = classifyLookupTelemetryBucket(event);
                       const normalizationStatus = payloadString(event.payload, "normalizationStatus");
                       const normalizationErrorType = payloadString(event.payload, "normalizationErrorType");
                       const candidateQualityType = payloadString(event.payload, "candidateQualityType");
@@ -1037,6 +1115,9 @@ export default async function OperationsHealthPage() {
                           </td>
                           <td className="px-5 py-4">
                             <Badge tone={eventTone(event)}>{telemetryStatusLabel(event.status)}</Badge>
+                          </td>
+                          <td className="px-5 py-4">
+                            <Badge tone={bucket.tone}>{bucket.label}</Badge>
                           </td>
                           <td className="whitespace-nowrap px-5 py-4 text-slate-700">
                             <span className="font-semibold text-slate-950">{event.resultCount ?? payloadValue(event.payload, "candidateCount")}</span>

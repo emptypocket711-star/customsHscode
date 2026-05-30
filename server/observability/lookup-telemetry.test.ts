@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { productInputShape, sanitizeLookupTelemetryPayload } from "@/server/observability/lookup-telemetry";
 import {
+  classifyLookupTelemetryBucket,
   classifyLookupTelemetryIssue,
   lookupTelemetryIssueAction,
+  summarizeLookupTelemetryBuckets,
   summarizeLookupTelemetryDiagnostics,
   type LookupTelemetryEvent
 } from "@/server/repositories/lookup-telemetry.repository";
@@ -142,5 +144,47 @@ describe("lookup telemetry", () => {
       action: lookupTelemetryIssueAction("GPT 후보 없음")
     });
     expect(summary.find((item) => item.diagnosis === "정상")?.count).toBe(1);
+  });
+
+  it("groups lookup telemetry into operator triage buckets", () => {
+    expect(classifyLookupTelemetryBucket(telemetryEvent({
+      status: "fallback",
+      resultCount: 1
+    }))).toMatchObject({
+      key: "fallback",
+      label: "Fallback"
+    });
+
+    expect(classifyLookupTelemetryBucket(telemetryEvent({
+      payload: { normalizationStatus: "failed", normalizationErrorType: "TimeoutError" },
+      resultCount: 1
+    }))).toMatchObject({
+      key: "gpt",
+      label: "GPT 단계"
+    });
+
+    const summary = summarizeLookupTelemetryBuckets([
+      telemetryEvent({
+        id: "event-1",
+        payload: { normalizationStatus: "failed", normalizationErrorType: "TimeoutError" },
+        resultCount: 1
+      }),
+      telemetryEvent({
+        id: "event-2",
+        payload: { candidateQualityType: "hs6_only_provisional", onlyProvisionalHs6: true },
+        resultCount: 1
+      }),
+      telemetryEvent({
+        id: "event-3",
+        payload: {},
+        resultCount: 2
+      })
+    ]);
+
+    expect(summary).toEqual([
+      expect.objectContaining({ key: "gpt", count: 1, issueCount: 1 }),
+      expect.objectContaining({ key: "hs6_only", count: 1, issueCount: 1 }),
+      expect.objectContaining({ key: "normal", count: 1, issueCount: 0 })
+    ]);
   });
 });
