@@ -29,6 +29,7 @@ import {
 import {
   filterOperationsIssueEvents,
   listRecentOperationsIssueEvents,
+  summarizeOpenOperationsIssuesByOwner,
   summarizeOperationsIssueEvents,
   type OperationsIssueEventItem,
   type OperationsIssueEventFilters,
@@ -506,6 +507,7 @@ export default async function OperationsHealthPage({
   const filteredOperationsIssueEvents = filterOperationsIssueEvents(operationsIssueEvents, issueFilters);
   const operationsIssueSummary = summarizeOperationsIssueEvents(operationsIssueEvents);
   const filteredOperationsIssueSummary = summarizeOperationsIssueEvents(filteredOperationsIssueEvents);
+  const operationsIssueOwnerSummary = summarizeOpenOperationsIssuesByOwner(operationsIssueEvents).slice(0, 6);
   const hasOperationsIssueFilters = Boolean(
     (issueFilters.status && issueFilters.status !== "all")
       || (issueFilters.severity && issueFilters.severity !== "all")
@@ -1084,6 +1086,52 @@ export default async function OperationsHealthPage({
               <p className="mt-1 font-semibold text-slate-950">{operationsIssueSummary.latestIssueAt ? formatDate(operationsIssueSummary.latestIssueAt) : "-"}</p>
             </div>
           </div>
+          {operationsIssueOwnerSummary.length ? (
+            <div className="border-b border-slate-200 bg-white p-4">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-sm font-semibold text-slate-950">담당자별 미해결 요약</p>
+                  <p className="mt-1 text-xs text-slate-500">미해결 운영 이슈를 담당자 기준으로 묶어 우선 확인 대상을 표시합니다.</p>
+                </div>
+                <Badge tone={operationsIssueOwnerSummary.some((item) => item.blocker > 0) ? "warning" : "neutral"}>담당 {operationsIssueOwnerSummary.length}명</Badge>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                {operationsIssueOwnerSummary.map((owner) => {
+                  const ownerFilterUrl = owner.assignedToLabel === "미지정"
+                    ? "/operations/health?issueStatus=open#issue-events"
+                    : `/operations/health?issueStatus=open&issueOwner=${encodeURIComponent(owner.assignedToLabel)}#issue-events`;
+                  return (
+                    <a
+                      className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 transition hover:border-blue-200 hover:bg-blue-50"
+                      href={ownerFilterUrl}
+                      key={owner.assignedToLabel}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-slate-950">{owner.assignedToLabel}</p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            오래 열린 이슈 {owner.oldestOpenAgeDays ?? "-"}일
+                          </p>
+                        </div>
+                        <Badge tone={owner.blocker > 0 ? "warning" : "neutral"}>미해결 {owner.open}건</Badge>
+                      </div>
+                      <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                        <p className="rounded border border-white bg-white px-2 py-1 text-slate-600">
+                          차단 <span className="font-semibold text-amber-700">{owner.blocker}</span>
+                        </p>
+                        <p className="rounded border border-white bg-white px-2 py-1 text-slate-600">
+                          주의 <span className="font-semibold text-slate-950">{owner.warning}</span>
+                        </p>
+                        <p className="col-span-2 rounded border border-white bg-white px-2 py-1 text-slate-600">
+                          최근 갱신 <span className="font-semibold text-slate-950">{owner.latestIssueAt ? formatDate(owner.latestIssueAt) : "-"}</span>
+                        </p>
+                      </div>
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
           <form className="grid gap-3 border-b border-slate-200 bg-white p-4 text-sm lg:grid-cols-[1fr_1fr_1fr_1.5fr_auto]" action="/operations/health#issue-events">
             <label className="grid gap-1 text-xs font-semibold text-slate-600">
               상태

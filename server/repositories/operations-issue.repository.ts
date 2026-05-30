@@ -91,6 +91,16 @@ export type OperationsIssueEventFilters = {
   query?: string;
 };
 
+export type OperationsIssueOwnerSummary = {
+  assignedToLabel: string;
+  open: number;
+  blocker: number;
+  warning: number;
+  oldestOpenAt: string | null;
+  oldestOpenAgeDays: number | null;
+  latestIssueAt: string | null;
+};
+
 const operationsIssueEventSelect = [
   "id",
   "issue_type",
@@ -288,5 +298,59 @@ export function filterOperationsIssueEvents(
       event.operatorNote,
       event.resolutionReason
     ].some((value) => includesNormalized(value, query));
+  });
+}
+
+function ownerLabel(value: string | null) {
+  return value?.trim() || "미지정";
+}
+
+function ageDaysSince(value: string | null, now: Date) {
+  if (!value) return null;
+  const ageMs = now.getTime() - new Date(value).getTime();
+  return Math.max(0, Math.floor(ageMs / (24 * 60 * 60 * 1000)));
+}
+
+export function summarizeOpenOperationsIssuesByOwner(
+  events: OperationsIssueEventItem[],
+  now = new Date()
+): OperationsIssueOwnerSummary[] {
+  const rows = new Map<string, OperationsIssueOwnerSummary>();
+
+  for (const event of events) {
+    if (event.status !== "open") continue;
+
+    const label = ownerLabel(event.assignedToLabel);
+    const current = rows.get(label) ?? {
+      assignedToLabel: label,
+      open: 0,
+      blocker: 0,
+      warning: 0,
+      oldestOpenAt: null,
+      oldestOpenAgeDays: null,
+      latestIssueAt: null
+    };
+
+    current.open += 1;
+    current.blocker += event.severity === "blocker" ? 1 : 0;
+    current.warning += event.severity === "warning" ? 1 : 0;
+    if (!current.oldestOpenAt || new Date(event.firstSeenAt).getTime() < new Date(current.oldestOpenAt).getTime()) {
+      current.oldestOpenAt = event.firstSeenAt;
+      current.oldestOpenAgeDays = ageDaysSince(event.firstSeenAt, now);
+    }
+    if (!current.latestIssueAt || new Date(event.updatedAt).getTime() > new Date(current.latestIssueAt).getTime()) {
+      current.latestIssueAt = event.updatedAt;
+    }
+
+    rows.set(label, current);
+  }
+
+  return [...rows.values()].sort((a, b) => {
+    if (b.blocker !== a.blocker) return b.blocker - a.blocker;
+    if (b.open !== a.open) return b.open - a.open;
+    if (a.oldestOpenAt && b.oldestOpenAt && a.oldestOpenAt !== b.oldestOpenAt) {
+      return new Date(a.oldestOpenAt).getTime() - new Date(b.oldestOpenAt).getTime();
+    }
+    return a.assignedToLabel.localeCompare(b.assignedToLabel);
   });
 }

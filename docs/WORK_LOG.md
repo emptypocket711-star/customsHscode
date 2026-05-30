@@ -216,6 +216,11 @@
   - `npm run ops:job:operations-issues` 실행 결과 scannedEvents 0, recurringIssues 0, syncedIssues 0건, alerts 0건을 확인했다.
   - `npm run ops:job:operations-issues-rehearsal` 실행 결과 synthetic telemetry 3건, recurringIssues 1건, 운영 이슈 occurrenceCount 3건, resolved/open 상태 변경, cleanup true를 확인했다.
   - `npm run ops:job:operations-retention` 실행 결과 운영 알림 이력 deletedCount 0, background job history deletedRuns 0/deletedJobs 0, 운영 이슈 deletedCount 0을 확인했다.
+- 운영 이슈 담당자별 요약을 추가했다.
+  - 이전 작업은 목록에서 특정 이슈를 찾는 필터/검색이고, 이번 작업은 담당자별 미해결 부담과 오래 열린 이슈를 먼저 보는 요약 기능이다.
+  - 운영 점검 화면에서 미해결 운영 이슈를 담당자 기준으로 묶어 open, blocker, warning, 오래 열린 기간, 최근 갱신 시각을 표시한다.
+  - 담당자 요약 카드를 누르면 해당 담당자의 미해결 이슈 필터 목록으로 이동한다.
+  - 담당자가 없는 미해결 이슈는 `미지정`으로 묶어 담당 배정 누락을 확인할 수 있게 했다.
 
 검증:
 

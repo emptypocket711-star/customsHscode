@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   filterOperationsIssueEvents,
+  summarizeOpenOperationsIssuesByOwner,
   summarizeOperationsIssueEvents,
   type OperationsIssueEventItem
 } from "@/server/repositories/operations-issue.repository";
@@ -87,5 +88,61 @@ describe("operations issue repository helpers", () => {
       assignedToLabel: "박",
       query: "fallback"
     }).map((event) => event.id)).toEqual(["issue-2"]);
+  });
+
+  it("summarizes open operations issues by owner workload", () => {
+    const rows = summarizeOpenOperationsIssuesByOwner([
+      issue({
+        id: "issue-1",
+        status: "open",
+        severity: "warning",
+        assignedToLabel: "김운영",
+        firstSeenAt: "2026-05-27T00:00:00.000Z",
+        updatedAt: "2026-05-29T02:00:00.000Z"
+      }),
+      issue({
+        id: "issue-2",
+        status: "open",
+        severity: "blocker",
+        assignedToLabel: "김운영",
+        firstSeenAt: "2026-05-28T00:00:00.000Z",
+        updatedAt: "2026-05-29T03:00:00.000Z"
+      }),
+      issue({
+        id: "issue-3",
+        status: "open",
+        severity: "warning",
+        assignedToLabel: null,
+        firstSeenAt: "2026-05-26T00:00:00.000Z",
+        updatedAt: "2026-05-29T01:00:00.000Z"
+      }),
+      issue({
+        id: "issue-4",
+        status: "resolved",
+        severity: "blocker",
+        assignedToLabel: "박검토"
+      })
+    ], new Date("2026-05-30T00:00:00.000Z"));
+
+    expect(rows).toEqual([
+      {
+        assignedToLabel: "김운영",
+        open: 2,
+        blocker: 1,
+        warning: 1,
+        oldestOpenAt: "2026-05-27T00:00:00.000Z",
+        oldestOpenAgeDays: 3,
+        latestIssueAt: "2026-05-29T03:00:00.000Z"
+      },
+      {
+        assignedToLabel: "미지정",
+        open: 1,
+        blocker: 0,
+        warning: 1,
+        oldestOpenAt: "2026-05-26T00:00:00.000Z",
+        oldestOpenAgeDays: 4,
+        latestIssueAt: "2026-05-29T01:00:00.000Z"
+      }
+    ]);
   });
 });
