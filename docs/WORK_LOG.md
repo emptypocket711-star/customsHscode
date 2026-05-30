@@ -242,6 +242,12 @@
   - 이전 작업은 운영 이슈가 왜 생겼는지 원인 telemetry를 보여주는 분석 기능이고, 이번 작업은 미해결 이슈가 얼마나 오래 열려 있는지 처리 우선순위를 표시하는 경고 기능이다.
   - 미해결 이슈의 `first_seen_at` 기준 경과일을 계산해 `열림`, `지연 확인`, `장기 미해결` 배지를 표시한다.
   - 해결·제외 상태의 이슈에는 경과일 경고를 표시하지 않는다.
+- 오래 열린 운영 이슈 경고 운영 반영:
+  - production 배포 `customs-hscode-on9y0qb57-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+  - `npm run ops:job:operations-issues` 실행 결과 scannedEvents 0, recurringIssues 0, syncedIssues 0건, alerts 0건을 확인했다.
+  - `npm run ops:job:operations-issues-rehearsal` 실행 결과 synthetic telemetry 3건, recurringIssues 1건, 운영 이슈 occurrenceCount 3건, resolved/open 상태 변경, cleanup true를 확인했다.
+  - `npm run ops:job:operations-retention` 실행 결과 운영 알림 이력 deletedCount 0, background job history deletedRuns 0/deletedJobs 0, 운영 이슈 deletedCount 0을 확인했다.
 
 검증:
 
@@ -299,6 +305,11 @@
 - `npm run typecheck`
 - `npm run lint`
 - `npm run build`
+- `vercel env run -e production -- npm run health:db`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
+- `vercel env run -e production -- npm run ops:job:operations-issues`
+- `vercel env run -e production -- npm run ops:job:operations-issues-rehearsal`
+- `vercel env run -e production -- npm run ops:job:operations-retention`
 - `vercel env run -e production -- npm run health:db`
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 - `vercel env run -e production -- npm run ops:job:operations-issues`
