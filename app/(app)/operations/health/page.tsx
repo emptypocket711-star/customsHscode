@@ -32,6 +32,7 @@ import {
   getOperationsIssueStatusChangeSummary,
   buildOperationsIssueActiveFilterLabels,
   buildOperationsIssueQuickFilterPresets,
+  operationsIssueFiltersMatch,
   listRecentOperationsIssueEvents,
   sortOperationsIssueEventsForTriage,
   summarizeOpenOperationsIssuesByOwner,
@@ -304,7 +305,11 @@ function operationsIssueFilterHrefWithout(
   });
 }
 
-function operationsIssueQuickFilterClassName(preset: OperationsIssueQuickFilterPreset) {
+function operationsIssueQuickFilterClassName(preset: OperationsIssueQuickFilterPreset, active = false) {
+  if (active) {
+    return "rounded-md border border-blue-300 bg-blue-50 px-3 py-2 text-left ring-2 ring-blue-100 transition hover:bg-blue-100";
+  }
+
   if (preset.tone === "warning") {
     return "rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-left transition hover:bg-amber-100";
   }
@@ -1246,13 +1251,20 @@ export default async function OperationsHealthPage({
               ) : null}
             </div>
             <div className="grid gap-2 md:grid-cols-5">
-              {operationsIssueQuickFilterPresets.map((preset) => (
-                <a className={operationsIssueQuickFilterClassName(preset)} href={operationsIssueFilterHref(preset.filters)} key={preset.id}>
-                  <span className="block text-xs font-semibold text-slate-600">{preset.label}</span>
-                  <span className="mt-1 block text-lg font-semibold text-slate-950">{preset.count}건</span>
-                  <span className="mt-1 block text-xs leading-5 text-slate-500">{preset.description}</span>
-                </a>
-              ))}
+              {operationsIssueQuickFilterPresets.map((preset) => {
+                const presetActive = operationsIssueFiltersMatch(issueFilters, preset.filters);
+
+                return (
+                  <a className={operationsIssueQuickFilterClassName(preset, presetActive)} href={operationsIssueFilterHref(preset.filters)} key={preset.id}>
+                    <span className="flex items-center justify-between gap-2 text-xs font-semibold text-slate-600">
+                      <span>{preset.label}</span>
+                      {presetActive ? <Badge tone="info">선택됨</Badge> : null}
+                    </span>
+                    <span className="mt-1 block text-lg font-semibold text-slate-950">{preset.count}건</span>
+                    <span className="mt-1 block text-xs leading-5 text-slate-500">{preset.description}</span>
+                  </a>
+                );
+              })}
             </div>
           </div>
           <form className="grid gap-3 border-b border-slate-200 bg-white p-4 text-sm lg:grid-cols-[1fr_1fr_1fr_1fr_1.5fr_auto]" action="/operations/health#issue-events">

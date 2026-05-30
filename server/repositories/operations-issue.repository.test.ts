@@ -5,6 +5,7 @@ import {
   filterOperationsIssueEvents,
   getOpenOperationsIssueAgeStatus,
   getOperationsIssueStatusChangeSummary,
+  operationsIssueFiltersMatch,
   sortOperationsIssueEventsForTriage,
   summarizeOpenOperationsIssuesByOwner,
   summarizeOperationsIssueResolutionOutcomes,
@@ -385,5 +386,27 @@ describe("operations issue repository helpers", () => {
       { key: "assignedToLabel", label: "담당: 미지정" },
       { key: "query", label: "검색: GPT" }
     ]);
+  });
+
+  it("matches quick filter presets against current filters", () => {
+    expect(operationsIssueFiltersMatch({
+      status: "open",
+      severity: "blocker",
+      ageLevel: "all",
+      assignedToLabel: "",
+      query: ""
+    }, {
+      status: "open",
+      severity: "blocker"
+    })).toBe(true);
+
+    expect(operationsIssueFiltersMatch({
+      status: "open",
+      severity: "blocker",
+      ageLevel: "stale"
+    }, {
+      status: "open",
+      severity: "blocker"
+    })).toBe(false);
   });
 });

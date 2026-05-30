@@ -135,6 +135,19 @@ export type OperationsIssueActiveFilterLabel = {
   label: string;
 };
 
+export function operationsIssueFiltersMatch(
+  current: OperationsIssueEventFilters,
+  target: OperationsIssueEventFilters
+) {
+  const keys: Array<keyof OperationsIssueEventFilters> = ["status", "severity", "ageLevel", "assignedToLabel", "query"];
+
+  return keys.every((key) => {
+    const currentValue = current[key] ?? (key === "status" || key === "severity" || key === "ageLevel" ? "all" : "");
+    const targetValue = target[key] ?? (key === "status" || key === "severity" || key === "ageLevel" ? "all" : "");
+    return String(currentValue).trim() === String(targetValue).trim();
+  });
+}
+
 const operationsIssueStatusPriority: Record<OperationsIssueStatus, number> = {
   open: 0,
   resolved: 1,
