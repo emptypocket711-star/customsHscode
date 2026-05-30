@@ -1677,12 +1677,19 @@
 - 재배포 후 실사이트 `립밤` 검색은 약 7.6초로 측정됐다. telemetry 기준 후보 생성 단계는 약 2.24초, 전체 서버 렌더 주요 단계는 약 4.25초였다.
 - 사용자가 DB 후보 후처리 제거와 GPT 중심 흐름을 요청해, Supabase 운영 경로에서 느린 광역 공식명/표준품명/저장 검색 후처리를 제거했다. 결정적 exact 후보가 없으면 GPT가 반환한 HS4/HS6/HS10 힌트를 예비 후보로 바로 표시한다.
 - 이 변경은 품목분류 확정이 아니라 `AI 품명 정규화` 출처의 예비 HS 방향이며, 상세 관세율·요건은 사용자가 후보를 선택해 직접조회로 들어간 뒤 공식 데이터 기준으로 조회한다.
+- 배포 후 실사이트 측정에서 이전에 37초 이상 걸리거나 70초 timeout이 났던 `텀블러`, `가방`은 각각 약 6.5초, 6.3초에 완료 화면과 후보를 표시했다.
+- production telemetry 기준 fast exact 후보 경로는 후보 생성 단계가 약 2.2초로 유지됐고, 결정적 exact 후보가 없는 품명은 `supabase_gpt_only` 경로에서 약 2.0초 안에 후보 없음/추가 정보 필요 상태로 종료됐다.
 - 운영 확장 문서의 품명검색 캐시/타임아웃 설명도 웹 보조가 아닌 GPT API 전용 정책으로 갱신했다.
 
 검증:
 
-- `npm test -- server/ai/clarification.service.test.ts server/rules/hs-candidate.service.test.ts`
+- `npm test -- server/rules/hs-candidate.service.test.ts server/ai/clarification.service.test.ts server/observability/lookup-telemetry.test.ts lib/i18n/hs-direct.test.ts`
 - `npm run typecheck`
 - `npm run lint`
 - `npm run build`
 - `git diff --check`
+- Vercel production deployment: `customs-hscode-b0qj57qk3-koo-apps.vercel.app`
+- Alias: `https://hsfinder.co.kr`
+- `vercel env run -e production -- npm run health:db`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
+- Playwright 실사이트 검색: `텀블러` 6483ms / 후보 2개, `가방` 6250ms / 후보 1개, `손선풍기` 5844ms / 후보 1개, `핸드크림` 6029ms / 후보 1개
