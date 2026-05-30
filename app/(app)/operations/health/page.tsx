@@ -1460,10 +1460,32 @@ export default async function OperationsHealthPage({
               </table>
             </div>
           ) : (
-            <div className="p-5 text-sm text-slate-600">
-              {hasOperationsIssueFilters
-                ? "현재 필터에 맞는 운영 이슈가 없습니다. 필터를 조정하거나 초기화해 주세요."
-                : "저장된 운영 이슈가 없습니다. `operations-issues` job이 반복 조회 품질 이슈를 감지하면 표시됩니다."}
+            <div className="grid gap-3 p-5 text-sm text-slate-600">
+              {hasOperationsIssueFilters ? (
+                <>
+                  <div>
+                    <p className="font-semibold text-slate-950">현재 필터에 맞는 운영 이슈가 없습니다.</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                      조건을 일부 해제하거나 전체 초기화 후 우선순위순 목록에서 다시 확인해 주세요.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <a className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800 transition hover:bg-blue-100" href="/operations/health#issue-events">
+                      전체 초기화
+                    </a>
+                    <a className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 transition hover:bg-amber-100" href="/operations/health?issueStatus=open#issue-events">
+                      미해결 전체 보기
+                    </a>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="font-semibold text-slate-950">저장된 운영 이슈가 없습니다.</p>
+                  <p className="text-xs leading-5 text-slate-500">
+                    `operations-issues` job이 반복 조회 품질 이슈를 감지하면 이 목록에 표시됩니다.
+                  </p>
+                </>
+              )}
             </div>
           )}
         </CardBody>
