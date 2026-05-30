@@ -54,6 +54,10 @@
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
   - production 배포 후 `/api/jobs/run` 수동 실행 결과 200 OK, claimed 0건을 확인했다.
   - `background_job_runs` 최신 row가 `succeeded`, claimed 0, failed 0으로 저장되는 것을 확인했다.
+- worker 실패 메일 알림을 추가했다.
+  - `/api/jobs/run`에서 실패 job이 있거나 route-level 오류가 발생하면 `OPERATIONS_ALERT_EMAIL` 또는 `DEVELOPER_ALERT_EMAIL`로 운영자 메일을 보낸다.
+  - 알림 본문에는 worker id, 처리 건수, 실패 job id/reason만 포함하고 payload, 문서 원문, invoice 내용은 포함하지 않는다.
+  - 운영 점검 화면의 외부 연동 준비 상태에 `운영 실패 알림` 항목을 추가했다.
 
 검증:
 
@@ -68,6 +72,7 @@
 - 운영 E2E: 임시 계정 기반 82행 큐 등록 → worker 처리 → 결과 UI/XLSX 버튼 확인
 - `npm test -- server/repositories/background-job.repository.test.ts`
 - `vercel env run -e production -- npm run ops:job:background`
+- `npm test -- server/operations/background-job-alert.service.test.ts server/operations/environment-health.service.test.ts`
 
 ## 2026-05-29
 

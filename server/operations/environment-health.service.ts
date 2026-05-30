@@ -162,6 +162,16 @@ export function getExternalIntegrationHealthItems(): ExternalIntegrationHealthIt
       missingMessage: "RESEND_API_KEY 또는 NOTIFICATION_FROM_EMAIL이 없어 적하목록 알림 메일 발송이 실패할 수 있습니다."
     }),
     integrationItem({
+      key: "operations_alert_email",
+      label: "운영 실패 알림",
+      path: "백그라운드 worker 실패 메일",
+      requiredKeys: ["RESEND_API_KEY", "NOTIFICATION_FROM_EMAIL"],
+      optionalAnyKeys: ["OPERATIONS_ALERT_EMAIL", "DEVELOPER_ALERT_EMAIL"],
+      okMessage: "백그라운드 worker 실패 시 운영자 메일로 알림을 보낼 수 있습니다.",
+      warningMessage: "메일 발송 설정은 있으나 운영자 수신 주소가 없어 worker 실패 알림은 화면 이력으로만 확인됩니다.",
+      missingMessage: "메일 발송 설정이 없어 worker 실패 알림 메일을 보낼 수 없습니다."
+    }),
+    integrationItem({
       key: "scheduled_jobs",
       label: "정기 작업",
       path: "Vercel Cron / job endpoint",

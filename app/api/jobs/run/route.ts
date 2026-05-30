@@ -3,6 +3,7 @@ import { createSupabaseServiceRoleClient, hasSupabaseServiceRoleEnv } from "@/li
 import { createDocumentExtractionJobHandler } from "@/server/jobs/document-extraction-job.handler";
 import { createHsBatchLookupJobHandler } from "@/server/jobs/hs-batch-lookup-job.handler";
 import { runBackgroundJobBatch } from "@/server/jobs/background-worker.service";
+import { sendBackgroundJobFailureAlert } from "@/server/operations/background-job-alert.service";
 import { recordBackgroundJobRun } from "@/server/repositories/background-job.repository";
 
 export const runtime = "nodejs";
@@ -58,6 +59,17 @@ async function handleRun(request: NextRequest) {
       result: result as unknown as Record<string, unknown>
     });
 
+    if (failedCount > 0) {
+      await sendBackgroundJobFailureAlert({
+        workerId,
+        claimedCount: result.claimed,
+        succeededCount,
+        failedCount,
+        durationMs: Date.now() - startedAt,
+        outcomes: result.outcomes
+      }).catch(() => undefined);
+    }
+
     return NextResponse.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Background worker failed";
@@ -70,6 +82,16 @@ async function handleRun(request: NextRequest) {
       durationMs: Date.now() - startedAt,
       errorMessage: message,
       result: { error: message }
+    }).catch(() => undefined);
+
+    await sendBackgroundJobFailureAlert({
+      workerId,
+      claimedCount: 0,
+      succeededCount: 0,
+      failedCount: 1,
+      durationMs: Date.now() - startedAt,
+      outcomes: [],
+      errorMessage: message
     }).catch(() => undefined);
 
     return NextResponse.json({ error: message }, { status: 500 });

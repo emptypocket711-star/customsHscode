@@ -62,4 +62,16 @@ describe("environment health service", () => {
     expect(kotra?.status).toBe("warning");
     expect(kotra?.message).toContain("RSS");
   });
+
+  it("warns when worker failure alert recipient is not configured", () => {
+    vi.stubEnv("RESEND_API_KEY", "resend-key");
+    vi.stubEnv("NOTIFICATION_FROM_EMAIL", "HS Finder <noreply@example.test>");
+    vi.stubEnv("OPERATIONS_ALERT_EMAIL", "");
+    vi.stubEnv("DEVELOPER_ALERT_EMAIL", "");
+
+    const alertEmail = getExternalIntegrationHealthItems().find((item) => item.key === "operations_alert_email");
+
+    expect(alertEmail?.status).toBe("warning");
+    expect(alertEmail?.missingKeys).toEqual(["OPERATIONS_ALERT_EMAIL", "DEVELOPER_ALERT_EMAIL"]);
+  });
 });
