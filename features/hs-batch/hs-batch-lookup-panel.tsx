@@ -182,6 +182,7 @@ export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
   const [exporting, setExporting] = useState(false);
   const [resultFilter, setResultFilter] = useState<ResultFilter>("all");
   const [copiedRowKey, setCopiedRowKey] = useState<string | null>(null);
+  const [copiedVisibleRows, setCopiedVisibleRows] = useState(false);
 
   const rowSummary = useMemo(() => {
     const valid10 = rows.filter((row) => normalizeHsCode(row.hskCode).length === 10).length;
@@ -238,6 +239,16 @@ export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
     await navigator.clipboard.writeText(buildRowGuidance(row));
     setCopiedRowKey(key);
     window.setTimeout(() => setCopiedRowKey((current) => current === key ? null : current), 1600);
+  }
+
+  async function handleCopyVisibleRows() {
+    if (!filteredResults.length) return;
+    const text = filteredResults
+      .map((row) => buildRowGuidance(row))
+      .join("\n\n------------------------------\n\n");
+    await navigator.clipboard.writeText(text);
+    setCopiedVisibleRows(true);
+    window.setTimeout(() => setCopiedVisibleRows(false), 1600);
   }
 
   return (
@@ -377,15 +388,30 @@ export function HsBatchLookupPanel({ basisDate }: { basisDate: string }) {
                 완료 {state.summary?.success ?? 0}행 / 확인 필요 {state.summary?.warning ?? 0}행 / 오류 {state.summary?.error ?? 0}행
               </p>
             </div>
-            <button
-              className="focus-ring inline-flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-500"
-              disabled={exporting}
-              onClick={() => void handleDownloadResults()}
-              type="button"
-            >
-              {exporting ? <Loader2 aria-hidden="true" className="animate-spin" size={17} /> : <Download aria-hidden="true" size={17} />}
-              {exporting ? "XLSX 생성 중" : "XLSX 다운로드"}
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                className={
+                  copiedVisibleRows
+                    ? "focus-ring inline-flex items-center gap-2 rounded-md bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white"
+                    : "focus-ring inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                }
+                disabled={!filteredResults.length}
+                onClick={() => void handleCopyVisibleRows()}
+                type="button"
+              >
+                {copiedVisibleRows ? <Check aria-hidden="true" size={17} /> : <Clipboard aria-hidden="true" size={17} />}
+                {copiedVisibleRows ? "복사됨" : "표시 행 안내 복사"}
+              </button>
+              <button
+                className="focus-ring inline-flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-500"
+                disabled={exporting}
+                onClick={() => void handleDownloadResults()}
+                type="button"
+              >
+                {exporting ? <Loader2 aria-hidden="true" className="animate-spin" size={17} /> : <Download aria-hidden="true" size={17} />}
+                {exporting ? "XLSX 생성 중" : "XLSX 다운로드"}
+              </button>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2 border-b border-slate-200 px-5 py-3">
             {(["all", "success", "warning", "error"] as const).map((filter) => {

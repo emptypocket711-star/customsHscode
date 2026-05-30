@@ -295,7 +295,7 @@
 ## Launch Backlog
 
 1. Improve dashboard and direct lookup density for daily broker/forwarder use.
-   - Done: HS batch lookup now preserves invoice row order, separates result statuses, exports XLSX, and includes row-level customer guidance text in both the UI copy button and downloaded file.
+   - Done: HS batch lookup now preserves invoice row order, separates result statuses, exports XLSX, includes row-level customer guidance text in both the UI copy button and downloaded file, and supports copying the currently filtered guidance rows at once.
 2. Expand destination-country HS, tariff, internal tax, requirement datasets beyond the current priority countries.
 3. Replace temporary internal-tax law rules with official HS-mapped internal-tax data once received.
 4. Keep document upload hidden from ordinary users until OCR/XLS conversion workers are deployed.
