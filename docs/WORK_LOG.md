@@ -255,9 +255,22 @@
 - 운영 이슈 우선순위 정렬 운영 반영:
   - production 배포 `customs-hscode-4mzbu0gx1-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+- 운영 이슈 상태 변경 추적을 보강했다.
+  - 이전 작업은 운영 이슈 목록의 표시 순서를 바꾸는 기능이고, 이번 작업은 각 이슈의 상태가 언제, 어떤 운영자 식별자로 변경됐는지 행 안에서 바로 확인하는 추적 기능이다.
+  - `status_updated_at`, `status_updated_by`를 요약해 상태 변경 시각과 짧은 운영자 식별자를 표시한다.
+  - 전체 사용자 ID는 노출하지 않고 앞 8자리만 표시한다.
+- 운영 이슈 상태 변경 추적 운영 반영:
+  - production 배포 `customs-hscode-mtknl84cr-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` production smoke 10개 경로가 모두 통과했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
+- `npm test -- server/repositories/operations-issue.repository.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `vercel env run -e production -- npm run health:db`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 - `npm test -- server/repositories/operations-issue.repository.test.ts`
 - `npm run typecheck`
 - `npm run lint`
