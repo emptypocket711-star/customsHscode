@@ -827,6 +827,30 @@ function rankOfficialHsMasterRows(
   return mapOfficialHsMasterRowsToCandidates(input, normalization, [...best.values()]);
 }
 
+function officializeDeterministicCandidates(
+  deterministicCandidates: HsCandidateRecommendation[],
+  officialRows: HsMasterSearchRow[]
+) {
+  const officialByCode = new Map(officialRows.map((row) => [row.hsk_code, row]));
+
+  return deterministicCandidates
+    .map((candidate) => {
+      const official = officialByCode.get(candidate.hskCode);
+      if (!official) return null;
+
+      return {
+        ...candidate,
+        koreanName: official.korean_name || candidate.koreanName,
+        sourceName: official.source_name,
+        sourceUrl: official.source_url,
+        sourceVersion: official.source_version,
+        effectiveFrom: official.effective_from,
+        effectiveTo: official.effective_to
+      };
+    })
+    .filter((candidate): candidate is HsCandidateRecommendation => Boolean(candidate));
+}
+
 function recommendHsCandidatesFromMockOfficialHsMasterSearch(
   input: ProductHsRecommendationInput,
   normalization: AiProductSearchNormalizationResult | null
@@ -1272,6 +1296,34 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
         bareProductCodeWithoutSource: true
       });
       return [];
+    }
+    const deterministicFastCandidates = !shouldKeepAiAlternatives ? recommendHsCandidates(augmentedInput) : [];
+    if (deterministicFastCandidates.length) {
+      const officialRows = await findHsMasterRowsByExactCodes(
+        supabase,
+        input,
+        deterministicFastCandidates.map((candidate) => candidate.hskCode)
+      ).catch(() => []);
+      const officialDeterministicCandidates = officializeDeterministicCandidates(deterministicFastCandidates, officialRows);
+      if (officialDeterministicCandidates.length) {
+        const candidates = focusHighCertaintySingleRecommendation(pruneByUserHsHints(input, pruneWeakProductRecommendations(officialDeterministicCandidates, {
+          keepAmbiguousAlternatives: shouldKeepAiAlternatives
+        })), normalization, { keepAmbiguousAlternatives: shouldKeepAiAlternatives });
+        logLookupTelemetry("product_candidates_recommended", {
+          ...productInputShape(input),
+          route: "hs_product_ai",
+          status: "success",
+          sourceMode: "supabase_deterministic_fast",
+          durationMs: Date.now() - startedAt,
+          resultCount: candidates.length,
+          aiHintCount: 0,
+          officialCandidateCount: officialDeterministicCandidates.length,
+          fallbackCandidateCount: 0,
+          ...candidateTelemetryShape(candidates),
+          ...productNormalizationTelemetryShape(normalization, { normalizationErrorType, normalizationStatus })
+        });
+        return candidates;
+      }
     }
     const officialHsMasterCandidates = await recommendHsCandidatesFromOfficialHsMasterSearch(
       supabase,
