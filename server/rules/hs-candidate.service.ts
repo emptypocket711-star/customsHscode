@@ -16,8 +16,7 @@ import {
   productSearchTerms,
   scoreProductHint,
   scoreStandardNameWithTerms,
-  type ProductNameSearchAnalysis,
-  type ProductNameSearchRow
+  type ProductNameSearchAnalysis
 } from "@/server/rules/product-name-search-engine";
 
 export type HsCandidateRecommendation = {
@@ -61,15 +60,6 @@ type CustomsHsCodeSearchRow = {
   weight_unit: string | null;
   rate_text: string | null;
   rate_type_code: string | null;
-  source_name: string;
-  source_url: string;
-  source_version: string;
-  effective_from: string;
-  effective_to: string | null;
-};
-
-type StandardProductNameSearchRow = ProductNameSearchRow & {
-  standard_name_en?: string | null;
   source_name: string;
   source_url: string;
   source_version: string;
@@ -425,39 +415,6 @@ function filterContextConflictingCandidates(
   return filtered.length ? filtered.map((candidate, index) => ({ ...candidate, rank: index + 1 })) : candidates;
 }
 
-async function findHsMasterRowsByCodeHints(
-  supabase: SupabaseClient,
-  input: ProductHsRecommendationInput,
-  codeHints: string[]
-) {
-  const collected: HsMasterSearchRow[] = [];
-  const normalizedHints = Array.from(new Set(codeHints.map((code) => code.replace(/[^0-9]/g, "")).filter((code) => code.length >= 4 && code.length <= 10)));
-
-  for (const code of normalizedHints) {
-    let query = supabase
-      .from("hs_master")
-      .select("hsk_code, hs6, korean_name, english_name, source_name, source_url, source_version, effective_from, effective_to")
-      .lte("effective_from", input.basisDate)
-      .or(`effective_to.is.null,effective_to.gte.${input.basisDate}`)
-      .eq("status", "published")
-      .order("hsk_code")
-      .limit(code.length >= 10 ? 1 : 12);
-
-    query = code.length >= 10
-      ? query.eq("hsk_code", code)
-      : code.length === 6
-      ? query.eq("hs6", code)
-      : query.like("hsk_code", `${code}%`);
-
-    const { data, error } = await query;
-
-    if (error) throw new Error(error.message);
-    collected.push(...((data ?? []) as HsMasterSearchRow[]));
-  }
-
-  return collected;
-}
-
 function mapStoredCustomsHsCodeSearchRowsToCandidates(
   input: ProductHsRecommendationInput,
   rows: CustomsHsCodeSearchRow[],
@@ -504,101 +461,6 @@ function mapStoredCustomsHsCodeSearchRowsToCandidates(
     }));
 }
 
-function dbIlikePattern(term: string) {
-  return `%${term.replace(/[\\%_]/g, "\\$&")}%`;
-}
-
-function uniqueByHskCode<T extends { hsk_code: string }>(rows: T[]) {
-  return [...rows.reduce((best, row) => {
-    if (!best.has(row.hsk_code)) best.set(row.hsk_code, row);
-    return best;
-  }, new Map<string, T>()).values()];
-}
-
-async function findHsMasterRowsByTerms(
-  supabase: SupabaseClient,
-  input: ProductHsRecommendationInput,
-  terms: string[]
-) {
-  const collected: HsMasterSearchRow[] = [];
-  const queryTerms = terms.filter((term) => !hsMasterMaterialOnlyTerms.has(term)).slice(0, 8);
-
-  for (const term of queryTerms) {
-    for (const field of ["korean_name", "english_name"] as const) {
-      const { data, error } = await supabase
-        .from("hs_master")
-        .select("hsk_code, hs6, korean_name, english_name, source_name, source_url, source_version, effective_from, effective_to")
-        .ilike(field, dbIlikePattern(term))
-        .lte("effective_from", input.basisDate)
-        .or(`effective_to.is.null,effective_to.gte.${input.basisDate}`)
-        .eq("status", "published")
-        .order("hsk_code")
-        .limit(8);
-
-      if (error) throw new Error(error.message);
-      collected.push(...((data ?? []) as HsMasterSearchRow[]));
-    }
-  }
-
-  return uniqueByHskCode(collected);
-}
-
-async function findStoredCustomsHsCodeRowsByTerms(
-  supabase: SupabaseClient,
-  input: ProductHsRecommendationInput,
-  terms: string[]
-) {
-  const collected: CustomsHsCodeSearchRow[] = [];
-  const queryTerms = terms.filter((term) => !hsMasterMaterialOnlyTerms.has(term)).slice(0, 8);
-
-  for (const term of queryTerms) {
-    for (const field of ["korean_name", "english_name"] as const) {
-      const { data, error } = await supabase
-        .from("customs_hs_code_search_items")
-        .select("hsk_code, hs6, korean_name, english_name, quantity_unit, weight_unit, rate_text, rate_type_code, source_name, source_url, source_version, effective_from, effective_to")
-        .ilike(field, dbIlikePattern(term))
-        .lte("effective_from", input.basisDate)
-        .or(`effective_to.is.null,effective_to.gte.${input.basisDate}`)
-        .eq("status", "published")
-        .order("hsk_code")
-        .limit(8);
-
-      if (error) throw new Error(error.message);
-      collected.push(...((data ?? []) as CustomsHsCodeSearchRow[]));
-    }
-  }
-
-  return uniqueByHskCode(collected);
-}
-
-async function findStandardProductNameRowsByTerms(
-  supabase: SupabaseClient,
-  input: ProductHsRecommendationInput,
-  terms: string[]
-) {
-  const collected: StandardProductNameSearchRow[] = [];
-  const queryTerms = terms.filter((term) => !hsMasterMaterialOnlyTerms.has(term)).slice(0, 8);
-
-  for (const term of queryTerms) {
-    for (const field of ["standard_name_kr", "standard_name_en", "required_spec_kr", "detailed_classification"] as const) {
-      const { data, error } = await supabase
-        .from("standard_product_names")
-        .select("hsk_code, standard_name_kr, standard_name_en, required_spec_kr, detailed_classification, source_name, source_url, source_version, effective_from, effective_to")
-        .ilike(field, dbIlikePattern(term))
-        .lte("effective_from", input.basisDate)
-        .or(`effective_to.is.null,effective_to.gte.${input.basisDate}`)
-        .eq("status", "published")
-        .order("hsk_code")
-        .limit(8);
-
-      if (error) throw new Error(error.message);
-      collected.push(...((data ?? []) as StandardProductNameSearchRow[]));
-    }
-  }
-
-  return uniqueByHskCode(collected);
-}
-
 async function findHsMasterRowsByExactCodes(
   supabase: SupabaseClient,
   input: ProductHsRecommendationInput,
@@ -618,68 +480,6 @@ async function findHsMasterRowsByExactCodes(
 
   if (error) throw new Error(error.message);
   return (data ?? []) as HsMasterSearchRow[];
-}
-
-async function recommendHsCandidatesFromStandardProductNames(
-  supabase: SupabaseClient,
-  input: ProductHsRecommendationInput,
-  normalization: AiProductSearchNormalizationResult | null,
-  terms: string[],
-  analysis: ProductNameSearchAnalysis
-) {
-  const standardRows = await findStandardProductNameRowsByTerms(supabase, input, terms);
-  if (!standardRows.length) return [];
-
-  const hskRows = await findHsMasterRowsByExactCodes(supabase, input, standardRows.map((row) => row.hsk_code));
-  const hskByCode = new Map(hskRows.map((row) => [row.hsk_code, row]));
-  const scored = standardRows
-    .map((row) => ({
-      row,
-      hsk: hskByCode.get(row.hsk_code),
-      score: scoreStandardNameWithTerms(row, terms),
-      fallbackScore: scoreStandardNameWithTerms(row, analysis.terms)
-    }))
-    .map((item) => ({ ...item, score: Math.max(item.score, item.fallbackScore) }))
-    .filter((item) => item.hsk && item.score > 0)
-    .sort((a, b) => b.score - a.score || a.row.hsk_code.localeCompare(b.row.hsk_code))
-    .slice(0, 5);
-
-  return scored.map(({ row, hsk, score }, index) => {
-    const hintReason = reasonForHsCodeHint(normalization, row.hsk_code, hsk!.hs6);
-    const matchedTerms = terms.filter((term) =>
-      `${row.standard_name_kr} ${row.standard_name_en ?? ""} ${row.required_spec_kr ?? ""} ${row.detailed_classification ?? ""}`.toLowerCase().includes(term)
-    );
-
-    return {
-      hskCode: row.hsk_code,
-      hs6: hsk!.hs6,
-      rank: index + 1,
-      confidenceScore: Math.max(0.42, Math.min(0.74, 0.48 + score * 0.04 - index * 0.03)),
-      koreanName: hsk!.korean_name,
-      reason: hintReason
-        ? `${hintReason.reason} 공식 표준품명 데이터와 함께 대조한 예비 후보입니다.`
-        : "공식 표준품명 데이터에서 입력 품명 단서와 맞는 예비 HS 후보입니다. 실제 제품 사양 확인이 필요합니다.",
-      requiredQuestions: [
-        row.required_spec_kr ? `표준품명 필수규격 확인: ${row.required_spec_kr}` : null,
-        ...(hintReason?.requiredInfo ?? []),
-        ...(normalization?.missingQuestions ?? []),
-        "카탈로그, 제품 사양서, 재질·성분, 용도 확인"
-      ].filter((question): question is string => Boolean(question)).filter((question, questionIndex, questions) => questions.indexOf(question) === questionIndex).slice(0, 4),
-      riskNotes: "공식 표준품명 기반 검색 결과는 예비 후보이며 품목분류 확정이 아닙니다.",
-      scoreBreakdown: [
-        "공식 표준품명 조회",
-        ...matchedTerms.slice(0, 4).map((term) => `표준품명 보조어 ${term}`)
-      ],
-      lookupBasis: "official_name_match" as const,
-      reviewStatus: "suggested" as const,
-      sourceName: row.source_name,
-      sourceUrl: row.source_url,
-      sourceVersion: row.source_version,
-      effectiveFrom: row.effective_from,
-      effectiveTo: row.effective_to,
-      basisDate: input.basisDate
-    };
-  });
 }
 
 function mockHsMasterRowsByCodeHints(
@@ -865,43 +665,6 @@ function recommendHsCandidatesFromMockOfficialHsMasterSearch(
     [],
     mockHsMasterRowsByCodeHints(input, normalization.candidateHsCodes)
   );
-}
-
-async function recommendHsCandidatesFromOfficialHsMasterSearch(
-  supabase: SupabaseClient,
-  input: ProductHsRecommendationInput,
-  normalization: AiProductSearchNormalizationResult | null
-): Promise<HsCandidateRecommendation[]> {
-  const analysis = analyzeProductNameInput(input);
-  const terms = hsMasterSearchTerms(analysis, normalization);
-  const codeHints = normalization?.candidateHsCodes ?? [];
-  if (!codeHints.length && !terms.length) return [];
-
-  if (codeHints.length) {
-    const codeHintRows = await findHsMasterRowsByCodeHints(supabase, input, codeHints).catch(() => []);
-    const codeHintCandidates = rankOfficialHsMasterRows(input, normalization, terms, [], codeHintRows);
-    if (codeHintCandidates.length) return codeHintCandidates;
-  }
-
-  const [
-    termRows,
-    standardNameCandidates,
-    storedCustomsCandidates
-  ] = await Promise.all([
-    terms.length ? findHsMasterRowsByTerms(supabase, input, terms).catch(() => []) : Promise.resolve([]),
-    terms.length ? recommendHsCandidatesFromStandardProductNames(supabase, input, normalization, terms, analysis).catch(() => []) : Promise.resolve([]),
-    terms.length
-      ? findStoredCustomsHsCodeRowsByTerms(supabase, input, terms)
-        .then((rows) => mapStoredCustomsHsCodeSearchRowsToCandidates(input, rows, terms))
-        .catch(() => [])
-      : Promise.resolve([])
-  ]);
-
-  return mergeRecommendations([
-    ...rankOfficialHsMasterRows(input, normalization, terms, termRows, []),
-    ...standardNameCandidates,
-    ...storedCustomsCandidates
-  ]);
 }
 
 function mergeRecommendations(candidates: HsCandidateRecommendation[]) {
@@ -1325,25 +1088,13 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
         return candidates;
       }
     }
-    const officialHsMasterCandidates = await recommendHsCandidatesFromOfficialHsMasterSearch(
-      supabase,
-      augmentedInput,
-      normalization
-    ).catch(() => []);
-    const nonApiNormalizedBaseCandidates = [
-      ...officialHsMasterCandidates
-    ];
     const aiHintCandidates = normalization
-      ? recommendAiHsCodeHintCandidates(augmentedInput, normalization, nonApiNormalizedBaseCandidates)
+      ? recommendAiHsCodeHintCandidates(augmentedInput, normalization, [])
       : [];
-    const nonApiNormalizedCandidates = [
-      ...nonApiNormalizedBaseCandidates,
-      ...aiHintCandidates
-    ];
-    const fallbackCandidates = !shouldKeepAiAlternatives && !nonApiNormalizedCandidates.length
+    const fallbackCandidates = !shouldKeepAiAlternatives && !aiHintCandidates.length
       ? recommendHsCandidates(augmentedInput)
       : [];
-    const normalizedCandidates = [...nonApiNormalizedCandidates, ...fallbackCandidates];
+    const normalizedCandidates = [...aiHintCandidates, ...fallbackCandidates];
     const merged = filterContextConflictingCandidates(augmentedInput, mergeRecommendations([
       ...recommendAmbiguousProductCandidates(input),
       ...normalizedCandidates
@@ -1355,11 +1106,11 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
       ...productInputShape(input),
       route: "hs_product_ai",
       status: "success",
-      sourceMode: "supabase",
+      sourceMode: "supabase_gpt_only",
       durationMs: Date.now() - startedAt,
       resultCount: candidates.length,
       aiHintCount: aiHintCandidates.length,
-      officialCandidateCount: officialHsMasterCandidates.length,
+      officialCandidateCount: 0,
       fallbackCandidateCount: fallbackCandidates.length,
       ...candidateTelemetryShape(candidates),
       ...productNormalizationTelemetryShape(normalization, { normalizationErrorType, normalizationStatus })
