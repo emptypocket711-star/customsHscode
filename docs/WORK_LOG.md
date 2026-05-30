@@ -142,6 +142,11 @@
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
   - `npm run ops:job:operations-retention` 실행 결과 운영 알림 이력 deletedCount 0, background job runs deletedRuns 0, 완료 job deletedJobs 0을 확인했다.
   - production smoke 10개 경로 모두 통과했다.
+- 반복 조회 품질 이슈 승격 운영 반영:
+  - production 배포 `customs-hscode-7z0zt3ype-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` alias 연결을 확인했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+  - `npm run ops:job:operations-retention` 실행 결과 운영 알림 이력 deletedCount 0, background job runs deletedRuns 0, 완료 job deletedJobs 0을 확인했다.
+  - production smoke 10개 경로 모두 통과했다.
 
 검증:
 
