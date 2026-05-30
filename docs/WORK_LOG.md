@@ -205,9 +205,15 @@
   - `npm run ops:job:operations-issues-rehearsal` 실행 결과 synthetic telemetry 3건, recurringIssues 1건, 운영 이슈 occurrenceCount 3건, resolved/open 상태 변경, cleanup true를 확인했다.
   - `npm run ops:job:operations-issues` 실행 결과 scannedEvents 0, recurringIssues 0, syncedIssues 0건, alerts 0건을 확인했다.
   - `npm run ops:job:operations-retention` 실행 결과 운영 알림 이력 deletedCount 0, background job history deletedRuns 0/deletedJobs 0, 운영 이슈 deletedCount 0을 확인했다.
+- 운영 이슈 필터/검색을 추가했다.
+  - 이전 작업은 이슈별 담당자/메모/처리 사유를 저장하는 기능이고, 이번 작업은 여러 운영 이슈 중 필요한 항목을 빠르게 찾는 목록 탐색 기능이다.
+  - 운영 점검 화면에서 상태, 심각도, 담당자, 검색어 기준으로 최근 운영 이슈 목록을 필터링할 수 있게 했다.
+  - 검색어는 제목, 요약, 조치, issue key/type, 담당자, 메모, 처리 사유를 대상으로 한다.
+  - 필터는 URL query string으로 유지되어 새로고침 후에도 같은 목록 상태를 볼 수 있다.
 
 검증:
 
+- `npm test -- server/repositories/operations-issue.repository.test.ts`
 - `npm test -- server/repositories/operations-issue.repository.test.ts server/operations/operations-issue-alert.service.test.ts`
 - `npm test -- server/operations/operations-issue-alert.service.test.ts server/operations/background-job-alert.service.test.ts`
 - `npm test -- server/observability/lookup-telemetry.test.ts`

@@ -84,6 +84,13 @@ export type OperationsIssueEventSummary = {
   latestIssueAt: string | null;
 };
 
+export type OperationsIssueEventFilters = {
+  status?: OperationsIssueStatus | "all";
+  severity?: OperationsIssueSeverity | "all";
+  assignedToLabel?: string;
+  query?: string;
+};
+
 const operationsIssueEventSelect = [
   "id",
   "issue_type",
@@ -249,5 +256,37 @@ export function summarizeOperationsIssueEvents(events: OperationsIssueEventItem[
     blocker: 0,
     warning: 0,
     latestIssueAt: null
+  });
+}
+
+function includesNormalized(value: string | null | undefined, query: string) {
+  return Boolean(value?.toLowerCase().includes(query));
+}
+
+export function filterOperationsIssueEvents(
+  events: OperationsIssueEventItem[],
+  filters: OperationsIssueEventFilters
+) {
+  const status = filters.status && filters.status !== "all" ? filters.status : null;
+  const severity = filters.severity && filters.severity !== "all" ? filters.severity : null;
+  const assignedToLabel = filters.assignedToLabel?.trim().toLowerCase() ?? "";
+  const query = filters.query?.trim().toLowerCase() ?? "";
+
+  return events.filter((event) => {
+    if (status && event.status !== status) return false;
+    if (severity && event.severity !== severity) return false;
+    if (assignedToLabel && !includesNormalized(event.assignedToLabel, assignedToLabel)) return false;
+    if (!query) return true;
+
+    return [
+      event.title,
+      event.summary,
+      event.action,
+      event.issueKey,
+      event.issueType,
+      event.assignedToLabel,
+      event.operatorNote,
+      event.resolutionReason
+    ].some((value) => includesNormalized(value, query));
   });
 }

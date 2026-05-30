@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  filterOperationsIssueEvents,
   summarizeOperationsIssueEvents,
   type OperationsIssueEventItem
 } from "@/server/repositories/operations-issue.repository";
@@ -47,5 +48,44 @@ describe("operations issue repository helpers", () => {
       warning: 1,
       latestIssueAt: "2026-05-29T03:00:00.000Z"
     });
+  });
+
+  it("filters operations issues by status, severity, owner, and text query", () => {
+    const events = [
+      issue({
+        id: "issue-1",
+        status: "open",
+        severity: "warning",
+        assignedToLabel: "김운영",
+        operatorNote: "GPT 단계 확인 중",
+        resolutionReason: null
+      }),
+      issue({
+        id: "issue-2",
+        status: "resolved",
+        severity: "blocker",
+        title: "반복 조회 품질 이슈: 후보 없음",
+        issueKey: "lookup_quality_recurring:no_candidates",
+        assignedToLabel: "박검토",
+        operatorNote: "후보 생성 경로 수정 완료",
+        resolutionReason: "후보 fallback 보강"
+      }),
+      issue({
+        id: "issue-3",
+        status: "ignored",
+        severity: "info",
+        title: "반복 조회 품질 이슈: 테스트",
+        assignedToLabel: null,
+        operatorNote: null,
+        resolutionReason: "리허설 데이터"
+      })
+    ];
+
+    expect(filterOperationsIssueEvents(events, {
+      status: "resolved",
+      severity: "blocker",
+      assignedToLabel: "박",
+      query: "fallback"
+    }).map((event) => event.id)).toEqual(["issue-2"]);
   });
 });

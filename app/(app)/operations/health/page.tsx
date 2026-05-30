@@ -27,9 +27,12 @@ import {
   type BackgroundJobOperationsItem
 } from "@/server/repositories/background-job.repository";
 import {
+  filterOperationsIssueEvents,
   listRecentOperationsIssueEvents,
   summarizeOperationsIssueEvents,
   type OperationsIssueEventItem,
+  type OperationsIssueEventFilters,
+  type OperationsIssueSeverity,
   type OperationsIssueStatus
 } from "@/server/repositories/operations-issue.repository";
 import {
@@ -234,6 +237,33 @@ function operationsIssueStatusTone(status: OperationsIssueStatus) {
   return "neutral";
 }
 
+function operationsIssueSeverityLabel(severity: OperationsIssueSeverity) {
+  if (severity === "blocker") return "차단";
+  if (severity === "warning") return "주의";
+  return "정보";
+}
+
+function searchParamValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function parseOperationsIssueFilters(params: {
+  issueStatus?: string | string[];
+  issueSeverity?: string | string[];
+  issueOwner?: string | string[];
+  issueQuery?: string | string[];
+}): OperationsIssueEventFilters {
+  const rawStatus = searchParamValue(params.issueStatus);
+  const rawSeverity = searchParamValue(params.issueSeverity);
+
+  return {
+    status: rawStatus === "open" || rawStatus === "resolved" || rawStatus === "ignored" ? rawStatus : "all",
+    severity: rawSeverity === "info" || rawSeverity === "warning" || rawSeverity === "blocker" ? rawSeverity : "all",
+    assignedToLabel: searchParamValue(params.issueOwner)?.trim() ?? "",
+    query: searchParamValue(params.issueQuery)?.trim() ?? ""
+  };
+}
+
 function eventTone(event: LookupTelemetryEvent) {
   return isLookupTelemetryIssue(event) ? "warning" : "success";
 }
@@ -421,7 +451,7 @@ async function loadOperationsIssueEvents() {
   if (!hasSupabaseEnv()) return [];
 
   const supabase = await createSupabaseServerClient();
-  return listRecentOperationsIssueEvents(supabase, 20).catch(() => []);
+  return listRecentOperationsIssueEvents(supabase, 100).catch(() => []);
 }
 
 async function loadOperationsRetentionStatus(): Promise<OperationsRetentionStatus | null> {
@@ -431,13 +461,23 @@ async function loadOperationsRetentionStatus(): Promise<OperationsRetentionStatu
   return getOperationsRetentionStatus(supabase).catch(() => null);
 }
 
-export default async function OperationsHealthPage() {
+export default async function OperationsHealthPage({
+  searchParams
+}: {
+  searchParams?: Promise<{
+    issueStatus?: string | string[];
+    issueSeverity?: string | string[];
+    issueOwner?: string | string[];
+    issueQuery?: string | string[];
+  }>;
+}) {
   const guard = await requireDeveloperRole();
 
   if (!guard.allowed) {
     return <AccessDenied message={guard.message} />;
   }
 
+  const issueFilters = parseOperationsIssueFilters((await searchParams) ?? {});
   const groups = getEnvironmentHealthGroups();
   const integrationHealthItems = getExternalIntegrationHealthItems();
   const [lookupTelemetryEvents, backgroundJobs, backgroundJobRuns, operationsAlertEvents, operationsIssueEvents, operationsRetentionStatus, schemaHealthReport] = await Promise.all([
@@ -463,7 +503,15 @@ export default async function OperationsHealthPage() {
   const backgroundJobSummary = summarizeBackgroundJobOperations(backgroundJobs);
   const backgroundJobRunSummary = summarizeBackgroundJobRuns(backgroundJobRuns);
   const operationsAlertSummary = summarizeOperationsAlertEvents(operationsAlertEvents);
+  const filteredOperationsIssueEvents = filterOperationsIssueEvents(operationsIssueEvents, issueFilters);
   const operationsIssueSummary = summarizeOperationsIssueEvents(operationsIssueEvents);
+  const filteredOperationsIssueSummary = summarizeOperationsIssueEvents(filteredOperationsIssueEvents);
+  const hasOperationsIssueFilters = Boolean(
+    (issueFilters.status && issueFilters.status !== "all")
+      || (issueFilters.severity && issueFilters.severity !== "all")
+      || issueFilters.assignedToLabel
+      || issueFilters.query
+  );
   const totalRetentionCandidates = operationsRetentionStatus
     ? operationsRetentionStatus.operationsAlertEvents.pruneCandidateCount
       + operationsRetentionStatus.backgroundJobHistory.runPruneCandidateCount
@@ -1036,7 +1084,67 @@ export default async function OperationsHealthPage() {
               <p className="mt-1 font-semibold text-slate-950">{operationsIssueSummary.latestIssueAt ? formatDate(operationsIssueSummary.latestIssueAt) : "-"}</p>
             </div>
           </div>
-          {operationsIssueEvents.length ? (
+          <form className="grid gap-3 border-b border-slate-200 bg-white p-4 text-sm lg:grid-cols-[1fr_1fr_1fr_1.5fr_auto]" action="/operations/health#issue-events">
+            <label className="grid gap-1 text-xs font-semibold text-slate-600">
+              상태
+              <select
+                className="rounded-md border border-slate-200 bg-white px-2 py-2 text-sm font-normal text-slate-900 outline-none transition focus:border-blue-400"
+                defaultValue={issueFilters.status ?? "all"}
+                name="issueStatus"
+              >
+                <option value="all">전체</option>
+                <option value="open">미해결</option>
+                <option value="resolved">해결</option>
+                <option value="ignored">제외</option>
+              </select>
+            </label>
+            <label className="grid gap-1 text-xs font-semibold text-slate-600">
+              심각도
+              <select
+                className="rounded-md border border-slate-200 bg-white px-2 py-2 text-sm font-normal text-slate-900 outline-none transition focus:border-blue-400"
+                defaultValue={issueFilters.severity ?? "all"}
+                name="issueSeverity"
+              >
+                <option value="all">전체</option>
+                <option value="blocker">차단</option>
+                <option value="warning">주의</option>
+                <option value="info">정보</option>
+              </select>
+            </label>
+            <label className="grid gap-1 text-xs font-semibold text-slate-600">
+              담당자
+              <input
+                className="rounded-md border border-slate-200 bg-white px-2 py-2 text-sm font-normal text-slate-900 outline-none transition focus:border-blue-400"
+                defaultValue={issueFilters.assignedToLabel ?? ""}
+                name="issueOwner"
+                placeholder="담당자명"
+              />
+            </label>
+            <label className="grid gap-1 text-xs font-semibold text-slate-600">
+              검색
+              <input
+                className="rounded-md border border-slate-200 bg-white px-2 py-2 text-sm font-normal text-slate-900 outline-none transition focus:border-blue-400"
+                defaultValue={issueFilters.query ?? ""}
+                name="issueQuery"
+                placeholder="제목, 키, 조치, 메모, 처리 사유"
+              />
+            </label>
+            <div className="flex items-end gap-2">
+              <button className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800 transition hover:bg-blue-100" type="submit">
+                필터 적용
+              </button>
+              {hasOperationsIssueFilters ? (
+                <a className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" href="/operations/health#issue-events">
+                  초기화
+                </a>
+              ) : null}
+            </div>
+            <p className="text-xs text-slate-500 lg:col-span-5">
+              표시 {filteredOperationsIssueSummary.total}건 / 최근 이슈 {operationsIssueSummary.total}건
+              {hasOperationsIssueFilters ? " · 필터 적용 중" : ""}
+            </p>
+          </form>
+          {filteredOperationsIssueEvents.length ? (
             <div className="overflow-x-auto">
               <table className="min-w-[1480px] text-left text-sm">
                 <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
@@ -1052,10 +1160,11 @@ export default async function OperationsHealthPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {operationsIssueEvents.map((event: OperationsIssueEventItem) => (
+                  {filteredOperationsIssueEvents.map((event: OperationsIssueEventItem) => (
                     <tr key={event.id} className={event.status === "open" ? "bg-amber-50/45" : undefined}>
                       <td className="px-5 py-4">
                         <Badge tone={operationsIssueStatusTone(event.status)}>{operationsIssueStatusLabel(event.status)}</Badge>
+                        <p className="mt-2 text-xs font-semibold text-slate-500">{operationsIssueSeverityLabel(event.severity)}</p>
                       </td>
                       <td className="px-5 py-4">
                         <p className="font-semibold text-slate-950">{event.title}</p>
@@ -1163,7 +1272,9 @@ export default async function OperationsHealthPage() {
             </div>
           ) : (
             <div className="p-5 text-sm text-slate-600">
-              저장된 운영 이슈가 없습니다. `operations-issues` job이 반복 조회 품질 이슈를 감지하면 표시됩니다.
+              {hasOperationsIssueFilters
+                ? "현재 필터에 맞는 운영 이슈가 없습니다. 필터를 조정하거나 초기화해 주세요."
+                : "저장된 운영 이슈가 없습니다. `operations-issues` job이 반복 조회 품질 이슈를 감지하면 표시됩니다."}
             </div>
           )}
         </CardBody>
