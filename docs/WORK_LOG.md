@@ -133,6 +133,11 @@
 - 운영 반영:
   - production 배포 후 `npm run ops:job:operations-retention`을 실행해 운영 알림 이력 deletedCount 0, background job runs deletedRuns 0, 완료 job deletedJobs 0을 확인했다.
   - production smoke 10개 경로 모두 통과했다.
+- 조회 품질 분류 운영 반영:
+  - production 배포 `customs-hscode-meod8byca-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` alias 연결을 확인했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+  - `npm run ops:job:operations-retention` 실행 결과 운영 알림 이력 deletedCount 0, background job runs deletedRuns 0, 완료 job deletedJobs 0을 확인했다.
+  - production smoke 10개 경로 모두 통과했다.
 
 검증:
 
@@ -144,6 +149,9 @@
 - `npm run typecheck`
 - `npm run lint`
 - `npm run build`
+- `vercel env run -e production -- npm run health:db`
+- `vercel env run -e production -- npm run ops:job:operations-retention`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 - `vercel env run -e production -- npm run ops:job:background-failure-rehearsal`
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 - `npm test -- server/operations/background-job-alert.service.test.ts server/repositories/background-job.repository.test.ts`
