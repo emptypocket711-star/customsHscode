@@ -1428,23 +1428,23 @@ export default async function OperationsHealthPage({
                               </p>
                             ) : null}
                           </td>
-                          <td className="px-5 py-4">
-                            <p className="font-semibold text-slate-950">{event.title}</p>
-                            <p className="mt-1 text-xs leading-5 text-slate-600">{event.summary}</p>
+                          <td className="max-w-[420px] px-5 py-4">
+                            <p className="break-words font-semibold text-slate-950">{event.title}</p>
+                            <p className="mt-1 break-words text-xs leading-5 text-slate-600">{event.summary}</p>
                             {drilldown ? (
                               <div className="mt-3 rounded-md border border-amber-200 bg-white px-3 py-2 text-xs leading-5 text-slate-600">
                                 <div className="flex flex-wrap items-center justify-between gap-2">
                                   <p className="font-semibold text-amber-900">원인 드릴다운</p>
                                   <Badge tone="warning">관련 로그 {drilldown.relatedEventCount}건</Badge>
                                 </div>
-                                <p className="mt-2">
+                                  <p className="mt-2 break-words">
                                   진단: {drilldown.diagnoses.join(", ")}
                                   <br />
                                   경로: {drilldown.routes.join(", ")}
                                 </p>
                                 <div className="mt-2 grid gap-1">
                                   {drilldown.samples.map((sample) => (
-                                    <p className="rounded border border-slate-100 bg-slate-50 px-2 py-1" key={sample.id}>
+                                    <p className="break-words rounded border border-slate-100 bg-slate-50 px-2 py-1" key={sample.id}>
                                       {formatDate(sample.createdAt)} · {sample.diagnosis} · 결과 {sample.resultCount ?? "-"}건 · AI {sample.normalizationCandidateCount ?? "-"} / 공식 {sample.officialCandidateCount ?? "-"} / HS6 {sample.finalHs6Count ?? "-"} / 10자리 {sample.finalHsk10Count ?? "-"}
                                     </p>
                                   ))}
@@ -1461,8 +1461,8 @@ export default async function OperationsHealthPage({
                             <br />
                             최근 {formatDate(event.lastSeenAt)}
                           </td>
-                          <td className="max-w-[320px] px-5 py-4 text-xs leading-5 text-slate-600">{event.action}</td>
-                          <td className="max-w-[320px] px-5 py-4 text-xs leading-5 text-slate-600">
+                          <td className="max-w-[320px] break-words px-5 py-4 text-xs leading-5 text-slate-600">{event.action}</td>
+                          <td className="max-w-[320px] break-words px-5 py-4 text-xs leading-5 text-slate-600">
                             <div className="grid gap-2">
                               <div className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5">
                                 <p className="font-semibold text-slate-500">담당자</p>
