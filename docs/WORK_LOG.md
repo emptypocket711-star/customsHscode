@@ -421,6 +421,13 @@
 - 운영 이슈 우선 확인 행 표시 운영 반영:
   - production 배포 `customs-hscode-mrofm6b8r-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` alias 연결과 production smoke 10개 경로 통과를 확인했다.
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+- 운영 이슈 우선 확인 처리 안내를 추가했다.
+  - 이전 작업은 우선 확인 대상 행을 테이블에서 식별하기 쉽게 표시한 행 식별성 보강이고, 이번 작업은 해당 행의 처리 폼 안에서 우선 확인 사유와 다음 조치를 다시 보여주는 처리 입력 안내 보강이다.
+  - 우선 확인 대상 행의 처리 폼에만 사유, 다음 조치, 담당자/메모 기록 안내를 표시한다.
+  - 일반 운영 이슈 행의 처리 폼과 저장 데이터, RLS, 상태 변경 권한 구조는 바꾸지 않았다.
+- 운영 이슈 우선 확인 처리 안내 운영 반영:
+  - production 배포 `customs-hscode-3b08cj5yq-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` alias 연결과 production smoke 10개 경로 통과를 확인했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
 
 검증:
 
