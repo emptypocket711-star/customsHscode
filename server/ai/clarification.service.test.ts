@@ -111,7 +111,7 @@ describe("normalizeProductSearchInput", () => {
     });
 
     expect(key).toContain("ai-product-normalization");
-    expect(key).toContain("product-search-normalization-v16");
+    expect(key).toContain("product-search-normalization-v17");
     expect(key).toContain("901910");
     expect(key).not.toContain("secret");
     expect(key).not.toContain("ABC-123");
@@ -255,29 +255,18 @@ describe("normalizeProductSearchInput", () => {
     expect(parsed.candidateHsCodes).toEqual(["854370", "847160"]);
   });
 
-  it("keeps product-name GPT instructions broad enough for multilingual and model-code searches", () => {
+  it("keeps product-name GPT instructions focused on direct HS lookup", () => {
     const instructions = aiProviderInternals.aiProductSearchNormalizationInstructions();
 
+    expect(instructions).toContain("\"검색품명\" HS CODE 알려줘");
     expect(instructions).toContain("Korean, Chinese, Japanese, English, or another language");
-    expect(instructions).toContain("For Korean, Chinese, Japanese, Cyrillic, or mixed-language product names");
+    expect(instructions).toContain("Use general product knowledge only");
+    expect(instructions).toContain("clear common product");
+    expect(instructions).toContain("candy/sweets/confectionery");
     expect(instructions).toContain("Do not return an empty candidateHsCodes array only because the exact Korean HSK 10-digit suffix is unknown");
-    expect(instructions).toContain("brand name, trade name, product line, model name, SKU, catalog number");
-    expect(instructions).toContain("brand or product line plus a generic product phrase");
-    expect(instructions).toContain("do not rely on live web search");
-    expect(instructions).toContain("Act as a classification interviewer first");
-    expect(instructions).toContain("First decide classificationState, certainty, and displayMode");
-    expect(instructions).toContain("Candidate count rule");
-    expect(instructions).toContain("Use classificationState=needs_clarification");
-    expect(instructions).toContain("For needs_clarification, still include one primaryCandidate");
-    expect(instructions).toContain("Do not force 3 to 8 candidates in high-certainty cases");
-    expect(instructions).toContain("Prefer HS6 prefixes");
-    expect(instructions).toContain("Return useful HS4/HS6 candidates even when the exact national HS10 may need later official-data expansion");
-    expect(instructions).toContain("Do not require an exact official HS description match before returning candidateHsCodes");
     expect(instructions).toContain("Do not use needs_clarification just because the exact national HS10 is uncertain");
-    expect(instructions).toContain("do not prioritize accumulator/battery headings only because the article contains an internal battery");
-    expect(instructions).toContain("classify lookup intent by the traded finished article first");
-    expect(instructions).toContain("Do not use live web search for product-name normalization");
-    expect(instructions).toContain("trade names, retail product names, and foreign-language names");
+    expect(instructions).toContain("traded finished article");
+    expect(instructions).toContain("Do not use live web search");
   });
 
   it("parses high-certainty single primary candidates before alternatives", () => {
@@ -347,6 +336,45 @@ describe("normalizeProductSearchInput", () => {
     expect(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string).tools).toBeUndefined();
     expect(result.candidateHsCodes).toEqual(["851762", "910212", "852589"]);
     expect(result.searchTerms).toEqual(expect.arrayContaining(["smart watch", "스마트워치"]));
+  });
+
+  it("accepts a direct common-product HS answer from GPT", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        output_text: JSON.stringify({
+          classificationState: "single_likely_candidate",
+          certainty: "medium",
+          displayMode: "single",
+          correctedProductName: "사탕",
+          primaryCandidate: {
+            code: "1704",
+            reason: "사탕은 일반적으로 코코아를 함유하지 않은 설탕과자류로 검토됩니다.",
+            requiredInfo: ["초콜릿 함유 여부", "껌 또는 의약품 표시 여부", "성분표"]
+          },
+          searchTerms: ["사탕", "캔디", "설탕과자", "sugar confectionery", "candy"],
+          koreanTerms: ["사탕", "캔디", "설탕과자"],
+          englishTerms: ["sugar confectionery", "candy"],
+          productFamilies: ["sugar confectionery"],
+          candidateHsCodes: ["1704"],
+          candidateHsCodeReasons: [
+            { code: "1704", reason: "코코아를 함유하지 않은 설탕과자류 가능성", requiredInfo: ["초콜릿 함유 여부", "성분표"] }
+          ],
+          missingQuestions: ["초콜릿 또는 코코아 함유 여부 확인이 필요합니다."]
+        })
+      }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const provider = new OpenAiProvider("test-key");
+    const result = await provider.normalizeProductSearch({
+      task: "product_search_normalization",
+      basisDate: "2026-05-30",
+      redactedInput: "품명: 사탕"
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(result.candidateHsCodes).toEqual(["1704"]);
+    expect(result.primaryCandidate?.code).toBe("1704");
+    expect(result.searchTerms).toEqual(expect.arrayContaining(["사탕", "sugar confectionery"]));
   });
 
   it("runs a simple interviewer retry when a successful response still has no HS candidates", async () => {
