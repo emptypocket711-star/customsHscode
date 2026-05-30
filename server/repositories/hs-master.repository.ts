@@ -106,6 +106,62 @@ type OriginMarkingMethodRecord = {
   status: string;
 };
 
+type HsLookupSnapshotPayload = {
+  lookupMode?: "hsk_detail" | "hs6_explorer" | "hs4_explorer";
+  basisDate?: string;
+  rows?: unknown[];
+};
+
+type HskLookupSnapshotRow = {
+  hsk_code: string;
+  hs6: string;
+  hs4?: string;
+  hs2?: string;
+  korean_name: string;
+  english_name: string | null;
+  quantity_unit: string | null;
+  weight_unit: string | null;
+  tariff_rates?: unknown[];
+  customs_confirmation_requirements?: unknown[];
+  integrated_public_notice_requirements?: unknown[];
+  source_snapshot?: {
+    hsMaster?: {
+      sourceName?: string;
+      sourceUrl?: string;
+      sourceVersion?: string;
+      effectiveFrom?: string;
+      effectiveTo?: string | null;
+      publishedAt?: string | null;
+      retrievedAt?: string;
+      checksum?: string | null;
+    };
+  };
+  standardNames?: Array<{
+    name?: string;
+    requiredSpec?: string | null;
+    sourceName?: string;
+    sourceVersion?: string;
+  }>;
+  siblings?: Array<{
+    hskCode?: string;
+    koreanName?: string;
+    isSelected?: boolean;
+  }>;
+};
+
+type Hs6LookupSnapshotRow = {
+  hs6: string;
+  children_json?: unknown[];
+};
+
+type Hs4LookupSnapshotRow = {
+  hs4: string;
+  hs6_groups_json?: Array<{
+    hs6?: string;
+    children?: unknown[];
+  }>;
+};
+
 type RequirementAgencyContact = {
   agencyCode: string | null;
   agencyName: string;
@@ -655,6 +711,186 @@ async function findOriginMarkingRecords(supabase: SupabaseClient, hskCodes: stri
   };
 }
 
+function snapshotArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [];
+}
+
+function snapshotString(value: unknown, fallback = "") {
+  return typeof value === "string" ? value : fallback;
+}
+
+function snapshotNumber(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() && Number.isFinite(Number(value))) return Number(value);
+  return null;
+}
+
+function mapSnapshotTariffs(rows: unknown[]): HsDirectLookupResult["tariffPreviews"] {
+  return rows.map((row) => {
+    const item = row as {
+      rateType?: unknown;
+      dutyRate?: unknown;
+      unitDuty?: unknown;
+      countryGroup?: unknown;
+      usageRateType?: unknown;
+      sourceName?: unknown;
+      sourceVersion?: unknown;
+    };
+    const rateType = snapshotString(item.rateType, "-");
+    const countryGroup = typeof item.countryGroup === "string" ? item.countryGroup : null;
+
+    return {
+      rateType,
+      label: tariffLabel(rateType, countryGroup),
+      rateText: tariffRateText(snapshotNumber(item.dutyRate), snapshotNumber(item.unitDuty)),
+      countryGroup,
+      usageRateType: typeof item.usageRateType === "string" ? item.usageRateType : null,
+      sourceName: snapshotString(item.sourceName, "-"),
+      sourceVersion: snapshotString(item.sourceVersion, "-")
+    };
+  });
+}
+
+function mapSnapshotRequirements(row: HskLookupSnapshotRow): HsDirectLookupResult["importRequirements"] {
+  const customs = snapshotArray(row.customs_confirmation_requirements).map((item) => {
+    const requirement = item as {
+      documentName?: unknown;
+      relatedLaw?: unknown;
+      sourceName?: unknown;
+      sourceVersion?: unknown;
+    };
+
+    return {
+      type: "세관장확인",
+      name: snapshotString(requirement.documentName, "-"),
+      relatedLaw: snapshotString(requirement.relatedLaw, "-"),
+      agencyCode: null,
+      agency: null,
+      agencyContact: null,
+      procedureSummary: null,
+      playbook: null,
+      sourceName: snapshotString(requirement.sourceName, "-"),
+      sourceVersion: snapshotString(requirement.sourceVersion, "-")
+    };
+  });
+  const publicNotice = snapshotArray(row.integrated_public_notice_requirements).map((item) => {
+    const requirement = item as {
+      requirementName?: unknown;
+      relatedLaw?: unknown;
+      agency?: unknown;
+      procedureSummary?: unknown;
+      sourceName?: unknown;
+      sourceVersion?: unknown;
+    };
+
+    return {
+      type: "통합공고",
+      name: snapshotString(requirement.requirementName, "-"),
+      relatedLaw: snapshotString(requirement.relatedLaw, "-"),
+      agencyCode: null,
+      agency: typeof requirement.agency === "string" ? requirement.agency : null,
+      agencyContact: null,
+      procedureSummary: typeof requirement.procedureSummary === "string" ? requirement.procedureSummary : null,
+      playbook: null,
+      sourceName: snapshotString(requirement.sourceName, "-"),
+      sourceVersion: snapshotString(requirement.sourceVersion, "-")
+    };
+  });
+
+  return [...customs, ...publicNotice];
+}
+
+function mapSnapshotRowToResult(row: HskLookupSnapshotRow, basisDate: string): HsDirectLookupResult {
+  const source = row.source_snapshot?.hsMaster;
+  const hierarchyPath = buildHsHierarchyPath({
+    code: row.hsk_code,
+    hs6: row.hs6,
+    currentLabel: row.korean_name
+  });
+
+  return {
+    hskCode: row.hsk_code,
+    hs6: row.hs6,
+    koreanName: row.korean_name,
+    briefDescription: buildHsBriefDescription({
+      hskCode: row.hsk_code,
+      hs6: row.hs6,
+      koreanName: row.korean_name,
+      hierarchyPath
+    }),
+    englishName: row.english_name,
+    importNatureCode: null,
+    exportNatureCode: null,
+    quantityUnit: row.quantity_unit,
+    weightUnit: row.weight_unit,
+    basisDate,
+    sourceName: source?.sourceName ?? "domestic_hs_lookup_snapshots",
+    sourceUrl: source?.sourceUrl ?? "internal://domestic_hs_lookup_snapshots",
+    sourceVersion: source?.sourceVersion ?? `snapshot:${basisDate}`,
+    effectiveFrom: source?.effectiveFrom ?? basisDate,
+    effectiveTo: source?.effectiveTo ?? null,
+    publishedAt: source?.publishedAt ?? null,
+    retrievedAt: source?.retrievedAt ?? new Date().toISOString(),
+    checksum: source?.checksum ?? null,
+    standardProductNames: (row.standardNames ?? []).map((item) => ({
+      name: item.name ?? "-",
+      requiredSpec: item.requiredSpec ?? "-",
+      sourceName: item.sourceName ?? "-",
+      sourceVersion: item.sourceVersion ?? "-"
+    })),
+    classificationSiblings: (row.siblings ?? []).map((item) => ({
+      hskCode: item.hskCode ?? "",
+      koreanName: item.koreanName ?? "-",
+      isSelected: Boolean(item.isSelected)
+    })).filter((item) => item.hskCode),
+    tariffPreviews: mapSnapshotTariffs(snapshotArray(row.tariff_rates)),
+    importRequirements: mapSnapshotRequirements(row),
+    originMarking: null,
+    classificationCases: [],
+    hierarchyPath
+  };
+}
+
+function snapshotRowsFromPayload(payload: HsLookupSnapshotPayload | null | undefined, normalizedCode: string): HskLookupSnapshotRow[] {
+  const rows = snapshotArray(payload?.rows);
+  if (payload?.lookupMode === "hs6_explorer") {
+    return rows.flatMap((row) => snapshotArray((row as Hs6LookupSnapshotRow).children_json)) as HskLookupSnapshotRow[];
+  }
+  if (payload?.lookupMode === "hs4_explorer") {
+    return rows.flatMap((row) =>
+      snapshotArray((row as Hs4LookupSnapshotRow).hs6_groups_json)
+        .flatMap((group) => snapshotArray((group as { children?: unknown[] }).children))
+    ) as HskLookupSnapshotRow[];
+  }
+
+  return rows.filter((row) => snapshotString((row as HskLookupSnapshotRow).hsk_code) === normalizedCode) as HskLookupSnapshotRow[];
+}
+
+async function lookupWithSnapshotRpc(
+  supabase: SupabaseClient,
+  hskCode: string,
+  basisDate: string
+): Promise<HsDirectLookupResult[] | null> {
+  const normalizedCode = normalizeHskCode(hskCode);
+  if (!normalizedCode) return null;
+  if (normalizedCode.length > 6 && process.env.HSK_DETAIL_SNAPSHOT_ENABLED !== "true") return null;
+
+  const rpcCall = normalizedCode.length < 6
+    ? supabase.rpc("lookup_hs4_explorer", { p_hs4: normalizedCode, p_basis_date: basisDate })
+    : normalizedCode.length === 6
+      ? supabase.rpc("lookup_hs6_explorer", { p_hs6: normalizedCode, p_basis_date: basisDate })
+      : supabase.rpc("lookup_hsk_detail", { p_code: normalizedCode, p_basis_date: basisDate });
+  const { data, error } = await rpcCall;
+
+  if (error) return null;
+
+  const payload = ((data ?? []) as Array<{ payload?: HsLookupSnapshotPayload }>)[0]?.payload;
+  const rows = snapshotRowsFromPayload(payload, normalizedCode);
+  if (!rows.length) return null;
+
+  return rows.map((row) => mapSnapshotRowToResult(row, basisDate));
+}
+
 async function lookupWithSupabase(
   supabase: SupabaseClient,
   hskCode: string,
@@ -922,12 +1158,19 @@ export async function lookupHsDirect(hskCode: string, basisDate: string) {
   }
 
   const supabase = await createSupabaseServerClient();
+  const snapshotResults = await lookupWithSnapshotRpc(supabase, hskCode, basisDate);
+  if (snapshotResults?.length) {
+    return snapshotResults;
+  }
+
   return lookupWithSupabase(supabase, hskCode, basisDate);
 }
 
 export const hsMasterRepositoryInternals = {
   normalizeHskCode,
   matchesRequestedCode,
+  mapSnapshotRowToResult,
+  snapshotRowsFromPayload,
   originMarkingCandidatePatterns,
   selectBestOriginMarkingTarget,
   selectBestOriginMarkingMethod,

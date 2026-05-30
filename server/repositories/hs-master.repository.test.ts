@@ -2,6 +2,75 @@ import { describe, expect, it } from "vitest";
 import { hsMasterRepositoryInternals } from "@/server/repositories/hs-master.repository";
 
 describe("hs master repository mock lookup", () => {
+  it("maps HSK lookup snapshot rows to direct lookup results", () => {
+    const result = hsMasterRepositoryInternals.mapSnapshotRowToResult({
+      hsk_code: "3926909000",
+      hs6: "392690",
+      hs4: "3926",
+      hs2: "39",
+      korean_name: "기타",
+      english_name: "Other",
+      quantity_unit: "KG",
+      weight_unit: "KG",
+      tariff_rates: [
+        {
+          rateType: "A",
+          dutyRate: 8,
+          unitDuty: null,
+          countryGroup: "1",
+          usageRateType: null,
+          sourceName: "관세청 품목번호별 관세율표",
+          sourceVersion: "tariff-v1"
+        }
+      ],
+      customs_confirmation_requirements: [
+        {
+          documentName: "수입승인",
+          relatedLaw: "예시법",
+          sourceName: "요건",
+          sourceVersion: "requirement-v1"
+        }
+      ],
+      integrated_public_notice_requirements: [],
+      source_snapshot: {
+        hsMaster: {
+          sourceName: "관세청 HSK",
+          sourceUrl: "https://example.com",
+          sourceVersion: "hsk-v1",
+          effectiveFrom: "2026-01-01",
+          effectiveTo: null,
+          publishedAt: null,
+          retrievedAt: "2026-05-31T00:00:00.000Z",
+          checksum: "abc"
+        }
+      },
+      standardNames: [{ name: "기타 플라스틱 제품", requiredSpec: "재질", sourceName: "표준품명", sourceVersion: "standard-v1" }],
+      siblings: [{ hskCode: "3926909000", koreanName: "기타", isSelected: true }]
+    }, "2026-05-31");
+
+    expect(result.hskCode).toBe("3926909000");
+    expect(result.briefDescription).toBe("플라스틱으로 만든 기타 제품");
+    expect(result.tariffPreviews[0]?.label).toBe("기본세율");
+    expect(result.tariffPreviews[0]?.rateText).toBe("8%");
+    expect(result.importRequirements[0]?.type).toBe("세관장확인");
+    expect(result.standardProductNames[0]?.sourceVersion).toBe("standard-v1");
+    expect(result.classificationSiblings[0]?.isSelected).toBe(true);
+  });
+
+  it("extracts children from HS4 and HS6 snapshot payloads", () => {
+    const hs6Rows = hsMasterRepositoryInternals.snapshotRowsFromPayload({
+      lookupMode: "hs6_explorer",
+      rows: [{ hs6: "392690", children_json: [{ hsk_code: "3926909000" }] }]
+    }, "392690");
+    const hs4Rows = hsMasterRepositoryInternals.snapshotRowsFromPayload({
+      lookupMode: "hs4_explorer",
+      rows: [{ hs4: "3926", hs6_groups_json: [{ hs6: "392690", children: [{ hsk_code: "3926909000" }] }] }]
+    }, "3926");
+
+    expect(hs6Rows.map((row) => row.hsk_code)).toEqual(["3926909000"]);
+    expect(hs4Rows.map((row) => row.hsk_code)).toEqual(["3926909000"]);
+  });
+
   it("normalizes hsk punctuation and returns published basis-date records", () => {
     const results = hsMasterRepositoryInternals.lookupWithMockData("3304.99-1000", "2026-05-21");
 

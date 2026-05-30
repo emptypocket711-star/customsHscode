@@ -97,3 +97,9 @@ and status = 'published'
 4. Switch 10-digit lookup to snapshot-first/fallback-second.
 5. Switch 4/6 explorer lookup to snapshot-first/fallback-second.
 6. Split heavy sections into lazy-loaded server actions or API routes.
+
+## Current Implementation Note
+
+The HS4/HS6 explorer modes can safely use snapshot-first lookup because those screens only need grouped child HSK rows and summary columns.
+
+The HSK 10-digit detail RPC is available, but the app keeps full-detail fallback as the default until the snapshot contains detail parity for origin marking, requirement playbooks, agency contacts, statistics, and any user-visible legal-risk notes. It can be enabled with `HSK_DETAIL_SNAPSHOT_ENABLED=true` after parity verification.
