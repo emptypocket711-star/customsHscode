@@ -176,6 +176,12 @@
   - `npm run ops:job:operations-retention` 실행 결과 operationsIssueEvents retentionDays 180, deletedCount 0을 확인했다.
   - `npm run ops:job:operations-issues` 실행 결과 200 OK, scannedEvents 0, recurringIssues 0, syncedIssues 0건을 확인했다.
   - production smoke 10개 경로 모두 통과했다.
+- 운영 이슈 리허설 운영 반영:
+  - Supabase production DB에 `20260530008000_operations_rehearsal_cleanup_grants.sql` migration을 적용했다.
+  - production 배포 `customs-hscode-6oldef5k9-koo-apps.vercel.app`이 Ready 상태가 되었고 `https://hsfinder.co.kr` alias 연결을 확인했다.
+  - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
+  - `npm run ops:job:operations-issues-rehearsal` 실행 결과 synthetic telemetry 3건, recurringIssues 1건, 운영 이슈 occurrenceCount 3건, resolved/open 상태 변경, issue/telemetry cleanup true를 확인했다.
+  - production smoke 10개 경로 모두 통과했다.
 
 검증:
 
@@ -191,8 +197,10 @@
 - `npm run build`
 - `vercel env run -e production -- sh -c 'psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260530006000_operations_issue_events.sql'`
 - `vercel env run -e production -- sh -c 'psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260530007000_cleanup_operations_issue_events.sql'`
+- `vercel env run -e production -- sh -c 'psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260530008000_operations_rehearsal_cleanup_grants.sql'`
 - `vercel env run -e production -- npm run health:db`
 - `vercel env run -e production -- npm run ops:job:operations-issues`
+- `vercel env run -e production -- npm run ops:job:operations-issues-rehearsal`
 - `vercel env run -e production -- npm run ops:job:operations-retention`
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 - `vercel env run -e production -- npm run ops:job:background-failure-rehearsal`
