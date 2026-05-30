@@ -614,6 +614,8 @@ export default async function OperationsHealthPage({
     hasOperationsIssueFilters
   );
   const operationsIssueTriageFocus = buildOperationsIssueTriageFocus(filteredOperationsIssueEvents);
+  const hasStoredOperationsIssues = operationsIssueSummary.total > 0;
+  const hasOpenOperationsIssues = operationsIssueSummary.open > 0;
   const operationsIssueOwnerFilterHelp = isUnassignedOperationsIssueOwnerFilter(issueFilters.assignedToLabel)
     ? "담당자 값이 비어 있는 미해결 이슈만 확인할 때 사용하는 조건입니다."
     : "미지정 입력 시 담당자 없는 이슈만 필터링합니다.";
@@ -1490,7 +1492,9 @@ export default async function OperationsHealthPage({
               <div className="rounded-md border border-emerald-100 bg-emerald-50 px-3 py-2 lg:col-span-6">
                 <p className="text-xs font-semibold text-emerald-800">우선 확인 대상 없음</p>
                 <p className="mt-1 text-xs leading-5 text-emerald-900">
-                  현재 필터 기준 미해결 운영 이슈가 없습니다. 해결·제외 이슈는 처리 사유와 상태 변경 이력 위주로 검토합니다.
+                  {hasStoredOperationsIssues
+                    ? "현재 목록에는 우선 처리할 미해결 이슈가 없습니다. 닫힌 이슈는 처리 근거와 상태 변경 이력 위주로 검토합니다."
+                    : "아직 동기화된 운영 이슈가 없어 우선 확인 대상도 없습니다."}
                 </p>
               </div>
             )}
@@ -1646,27 +1650,36 @@ export default async function OperationsHealthPage({
             <div className="grid gap-3 p-5 text-sm text-slate-600">
               {hasOperationsIssueFilters ? (
                 <>
-                  <div>
-                    <p className="font-semibold text-slate-950">현재 필터에 맞는 운영 이슈가 없습니다.</p>
+                  <div className="rounded-md border border-blue-100 bg-blue-50 px-3 py-2">
+                    <p className="font-semibold text-blue-950">필터 결과 0건</p>
                     <p className="mt-1 text-xs leading-5 text-slate-500">
-                      조건을 일부 해제하거나 전체 초기화 후 우선순위순 목록에서 다시 확인해 주세요.
+                      {hasOpenOperationsIssues
+                        ? "전체 미해결 이슈는 남아 있습니다. 조건을 일부 해제하거나 미해결 전체 보기로 우선순위순 목록을 다시 확인합니다."
+                        : "전체 기준 미해결 이슈도 없습니다. 조건을 초기화해 해결·제외 이슈의 처리 근거를 확인합니다."}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <a className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800 transition hover:bg-blue-100" href="/operations/health#issue-events">
                       전체 초기화
                     </a>
-                    <a className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 transition hover:bg-amber-100" href="/operations/health?issueStatus=open#issue-events">
-                      미해결 전체 보기
-                    </a>
+                    {hasOpenOperationsIssues ? (
+                      <a className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 transition hover:bg-amber-100" href="/operations/health?issueStatus=open#issue-events">
+                        미해결 전체 보기
+                      </a>
+                    ) : null}
                   </div>
                 </>
               ) : (
                 <>
-                  <p className="font-semibold text-slate-950">저장된 운영 이슈가 없습니다.</p>
-                  <p className="text-xs leading-5 text-slate-500">
-                    `operations-issues` job이 반복 조회 품질 이슈를 감지하면 이 목록에 표시됩니다.
-                  </p>
+                  <div className="rounded-md border border-emerald-100 bg-emerald-50 px-3 py-2">
+                    <p className="font-semibold text-emerald-900">저장된 운영 이슈 0건</p>
+                    <p className="mt-1 text-xs leading-5 text-emerald-900">
+                      반복 조회 품질 이슈가 아직 동기화되지 않았습니다. 운영 이슈 동기화 job이 새 반복 이슈를 감지하면 이 목록에 표시됩니다.
+                    </p>
+                  </div>
+                  <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600">
+                    수동 확인이 필요하면 운영 명령 `vercel env run -e production -- npm run ops:job:operations-issues`를 실행한 뒤 이 화면을 다시 확인합니다.
+                  </div>
                 </>
               )}
             </div>
