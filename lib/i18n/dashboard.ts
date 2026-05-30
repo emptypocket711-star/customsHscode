@@ -13,8 +13,6 @@ export type DashboardDictionary = {
     hsDirect: string;
     import: string;
     overseasHs: string;
-    popular: string;
-    productAi: string;
     query: string;
     queryPlaceholder: string;
     submit: string;
@@ -79,11 +77,9 @@ const dictionaries = {
       country: "수입국가/목적국",
       direction: "조회 구분",
       export: "수출",
-      hsDirect: "HS CODE 직접 검색",
+      hsDirect: "HS CODE·품명 통합 검색",
       import: "수입",
       overseasHs: "해외 HS 검색",
-      popular: "인기 검색어",
-      productAi: "품명 검색 AI",
       query: "검색어",
       queryPlaceholder: "예: 3304.99-1000, mushroom powder, 레이니 키보드",
       submit: "조회"
@@ -156,11 +152,9 @@ const dictionaries = {
       country: "Import country / destination",
       direction: "Lookup mode",
       export: "Export",
-      hsDirect: "HS code lookup",
+      hsDirect: "HS code / product lookup",
       import: "Import",
       overseasHs: "Overseas HS lookup",
-      popular: "Popular searches",
-      productAi: "Product-name AI",
       query: "Search term",
       queryPlaceholder: "e.g. 3304.99-1000, mushroom powder, rainy keyboard",
       submit: "Search"
@@ -233,11 +227,9 @@ const dictionaries = {
       country: "进口国家/目的地",
       direction: "查询区分",
       export: "出口",
-      hsDirect: "HS编码直接查询",
+      hsDirect: "HS编码/品名综合查询",
       import: "进口",
       overseasHs: "海外HS查询",
-      popular: "热门搜索",
-      productAi: "品名AI查询",
       query: "搜索词",
       queryPlaceholder: "例：3304.99-1000, mushroom powder, rainy keyboard",
       submit: "查询"

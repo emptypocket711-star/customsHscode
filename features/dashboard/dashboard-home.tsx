@@ -11,12 +11,6 @@ import type { AppNotice } from "@/server/repositories/app-notice.repository";
 import type { HsFavoriteItem } from "@/server/repositories/hs-favorite.repository";
 import type { HsLookupHistoryItem } from "@/server/repositories/hs-lookup-history.repository";
 
-const quickExamples = [
-  { label: "3401.30-0000", href: "/hs/direct?query=3401.30-0000&direction=import&destinationCountry=ALL" },
-  { label: "작업용 조끼", href: "/hs/direct?query=%EC%9E%91%EC%97%85%EC%9A%A9%20%EC%A1%B0%EB%81%BC&direction=import&destinationCountry=ALL" },
-  { label: "graceday hand cream", href: "/hs/direct?query=graceday%20hand%20cream&direction=import&destinationCountry=ALL" }
-];
-
 function displayLookupTitle(query: string) {
   const digits = query.replace(/\D/g, "");
   return digits.length === 10 ? formatHsCode(digits) : query;
@@ -95,7 +89,6 @@ export function DashboardHome({
             <input defaultValue={basisDate} name="basisDate" type="hidden" />
             <div className="flex gap-6 border-b border-[var(--border-subtle)] text-sm font-semibold text-[var(--text-secondary)]">
               <span className="border-b-2 border-blue-700 px-2 pb-3 text-blue-700">{dictionary.lookup.hsDirect}</span>
-              <span className="px-2 pb-3">{dictionary.lookup.productAi}</span>
               <Link className="px-2 pb-3 hover:text-blue-700" data-navigation-progress={dictionary.lookup.overseasHs} href="/hs/overseas">{dictionary.lookup.overseasHs}</Link>
             </div>
             <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(280px,1fr)_160px_220px_120px] lg:items-end">
@@ -132,19 +125,9 @@ export function DashboardHome({
               </button>
             </div>
 
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold text-[var(--text-muted)]">{dictionary.lookup.popular}</span>
-              {quickExamples.map((item) => (
-                <Link
-                  className="focus-ring rounded-full border border-[var(--border-subtle)] bg-[var(--surface-muted)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-800"
-                  data-navigation-progress="인기검색어 조회"
-                  href={item.href}
-                  key={item.href}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
+            <p className="mt-3 text-xs leading-5 text-[var(--text-muted)]">
+              HS CODE를 입력하면 직접 조회하고, 품명을 입력하면 같은 검색창에서 AI가 가장 가까운 HS CODE를 함께 찾아줍니다.
+            </p>
           </form>
         </div>
       </section>
