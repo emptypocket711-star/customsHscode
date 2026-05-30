@@ -536,7 +536,9 @@ async function findHsMasterRowsByCodeHintPrefixes(
     }
   }
 
-  return [...collected.values()];
+  const rows = [...collected.values()];
+  const tenDigitRows = rows.filter((row) => row.hsk_code.replace(/[^0-9]/g, "").length === 10);
+  return tenDigitRows.length ? tenDigitRows : rows;
 }
 
 function mockHsMasterRowsByCodeHints(
