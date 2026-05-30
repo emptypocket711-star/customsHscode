@@ -125,6 +125,7 @@ export type OperationsIssueQuickFilterPreset = {
   id: "open_blockers" | "stale_open" | "unassigned_open" | "resolved" | "ignored";
   label: string;
   description: string;
+  actionLabel: string;
   count: number;
   tone: "warning" | "success" | "neutral";
   filters: OperationsIssueEventFilters;
@@ -510,6 +511,7 @@ export function buildOperationsIssueQuickFilterPresets(
       id: "open_blockers",
       label: "차단 미해결",
       description: "즉시 처리할 blocker 이슈",
+      actionLabel: "장애 영향 확인 및 담당자 배정",
       count: openBlockerCount,
       tone: openBlockerCount > 0 ? "warning" : "neutral",
       filters: { status: "open", severity: "blocker" }
@@ -518,6 +520,7 @@ export function buildOperationsIssueQuickFilterPresets(
       id: "stale_open",
       label: "장기 미해결",
       description: "7일 이상 열린 이슈",
+      actionLabel: "처리 지연 사유와 다음 조치 확인",
       count: staleOpenCount,
       tone: staleOpenCount > 0 ? "warning" : "neutral",
       filters: { status: "open", ageLevel: "stale" }
@@ -526,6 +529,7 @@ export function buildOperationsIssueQuickFilterPresets(
       id: "unassigned_open",
       label: "담당 미지정",
       description: "담당자 배정이 필요한 이슈",
+      actionLabel: "담당자 지정 후 처리 메모 작성",
       count: unassignedOpenCount,
       tone: unassignedOpenCount > 0 ? "warning" : "neutral",
       filters: { status: "open", assignedToLabel: "미지정" }
@@ -534,6 +538,7 @@ export function buildOperationsIssueQuickFilterPresets(
       id: "resolved",
       label: "해결됨",
       description: "처리 완료된 이슈",
+      actionLabel: "처리 사유와 완료 시점 검토",
       count: resolvedCount,
       tone: "success",
       filters: { status: "resolved" }
@@ -542,6 +547,7 @@ export function buildOperationsIssueQuickFilterPresets(
       id: "ignored",
       label: "제외됨",
       description: "운영 대상에서 제외한 이슈",
+      actionLabel: "제외 사유와 재오픈 필요성 검토",
       count: ignoredCount,
       tone: "neutral",
       filters: { status: "ignored" }

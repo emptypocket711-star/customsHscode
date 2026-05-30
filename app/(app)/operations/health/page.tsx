@@ -1284,6 +1284,9 @@ export default async function OperationsHealthPage({
                     </span>
                     <span className="mt-1 block text-lg font-semibold text-slate-950">{preset.count}건</span>
                     <span className="mt-1 block text-xs leading-5 text-slate-500">{preset.description}</span>
+                    <span className="mt-2 block rounded-md border border-white/70 bg-white/70 px-2 py-1 text-xs font-semibold leading-5 text-slate-700">
+                      {preset.actionLabel}
+                    </span>
                   </a>
                 );
               })}

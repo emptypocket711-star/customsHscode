@@ -379,6 +379,10 @@ describe("operations issue repository helpers", () => {
       ["resolved", 1],
       ["ignored", 1]
     ]);
+    expect(presets.map((preset) => [preset.id, preset.actionLabel])).toContainEqual([
+      "unassigned_open",
+      "담당자 지정 후 처리 메모 작성"
+    ]);
   });
 
   it("builds active filter labels", () => {
