@@ -182,9 +182,15 @@
   - `npm run health:db` 기준 schema drift 없음: 차단 0건, 주의 0건.
   - `npm run ops:job:operations-issues-rehearsal` 실행 결과 synthetic telemetry 3건, recurringIssues 1건, 운영 이슈 occurrenceCount 3건, resolved/open 상태 변경, issue/telemetry cleanup true를 확인했다.
   - production smoke 10개 경로 모두 통과했다.
+- 운영 이슈 미해결 알림을 추가했다.
+  - `/api/jobs/operations-issues`가 반복 조회 품질 이슈를 `operations_issue_events`에 저장한 뒤 미해결 이슈에 대해 `operations_issue_open` 알림을 남긴다.
+  - 알림은 `OPERATIONS_ALERT_EMAIL` 또는 `DEVELOPER_ALERT_EMAIL`을 사용하고, `OPERATIONS_ALERT_THROTTLE_MINUTES` 기준으로 같은 issue key의 중복 발송을 제한한다.
+  - `operations_alert_events`에는 해시된 alert key와 issue type, severity, occurrence count 같은 운영 메타데이터만 저장하고 입력 품명, 문서 원문, invoice 내용은 저장하지 않는다.
+  - 운영 이슈 리허설 job은 반복 검증 중 메일이 발송되지 않도록 `sendAlerts: false`로 유지한다.
 
 검증:
 
+- `npm test -- server/operations/operations-issue-alert.service.test.ts server/operations/background-job-alert.service.test.ts`
 - `npm test -- server/observability/lookup-telemetry.test.ts`
 - `npm test -- server/observability/lookup-telemetry.test.ts server/repositories/operations-issue.repository.test.ts`
 - `npm test -- server/operations/operations-retention.service.test.ts server/repositories/operations-issue.repository.test.ts`

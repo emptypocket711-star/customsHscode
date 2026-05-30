@@ -94,7 +94,8 @@ async function handleOperationsIssueRehearsal(request: NextRequest) {
     const sync = await syncLookupQualityIssueEvents(supabase, {
       telemetryLimit: 10,
       threshold: 3,
-      issueType
+      issueType,
+      sendAlerts: false
     });
     const issue = sync.syncedIssues.find((item) => item.issueKey === issueKey) ?? null;
 

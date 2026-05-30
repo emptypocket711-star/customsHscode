@@ -81,6 +81,8 @@ npm run health:db
 vercel env run -e production -- npm run ops:job:operations-issues
 ```
 
+새 미해결 운영 이슈는 `operations_alert_events`에 `operations_issue_open` 알림 이력으로 기록된다. `OPERATIONS_ALERT_THROTTLE_MINUTES` 기준으로 같은 이슈 키의 중복 알림은 생략된다.
+
 해결·제외 처리된 운영 이슈는 `operations-retention` job이 `OPERATIONS_ISSUE_RETENTION_DAYS` 기준으로 정리한다. 미해결 이슈는 정리 대상에서 제외된다.
 
 운영 이슈 E2E 리허설은 원문 없는 synthetic telemetry만 만들고 검증 후 정리한다.

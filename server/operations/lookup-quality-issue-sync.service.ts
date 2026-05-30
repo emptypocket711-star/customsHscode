@@ -1,5 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  sendOperationsIssueAlert,
+  type OperationsIssueAlertResult
+} from "@/server/operations/operations-issue-alert.service";
+import {
   listRecentLookupTelemetryEvents,
   summarizeRecurringLookupTelemetryIssues
 } from "@/server/repositories/lookup-telemetry.repository";
@@ -13,6 +17,7 @@ export type LookupQualityIssueSyncResult = {
   scannedEvents: number;
   recurringIssues: number;
   syncedIssues: OperationsIssueEventItem[];
+  alerts: OperationsIssueAlertResult[];
 };
 
 const recurringLookupIssueType = "lookup_quality_recurring";
@@ -23,6 +28,8 @@ export async function syncLookupQualityIssueEvents(
     telemetryLimit?: number;
     threshold?: number;
     issueType?: string;
+    sendAlerts?: boolean;
+    alertThrottleWindowMs?: number;
   } = {}
 ): Promise<LookupQualityIssueSyncResult> {
   const telemetryLimit = options.telemetryLimit ?? 100;
@@ -31,9 +38,10 @@ export async function syncLookupQualityIssueEvents(
   const events = await listRecentLookupTelemetryEvents(supabase, telemetryLimit);
   const recurringIssues = summarizeRecurringLookupTelemetryIssues(events, threshold);
   const syncedIssues: OperationsIssueEventItem[] = [];
+  const alerts: OperationsIssueAlertResult[] = [];
 
   for (const issue of recurringIssues) {
-    syncedIssues.push(await upsertOperationsIssueEvent(supabase, {
+    const syncedIssue = await upsertOperationsIssueEvent(supabase, {
       issueType,
       issueKey: `${issueType}:${issue.key}`,
       severity: "warning",
@@ -52,13 +60,26 @@ export async function syncLookupQualityIssueEvents(
         threshold,
         telemetryLimit
       }
-    }));
+    });
+    syncedIssues.push(syncedIssue);
+
+    if (options.sendAlerts !== false) {
+      alerts.push(await sendOperationsIssueAlert(syncedIssue, {
+        supabase,
+        throttleWindowMs: options.alertThrottleWindowMs
+      }).catch((error) => ({
+        sent: false,
+        reason: "alert_error",
+        message: error instanceof Error ? error.message : "Operations issue alert failed."
+      })));
+    }
   }
 
   return {
     kind: "lookup_quality_issue_sync",
     scannedEvents: events.length,
     recurringIssues: recurringIssues.length,
-    syncedIssues
+    syncedIssues,
+    alerts
   };
 }
