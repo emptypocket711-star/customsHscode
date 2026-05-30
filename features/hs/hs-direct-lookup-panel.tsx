@@ -425,8 +425,10 @@ const copyGuideLabels: Record<HsCopyGuideLanguage, {
   productInfoInsufficientDetail: string;
   productName: string;
   provisionalHsDirections: string;
+  preliminaryNotice: string;
   requestHints: string;
   requirementsNeedReview: string;
+  finalReviewNote: string;
   standardVat: string;
   ftaRate: string;
 }> = {
@@ -456,8 +458,10 @@ const copyGuideLabels: Record<HsCopyGuideLanguage, {
     productInfoInsufficientDetail: "아래 정보가 보완되면 HS CODE 후보, 관세율, 내국세, 수입요건을 다시 확인하겠습니다.",
     productName: "품명",
     provisionalHsDirections: "예비 검토 가능한 HS 방향",
+    preliminaryNotice: "아래 내용은 제공된 정보 기준의 예비 안내입니다. 실제 수입신고 전에는 제품 상세자료와 원산지, 거래조건 기준으로 재확인이 필요합니다.",
     requestHints: "확인 요청자료",
     requirementsNeedReview: "수입요건 해당 여부와 제출서류는 제품 상세자료 확인 후 검토가 필요합니다.",
+    finalReviewNote: "정확한 적용 여부는 제품 상세자료, 원산지, 선적 경로, 실제 신고 시점 기준으로 다시 확인해 주세요.",
     standardVat: "부가세 : 10%",
     ftaRate: "FTA 관세율"
   },
@@ -487,8 +491,10 @@ const copyGuideLabels: Record<HsCopyGuideLanguage, {
     productInfoInsufficientDetail: "If the information below is provided, HS candidates, duty rates, internal taxes, and import requirements can be reviewed again.",
     productName: "Product",
     provisionalHsDirections: "Provisional HS directions for review",
+    preliminaryNotice: "The information below is a preliminary guide based on the details provided. Please re-check using the final product specifications, origin, and transaction details before import declaration.",
     requestHints: "Information/documents to request",
     requirementsNeedReview: "Applicability and required documents should be reviewed after checking detailed product information.",
+    finalReviewNote: "Please re-check applicability based on detailed product data, origin, shipping route, and the actual declaration date.",
     standardVat: "VAT: 10%",
     ftaRate: "FTA preferential rate"
   },
@@ -518,8 +524,10 @@ const copyGuideLabels: Record<HsCopyGuideLanguage, {
     productInfoInsufficientDetail: "补充以下资料后，可重新确认 HS 候选、关税、国内税和进口要求。",
     productName: "产品名称",
     provisionalHsDirections: "可供初步参考的 HS 方向",
+    preliminaryNotice: "以下内容为根据已提供信息作出的初步提示。实际进口申报前，应根据产品详细资料、原产地和交易条件重新确认。",
     requestHints: "需确认/请求的资料",
     requirementsNeedReview: "进口要求适用性和提交资料需根据产品详细资料进一步确认。",
+    finalReviewNote: "请根据产品详细资料、原产地、运输路径及实际申报日期重新确认适用性。",
     standardVat: "增值税: 10%",
     ftaRate: "FTA 优惠税率"
   }
@@ -544,6 +552,39 @@ function buildCopyTextSet(builder: (language: HsCopyGuideLanguage, variant: HsCo
       detailed: builder("zh", "detailed")
     }
   };
+}
+
+function defaultProductClarificationQuestions(language: HsCopyGuideLanguage) {
+  if (language === "en") {
+    return [
+      "Exact generic product name and commercial name",
+      "Actual use and final application",
+      "Whether it is a finished product or a part; if a part, the finished product it is used with",
+      "Main material, composition, content, or components",
+      "Operating method, function, specifications, or catalog URL",
+      "Manufacturer, model name, product photo, or detailed description"
+    ];
+  }
+
+  if (language === "zh") {
+    return [
+      "准确的一般品名和商品名",
+      "实际用途和最终使用场景",
+      "是否为成品或零部件；如为零部件，请说明装配对象",
+      "主要材质、成分、含量或构成部件",
+      "工作方式、功能、规格书或产品目录链接",
+      "制造商、型号、产品照片或详细说明"
+    ];
+  }
+
+  return [
+    "제품의 정확한 일반 품명과 상업명",
+    "제품의 실제 용도와 최종 사용처",
+    "완제품인지 부분품인지, 부분품이면 장착 대상 완제품",
+    "주요 재질, 성분, 함량 또는 구성품",
+    "작동 방식, 기능, 사양서 또는 카탈로그 URL",
+    "제조사, 모델명, 제품 사진 또는 상세 설명"
+  ];
 }
 
 function appendRequirementCopyLines(
@@ -712,6 +753,8 @@ function hsCopySummaryTexts({
     }
 
     lines.push("");
+    lines.push(labels.preliminaryNotice);
+    lines.push("");
     lines.push(`${labels.appliedDutyRate} : ${commonTariff ? tariffSummaryText(commonTariff, countryCode) : "-"}`);
 
     if (ftaTariffs.length) {
@@ -730,6 +773,8 @@ function hsCopySummaryTexts({
 
     appendRequirementCopyLines(lines, groupedRequirements, language, variant);
     appendOriginMarkingCopyLines(lines, result.originMarking, language, variant);
+    lines.push("");
+    lines.push(labels.finalReviewNote);
 
     return lines.join("\n");
   });
@@ -886,6 +931,8 @@ function productCandidateCopySummaryTexts({
 
     if (variant === "detailed") {
       lines.push("");
+      lines.push(labels.preliminaryNotice);
+      lines.push("");
       lines.push(candidates.length === 1 ? labels.candidateIntroSingleDetailed : labels.candidateIntroDetailed);
     }
 
@@ -937,6 +984,11 @@ function productCandidateCopySummaryTexts({
       appendOriginMarkingCopyLines(lines, lookup?.originMarking, language, variant);
     });
 
+    if (variant === "detailed") {
+      lines.push("");
+      lines.push(labels.finalReviewNote);
+    }
+
     return lines.join("\n");
   });
 }
@@ -948,25 +1000,18 @@ function productNoResultCopySummaryTexts({
   productName: string;
   clarification: ProductClarificationResult | null;
 }) {
-  const questions = clarification?.missingQuestions.length
-    ? clarification.missingQuestions
-    : [
-      "제품의 정확한 일반 품명과 상업명",
-      "제품의 실제 용도와 최종 사용처",
-      "완제품인지 부분품인지, 부분품이면 장착 대상 완제품",
-      "주요 재질, 성분, 함량 또는 구성품",
-      "작동 방식, 기능, 사양서 또는 카탈로그 URL",
-      "제조사, 모델명, 제품 사진 또는 상세 설명"
-    ];
-
   return buildCopyTextSet((language, variant) => {
     const labels = copyLabels(language);
+    const questions = clarification?.missingQuestions.length
+      ? clarification.missingQuestions
+      : defaultProductClarificationQuestions(language);
     const lines = [
       `${labels.productName} : ${productName}`,
       "",
-      labels.productInfoInsufficient,
-      labels.productInfoInsufficientDetail
+      labels.productInfoInsufficient
     ];
+
+    if (variant === "detailed") lines.push(labels.productInfoInsufficientDetail);
 
     if (clarification?.suggestedCandidateCodes.length) {
       lines.push("");
@@ -974,11 +1019,11 @@ function productNoResultCopySummaryTexts({
       lines.push(...clarification.suggestedCandidateCodes.slice(0, 6).map((code, index) => `${index + 1}. ${formatHsCode(code)}`));
     }
 
-    if (variant === "brief") return lines.join("\n");
-
     lines.push("");
     lines.push(labels.requestHints);
-    lines.push(...questions.slice(0, 8).map((question, index) => `${index + 1}. ${question}`));
+    lines.push(...questions.slice(0, variant === "brief" ? 3 : 8).map((question, index) => `${index + 1}. ${question}`));
+    if (variant === "brief") return lines.join("\n");
+
     lines.push("");
     lines.push(labels.productCodeHelp);
     lines.push(labels.productDetailReview);
@@ -2209,6 +2254,8 @@ function destinationCopySummaryTexts({
     if (variant === "brief") return lines.join("\n");
 
     lines.push("");
+    lines.push(labels.preliminaryNotice);
+    lines.push("");
     lines.push(`${labels.appliedDutyRate} : ${destinationDisplayBaseRate(row)}`);
 
     if (agreementRateLabel !== "-") {
@@ -2231,6 +2278,9 @@ function destinationCopySummaryTexts({
     } else {
       lines.push(labels.noDestinationInternalTax);
     }
+
+    lines.push("");
+    lines.push(labels.finalReviewNote);
 
     return lines.join("\n");
   });
