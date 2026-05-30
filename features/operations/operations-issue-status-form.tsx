@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import {
   updateOperationsIssueStatusWithStateAction,
   type OperationsIssueStatusActionState
@@ -40,6 +40,16 @@ function statusActionHelp(status: OperationsIssueStatus) {
   return "다시 열기 전 재확인 사유와 다음 담당 조치를 메모에 남깁니다.";
 }
 
+function inputStatusClassName(hasValue: boolean) {
+  return hasValue
+    ? "rounded-md border border-emerald-100 bg-emerald-50 px-2 py-1 text-emerald-800"
+    : "rounded-md border border-amber-100 bg-amber-50 px-2 py-1 text-amber-800";
+}
+
+function inputStatusLabel(hasValue: boolean) {
+  return hasValue ? "작성됨" : "미입력";
+}
+
 const initialOperationsIssueStatusActionState: OperationsIssueStatusActionState = {
   status: "idle",
   message: null,
@@ -55,6 +65,9 @@ type OperationsIssueStatusFormProps = {
 };
 
 export function OperationsIssueStatusForm({ event, triageFocus }: OperationsIssueStatusFormProps) {
+  const [assignedToLabel, setAssignedToLabel] = useState(event.assignedToLabel ?? "");
+  const [operatorNote, setOperatorNote] = useState(event.operatorNote ?? "");
+  const [resolutionReason, setResolutionReason] = useState(event.resolutionReason ?? "");
   const [state, formAction, pending] = useActionState(
     updateOperationsIssueStatusWithStateAction,
     initialOperationsIssueStatusActionState
@@ -65,6 +78,9 @@ export function OperationsIssueStatusForm({ event, triageFocus }: OperationsIssu
     event.status !== "open" ? "open" : null
   ].filter((status): status is OperationsIssueStatus => Boolean(status));
   const primaryNextStatus = nextStatuses[0] ?? "resolved";
+  const assignedToLabelReady = Boolean(assignedToLabel.trim());
+  const operatorNoteReady = Boolean(operatorNote.trim());
+  const resolutionReasonReady = Boolean(resolutionReason.trim());
 
   return (
     <form action={formAction} className="grid min-w-[260px] gap-2">
@@ -83,11 +99,12 @@ export function OperationsIssueStatusForm({ event, triageFocus }: OperationsIssu
         담당자
         <input
           className="rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs font-normal text-slate-900 outline-none transition focus:border-blue-400 disabled:bg-slate-50 disabled:text-slate-500"
-          defaultValue={event.assignedToLabel ?? ""}
           disabled={pending}
           maxLength={120}
           name="assignedToLabel"
+          onChange={(inputEvent) => setAssignedToLabel(inputEvent.currentTarget.value)}
           placeholder="예: 김운영, 플랫폼 운영"
+          value={assignedToLabel}
         />
         <span className="font-normal text-slate-500">미입력 시 담당 미지정 이슈로 남습니다.</span>
       </label>
@@ -95,24 +112,39 @@ export function OperationsIssueStatusForm({ event, triageFocus }: OperationsIssu
         메모
         <textarea
           className="min-h-16 rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs font-normal text-slate-900 outline-none transition focus:border-blue-400 disabled:bg-slate-50 disabled:text-slate-500"
-          defaultValue={event.operatorNote ?? ""}
           disabled={pending}
           maxLength={1000}
           name="operatorNote"
+          onChange={(inputEvent) => setOperatorNote(inputEvent.currentTarget.value)}
           placeholder="확인한 원인, 후속 작업, 담당자 인계 내용을 기록"
+          value={operatorNote}
         />
       </label>
       <label className="grid gap-1 text-xs font-semibold text-slate-600">
         처리 사유
         <textarea
           className="min-h-14 rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs font-normal text-slate-900 outline-none transition focus:border-blue-400 disabled:bg-slate-50 disabled:text-slate-500"
-          defaultValue={event.resolutionReason ?? ""}
           disabled={pending}
           maxLength={1000}
           name="resolutionReason"
+          onChange={(inputEvent) => setResolutionReason(inputEvent.currentTarget.value)}
           placeholder="해결, 제외, 다시 열기 판단 근거"
+          value={resolutionReason}
         />
       </label>
+      <div className="grid gap-1 rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs">
+        <p className="font-semibold text-slate-600">저장 전 입력 확인</p>
+        <div className="grid gap-1 sm:grid-cols-3">
+          <span className={inputStatusClassName(assignedToLabelReady)}>담당자 {inputStatusLabel(assignedToLabelReady)}</span>
+          <span className={inputStatusClassName(operatorNoteReady)}>메모 {inputStatusLabel(operatorNoteReady)}</span>
+          <span className={inputStatusClassName(resolutionReasonReady)}>처리 사유 {inputStatusLabel(resolutionReasonReady)}</span>
+        </div>
+        {assignedToLabelReady && operatorNoteReady && resolutionReasonReady ? (
+          <p className="text-emerald-700">처리 근거 입력 상태를 확인했습니다.</p>
+        ) : (
+          <p className="text-amber-700">미입력 항목은 저장은 가능하지만 담당자 인계와 사후 검토 품질이 낮아질 수 있습니다.</p>
+        )}
+      </div>
       <div className="flex flex-wrap gap-2">
         {nextStatuses.map((status) => (
           <button
