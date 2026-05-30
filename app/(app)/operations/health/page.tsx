@@ -1463,18 +1463,20 @@ export default async function OperationsHealthPage({
                           </td>
                           <td className="max-w-[320px] px-5 py-4 text-xs leading-5 text-slate-600">{event.action}</td>
                           <td className="max-w-[320px] px-5 py-4 text-xs leading-5 text-slate-600">
-                            <p>
-                              <span className="font-semibold text-slate-500">담당자</span>
-                              <span className="ml-2 text-slate-900">{event.assignedToLabel || "-"}</span>
-                            </p>
-                            <p className="mt-1">
-                              <span className="font-semibold text-slate-500">메모</span>
-                              <span className="ml-2 text-slate-700">{event.operatorNote || "-"}</span>
-                            </p>
-                            <p className="mt-1">
-                              <span className="font-semibold text-slate-500">처리 사유</span>
-                              <span className="ml-2 text-slate-700">{event.resolutionReason || "-"}</span>
-                            </p>
+                            <div className="grid gap-2">
+                              <div className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5">
+                                <p className="font-semibold text-slate-500">담당자</p>
+                                <p className="mt-0.5 text-slate-900">{event.assignedToLabel || "-"}</p>
+                              </div>
+                              <div className="rounded-md border border-slate-200 bg-white px-2 py-1.5">
+                                <p className="font-semibold text-slate-500">메모</p>
+                                <p className="mt-0.5 text-slate-700">{event.operatorNote || "-"}</p>
+                              </div>
+                              <div className="rounded-md border border-slate-200 bg-white px-2 py-1.5">
+                                <p className="font-semibold text-slate-500">처리 사유</p>
+                                <p className="mt-0.5 text-slate-700">{event.resolutionReason || "-"}</p>
+                              </div>
+                            </div>
                             {statusChangeSummary ? (
                               <p className="mt-2 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-slate-500">
                                 상태 변경 {formatDate(statusChangeSummary.changedAt)}
