@@ -60,8 +60,19 @@ export function ProductSupplementResearchForm({
     <div className={`rounded-md border bg-white p-3 ${borderClass}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className={`text-xs font-semibold ${labelClass}`}>보완사항 입력</p>
+      </div>
+      <div className="mt-3 grid gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+        <label className="grid gap-1 text-xs font-semibold text-slate-700">
+          <span>간단 보완사항</span>
+          <textarea
+            className="focus-ring min-h-20 resize-y rounded-md border border-slate-300 px-3 py-2 text-sm font-normal leading-6 text-slate-900"
+            onChange={(event) => setSummaryAnswer(event.target.value)}
+            placeholder="예: 코코아 미함유, 소매포장, 설탕 과자입니다."
+            value={summaryAnswer}
+          />
+        </label>
         <button
-          className="focus-ring inline-flex items-center justify-center rounded-md bg-blue-700 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+          className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md bg-blue-700 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
           data-navigation-progress="보완검색"
           disabled={!hasAnswer || isPending}
           onClick={submitSupplement}
@@ -70,15 +81,6 @@ export function ProductSupplementResearchForm({
           {isPending ? "재조회 중" : "보완사항 적용하여 재조회"}
         </button>
       </div>
-      <label className="mt-3 grid gap-1 text-xs font-semibold text-slate-700">
-        <span>간단 보완사항</span>
-        <textarea
-          className="focus-ring min-h-20 resize-y rounded-md border border-slate-300 px-3 py-2 text-sm font-normal leading-6 text-slate-900"
-          onChange={(event) => setSummaryAnswer(event.target.value)}
-          placeholder="예: 코코아 미함유, 소매포장, 설탕 과자입니다."
-          value={summaryAnswer}
-        />
-      </label>
       <details className="mt-3 rounded-md border border-slate-200 bg-slate-50">
         <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-slate-700">
           질문별로 답변하기
