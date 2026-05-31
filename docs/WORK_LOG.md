@@ -1752,3 +1752,22 @@
 - Playwright 실사이트 확인: `/dashboard` 공지사항 카드 설명 표시
 - Playwright 실사이트 확인: `/dashboard` 상단 문구 균형 정리 표시
 - Playwright 실사이트 모바일 측정: 390px viewport `scrollWidth=390`, 768px viewport `scrollWidth=768`, horizontal overflow 없음
+
+### HS 직접 조회 결과 화면 모바일 정리
+
+- 이전 작업은 대시보드 모바일 폭을 고친 것이고, 이번 작업은 핵심 조회 화면인 `/hs/direct`의 품명검색 결과와 10자리 상세 결과를 모바일/태블릿에서 실측한 것이다.
+- 품명검색 결과 화면은 `사탕` 기준 모바일 390px, 태블릿 768px 모두 전체 가로 overflow가 없음을 확인했다.
+- 10자리 상세 조회 화면은 문서 전체 overflow는 없었지만, 상세 카드 상단의 `즐겨찾기`, `예상 납세액 산출`, 안내 언어/분량, 복사 컨트롤이 좁은 화면에서 한 줄에 몰려 잘릴 수 있었다.
+- `품목 상세 정보` 액션바를 `lg` 이상에서만 한 줄 배치하고, 모바일/태블릿에서는 제목 아래로 액션들이 줄바꿈되도록 조정했다.
+- 관세/요건 table의 내부 `overflow-x-auto`는 유지했다. 이 영역은 데이터 비교용 표라서 문서 전체를 밀지 않고 표 내부에서만 가로 스크롤된다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test -- features/hs/import-tariff-display.test.ts lib/i18n/hs-direct.test.ts`
+- `npm run build`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
+- `E2E_BASE_URL=https://hsfinder.co.kr npm run e2e:product-supplement`
+- Playwright 실사이트 측정: `/hs/direct?query=사탕...` 모바일/태블릿 horizontal overflow 없음
+- Playwright 실사이트 측정: `/hs/direct?query=1704902090...` 모바일 390px, 태블릿 768px, 데스크톱 1366px 모두 `scrollWidth=viewport`, 액션바 내부 clipped element 없음
