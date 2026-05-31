@@ -1771,3 +1771,21 @@
 - `E2E_BASE_URL=https://hsfinder.co.kr npm run e2e:product-supplement`
 - Playwright 실사이트 측정: `/hs/direct?query=사탕...` 모바일/태블릿 horizontal overflow 없음
 - Playwright 실사이트 측정: `/hs/direct?query=1704902090...` 모바일 390px, 태블릿 768px, 데스크톱 1366px 모두 `scrollWidth=viewport`, 액션바 내부 clipped element 없음
+
+### 실무 도구 화면 모바일 폭 점검
+
+- 이전 작업은 HS 직접 조회 결과 화면이었고, 이번 작업은 별도 실무 도구인 `/cargo`, `/duty-estimator`, `/used-car-export`를 모바일/태블릿에서 점검한 것이다.
+- `/duty-estimator`, `/used-car-export`는 모바일 390px, 태블릿 768px 모두 전체 가로 overflow가 없음을 확인했다.
+- `/cargo`는 모바일 390px에서 조회 입력 카드가 input 기본 최소폭 때문에 720px 이상으로 커져 문서 전체를 밀었다.
+- 적하목록 조회/상태 알림 등록 카드에 `min-w-0`, `grid-cols-[minmax(0,1fr)]`, input/select `w-full min-w-0`을 적용해 입력폼이 모바일 폭 안에서 줄어들도록 수정했다.
+- 결과/감시 table은 비교용 표라서 기존 내부 `overflow-x-auto`를 유지했다. 운영 재측정에서 문서 전체 `scrollWidth=390`이고 table만 내부 스크롤로 남는 것을 확인했다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test -- lib/i18n/cargo.test.ts server/services/cargo-status-classifier.test.ts`
+- `npm run build`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
+- `E2E_BASE_URL=https://hsfinder.co.kr npm run e2e:product-supplement`
+- Playwright 실사이트 측정: `/cargo`, `/duty-estimator`, `/used-car-export` 모바일 390px/태블릿 768px 모두 `scrollWidth=viewport`
