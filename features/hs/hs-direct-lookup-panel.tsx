@@ -3089,32 +3089,11 @@ function AiClarificationPanel({
       <div className="grid gap-3 p-3">
         <div>
           <p className={cn(
-            "text-xs font-semibold",
+            "mb-2 text-xs leading-5",
             presentation.tone === "warning" ? "text-amber-900" : "text-blue-900"
-          )}>보완 질문</p>
-          {presentation.questions.length ? (
-            <ol className="mt-2 grid gap-2">
-              {retryQuestions.map((question, index) => (
-                <li className={cn(
-                  "rounded-md border bg-white px-3 py-2 text-sm leading-6 text-slate-700",
-                  presentation.tone === "warning" ? "border-amber-100" : "border-blue-100"
-                )} key={question}>
-                  <span className={cn(
-                    "mr-2 font-mono text-xs font-semibold",
-                    presentation.tone === "warning" ? "text-amber-700" : "text-blue-700"
-                  )}>{index + 1}</span>
-                  {question}
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <div className={cn(
-              "mt-2 rounded-md border bg-white px-3 py-2 text-sm leading-6 text-slate-700",
-              presentation.tone === "warning" ? "border-amber-100" : "border-blue-100"
-            )}>
-              현재 입력 기준으로 조회 가능한 코드를 표시했습니다.
-            </div>
-          )}
+          )}>
+            확인 가능한 보완사항만 입력하면 같은 품명으로 다시 조회합니다.
+          </p>
           <ProductSupplementResearchForm
             basisDate={basisDate}
             destinationCountry={destinationCountry}
