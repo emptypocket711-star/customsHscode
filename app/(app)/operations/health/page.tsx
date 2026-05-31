@@ -424,6 +424,18 @@ function retentionTone(count: number) {
   return count > 0 ? "warning" : "success";
 }
 
+function fixRequestCardClassName(tone: "success" | "warning" | "neutral") {
+  if (tone === "warning") {
+    return "rounded-md border border-amber-200 bg-amber-50 px-3 py-3 text-sm";
+  }
+
+  if (tone === "success") {
+    return "rounded-md border border-emerald-100 bg-emerald-50 px-3 py-3 text-sm";
+  }
+
+  return "rounded-md border border-slate-200 bg-slate-50 px-3 py-3 text-sm";
+}
+
 function normalizationStatusLabel(status: string | null) {
   if (status === "success") return "GPT 응답";
   if (status === "failed") return "GPT 실패";
@@ -927,6 +939,98 @@ export default async function OperationsHealthPage({
     detail: string;
     tone: "success" | "warning";
   }>;
+  const operatorFixRequests = [
+    operationsIssueTriageFocus ? {
+      href: operationsIssueFilterHref(operationsIssueTriageFocus.filters),
+      label: "운영 이슈 우선 처리",
+      status: operationsIssueTriageFocus.reasonLabel,
+      request: `운영 이슈 처리 상태에서 "${operationsIssueTriageFocus.title}" 항목을 우선 분석하고 수정해줘.`,
+      detail: operationsIssueTriageFocus.actionLabel,
+      tone: "warning"
+    } : null,
+    recurringLookupIssues[0] ? {
+      href: "#lookup-quality",
+      label: "조회 품질 반복 개선",
+      status: `${recurringLookupIssues[0].label} ${recurringLookupIssues[0].issueCount}건 반복`,
+      request: `조회 품질 로그에서 "${recurringLookupIssues[0].label}" 반복 이슈를 원인 분석하고 품명 검색 흐름을 개선해줘.`,
+      detail: recurringLookupIssues[0].action,
+      tone: "warning"
+    } : lookupIssueCount > 0 ? {
+      href: "#lookup-quality",
+      label: "조회 품질 점검",
+      status: `점검 대상 ${lookupIssueCount}건`,
+      request: "조회 품질 로그의 점검 대상 항목을 원인별로 묶고, 품명 검색 결과 품질을 개선해줘.",
+      detail: `무결과 ${zeroResultCount}건 / 정상 ${lookupSuccessCount}건`,
+      tone: "warning"
+    } : null,
+    !snapshotIsToday ? {
+      href: "#hs-lookup-snapshot",
+      label: "HS 데이터 갱신",
+      status: snapshotBasisDate ? `snapshot ${snapshotBasisDate}` : "snapshot 미확인",
+      request: "HS lookup snapshot 기준일이 오늘과 맞지 않는 원인을 확인하고 갱신 작업을 정상화해줘.",
+      detail: `오늘 KST 기준일 ${todayKst}`,
+      tone: "warning"
+    } : null,
+    containerReceiptFailureSummary.status !== "normal" ? {
+      href: "#container-receipt-failures",
+      label: "반입계 출력 안정화",
+      status: containerReceiptFailureStatusText(containerReceiptFailureSummary.status),
+      request: "반입계 출력 실패 상태를 보고 터미널별 반복 실패 원인을 분석해서 수정해줘.",
+      detail: `최근 실패 ${containerReceiptFailureSummary.total}건 / 반복 묶음 ${containerReceiptFailureSummary.repeatedBucketCount}개`,
+      tone: "warning"
+    } : null,
+    protectedJobEventSummary.status !== "normal" ? {
+      href: "#protected-job-events",
+      label: "외부 API Job 복구",
+      status: protectedJobStatusText(protectedJobEventSummary.status),
+      request: "외부 API 정기 작업 상태에서 실패한 API001/API012 job을 확인하고 재실행 또는 수정해줘.",
+      detail: `실패 ${protectedJobEventSummary.failed}건 / 실행 ${protectedJobEventSummary.total}건`,
+      tone: "warning"
+    } : null,
+    rateLimitEventSummary.total > 0 ? {
+      href: "#rate-limit-events",
+      label: "트래픽 제한 조정",
+      status: `초과 ${rateLimitEventSummary.total}건`,
+      request: "Route rate limit 초과 이력을 보고 제한값이 너무 낮은지 또는 비정상 반복 요청인지 판단해줘.",
+      detail: rateLimitEventSummary.routes[0]
+        ? `${rateLimitEventSummary.routes[0].route} ${rateLimitEventSummary.routes[0].total}건`
+        : "route별 초과 이력 확인 필요",
+      tone: "warning"
+    } : null,
+    missingRequiredCount > 0 || schemaHealthReport.status !== "ok" ? {
+      href: "#advanced-operations",
+      label: "배포 설정 점검",
+      status: `설정 누락 ${missingRequiredCount} / DB 차단 ${schemaHealthReport.summary.blockerCount}`,
+      request: "상세 진단에서 환경변수와 운영 DB 스키마 문제를 확인하고 배포 설정을 정상화해줘.",
+      detail: `스키마 상태 ${schemaStatusLabel}`,
+      tone: "warning"
+    } : null,
+    backgroundJobSummary.dead > 0 || backgroundJobSummary.failed > 0 || backgroundJobRunSummary.failedRuns > 0 || backgroundJobRunSummary.failedJobs > 0 ? {
+      href: "#advanced-operations",
+      label: "백그라운드 작업 복구",
+      status: `실패 실행 ${backgroundJobRunSummary.failedRuns} / 최종 실패 ${backgroundJobSummary.dead}`,
+      request: "백그라운드 작업 상태와 worker 실행 이력에서 실패 원인을 확인하고 재처리 흐름을 고쳐줘.",
+      detail: `재시도 대기 ${backgroundJobSummary.retryWaiting}건 / 작업 실패 ${backgroundJobRunSummary.failedJobs}건`,
+      tone: "warning"
+    } : null
+  ].filter((item): item is {
+    href: string;
+    label: string;
+    status: string;
+    request: string;
+    detail: string;
+    tone: "warning";
+  } => item !== null);
+  const visibleFixRequests = operatorFixRequests.length
+    ? operatorFixRequests.slice(0, 4)
+    : [{
+        href: "#lookup-quality",
+        label: "현재 우선 수정 없음",
+        status: "정상 범위",
+        request: "운영 점검 화면은 정상 범위입니다. 다음 개선 작업으로 사용자 관리 화면을 대표용으로 더 단순화해줘.",
+        detail: "장애 징후가 없을 때는 다음 UX 정리 작업을 진행하면 됩니다.",
+        tone: "success" as const
+      }];
 
   return (
     <div className="grid gap-5">
@@ -981,6 +1085,33 @@ export default async function OperationsHealthPage({
               </a>
             ))}
           </nav>
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="개발 요청 문구"
+          description="통계를 해석하지 않아도, 문제가 보이면 아래 문장을 그대로 작업 요청으로 쓰면 됩니다."
+          action={<Badge tone={operatorFixRequests.length ? "warning" : "success"}>{operatorFixRequests.length ? `수정 후보 ${operatorFixRequests.length}건` : "우선 수정 없음"}</Badge>}
+        />
+        <CardBody>
+          <div className="grid gap-2 lg:grid-cols-2">
+            {visibleFixRequests.map((item) => (
+              <a className={fixRequestCardClassName(item.tone)} href={item.href} key={`${item.label}-${item.request}`}>
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <p className="font-semibold text-slate-950">{item.label}</p>
+                    <p className="mt-1 text-xs font-medium text-slate-500">{item.status}</p>
+                  </div>
+                  <Badge tone={item.tone}>{item.tone === "warning" ? "수정 요청" : "정상"}</Badge>
+                </div>
+                <p className="mt-3 rounded-md border border-white/70 bg-white/80 px-3 py-2 text-sm font-semibold leading-6 text-slate-950">
+                  {item.request}
+                </p>
+                <p className="mt-2 text-xs leading-5 text-slate-600">{item.detail}</p>
+              </a>
+            ))}
+          </div>
         </CardBody>
       </Card>
 
