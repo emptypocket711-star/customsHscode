@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { ArrowRight, Bell, Calculator, Car, Globe2, type LucideIcon } from "lucide-react";
+import { ArrowRight, Bell, Calculator, Car, FileSpreadsheet, type LucideIcon } from "lucide-react";
 import { getDashboardDictionary, type AppLocale } from "@/lib/i18n";
 
-type WorkflowId = "cargo" | "duty" | "overseas" | "vehicle-spec";
+type WorkflowId = "batch" | "cargo" | "duty" | "vehicle-spec";
 
 type WorkflowLink = {
   group: "primary" | "tools";
@@ -14,15 +14,15 @@ type WorkflowLink = {
 const workflowLinks: WorkflowLink[] = [
   {
     group: "primary",
-    href: "/hs/overseas",
-    id: "overseas",
-    tone: "emerald"
-  },
-  {
-    group: "primary",
     href: "/cargo",
     id: "cargo",
     tone: "amber"
+  },
+  {
+    group: "primary",
+    href: "/hs/batch",
+    id: "batch",
+    tone: "emerald"
   },
   {
     group: "tools",
@@ -39,7 +39,7 @@ const workflowLinks: WorkflowLink[] = [
 ];
 
 const iconById: Record<WorkflowId, LucideIcon> = {
-  overseas: Globe2,
+  batch: FileSpreadsheet,
   cargo: Bell,
   duty: Calculator,
   "vehicle-spec": Car
@@ -63,7 +63,7 @@ export function DashboardWorkflowLinks({ locale }: { locale: AppLocale }) {
     <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface)] shadow-[var(--shadow-panel)]">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] px-5 py-4">
         <div className="flex items-center gap-2">
-          <Globe2 aria-hidden="true" className="text-blue-700" size={18} />
+          <FileSpreadsheet aria-hidden="true" className="text-blue-700" size={18} />
           <h2 className="text-base font-semibold text-[var(--text-primary)]">{dictionary.title}</h2>
         </div>
         <span className="text-xs font-medium text-[var(--text-muted)]">{dictionary.description}</span>

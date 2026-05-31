@@ -62,7 +62,7 @@ export type DashboardDictionary = {
       primary: string;
       tools: string;
     };
-    items: Record<"cargo" | "duty" | "overseas" | "vehicle-spec", {
+    items: Record<"batch" | "cargo" | "duty" | "vehicle-spec", {
       description: string;
       title: string;
     }>;
@@ -133,16 +133,16 @@ const dictionaries = {
     },
     workflows: {
       open: "열기",
-      description: "HS 검색 이후 바로 이어지는 조회와 실무 도구입니다.",
-      title: "주요 업무·실무 도구",
+      description: "상단 검색 이후 자주 이어지는 실무 작업입니다.",
+      title: "후속 업무·실무 도구",
       groups: {
-        primary: "주요 업무",
+        primary: "후속 업무",
         tools: "실무 도구"
       },
       items: {
+        batch: { description: "여러 품목을 한 번에 확인", title: "HS 일괄 조회" },
         cargo: { description: "HBL 진행 상태와 알림", title: "적하목록 조회" },
         duty: { description: "입력값 기준 관세·내국세 예비 산출", title: "예상 납세액 산출" },
-        overseas: { description: "목적국 기준으로 조회", title: "해외 HS CODE조회" },
         "vehicle-spec": { description: "제원·컨테이너·터미널 실무 확인", title: "중고차 수출" }
       }
     }
@@ -210,16 +210,16 @@ const dictionaries = {
     },
     workflows: {
       open: "Open",
-      description: "Follow-up lookups and practical tools after HS search.",
-      title: "Key workflows and tools",
+      description: "Frequent follow-up work after the main search.",
+      title: "Follow-up work and tools",
       groups: {
-        primary: "Key workflows",
+        primary: "Follow-up work",
         tools: "Practical tools"
       },
       items: {
+        batch: { description: "Check multiple items at once", title: "Batch HS lookup" },
         cargo: { description: "HBL progress and alerts", title: "Cargo manifest" },
         duty: { description: "Preliminary duty and tax estimate", title: "Estimated duties" },
-        overseas: { description: "Check by destination country", title: "Overseas HS lookup" },
         "vehicle-spec": { description: "Vehicle specs, containers, and terminal checks", title: "Used-car export" }
       }
     }
@@ -287,16 +287,16 @@ const dictionaries = {
     },
     workflows: {
       open: "打开",
-      description: "HS查询后的后续查询和实务工具。",
-      title: "主要业务和实务工具",
+      description: "主搜索之后常用的后续实务操作。",
+      title: "后续业务和实务工具",
       groups: {
-        primary: "主要业务",
+        primary: "后续业务",
         tools: "实务工具"
       },
       items: {
+        batch: { description: "一次确认多个品目", title: "HS批量查询" },
         cargo: { description: "HBL进度和提醒", title: "舱单查询" },
         duty: { description: "关税和内税的初步估算", title: "预计税费" },
-        overseas: { description: "按目的国标准查询", title: "海外HS查询" },
         "vehicle-spec": { description: "车辆参数、集装箱和码头实务确认", title: "二手车出口" }
       }
     }

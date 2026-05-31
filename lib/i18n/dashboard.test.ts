@@ -16,7 +16,7 @@ describe("dashboard i18n dictionary", () => {
       expect(dictionary.hero.title).toBeTruthy();
       expect(dictionary.lookup.submit).toBeTruthy();
       expect(dictionary.notices.close).toBeTruthy();
-      expect(dictionary.workflows.items.overseas.title).toBeTruthy();
+      expect(dictionary.workflows.items.batch.title).toBeTruthy();
       expect(dictionary.workflows.description).toBeTruthy();
     }
   });
