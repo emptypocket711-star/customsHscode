@@ -1925,3 +1925,21 @@
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 - `E2E_BASE_URL=https://hsfinder.co.kr npm run e2e:product-supplement`
 - Playwright 실사이트 확인: 일반 테스트 계정은 `/operations/health`에서 접근 차단 유지, 운영 UI 미노출
+
+### 운영 통계 개발 요청 문구화
+
+- 이전 작업은 `/operations/health` 첫 화면의 카드 수와 노출 밀도를 줄인 것이고, 이번 작업은 남아 있는 운영 통계를 보고 대표가 어떤 개발 요청을 하면 되는지 자동 문구로 보여주는 것이다.
+- `개발 요청 문구` 카드를 추가해 운영 이슈, 조회 품질 반복, HS snapshot 지연, 반입계 출력 실패, 외부 API job 실패, rate limit 초과, 배포 설정, background job 실패를 수정 요청 후보로 변환한다.
+- 문제가 있으면 `수정 요청` 카드에 그대로 보낼 문장을 표시하고, 문제가 없으면 다음 개선 작업 문구를 표시한다.
+- 기존 상세 통계, 원시 telemetry, 운영 이슈 처리 폼은 유지했다. 이번 변경은 통계를 해석하기 쉽게 만드는 상단 안내만 추가한다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test -- server/repositories/operations-issue.repository.test.ts server/repositories/lookup-telemetry.repository.test.ts server/repositories/protected-job-event.repository.test.ts server/repositories/container-receipt-failure-event.repository.test.ts server/repositories/rate-limit-event.repository.test.ts`
+- `npm run build`
+- Vercel production deployment: `customs-hscode-5dk2x4lhp-koo-apps.vercel.app`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
+- `E2E_BASE_URL=https://hsfinder.co.kr npm run e2e:product-supplement`
+- Playwright 실사이트 확인: 일반 테스트 계정은 `/operations/health`에서 접근 차단 유지, 운영 UI 미노출
