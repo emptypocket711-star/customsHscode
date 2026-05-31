@@ -879,9 +879,9 @@ function productCandidateRouteSummary(candidate: HsCandidateRecommendation, look
   const current = hierarchy[hierarchy.length - 1];
 
   return [
-    hs4 ? `호 검토: ${formatHsCode(hs4.code)} ${hs4.label}` : null,
-    hs6 ? `6자리 분류 확인: ${formatHsCode(hs6.code)} ${hs6.label}` : null,
-    current ? `추천 코드: ${formatHsCode(candidate.hskCode)} ${candidate.koreanName}` : null
+    hs4 ? `호 ${formatHsCode(hs4.code)} ${hs4.label}` : null,
+    hs6 ? `6자리 ${formatHsCode(hs6.code)} ${hs6.label}` : null,
+    current ? `10자리 ${formatHsCode(candidate.hskCode)} ${candidate.koreanName}` : null
   ].filter((item): item is string => Boolean(item));
 }
 
@@ -940,15 +940,6 @@ function productCandidateBriefDescription(
   }
 
   return description;
-}
-
-function productCandidateDisplayReason(reason: string) {
-  return reason
-    .replaceAll("예비 후보", "후보")
-    .replaceAll("예비 HS 방향", "HS 방향")
-    .replaceAll("예비 방향", "HS 방향")
-    .replaceAll("예비 분류", "분류")
-    .replaceAll("예비 검토", "검토");
 }
 
 function productCandidateDetailButtonText(candidate: HsCandidateRecommendation) {
@@ -1151,9 +1142,6 @@ function ProductCandidateCard({
           <Badge tone={candidate.lookupBasis === "user_hs_hint" ? "info" : candidate.lookupBasis === "ambiguous_abbreviation" ? "warning" : "neutral"}>
             {productCandidateLookupBasisLabel(candidate)}
           </Badge>
-          {candidateGroup.related.length ? (
-            <Badge tone="neutral">유사 코드 {candidateGroup.related.length + 1}개 묶음</Badge>
-          ) : null}
           {showSingleScore ? (
             <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
               {productCandidateScoreLabel(candidate)}
@@ -1166,9 +1154,6 @@ function ProductCandidateCard({
       <div className="mt-2 grid gap-1 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-700">
         <div><span className="font-semibold text-slate-500">간략 정보</span> {productCandidateBriefDescription(candidate, lookup, familyLabels)}</div>
       </div>
-      <p className="mt-2 text-sm leading-6 text-slate-600">
-        <span className="font-semibold text-slate-700">주요 근거</span> {productCandidateEvidenceText(candidate)}
-      </p>
 
       <Link
         className="focus-ring mt-4 inline-flex w-full items-center justify-center rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-800"
@@ -1180,11 +1165,11 @@ function ProductCandidateCard({
 
       <details className="mt-3 rounded-md border border-slate-200 bg-slate-50">
         <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-slate-700">
-          근거·보완 보기
+          분류 근거 보기
         </summary>
         <div className="grid gap-3 border-t border-slate-200 p-3 text-sm lg:grid-cols-2">
           <div>
-            <div className="text-xs font-semibold text-blue-900">분류 과정</div>
+            <div className="text-xs font-semibold text-blue-900">분류 요약</div>
             <ol className="mt-2 grid gap-1 text-xs leading-5 text-blue-950">
               {routeSummary.map((line, stepIndex) => (
                 <li className="flex gap-2" key={line}>
@@ -1193,8 +1178,8 @@ function ProductCandidateCard({
                 </li>
               ))}
             </ol>
-            <div className="mt-3 text-xs font-semibold text-slate-500">상세 근거</div>
-            <p className="mt-1 leading-6 text-slate-700">{productCandidateDisplayReason(candidate.reason)}</p>
+            <div className="mt-3 text-xs font-semibold text-slate-500">주요 근거</div>
+            <p className="mt-1 text-xs leading-5 text-slate-700">{productCandidateEvidenceText(candidate)}</p>
           </div>
 
           <div>
