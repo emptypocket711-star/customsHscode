@@ -103,3 +103,5 @@ and status = 'published'
 The HS4/HS6 explorer modes use snapshot-first lookup because those screens only need grouped child HSK rows and summary columns.
 
 The HSK 10-digit detail RPC now includes the user-visible first-screen parity needed for snapshot-first lookup: standard product names, same-HS6 siblings, tariff previews, import requirements with agency contacts and playbooks, and origin marking target/method summaries. If a snapshot row is missing for the requested basis date, the repository falls back to the source-table composition path.
+
+Snapshot refresh functions force the refresh transaction timezone to `Asia/Seoul`, so `current_date` in the materialized read model matches the app's default basis-date rule.
