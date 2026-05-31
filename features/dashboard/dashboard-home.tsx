@@ -129,6 +129,23 @@ export function DashboardHome({
               HS CODE를 입력하면 직접 조회하고, 품명을 입력하면 같은 검색창에서 AI가 가장 가까운 HS CODE를 함께 찾아줍니다.
             </p>
           </form>
+
+          <div className="rounded-lg border border-[var(--border-subtle)] bg-slate-50 px-4 py-3">
+            <p className="text-sm font-semibold text-[var(--text-primary)]">{dictionary.startGuide.title}</p>
+            <div className="mt-3 grid gap-2 lg:grid-cols-3">
+              {dictionary.startGuide.items.map((item) => (
+                <div className="flex gap-3 rounded-md border border-slate-200 bg-white px-3 py-3" key={item.label}>
+                  <span className="grid size-7 shrink-0 place-items-center rounded-md bg-blue-50 text-xs font-semibold text-blue-700 ring-1 ring-blue-100">
+                    {item.label}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold text-[var(--text-primary)]">{item.title}</span>
+                    <span className="mt-1 block text-xs leading-5 text-[var(--text-secondary)]">{item.description}</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
