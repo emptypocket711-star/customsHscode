@@ -448,6 +448,12 @@ function mapResult(
     currentLabel: record.korean_name,
     labels: hierarchyLabels
   });
+  const familyLabels = { ...hierarchyLabels };
+  const originFamilyLabel = originMarking?.method?.itemName?.replace(/\([^)]*\)/g, "").trim();
+  const originFamilyPattern = originMarking?.method?.matchedPattern;
+  if (originFamilyPattern && originFamilyLabel && !originFamilyLabel.endsWith("제품")) {
+    familyLabels[originFamilyPattern] = originFamilyLabel;
+  }
 
   return {
     hskCode: record.hsk_code,
@@ -458,7 +464,7 @@ function mapResult(
       hs6: record.hs6,
       koreanName: record.korean_name,
       hierarchyPath,
-      familyLabels: hierarchyLabels
+      familyLabels
     }),
     englishName: record.english_name,
     importNatureCode: record.import_nature_code,

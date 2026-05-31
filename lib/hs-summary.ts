@@ -50,7 +50,9 @@ function preferredFamilyLabel(
 ) {
   const intermediateCodes = [
     hskCode.length > 8 ? hskCode.slice(0, 8) : "",
-    hskCode.length > 7 ? hskCode.slice(0, 7) : ""
+    hskCode.length > 7 ? hskCode.slice(0, 7) : "",
+    hs6,
+    hskCode.slice(0, 4)
   ].filter(Boolean);
 
   for (const code of intermediateCodes) {
