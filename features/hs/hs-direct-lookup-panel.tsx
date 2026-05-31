@@ -883,7 +883,7 @@ function productCandidateBranchNotes(candidate: HsCandidateRecommendation) {
     candidate.riskNotes
   ].map((note) => note.trim()).filter(Boolean);
 
-  return Array.from(new Set(notes)).slice(0, 4);
+  return Array.from(new Set(notes)).slice(0, 2);
 }
 
 function productCandidateCodeLevelLabel(candidate: HsCandidateRecommendation) {
@@ -979,19 +979,16 @@ function productSearchPresentationState(candidates: HsCandidateRecommendation[],
 
 function ProductClassificationFlowPanel({
   productName,
-  candidates,
-  clarification
+  candidates
 }: {
   productName: string;
   candidates: HsCandidateRecommendation[];
-  clarification: ProductClarificationResult | null;
 }) {
   const hasCandidates = candidates.length > 0;
   const primary = candidates[0];
-  const summaryLines = [
-    clarification?.summary || `"${productName}" 품명의 제품 의미를 먼저 해석했습니다.`,
-    primary ? `가장 가까운 방향: ${formatHsCode(primary.hskCode)} ${primary.koreanName}` : "현재 입력값만으로는 표시할 HS CODE가 부족합니다."
-  ].filter(Boolean);
+  const summaryText = primary
+    ? `"${productName}" 기준 가장 가까운 코드: ${formatHsCode(primary.hskCode)} ${primary.koreanName}`
+    : `"${productName}" 기준 보완정보가 더 필요합니다.`;
 
   return (
     <details className="mt-4 rounded-md border border-blue-100 bg-blue-50">
@@ -1003,13 +1000,8 @@ function ProductClassificationFlowPanel({
         </span>
         <span className="text-xs font-medium text-blue-800">{productName}</span>
       </summary>
-      <div className="grid gap-2 border-t border-blue-100 bg-white p-3 text-sm leading-6 text-slate-700 md:grid-cols-2">
-        {summaryLines.map((line, index) => (
-          <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2" key={`${line}-${index}`}>
-            <span className="mr-2 font-mono text-xs font-semibold text-blue-700">{index + 1}</span>
-            {line}
-          </div>
-        ))}
+      <div className="border-t border-blue-100 bg-white p-3 text-sm leading-6 text-slate-700">
+        {summaryText}
       </div>
     </details>
   );
@@ -1024,7 +1016,7 @@ function ProductSupplementSummaryPanel({ entries }: { entries: ProductSupplement
         <div>
           <p className="font-semibold">이번 재조회에 반영된 보완사항</p>
           <p className="mt-1 text-xs text-blue-900">
-            검색창에는 원 품명만 표시하고, 아래 답변을 함께 반영해 다시 분류했습니다.
+            아래 답변을 반영해 다시 조회했습니다.
           </p>
         </div>
         <Badge tone="info">{entries.length}개 반영</Badge>
@@ -2935,7 +2927,7 @@ function AiClarificationPanel({
           <p className={cn(
             "mt-1 text-xs leading-5",
             presentation.tone === "warning" ? "text-amber-900" : "text-blue-900"
-          )}>답변 후 재조회하면 후보를 다시 좁힙니다.</p>
+          )}>답변 후 재조회합니다.</p>
         </div>
         <Badge tone={analysis.confidence === "low" ? "warning" : "info"}>
           {analysis.confidence === "low" ? "검토 필요" : "검토"}
@@ -2967,7 +2959,7 @@ function AiClarificationPanel({
               "mt-2 rounded-md border bg-white px-3 py-2 text-sm leading-6 text-slate-700",
               presentation.tone === "warning" ? "border-amber-100" : "border-blue-100"
             )}>
-              현재 입력 기준으로 가장 가까운 코드를 표시할 수 있습니다. 실제 사양서나 용도를 확인하면 더 정확히 좁힐 수 있습니다.
+              현재 입력 기준으로 조회 가능한 코드를 표시했습니다.
             </div>
           )}
           <ProductSupplementResearchForm
@@ -3626,7 +3618,7 @@ export async function HsDirectLookupPanel({
 
                     <details className="mt-3 rounded-md border border-slate-200 bg-slate-50">
                       <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-slate-700">
-                        근거·보완정보 보기
+                        근거·보완 보기
                       </summary>
                       <div className="grid gap-3 border-t border-slate-200 p-3 text-sm lg:grid-cols-2">
                         <div>
@@ -3653,7 +3645,7 @@ export async function HsDirectLookupPanel({
                             </ul>
                           ) : (
                             <p className="mt-1 leading-6 text-slate-700">
-                              입력 정보 기준으로 가장 가까운 코드를 표시했습니다. 실제 사양과 용도를 확인하면 더 정확히 좁힐 수 있습니다.
+                              추가 보완 없이 조회 가능한 코드입니다.
                             </p>
                           )}
                           <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
@@ -3769,7 +3761,7 @@ export async function HsDirectLookupPanel({
 
                           <details className="mt-3 rounded-md border border-slate-200 bg-slate-50">
                             <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-slate-700">
-                              근거·보완정보 보기
+                              근거·보완 보기
                             </summary>
                             <div className="grid gap-3 border-t border-slate-200 p-3 text-sm lg:grid-cols-2">
                               <div>
@@ -3796,7 +3788,7 @@ export async function HsDirectLookupPanel({
                                   </ul>
                                 ) : (
                                   <p className="mt-1 leading-6 text-slate-700">
-                                    입력 정보 기준으로 가장 가까운 코드를 표시했습니다. 실제 사양과 용도를 확인하면 더 정확히 좁힐 수 있습니다.
+                                    추가 보완 없이 조회 가능한 코드입니다.
                                   </p>
                                 )}
                                 <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
@@ -3847,7 +3839,6 @@ export async function HsDirectLookupPanel({
         {shouldLookupProduct ? (
           <ProductClassificationFlowPanel
             candidates={productCandidates}
-            clarification={aiClarification}
             productName={displaySearchQuery}
           />
         ) : null}
