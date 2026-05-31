@@ -1619,17 +1619,6 @@ function DestinationHsHierarchyTrail({
   );
 }
 
-function splitHskNavigatorCode(value: string) {
-  const normalized = normalizeHsInput(value);
-
-  return {
-    hs4: normalized.slice(0, 4),
-    hs6Tail: normalized.length >= 6 ? normalized.slice(4, 6) : "",
-    digit78: normalized.length >= 8 ? normalized.slice(6, 8) : "",
-    digit910: normalized.length >= 10 ? normalized.slice(8, 10) : ""
-  };
-}
-
 function hs8GroupKey(value: string) {
   const normalized = normalizeHsInput(value);
 
@@ -1647,34 +1636,6 @@ function hsNavigatorRowClass({ isCurrent, startsGroup }: { isCurrent: boolean; s
   return cn(
     startsGroup ? "border-t-2 border-slate-300" : "border-t border-slate-100",
     isCurrent ? "bg-slate-100 font-semibold text-slate-950" : "text-slate-800 hover:bg-slate-50"
-  );
-}
-
-function hsNavigatorCodeClass({ isHs8, isAnchor }: { isHs8: boolean; isAnchor?: boolean }) {
-  return cn(
-    "border-r border-slate-200 px-1.5 py-1.5 text-right align-top font-mono text-slate-700",
-    isHs8 ? "border-l-2 border-l-slate-300 font-semibold" : "font-medium",
-    isAnchor ? "text-slate-950" : null
-  );
-}
-
-function HsNavigatorCodeCell({
-  className,
-  href,
-  value
-}: {
-  className: string;
-  href: string;
-  value: string;
-}) {
-  return (
-    <td className={className}>
-      {value ? (
-        <Link className="block h-full w-full underline-offset-2 hover:underline" href={href}>
-          {value}
-        </Link>
-      ) : null}
-    </td>
   );
 }
 
@@ -1701,21 +1662,14 @@ function HsCodeSideNavigator({
         <div className="max-h-[calc(100vh-150px)] overflow-auto">
           <table className="w-full table-fixed border-collapse text-left text-xs">
             <colgroup>
-              <col className="w-14" />
-              <col className="w-8" />
-              <col className="w-8" />
-              <col className="w-8" />
+              <col className="w-28" />
               <col />
             </colgroup>
             <tbody>
               {result.hierarchyPath.map((node, index) => {
                 const normalized = normalizeHsInput(node.code);
-                const parts = splitHskNavigatorCode(normalized);
                 const isCurrent = normalized === currentCode;
                 const startsGroup = startsHs8Group(normalized, hierarchyCodes[index - 1]);
-                const codeClass = hsNavigatorCodeClass({ isHs8: false });
-                const hs8AnchorCodeClass = hsNavigatorCodeClass({ isHs8: normalized.length >= 8, isAnchor: true });
-                const firstCodeClass = hsNavigatorCodeClass({ isHs8: normalized.length >= 8 });
                 const rowClass = hsNavigatorRowClass({ isCurrent, startsGroup });
                 const labelClass = node.level <= 4 ? "font-semibold" : "font-medium";
                 const href = hsLookupHref({
@@ -1727,10 +1681,11 @@ function HsCodeSideNavigator({
 
                 return (
                   <tr className={rowClass} key={`${node.level}-${node.code}`}>
-                    <HsNavigatorCodeCell className={firstCodeClass} href={href} value={node.level <= 4 ? formatHsCode(node.code) : parts.hs4} />
-                    <HsNavigatorCodeCell className={codeClass} href={href} value={node.level >= 6 ? parts.hs6Tail : ""} />
-                    <HsNavigatorCodeCell className={hs8AnchorCodeClass} href={href} value={node.level >= 8 ? parts.digit78 : ""} />
-                    <HsNavigatorCodeCell className={codeClass} href={href} value={node.level >= 10 ? parts.digit910 : ""} />
+                    <td className="border-r border-slate-200 px-2 py-1.5 text-right align-top font-mono font-semibold text-slate-800">
+                      <Link className="block h-full w-full underline-offset-2 hover:underline" href={href}>
+                        {formatHsCode(node.code)}
+                      </Link>
+                    </td>
                     <td className={`px-2 py-1.5 align-top leading-5 ${labelClass}`}>
                       <Link
                         className="block truncate"
@@ -1744,12 +1699,8 @@ function HsCodeSideNavigator({
               })}
               {visibleSiblings.map((sibling, index) => {
                 const normalized = normalizeHsInput(sibling.hskCode);
-                const parts = splitHskNavigatorCode(normalized);
                 const previousCode = index > 0 ? visibleSiblings[index - 1]?.hskCode : result.hierarchyPath.at(-1)?.code;
                 const startsGroup = startsHs8Group(normalized, previousCode);
-                const codeClass = hsNavigatorCodeClass({ isHs8: false });
-                const hs8AnchorCodeClass = hsNavigatorCodeClass({ isHs8: normalized.length >= 8, isAnchor: true });
-                const firstCodeClass = hsNavigatorCodeClass({ isHs8: normalized.length >= 8 });
                 const rowClass = hsNavigatorRowClass({ isCurrent: sibling.isSelected, startsGroup });
                 const href = hsLookupHref({
                   hskCode: sibling.hskCode,
@@ -1760,10 +1711,11 @@ function HsCodeSideNavigator({
 
                 return (
                   <tr className={rowClass} key={sibling.hskCode}>
-                    <HsNavigatorCodeCell className={firstCodeClass} href={href} value={parts.hs4} />
-                    <HsNavigatorCodeCell className={codeClass} href={href} value={parts.hs6Tail} />
-                    <HsNavigatorCodeCell className={hs8AnchorCodeClass} href={href} value={parts.digit78} />
-                    <HsNavigatorCodeCell className={codeClass} href={href} value={parts.digit910} />
+                    <td className="border-r border-slate-200 px-2 py-1.5 text-right align-top font-mono font-medium text-slate-700">
+                      <Link className="block h-full w-full underline-offset-2 hover:underline" href={href}>
+                        {formatHsCode(sibling.hskCode)}
+                      </Link>
+                    </td>
                     <td className="px-2 py-1.5 align-top font-medium leading-5">
                       <Link
                         className="block truncate"
