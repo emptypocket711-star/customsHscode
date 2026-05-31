@@ -1033,6 +1033,184 @@ function ProductSupplementSummaryPanel({ entries }: { entries: ProductSupplement
   );
 }
 
+type ProductCandidateGroup = {
+  representative: HsCandidateRecommendation;
+  related: HsCandidateRecommendation[];
+};
+
+function ProductCandidateCard({
+  candidateGroup,
+  destinationCountry,
+  direction,
+  displaySearchQuery,
+  isPrimary,
+  lookup,
+  originCountry,
+  showSingleScore
+}: {
+  candidateGroup: ProductCandidateGroup;
+  destinationCountry: string;
+  direction: "import" | "export";
+  displaySearchQuery: string;
+  isPrimary?: boolean;
+  lookup?: HsDirectLookupResult;
+  originCountry: string;
+  showSingleScore?: boolean;
+}) {
+  const candidate = candidateGroup.representative;
+  const routeSummary = productCandidateRouteSummary(candidate, lookup);
+  const branchNotes = productCandidateBranchNotes(candidate);
+  const detailHref = hsLookupHref({
+    hskCode: candidate.hskCode,
+    direction,
+    destinationCountry,
+    originCountry,
+    basisDate: candidate.basisDate,
+    source: "product_search",
+    sourceCandidateRank: candidate.rank,
+    sourceProductName: displaySearchQuery
+  });
+  const hs6Href = hsLookupHref({
+    hskCode: candidate.hs6,
+    direction,
+    destinationCountry,
+    originCountry,
+    basisDate: candidate.basisDate,
+    source: "product_search",
+    sourceCandidateRank: candidate.rank,
+    sourceProductName: displaySearchQuery
+  });
+
+  return (
+    <article
+      className={cn(
+        "rounded-md border bg-white p-4",
+        isPrimary ? "border-blue-300 shadow-sm lg:col-span-2 lg:p-5" : "border-slate-200"
+      )}
+      key={candidate.hskCode}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <div className={cn("text-xs font-semibold", isPrimary ? "text-blue-700" : "text-slate-500")}>
+            {isPrimary ? "가장 가까운 HS CODE" : `함께 볼 수 있는 코드 ${candidate.rank}`}
+          </div>
+          <Link
+            className={cn(
+              "mt-1 block font-mono font-semibold text-blue-700 underline-offset-2 hover:underline",
+              isPrimary ? "text-2xl" : "text-lg"
+            )}
+            data-navigation-progress="상세조회"
+            href={detailHref}
+          >
+            {formatHsCode(candidate.hskCode)}
+          </Link>
+        </div>
+        <div className="flex items-center gap-2">
+          {showSingleScore ? null : <Badge tone="info">{productCandidateScoreLabel(candidate)}</Badge>}
+          <Badge tone={normalizeHsInput(candidate.hskCode).length >= 10 ? "success" : "warning"}>
+            {productCandidateCodeLevelLabel(candidate)}
+          </Badge>
+          <Badge tone={candidate.lookupBasis === "user_hs_hint" ? "info" : candidate.lookupBasis === "ambiguous_abbreviation" ? "warning" : "neutral"}>
+            {productCandidateLookupBasisLabel(candidate)}
+          </Badge>
+          {candidateGroup.related.length ? (
+            <Badge tone="neutral">유사 코드 {candidateGroup.related.length + 1}개 묶음</Badge>
+          ) : null}
+          {showSingleScore ? (
+            <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
+              {productCandidateScoreLabel(candidate)}
+            </span>
+          ) : null}
+        </div>
+      </div>
+
+      <h3 className="mt-3 text-base font-semibold text-slate-950">{candidate.koreanName}</h3>
+      <div className="mt-2 grid gap-1 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-700">
+        <div><span className="font-semibold text-slate-500">간략 정보</span> {productCandidateBriefDescription(candidate, lookup)}</div>
+      </div>
+      <p className="mt-2 text-sm leading-6 text-slate-600">
+        <span className="font-semibold text-slate-700">주요 근거</span> {productCandidateEvidenceText(candidate)}
+      </p>
+
+      <Link
+        className="focus-ring mt-4 inline-flex w-full items-center justify-center rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-800"
+        data-navigation-progress="상세조회"
+        href={detailHref}
+      >
+        {normalizeHsInput(candidate.hskCode).length >= 10 ? "이 코드로 조회" : productCandidateDetailButtonText(candidate)}
+      </Link>
+
+      <details className="mt-3 rounded-md border border-slate-200 bg-slate-50">
+        <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-slate-700">
+          근거·보완 보기
+        </summary>
+        <div className="grid gap-3 border-t border-slate-200 p-3 text-sm lg:grid-cols-2">
+          <div>
+            <div className="text-xs font-semibold text-blue-900">분류 과정</div>
+            <ol className="mt-2 grid gap-1 text-xs leading-5 text-blue-950">
+              {routeSummary.map((line, stepIndex) => (
+                <li className="flex gap-2" key={line}>
+                  <span className="font-mono font-semibold text-blue-700">{stepIndex + 1}</span>
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ol>
+            <div className="mt-3 text-xs font-semibold text-slate-500">상세 근거</div>
+            <p className="mt-1 leading-6 text-slate-700">{productCandidateDisplayReason(candidate.reason)}</p>
+          </div>
+
+          <div>
+            <div className="text-xs font-semibold text-amber-900">확인하면 더 정확해지는 정보</div>
+            {branchNotes.length ? (
+              <ul className="mt-1 grid gap-1 leading-6 text-slate-700">
+                {branchNotes.map((question) => (
+                  <li key={question}>- {question}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-1 leading-6 text-slate-700">
+                추가 보완 없이 조회 가능한 코드입니다.
+              </p>
+            )}
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+              <span className="text-xs font-semibold text-slate-500">HS6</span>
+              <Link className="font-mono font-semibold text-blue-700 underline-offset-2 hover:underline" data-navigation-progress="상세조회" href={hs6Href}>
+                {formatHsCode(candidate.hs6)}
+              </Link>
+            </div>
+          </div>
+        </div>
+        {candidateGroup.related.length ? (
+          <div className="border-t border-slate-200 px-3 py-3">
+            <p className="text-xs font-semibold text-slate-600">비슷한 세부 코드</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {candidateGroup.related.map((relatedCandidate) => (
+                <Link
+                  className="rounded-md border border-slate-200 bg-white px-2 py-1 font-mono text-xs font-semibold text-blue-700 hover:bg-blue-50"
+                  data-navigation-progress="상세조회"
+                  href={hsLookupHref({
+                    hskCode: relatedCandidate.hskCode,
+                    direction,
+                    destinationCountry,
+                    originCountry,
+                    basisDate: relatedCandidate.basisDate,
+                    source: "product_search",
+                    sourceCandidateRank: relatedCandidate.rank,
+                    sourceProductName: displaySearchQuery
+                  })}
+                  key={relatedCandidate.hskCode}
+                >
+                  {formatHsCode(relatedCandidate.hskCode)} · {productCandidateScoreLabel(relatedCandidate)}
+                </Link>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </details>
+    </article>
+  );
+}
+
 function productCandidateCopySummaryTexts({
   productName,
   candidates,
@@ -3528,307 +3706,36 @@ export async function HsDirectLookupPanel({
               ) : null}
             </div>
             <div className="grid gap-3 bg-slate-50 p-3 lg:grid-cols-2">
-              {initiallyVisibleProductCandidateGroups.map((candidateGroup, index) => {
-                const candidate = candidateGroup.representative;
-                const lookup = productCandidateLookupByHsk.get(candidate.hskCode);
-                const routeSummary = productCandidateRouteSummary(candidate, lookup);
-                const branchNotes = productCandidateBranchNotes(candidate);
-                const isPrimaryCandidate = index === 0;
-                const detailHref = hsLookupHref({
-                  hskCode: candidate.hskCode,
-                  direction: lookupDirection,
-                  destinationCountry: selectedDestinationCountry,
-                  originCountry: selectedOriginCountry,
-                  basisDate: candidate.basisDate,
-                  source: "product_search",
-                  sourceCandidateRank: candidate.rank,
-                  sourceProductName: displaySearchQuery
-                });
-                const hs6Href = hsLookupHref({
-                  hskCode: candidate.hs6,
-                  direction: lookupDirection,
-                  destinationCountry: selectedDestinationCountry,
-                  originCountry: selectedOriginCountry,
-                  basisDate: candidate.basisDate,
-                  source: "product_search",
-                  sourceCandidateRank: candidate.rank,
-                  sourceProductName: displaySearchQuery
-                });
-
-                return (
-                  <article
-                    className={cn(
-                      "rounded-md border bg-white p-4",
-                      isPrimaryCandidate ? "border-blue-300 shadow-sm lg:col-span-2 lg:p-5" : "border-slate-200"
-                    )}
-                    key={candidate.hskCode}
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div>
-                        <div className={cn("text-xs font-semibold", isPrimaryCandidate ? "text-blue-700" : "text-slate-500")}>
-                          {isPrimaryCandidate ? "가장 가까운 HS CODE" : `함께 볼 수 있는 코드 ${candidate.rank}`}
-                        </div>
-                        <Link
-                          className={cn(
-                            "mt-1 block font-mono font-semibold text-blue-700 underline-offset-2 hover:underline",
-                            isPrimaryCandidate ? "text-2xl" : "text-lg"
-                          )}
-                          data-navigation-progress="상세조회"
-                          href={detailHref}
-                        >
-                          {formatHsCode(candidate.hskCode)}
-                        </Link>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {productCandidates.length > 1 ? (
-                          <Badge tone="info">{productCandidateScoreLabel(candidate)}</Badge>
-                        ) : null}
-                        <Badge tone={normalizeHsInput(candidate.hskCode).length >= 10 ? "success" : "warning"}>
-                          {productCandidateCodeLevelLabel(candidate)}
-                        </Badge>
-                        <Badge tone={candidate.lookupBasis === "user_hs_hint" ? "info" : candidate.lookupBasis === "ambiguous_abbreviation" ? "warning" : "neutral"}>
-                          {productCandidateLookupBasisLabel(candidate)}
-                        </Badge>
-                        {candidateGroup.related.length ? (
-                          <Badge tone="neutral">유사 코드 {candidateGroup.related.length + 1}개 묶음</Badge>
-                        ) : null}
-                        {productCandidates.length === 1 ? (
-                          <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
-                            {productCandidateScoreLabel(candidate)}
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
-
-                    <h3 className="mt-3 text-base font-semibold text-slate-950">{candidate.koreanName}</h3>
-                    <div className="mt-2 grid gap-1 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-700">
-                      <div><span className="font-semibold text-slate-500">간략 정보</span> {productCandidateBriefDescription(candidate, lookup)}</div>
-                    </div>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">
-                      <span className="font-semibold text-slate-700">주요 근거</span> {productCandidateEvidenceText(candidate)}
-                    </p>
-
-                    <Link
-                      className="focus-ring mt-4 inline-flex w-full items-center justify-center rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-800"
-                      data-navigation-progress="상세조회"
-                      href={detailHref}
-                    >
-                      {normalizeHsInput(candidate.hskCode).length >= 10 ? "이 코드로 조회" : productCandidateDetailButtonText(candidate)}
-                    </Link>
-
-                    <details className="mt-3 rounded-md border border-slate-200 bg-slate-50">
-                      <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-slate-700">
-                        근거·보완 보기
-                      </summary>
-                      <div className="grid gap-3 border-t border-slate-200 p-3 text-sm lg:grid-cols-2">
-                        <div>
-                          <div className="text-xs font-semibold text-blue-900">분류 과정</div>
-                          <ol className="mt-2 grid gap-1 text-xs leading-5 text-blue-950">
-                            {routeSummary.map((line, stepIndex) => (
-                              <li className="flex gap-2" key={line}>
-                                <span className="font-mono font-semibold text-blue-700">{stepIndex + 1}</span>
-                                <span>{line}</span>
-                              </li>
-                            ))}
-                          </ol>
-                          <div className="mt-3 text-xs font-semibold text-slate-500">상세 근거</div>
-                          <p className="mt-1 leading-6 text-slate-700">{productCandidateDisplayReason(candidate.reason)}</p>
-                        </div>
-
-                        <div>
-                          <div className="text-xs font-semibold text-amber-900">확인하면 더 정확해지는 정보</div>
-                          {branchNotes.length ? (
-                            <ul className="mt-1 grid gap-1 leading-6 text-slate-700">
-                              {branchNotes.map((question) => (
-                                <li key={question}>- {question}</li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <p className="mt-1 leading-6 text-slate-700">
-                              추가 보완 없이 조회 가능한 코드입니다.
-                            </p>
-                          )}
-                          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-                            <span className="text-xs font-semibold text-slate-500">{dictionary.product.hs6}</span>
-                            <Link className="font-mono font-semibold text-blue-700 underline-offset-2 hover:underline" data-navigation-progress="상세조회" href={hs6Href}>
-                              {formatHsCode(candidate.hs6)}
-                            </Link>
-                          </div>
-                        </div>
-                      </div>
-                      {candidateGroup.related.length ? (
-                        <div className="border-t border-slate-200 px-3 py-3">
-                          <p className="text-xs font-semibold text-slate-600">비슷한 세부 코드</p>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {candidateGroup.related.map((relatedCandidate) => (
-                              <Link
-                                className="rounded-md border border-slate-200 bg-white px-2 py-1 font-mono text-xs font-semibold text-blue-700 hover:bg-blue-50"
-                                data-navigation-progress="상세조회"
-                                href={hsLookupHref({
-                                  hskCode: relatedCandidate.hskCode,
-                                  direction: lookupDirection,
-                                  destinationCountry: selectedDestinationCountry,
-                                  originCountry: selectedOriginCountry,
-                                  basisDate: relatedCandidate.basisDate,
-                                  source: "product_search",
-                                  sourceCandidateRank: relatedCandidate.rank,
-                                  sourceProductName: displaySearchQuery
-                                })}
-                                key={relatedCandidate.hskCode}
-                              >
-                                {formatHsCode(relatedCandidate.hskCode)} · {productCandidateScoreLabel(relatedCandidate)}
-                              </Link>
-                            ))}
-                          </div>
-                        </div>
-                      ) : null}
-                    </details>
-                  </article>
-                );
-              })}
+              {initiallyVisibleProductCandidateGroups.map((candidateGroup, index) => (
+                <ProductCandidateCard
+                  candidateGroup={candidateGroup}
+                  destinationCountry={selectedDestinationCountry}
+                  direction={lookupDirection}
+                  displaySearchQuery={displaySearchQuery}
+                  isPrimary={index === 0}
+                  key={candidateGroup.representative.hskCode}
+                  lookup={productCandidateLookupByHsk.get(candidateGroup.representative.hskCode)}
+                  originCountry={selectedOriginCountry}
+                  showSingleScore={productCandidates.length === 1}
+                />
+              ))}
               {additionalProductCandidateGroups.length ? (
                 <details className="rounded-md border border-slate-200 bg-white lg:col-span-2">
                   <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-700">
                     함께 볼 수 있는 코드 {additionalProductCandidateCount}개 더 보기
                   </summary>
                   <div className="grid gap-3 border-t border-slate-200 bg-slate-50 p-3 lg:grid-cols-2">
-                    {additionalProductCandidateGroups.map((candidateGroup) => {
-                      const candidate = candidateGroup.representative;
-                      const lookup = productCandidateLookupByHsk.get(candidate.hskCode);
-                      const routeSummary = productCandidateRouteSummary(candidate, lookup);
-                      const branchNotes = productCandidateBranchNotes(candidate);
-                      const detailHref = hsLookupHref({
-                        hskCode: candidate.hskCode,
-                        direction: lookupDirection,
-                        destinationCountry: selectedDestinationCountry,
-                        originCountry: selectedOriginCountry,
-                        basisDate: candidate.basisDate,
-                        source: "product_search",
-                        sourceCandidateRank: candidate.rank,
-                        sourceProductName: displaySearchQuery
-                      });
-                      const hs6Href = hsLookupHref({
-                        hskCode: candidate.hs6,
-                        direction: lookupDirection,
-                        destinationCountry: selectedDestinationCountry,
-                        originCountry: selectedOriginCountry,
-                        basisDate: candidate.basisDate,
-                        source: "product_search",
-                        sourceCandidateRank: candidate.rank,
-                        sourceProductName: displaySearchQuery
-                      });
-
-                      return (
-                        <article className="rounded-md border border-slate-200 bg-white p-4" key={candidate.hskCode}>
-                          <div className="flex flex-wrap items-start justify-between gap-2">
-                            <div>
-                              <div className="text-xs font-semibold text-slate-500">
-                                함께 볼 수 있는 코드 {candidate.rank}
-                              </div>
-                              <Link className="mt-1 block font-mono text-lg font-semibold text-blue-700 underline-offset-2 hover:underline" data-navigation-progress="상세조회" href={detailHref}>
-                                {formatHsCode(candidate.hskCode)}
-                              </Link>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Badge tone="info">{productCandidateScoreLabel(candidate)}</Badge>
-                              <Badge tone={normalizeHsInput(candidate.hskCode).length >= 10 ? "success" : "warning"}>
-                                {productCandidateCodeLevelLabel(candidate)}
-                              </Badge>
-                              <Badge tone={candidate.lookupBasis === "user_hs_hint" ? "info" : candidate.lookupBasis === "ambiguous_abbreviation" ? "warning" : "neutral"}>
-                                {productCandidateLookupBasisLabel(candidate)}
-                              </Badge>
-                              {candidateGroup.related.length ? (
-                                <Badge tone="neutral">유사 코드 {candidateGroup.related.length + 1}개 묶음</Badge>
-                              ) : null}
-                            </div>
-                          </div>
-
-                          <h3 className="mt-3 text-base font-semibold text-slate-950">{candidate.koreanName}</h3>
-                          <div className="mt-2 grid gap-1 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-700">
-                            <div><span className="font-semibold text-slate-500">간략 정보</span> {productCandidateBriefDescription(candidate, lookup)}</div>
-                          </div>
-                          <p className="mt-2 text-sm leading-6 text-slate-600">
-                            <span className="font-semibold text-slate-700">주요 근거</span> {productCandidateEvidenceText(candidate)}
-                          </p>
-
-                          <Link
-                            className="focus-ring mt-4 inline-flex w-full items-center justify-center rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-800"
-                            data-navigation-progress="상세조회"
-                            href={detailHref}
-                          >
-                            {normalizeHsInput(candidate.hskCode).length >= 10 ? "이 코드로 조회" : productCandidateDetailButtonText(candidate)}
-                          </Link>
-
-                          <details className="mt-3 rounded-md border border-slate-200 bg-slate-50">
-                            <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-slate-700">
-                              근거·보완 보기
-                            </summary>
-                            <div className="grid gap-3 border-t border-slate-200 p-3 text-sm lg:grid-cols-2">
-                              <div>
-                                <div className="text-xs font-semibold text-blue-900">분류 과정</div>
-                                <ol className="mt-2 grid gap-1 text-xs leading-5 text-blue-950">
-                                  {routeSummary.map((line, stepIndex) => (
-                                    <li className="flex gap-2" key={line}>
-                                      <span className="font-mono font-semibold text-blue-700">{stepIndex + 1}</span>
-                                      <span>{line}</span>
-                                    </li>
-                                  ))}
-                                </ol>
-                                <div className="mt-3 text-xs font-semibold text-slate-500">상세 근거</div>
-                                <p className="mt-1 leading-6 text-slate-700">{productCandidateDisplayReason(candidate.reason)}</p>
-                              </div>
-
-                              <div>
-                                <div className="text-xs font-semibold text-amber-900">확인하면 더 정확해지는 정보</div>
-                                {branchNotes.length ? (
-                                  <ul className="mt-1 grid gap-1 leading-6 text-slate-700">
-                                    {branchNotes.map((question) => (
-                                      <li key={question}>- {question}</li>
-                                    ))}
-                                  </ul>
-                                ) : (
-                                  <p className="mt-1 leading-6 text-slate-700">
-                                    추가 보완 없이 조회 가능한 코드입니다.
-                                  </p>
-                                )}
-                                <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-                                  <span className="text-xs font-semibold text-slate-500">{dictionary.product.hs6}</span>
-                                  <Link className="font-mono font-semibold text-blue-700 underline-offset-2 hover:underline" data-navigation-progress="상세조회" href={hs6Href}>
-                                    {formatHsCode(candidate.hs6)}
-                                  </Link>
-                                </div>
-                              </div>
-                              {candidateGroup.related.length ? (
-                                <div className="border-t border-slate-200 px-3 py-3">
-                                  <p className="text-xs font-semibold text-slate-600">비슷한 세부 코드</p>
-                                  <div className="mt-2 flex flex-wrap gap-2">
-                                    {candidateGroup.related.map((relatedCandidate) => (
-                                      <Link
-                                        className="rounded-md border border-slate-200 bg-white px-2 py-1 font-mono text-xs font-semibold text-blue-700 hover:bg-blue-50"
-                                        data-navigation-progress="상세조회"
-                                        href={hsLookupHref({
-                                          hskCode: relatedCandidate.hskCode,
-                                          direction: lookupDirection,
-                                          destinationCountry: selectedDestinationCountry,
-                                          originCountry: selectedOriginCountry,
-                                          basisDate: relatedCandidate.basisDate,
-                                          source: "product_search",
-                                          sourceCandidateRank: relatedCandidate.rank,
-                                          sourceProductName: displaySearchQuery
-                                        })}
-                                        key={relatedCandidate.hskCode}
-                                      >
-                                        {formatHsCode(relatedCandidate.hskCode)} · {productCandidateScoreLabel(relatedCandidate)}
-                                      </Link>
-                                    ))}
-                                  </div>
-                                </div>
-                              ) : null}
-                            </div>
-                          </details>
-                        </article>
-                      );
-                    })}
+                    {additionalProductCandidateGroups.map((candidateGroup) => (
+                      <ProductCandidateCard
+                        candidateGroup={candidateGroup}
+                        destinationCountry={selectedDestinationCountry}
+                        direction={lookupDirection}
+                        displaySearchQuery={displaySearchQuery}
+                        key={candidateGroup.representative.hskCode}
+                        lookup={productCandidateLookupByHsk.get(candidateGroup.representative.hskCode)}
+                        originCountry={selectedOriginCountry}
+                      />
+                    ))}
                   </div>
                 </details>
               ) : null}
