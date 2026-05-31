@@ -1733,11 +1733,16 @@
 - 대시보드 하단 반복 사용 카드에는 목적 설명과 항목 수를 추가하고, `즐겨찾기 HS CODE`, `최근 검색`, `적하목록 알림 감시` 순서로 재배치했다.
 - 공지사항 카드도 같은 하단 카드 패턴에 맞춰 사용자용 설명과 공지 수 배지를 추가했다.
 - 대시보드 hero, 검색 helper, 시작 안내 1단계 문구를 짧게 줄여 상단 검색과 시작 안내의 반복을 낮췄다.
+- 모바일 실사이트 측정에서 대시보드가 390px viewport에서도 768px scrollWidth를 만드는 문제를 확인했다.
+  - 최상위 대시보드 grid, 후속 업무 grid, 하단 반복 카드 grid가 자식 최소 콘텐츠 폭을 따라 커지지 않도록 `minmax(0,1fr)`와 `min-w-0`을 적용했다.
+  - 공지사항 카드 루트도 하단 카드들과 같은 축소 가능 레이아웃으로 맞췄다.
+- governance test가 현재 운영 내비/수동 계정 발급 UI 문구를 기준으로 검사하도록 갱신했다.
 
 검증:
 
 - `npm run typecheck`
 - `npm run lint`
+- `npm test`
 - `npm run build`
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 - `npm run e2e:product-supplement`
@@ -1746,3 +1751,4 @@
 - Playwright 실사이트 확인: `/dashboard` 하단 반복 사용 카드 설명 및 카드 순서 표시
 - Playwright 실사이트 확인: `/dashboard` 공지사항 카드 설명 표시
 - Playwright 실사이트 확인: `/dashboard` 상단 문구 균형 정리 표시
+- Playwright 실사이트 모바일 측정: 390px viewport `scrollWidth=390`, 768px viewport `scrollWidth=768`, horizontal overflow 없음
