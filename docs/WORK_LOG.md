@@ -1907,3 +1907,21 @@
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 - `E2E_BASE_URL=https://hsfinder.co.kr npm run e2e:product-supplement`
 - Playwright 실사이트 확인: 일반 테스트 계정은 `/operations/health`에서 접근 차단 유지, 운영 UI 미노출
+
+### 운영 점검 대표용 첫 화면 축소
+
+- 이전 작업은 외부 API 정기 작업 성공/실패 telemetry를 추가한 것이고, 이번 작업은 `/operations/health` 첫 화면을 1인 대표/운영자가 바로 판단할 수 있게 줄인 것이다.
+- `핵심 운영 요약`을 7개 상세 카드에서 `서비스 준비`, `HS 데이터`, `고객 영향`, `외부 작업` 4개 대표 카드로 축소했다.
+- `오늘 할 일`은 고객 영향이 있을 수 있는 항목 위주로 유지하고, `상세 진단`, `트래픽 제한`은 `개발자용 바로가기` 접힘 영역으로 분리했다.
+- 기존 상세 진단, rate limit, 스키마, 작업 이력, 실패 로그는 제거하지 않았다. 문제가 있을 때 펼쳐서 원인을 확인하는 구조로 남겼다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test -- server/repositories/protected-job-event.repository.test.ts server/repositories/container-receipt-failure-event.repository.test.ts server/repositories/rate-limit-event.repository.test.ts`
+- `npm run build`
+- Vercel production deployment: `customs-hscode-8udx3n1lh-koo-apps.vercel.app`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
+- `E2E_BASE_URL=https://hsfinder.co.kr npm run e2e:product-supplement`
+- Playwright 실사이트 확인: 일반 테스트 계정은 `/operations/health`에서 접근 차단 유지, 운영 UI 미노출
