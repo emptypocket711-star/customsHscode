@@ -48,6 +48,10 @@ import {
   type OperationsIssueStatus
 } from "@/server/repositories/operations-issue.repository";
 import {
+  getDomesticHsLookupSnapshotCoverageFromSupabase,
+  type DomesticHsLookupSnapshotCoverage,
+} from "@/server/repositories/source-inventory.repository";
+import {
   buildOperationsIssueLookupDrilldown,
   classifyLookupTelemetryBucket,
   classifyLookupTelemetryIssue,
@@ -58,6 +62,7 @@ import {
   summarizeLookupTelemetryDiagnostics,
   type LookupTelemetryEvent
 } from "@/server/repositories/lookup-telemetry.repository";
+import { getSeoulDateString } from "@/lib/utils";
 
 const dateFormatter = new Intl.DateTimeFormat("ko-KR", {
   dateStyle: "short",
@@ -84,6 +89,13 @@ const operationsManualCommands = [
     useWhen: "운영 실패 알림 메일과 run 이력 저장 경로를 배포 후 확인할 때 사용합니다.",
     purpose: "임시 실패 job으로 실패 처리, run 이력, 운영 메일 알림 경로를 검증합니다.",
     expected: "alert.sent가 true이고 임시 job은 스크립트가 삭제합니다."
+  },
+  {
+    label: "HS snapshot 갱신",
+    command: "vercel env run -e production -- npm run ops:job:hs-lookup-snapshots",
+    useWhen: "HS 10자리/4자리/6자리 조회 snapshot 기준일이 오늘이 아니거나 refresh cron을 배포 후 즉시 검증할 때 사용합니다.",
+    purpose: "국내 HS lookup read model 3종을 함께 갱신합니다.",
+    expected: "refreshed true, snapshotBasisDate가 오늘 KST 날짜, HTTP 200이면 정상입니다."
   },
   {
     label: "운영 이력 정리",
@@ -132,6 +144,11 @@ const operationsSectionLinks = [
     href: "#integrations",
     label: "외부 연동",
     detail: "환경변수·호출 경로"
+  },
+  {
+    href: "#hs-lookup-snapshot",
+    label: "HS snapshot",
+    detail: "기준일·refresh"
   },
   {
     href: "#schema-health",
@@ -548,6 +565,13 @@ async function loadOperationsRetentionStatus(): Promise<OperationsRetentionStatu
   return getOperationsRetentionStatus(supabase).catch(() => null);
 }
 
+async function loadDomesticLookupSnapshotCoverage(): Promise<DomesticHsLookupSnapshotCoverage | null> {
+  if (!hasSupabaseEnv()) return null;
+
+  const supabase = await createSupabaseServerClient();
+  return getDomesticHsLookupSnapshotCoverageFromSupabase(supabase).catch(() => null);
+}
+
 export default async function OperationsHealthPage({
   searchParams
 }: {
@@ -568,15 +592,28 @@ export default async function OperationsHealthPage({
   const issueFilters = parseOperationsIssueFilters((await searchParams) ?? {});
   const groups = getEnvironmentHealthGroups();
   const integrationHealthItems = getExternalIntegrationHealthItems();
-  const [lookupTelemetryEvents, backgroundJobs, backgroundJobRuns, operationsAlertEvents, operationsIssueEvents, operationsRetentionStatus, schemaHealthReport] = await Promise.all([
+  const [
+    lookupTelemetryEvents,
+    backgroundJobs,
+    backgroundJobRuns,
+    operationsAlertEvents,
+    operationsIssueEvents,
+    operationsRetentionStatus,
+    schemaHealthReport,
+    domesticLookupSnapshotCoverage
+  ] = await Promise.all([
     loadLookupTelemetryEvents(),
     loadBackgroundJobOperations(),
     loadBackgroundJobRuns(),
     loadOperationsAlertEvents(),
     loadOperationsIssueEvents(),
     loadOperationsRetentionStatus(),
-    getProductionSchemaHealthReport()
+    getProductionSchemaHealthReport(),
+    loadDomesticLookupSnapshotCoverage()
   ]);
+  const todayKst = getSeoulDateString();
+  const snapshotBasisDate = domesticLookupSnapshotCoverage?.snapshotBasisDate ?? null;
+  const snapshotIsToday = snapshotBasisDate === todayKst;
   const lookupIssueCount = lookupTelemetryEvents.filter(isLookupTelemetryIssue).length;
   const lookupSuccessCount = lookupTelemetryEvents.length - lookupIssueCount;
   const zeroResultCount = lookupTelemetryEvents.filter((event) => event.resultCount === 0).length;
@@ -649,6 +686,14 @@ export default async function OperationsHealthPage({
       value: schemaStatusLabel,
       detail: `차단 ${schemaHealthReport.summary.blockerCount} / 주의 ${schemaHealthReport.summary.warnCount}`,
       tone: schemaStatusTone
+    },
+    {
+      label: "HS snapshot",
+      value: snapshotBasisDate ?? "미확인",
+      detail: domesticLookupSnapshotCoverage
+        ? `HSK ${domesticLookupSnapshotCoverage.totalHsk10.toLocaleString("ko-KR")}건 / 갱신 ${domesticLookupSnapshotCoverage.lastRefreshedAt ? formatDate(domesticLookupSnapshotCoverage.lastRefreshedAt) : "-"}`
+        : "coverage RPC 미확인",
+      tone: snapshotIsToday ? "success" : "warning"
     },
     {
       label: "worker",
@@ -840,6 +885,55 @@ export default async function OperationsHealthPage({
           ) : (
             <div className="p-5 text-sm text-emerald-700">
               운영 DB 스키마가 현재 migration 기준과 일치합니다. 최근 점검: {formatDate(schemaHealthReport.checkedAt)}
+            </div>
+          )}
+        </CardBody>
+      </Card>
+
+      <Card id="hs-lookup-snapshot" className="scroll-mt-6">
+        <CardHeader
+          title="HS lookup snapshot 상태"
+          description="10자리 상세조회와 4/6자리 탐색이 사용하는 read model 기준일과 coverage를 확인합니다."
+          action={<Badge tone={snapshotIsToday ? "success" : "warning"}>{snapshotIsToday ? "오늘 기준" : "갱신 확인"}</Badge>}
+        />
+        <CardBody>
+          {domesticLookupSnapshotCoverage ? (
+            <div className="grid gap-3 lg:grid-cols-4">
+              <div className="rounded-lg border border-slate-200 bg-white p-4">
+                <p className="text-xs font-semibold text-slate-500">snapshot 기준일</p>
+                <p className="mt-2 text-lg font-semibold text-slate-950">{domesticLookupSnapshotCoverage.snapshotBasisDate ?? "-"}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">앱 기본 기준일: {todayKst}</p>
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-white p-4">
+                <p className="text-xs font-semibold text-slate-500">마지막 refresh</p>
+                <p className="mt-2 text-sm font-semibold text-slate-950">
+                  {domesticLookupSnapshotCoverage.lastRefreshedAt ? formatDate(domesticLookupSnapshotCoverage.lastRefreshedAt) : "-"}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">cron: 매일 00:10 KST</p>
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-white p-4">
+                <p className="text-xs font-semibold text-slate-500">HSK 10자리 snapshot</p>
+                <p className="mt-2 text-lg font-semibold text-slate-950">{domesticLookupSnapshotCoverage.totalHsk10.toLocaleString("ko-KR")}건</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">관세율 누락 {domesticLookupSnapshotCoverage.missingTariffRates.toLocaleString("ko-KR")}건</p>
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-white p-4">
+                <p className="text-xs font-semibold text-slate-500">coverage</p>
+                <p className="mt-2 text-sm font-semibold text-slate-950">
+                  관세 {domesticLookupSnapshotCoverage.withTariffRates.toLocaleString("ko-KR")} / 요건 {domesticLookupSnapshotCoverage.withCustomsRequirements.toLocaleString("ko-KR")}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  통합공고 {domesticLookupSnapshotCoverage.withPublicNoticeRequirements.toLocaleString("ko-KR")} / 내국세 {domesticLookupSnapshotCoverage.withInternalTaxes.toLocaleString("ko-KR")}
+                </p>
+              </div>
+              {!snapshotIsToday ? (
+                <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-3 text-sm leading-6 text-amber-900 lg:col-span-4">
+                  snapshot 기준일이 오늘 KST 기준일과 다릅니다. `vercel env run -e production -- npm run ops:job:hs-lookup-snapshots`로 refresh job을 수동 실행해 확인하세요.
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-3 text-sm leading-6 text-amber-900">
+              HS lookup snapshot coverage를 조회하지 못했습니다. Supabase 연결 또는 `get_domestic_hs_lookup_snapshot_coverage` RPC를 확인하세요.
             </div>
           )}
         </CardBody>
