@@ -58,6 +58,10 @@ export type DashboardDictionary = {
     open: string;
     description: string;
     title: string;
+    groups: {
+      primary: string;
+      tools: string;
+    };
     items: Record<"cargo" | "duty" | "overseas" | "vehicle-spec", {
       description: string;
       title: string;
@@ -129,13 +133,17 @@ const dictionaries = {
     },
     workflows: {
       open: "열기",
-      description: "상단 검색 이후 필요한 보조 업무입니다.",
-      title: "다음 업무",
+      description: "HS 검색 이후 바로 이어지는 조회와 실무 도구입니다.",
+      title: "주요 업무·실무 도구",
+      groups: {
+        primary: "주요 업무",
+        tools: "실무 도구"
+      },
       items: {
         cargo: { description: "HBL 진행 상태와 알림", title: "적하목록 조회" },
-        duty: { description: "입력값 기준 예비 산출", title: "예상 납세액 산출" },
+        duty: { description: "입력값 기준 관세·내국세 예비 산출", title: "예상 납세액 산출" },
         overseas: { description: "목적국 기준으로 조회", title: "해외 HS CODE조회" },
-        "vehicle-spec": { description: "제원·컨테이너 조회", title: "중고차 수출" }
+        "vehicle-spec": { description: "제원·컨테이너·터미널 실무 확인", title: "중고차 수출" }
       }
     }
   },
@@ -202,13 +210,17 @@ const dictionaries = {
     },
     workflows: {
       open: "Open",
-      description: "Secondary workflows after the main lookup.",
-      title: "Next workflows",
+      description: "Follow-up lookups and practical tools after HS search.",
+      title: "Key workflows and tools",
+      groups: {
+        primary: "Key workflows",
+        tools: "Practical tools"
+      },
       items: {
         cargo: { description: "HBL progress and alerts", title: "Cargo manifest" },
-        duty: { description: "Preliminary estimate from entered values", title: "Estimated duties" },
+        duty: { description: "Preliminary duty and tax estimate", title: "Estimated duties" },
         overseas: { description: "Check by destination country", title: "Overseas HS lookup" },
-        "vehicle-spec": { description: "Vehicle specs and container checks", title: "Used-car export" }
+        "vehicle-spec": { description: "Vehicle specs, containers, and terminal checks", title: "Used-car export" }
       }
     }
   },
@@ -275,13 +287,17 @@ const dictionaries = {
     },
     workflows: {
       open: "打开",
-      description: "主查询后的辅助业务。",
-      title: "后续业务",
+      description: "HS查询后的后续查询和实务工具。",
+      title: "主要业务和实务工具",
+      groups: {
+        primary: "主要业务",
+        tools: "实务工具"
+      },
       items: {
         cargo: { description: "HBL进度和提醒", title: "舱单查询" },
-        duty: { description: "基于输入值的初步估算", title: "预计税费" },
+        duty: { description: "关税和内税的初步估算", title: "预计税费" },
         overseas: { description: "按目的国标准查询", title: "海外HS查询" },
-        "vehicle-spec": { description: "车辆参数和集装箱查询", title: "二手车出口" }
+        "vehicle-spec": { description: "车辆参数、集装箱和码头实务确认", title: "二手车出口" }
       }
     }
   }
