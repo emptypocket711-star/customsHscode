@@ -17,8 +17,8 @@ export default async function OperationsNoticesPage() {
   return (
     <div>
       <PageHeading
-        title="공지사항 관리"
-        description="대시보드 공지사항을 작성, 수정, 삭제합니다. 이 화면은 지정된 개발자 계정만 사용할 수 있습니다."
+        title="공지 관리"
+        description="대시보드 공지와 접속 팝업만 관리합니다. 평소에는 노출 상태를 확인하고, 수정이 필요할 때 항목을 펼칩니다."
       />
       <NoticeManagementPanel notices={notices} />
     </div>

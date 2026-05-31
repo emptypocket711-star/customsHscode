@@ -16,8 +16,8 @@ export default async function OperationsUsersPage() {
   return (
     <div>
       <PageHeading
-        title="사용자 관리"
-        description="개발자 계정에서 가입된 Auth 사용자, 앱 프로필, 회사 정보를 조회하고 수정·삭제합니다."
+        title="고객 계정 관리"
+        description="가입자 상태와 테스트 계정만 빠르게 확인합니다. 권한·삭제 같은 위험 작업은 사용자를 펼친 뒤 실행합니다."
       />
       <UserManagementPanel users={users} />
     </div>

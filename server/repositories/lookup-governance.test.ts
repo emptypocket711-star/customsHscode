@@ -150,7 +150,8 @@ describe("lookup governance guards", () => {
     expect(noticeActions).toContain("app_notice_update");
     expect(noticeActions).toContain("app_notice_delete");
     expect(dashboardPage).toContain("listPublishedAppNotices");
-    expect(noticePanel).toContain("공지사항 작성");
+    expect(noticePanel).toContain("공지 현황");
+    expect(noticePanel).toContain("공지 작성");
     expect(noticePanel).toContain("popupEnabled");
     expect(read("features/dashboard/dashboard-notice-card.tsx")).toContain("dictionary.hideOneDay");
     expect(read("lib/i18n/dashboard.ts")).toContain("1일 동안 보지 않기");
