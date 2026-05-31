@@ -1721,3 +1721,20 @@
 - `npm run e2e:product-supplement`
 - Playwright 실사이트 조회: `1704`, `170490`, `1704902090`
 - SQL 운영 확인: HS4/HS6 explorer payload에서 `internal_taxes`, `coverage_flags` 제거 및 `tariff_rates` 유지
+
+### 운영 보조 화면과 대시보드 시작 흐름 정리
+
+- 이전 작업은 운영 홈의 조회 품질 로그를 접는 작업이었고, 이번 작업은 공지 관리·고객 계정·자료 관리 각각의 사용 목적을 화면 상단에서 분명히 나누는 작업이다.
+- 공지 관리는 `평소 노출 상태 확인`, `필요할 때 작성·수정`, `삭제는 최후 작업` 기준을 추가했다.
+- 고객 계정 관리는 `가입자 상태 확인`, `검색 후 한 명만 펼치기`, `권한·삭제는 위험 작업` 기준을 추가했다.
+- 자료 관리는 매일 확인, 자료 갱신 때, 문제 발생 때의 문구를 더 명확하게 바꿨다.
+- 고객 대시보드에는 `처음이면 이렇게 시작하세요` 3단 안내를 추가해 상단 통합 검색, 후속 업무, 즐겨찾기/최근 검색 재사용 순서를 보여준다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
+- `npm run e2e:product-supplement`
+- Playwright 실사이트 확인: `/dashboard` 시작 안내 표시
