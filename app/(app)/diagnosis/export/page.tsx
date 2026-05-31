@@ -1,7 +1,4 @@
-import { PageHeading } from "@/components/page-heading";
-import { ExportDiagnosisPanel } from "@/features/export-diagnosis/export-diagnosis-panel";
-import { getDiagnosisDictionary } from "@/lib/i18n";
-import { resolveCurrentUserLocale } from "@/lib/i18n/server";
+import { redirect } from "next/navigation";
 
 export default async function ExportDiagnosisPage({
   searchParams
@@ -16,12 +13,12 @@ export default async function ExportDiagnosisPage({
   }>;
 }) {
   const params = await searchParams;
-  const dictionary = getDiagnosisDictionary(await resolveCurrentUserLocale());
+  const target = new URLSearchParams();
 
-  return (
-    <>
-      <PageHeading title={dictionary.export.pageTitle} description={dictionary.export.pageDescription} />
-      <ExportDiagnosisPanel dictionary={dictionary} params={params} />
-    </>
-  );
+  if (params.hskCode) target.set("query", params.hskCode);
+  target.set("direction", "export");
+  target.set("destinationCountry", params.destinationCountry || "US");
+  if (params.basisDate) target.set("basisDate", params.basisDate);
+
+  redirect(`/hs/overseas?${target.toString()}`);
 }
