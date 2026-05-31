@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { extractHsCodeHintsFromText } from "@/server/ai/product-search-normalization.service";
+import { clearLookupCache } from "@/server/cache/lookup-cache";
 import { hsCandidateServiceInternals, recommendHsCandidates, recommendHsCandidatesForProduct } from "@/server/rules/hs-candidate.service";
 
 const originalAiProvider = process.env.AI_PROVIDER;
@@ -16,6 +17,7 @@ afterEach(() => {
   } else {
     process.env.OPENAI_API_KEY = originalOpenAiApiKey;
   }
+  clearLookupCache();
   vi.unstubAllGlobals();
 });
 
@@ -506,6 +508,19 @@ describe("recommendHsCandidates", () => {
       expect.arrayContaining(["90191020", "901910"])
     );
     expect(extractHsCodeHintsFromText("lazer belt cs-3000")).toHaveLength(0);
+  });
+
+  it("builds product recommendation cache keys without raw product text", () => {
+    const key = hsCandidateServiceInternals.productRecommendationCacheKey({
+      productName: "printer black and white secret model ABC-123",
+      basisDate: "2026-05-21"
+    });
+
+    expect(key).toContain("hs-product-recommendations");
+    expect(key).toContain("2026-05-21");
+    expect(key).not.toContain("printer");
+    expect(key).not.toContain("secret");
+    expect(key).not.toContain("ABC-123");
   });
 
   it("prioritizes product input HS code hints while keeping them provisional", async () => {

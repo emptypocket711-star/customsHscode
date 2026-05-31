@@ -1,7 +1,10 @@
+import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { mockHsMasterRecords, mockStandardProductNames } from "@/features/hs/mock-hs-data";
 import type { ProductHsRecommendationInput } from "@/features/hs/schemas";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
+import { redactSensitiveText } from "@/server/ai/redaction";
+import { cachedLookup, lookupCacheKey } from "@/server/cache/lookup-cache";
 import { logLookupTelemetry, productInputShape } from "@/server/observability/lookup-telemetry";
 import {
   augmentProductInputWithAiTerms,
@@ -826,6 +829,26 @@ function shouldUseAiSearchNormalization(input: ProductHsRecommendationInput) {
   ].filter(Boolean).join(" ").trim());
 }
 
+function productRecommendationCacheKey(input: ProductHsRecommendationInput) {
+  const redactedInput = [
+    input.productName,
+    input.productUsage,
+    input.material,
+    input.composition,
+    input.functions,
+    input.modelName
+  ].filter(Boolean).join("\n");
+  const inputHash = createHash("sha256")
+    .update(redactSensitiveText(redactedInput).redactedText)
+    .digest("hex");
+
+  return lookupCacheKey("hs-product-recommendations", {
+    version: 1,
+    basisDate: input.basisDate,
+    inputHash
+  });
+}
+
 async function normalizedProductSearch(input: ProductHsRecommendationInput): Promise<NormalizedProductSearch> {
   if (!shouldUseAiSearchNormalization(input)) {
     return { input, normalization: null, normalizationErrorType: null, normalizationStatus: "skipped" };
@@ -1082,7 +1105,7 @@ export function recommendHsCandidates(input: ProductHsRecommendationInput): HsCa
   return mergeRecommendations([...userCodeHintCandidates, ...recommendAmbiguousProductCandidates(input), ...deterministicCandidates]);
 }
 
-export async function recommendHsCandidatesForProduct(input: ProductHsRecommendationInput): Promise<HsCandidateRecommendation[]> {
+async function recommendHsCandidatesForProductUncached(input: ProductHsRecommendationInput): Promise<HsCandidateRecommendation[]> {
   const startedAt = Date.now();
   const {
     input: augmentedInput,
@@ -1284,6 +1307,15 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
   }
 }
 
+export async function recommendHsCandidatesForProduct(input: ProductHsRecommendationInput): Promise<HsCandidateRecommendation[]> {
+  return cachedLookup({
+    key: productRecommendationCacheKey(input),
+    ttlMs: Number(process.env.PRODUCT_RECOMMENDATION_CACHE_TTL_MS || 30 * 60 * 1000),
+    load: () => recommendHsCandidatesForProductUncached(input),
+    shouldCache: (candidates) => candidates.length > 0
+  });
+}
+
 export const hsCandidateServiceInternals = {
   searchTerms: productSearchTerms,
   scoreStandardName: scoreStandardNameWithTerms,
@@ -1292,5 +1324,6 @@ export const hsCandidateServiceInternals = {
   pruneWeakProductRecommendations,
   filterContextConflictingCandidates,
   ambiguousRuleForProductName,
-  analyzeProductNameInput
+  analyzeProductNameInput,
+  productRecommendationCacheKey
 };
