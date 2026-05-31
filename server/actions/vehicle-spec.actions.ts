@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { z } from "zod";
 import { checkRateLimitAsync, isRateLimitEnabled, rateLimitIdentity } from "@/lib/rate-limit";
+import { logRateLimitExceeded } from "@/server/observability/rate-limit-events";
 import {
   CybertsVehicleSpecError,
   lookupCybertsVehicleSpec,
@@ -59,17 +60,29 @@ export async function lookupVehicleSpecAction(
   try {
     if (isRateLimitEnabled()) {
       const headerStore = await headers();
+      const limit = Number(process.env.VEHICLE_SPEC_RATE_LIMIT_PER_MINUTE || 20);
+      const windowMs = 60_000;
+      const identity = rateLimitIdentity({
+        scope: "vehicle-spec",
+        ip: headerStore.get("x-forwarded-for")?.split(",")[0] ?? headerStore.get("x-real-ip"),
+        userAgent: headerStore.get("user-agent")
+      });
       const rateLimit = await checkRateLimitAsync({
-        key: rateLimitIdentity({
-          scope: "vehicle-spec",
-          ip: headerStore.get("x-forwarded-for")?.split(",")[0] ?? headerStore.get("x-real-ip"),
-          userAgent: headerStore.get("user-agent")
-        }),
-        limit: Number(process.env.VEHICLE_SPEC_RATE_LIMIT_PER_MINUTE || 20),
-        windowMs: 60_000
+        key: identity,
+        limit,
+        windowMs
       });
 
       if (!rateLimit.allowed) {
+        await logRateLimitExceeded({
+          identity,
+          limit,
+          retryAfterSeconds: rateLimit.retryAfterSeconds,
+          route: "/used-car-export/vehicle-spec",
+          scope: "vehicle-spec",
+          windowMs
+        });
+
         return {
           status: "error",
           message: `자동차 제원 조회 요청이 많습니다. ${rateLimit.retryAfterSeconds}초 후 다시 시도해 주세요.`

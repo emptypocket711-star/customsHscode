@@ -1,5 +1,6 @@
 import { checkRateLimitAsync, isRateLimitEnabled, rateLimitIdentity } from "@/lib/rate-limit";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
+import { logRateLimitExceeded } from "@/server/observability/rate-limit-events";
 
 function clientIp(request: Request) {
   const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
@@ -38,17 +39,31 @@ export async function requireAuthenticatedApiRoute(
     return { allowed: true as const, userId };
   }
 
+  const identity = rateLimitIdentity({
+    scope: input.scope,
+    ip: `${userId}:${clientIp(request)}`,
+    userAgent: request.headers.get("user-agent")
+  });
   const result = await checkRateLimitAsync({
-    key: rateLimitIdentity({
-      scope: input.scope,
-      ip: `${userId}:${clientIp(request)}`,
-      userAgent: request.headers.get("user-agent")
-    }),
+    key: identity,
     limit: input.limit,
     windowMs: input.windowMs
   });
 
   if (!result.allowed) {
+    await logRateLimitExceeded({
+      identity,
+      limit: input.limit,
+      metadata: {
+        method: request.method
+      },
+      retryAfterSeconds: result.retryAfterSeconds,
+      route: new URL(request.url).pathname,
+      scope: input.scope,
+      userId,
+      windowMs: input.windowMs
+    });
+
     return {
       allowed: false as const,
       status: 429,

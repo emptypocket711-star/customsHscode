@@ -48,6 +48,10 @@ import {
   type OperationsIssueStatus
 } from "@/server/repositories/operations-issue.repository";
 import {
+  listRecentRateLimitEvents,
+  summarizeRateLimitEvents
+} from "@/server/repositories/rate-limit-event.repository";
+import {
   getDomesticHsLookupSnapshotCoverageFromSupabase,
   type DomesticHsLookupSnapshotCoverage,
 } from "@/server/repositories/source-inventory.repository";
@@ -599,6 +603,13 @@ async function loadOperationsAlertEvents() {
   return listRecentOperationsAlertEvents(supabase, 20).catch(() => []);
 }
 
+async function loadRateLimitEvents() {
+  if (!hasSupabaseEnv()) return [];
+
+  const supabase = await createSupabaseServerClient();
+  return listRecentRateLimitEvents(supabase, 50).catch(() => []);
+}
+
 async function loadOperationsIssueEvents() {
   if (!hasSupabaseEnv()) return [];
 
@@ -645,6 +656,7 @@ export default async function OperationsHealthPage({
     backgroundJobs,
     backgroundJobRuns,
     operationsAlertEvents,
+    rateLimitEvents,
     operationsIssueEvents,
     operationsRetentionStatus,
     schemaHealthReport,
@@ -654,6 +666,7 @@ export default async function OperationsHealthPage({
     loadBackgroundJobOperations(),
     loadBackgroundJobRuns(),
     loadOperationsAlertEvents(),
+    loadRateLimitEvents(),
     loadOperationsIssueEvents(),
     loadOperationsRetentionStatus(),
     getProductionSchemaHealthReport(),
@@ -678,6 +691,7 @@ export default async function OperationsHealthPage({
   const backgroundJobSummary = summarizeBackgroundJobOperations(backgroundJobs);
   const backgroundJobRunSummary = summarizeBackgroundJobRuns(backgroundJobRuns);
   const operationsAlertSummary = summarizeOperationsAlertEvents(operationsAlertEvents);
+  const rateLimitEventSummary = summarizeRateLimitEvents(rateLimitEvents);
   const filteredOperationsIssueEvents = sortOperationsIssueEventsForTriage(
     filterOperationsIssueEvents(operationsIssueEvents, issueFilters)
   );
@@ -729,7 +743,8 @@ export default async function OperationsHealthPage({
     !snapshotIsToday,
     totalRetentionCandidates > 0,
     backgroundJobSummary.dead > 0 || backgroundJobSummary.failed > 0 || backgroundJobRunSummary.failedRuns > 0 || backgroundJobRunSummary.failedJobs > 0 || backgroundJobRunSummary.latestStatus === "failed",
-    operationsAlertSummary.failed > 0
+    operationsAlertSummary.failed > 0,
+    rateLimitEventSummary.total > 0
   ].filter(Boolean).length;
   const operationalSummary = [
     {
@@ -799,6 +814,15 @@ export default async function OperationsHealthPage({
         ? "환경, DB, snapshot, worker, 알림 중 확인할 항목이 있습니다."
         : "장애 대응이나 배포 직후에만 펼쳐 확인하면 됩니다.",
       tone: advancedDiagnosticsWarningCount > 0 ? "warning" : "success"
+    },
+    {
+      href: "#rate-limit-events",
+      label: "트래픽 제한",
+      value: rateLimitEventSummary.total > 0 ? `${rateLimitEventSummary.total}건 초과` : "초과 없음",
+      detail: rateLimitEventSummary.total > 0
+        ? "route별 초과 이벤트를 확인해 제한값 조정 여부를 판단합니다."
+        : "최근 rate limit 초과 이벤트가 없습니다.",
+      tone: rateLimitEventSummary.total > 0 ? "warning" : "success"
     }
   ] satisfies Array<{
     href: string;
@@ -843,7 +867,7 @@ export default async function OperationsHealthPage({
           description="1인 운영자가 먼저 판단할 항목입니다. 정상인 항목은 확인만 하고 넘어가면 됩니다."
         />
         <CardBody>
-          <nav className="grid gap-2 lg:grid-cols-3" aria-label="운영 오늘 할 일">
+          <nav className="grid gap-2 lg:grid-cols-4" aria-label="운영 오늘 할 일">
             {operatorActionItems.map((item) => (
               <a
                 className={item.tone === "warning"
@@ -1094,7 +1118,7 @@ export default async function OperationsHealthPage({
                 <span className="block text-sm font-semibold text-slate-950">작업·알림 이력</span>
                 <span className="mt-1 block text-xs text-slate-500">보존 상태, worker queue, worker 실행, 운영 알림 이력은 실패나 정리 후보가 있을 때 확인합니다.</span>
               </span>
-              <Badge tone={totalRetentionCandidates > 0 || backgroundJobSummary.dead > 0 || backgroundJobRunSummary.failedRuns > 0 || operationsAlertSummary.failed > 0 ? "warning" : "success"}>4개 항목</Badge>
+              <Badge tone={totalRetentionCandidates > 0 || backgroundJobSummary.dead > 0 || backgroundJobRunSummary.failedRuns > 0 || operationsAlertSummary.failed > 0 || rateLimitEventSummary.total > 0 ? "warning" : "success"}>5개 항목</Badge>
             </summary>
             <div className="grid gap-5 border-t border-slate-200 bg-slate-50/45 p-4">
       <Card id="retention-health" className="scroll-mt-6">
@@ -1390,6 +1414,61 @@ export default async function OperationsHealthPage({
           ) : (
             <div className="p-5 text-sm text-slate-600">
               아직 운영 알림 이력이 없습니다. worker 실패 알림 발송 또는 throttle 생략 후 표시됩니다.
+            </div>
+          )}
+        </CardBody>
+      </Card>
+
+      <Card id="rate-limit-events" className="scroll-mt-6">
+        <CardHeader
+          title="Route rate limit 초과 이력"
+          description="비용이 큰 외부 연동 route와 서버 action의 요청 제한 초과를 route별로 확인합니다. IP와 user-agent 원문은 저장하지 않습니다."
+          action={<Badge tone={rateLimitEventSummary.total > 0 ? "warning" : "success"}>초과 {rateLimitEventSummary.total}건</Badge>}
+        />
+        <CardBody className="p-0">
+          {rateLimitEvents.length ? (
+            <>
+              <div className="grid gap-2 border-b border-slate-200 bg-slate-50 p-3 text-sm md:grid-cols-3">
+                {rateLimitEventSummary.routes.slice(0, 3).map((item) => (
+                  <div className="rounded-md border border-slate-200 bg-white px-3 py-2" key={`${item.scope}-${item.route}`}>
+                    <p className="text-xs font-semibold text-slate-500">{item.scope}</p>
+                    <p className="mt-1 break-all text-sm font-semibold text-slate-950">{item.route}</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      초과 {item.total}건 · 최근 {item.latestAt ? formatDate(item.latestAt) : "-"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-[880px] text-left text-sm">
+                  <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
+                    <tr>
+                      <th className="px-5 py-3">시간</th>
+                      <th className="px-5 py-3">scope</th>
+                      <th className="px-5 py-3">route</th>
+                      <th className="px-5 py-3">제한</th>
+                      <th className="px-5 py-3">retry-after</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {rateLimitEvents.slice(0, 20).map((event) => (
+                      <tr key={event.id}>
+                        <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-600">{formatDate(event.createdAt)}</td>
+                        <td className="px-5 py-4 font-semibold text-slate-800">{event.scope}</td>
+                        <td className="px-5 py-4 font-mono text-xs text-slate-700">{event.route}</td>
+                        <td className="px-5 py-4 text-xs text-slate-600">
+                          {event.limitCount}회 / {Math.round(event.windowMs / 1000)}초
+                        </td>
+                        <td className="px-5 py-4 text-xs text-slate-600">{event.retryAfterSeconds}초</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : (
+            <div className="p-5 text-sm text-slate-600">
+              최근 rate limit 초과 이력이 없습니다. 초과 발생 시 route, scope, 제한값, 재시도 대기 시간이 표시됩니다.
             </div>
           )}
         </CardBody>
