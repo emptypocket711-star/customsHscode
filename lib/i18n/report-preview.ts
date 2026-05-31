@@ -36,17 +36,17 @@ export type ReportPreviewDictionary = {
 const dictionaries = {
   "ko-KR": {
     approval: {
-      approved: "담당자 승인",
+      approved: "내부 확인 완료",
       draft: "초안",
-      pendingReview: "담당자 검토 필요",
-      published: "고객 게시",
-      reviewedAt: "승인시각",
-      reviewer: "승인자",
+      pendingReview: "내부 확인 필요",
+      published: "게시 완료",
+      reviewedAt: "확인시각",
+      reviewer: "확인자",
       unassigned: "미지정",
-      unreviewed: "검토 전"
+      unreviewed: "확인 전"
     },
     labels: {
-      autoPreliminary: "자동 예비진단 / 담당자 검토 전",
+      autoPreliminary: "자동 예비진단 / 내부 확인 전",
       basisDate: "조회기준일",
       generatedAt: "생성일시",
       import: "수입",
@@ -54,7 +54,7 @@ const dictionaries = {
       requestId: "요청 ID"
     },
     page: {
-      description: "보고서 생성 시점의 source snapshot과 rule version을 잠그고, 담당자 검토 상태를 고객 표시와 분리합니다.",
+      description: "보고서 생성 시점의 source snapshot과 rule version을 잠그고, 내부 확인 상태를 고객 표시와 분리합니다.",
       title: "리포트 미리보기"
     },
     sections: {
@@ -63,22 +63,22 @@ const dictionaries = {
       pdfTitle: "PDF 출력",
       sourceLocksDescription: "보고서 생성 시점의 원천 snapshot과 rule version입니다.",
       sourceLocksTitle: "Source Locks",
-      staffNotes: "담당자 메모"
+      staffNotes: "내부 확인 메모"
     }
   },
   "en-US": {
     approval: {
-      approved: "Staff approved",
+      approved: "Internally checked",
       draft: "Draft",
-      pendingReview: "Staff review needed",
+      pendingReview: "Internal check needed",
       published: "Published to customer",
-      reviewedAt: "Reviewed at",
-      reviewer: "Reviewer",
+      reviewedAt: "Checked at",
+      reviewer: "Checker",
       unassigned: "Unassigned",
-      unreviewed: "Not reviewed"
+      unreviewed: "Not checked"
     },
     labels: {
-      autoPreliminary: "Automated preliminary diagnosis / before staff review",
+      autoPreliminary: "Automated preliminary diagnosis / before internal check",
       basisDate: "Basis date",
       generatedAt: "Generated at",
       import: "Import",
@@ -86,7 +86,7 @@ const dictionaries = {
       requestId: "Request ID"
     },
     page: {
-      description: "Locks source snapshots and rule versions at report generation time, while separating staff review status from customer-facing output.",
+      description: "Locks source snapshots and rule versions at report generation time, while separating internal check status from customer-facing output.",
       title: "Report Preview"
     },
     sections: {
@@ -95,22 +95,22 @@ const dictionaries = {
       pdfTitle: "PDF output",
       sourceLocksDescription: "Source snapshots and rule versions at the time this report was generated.",
       sourceLocksTitle: "Source Locks",
-      staffNotes: "Staff notes"
+      staffNotes: "Internal check notes"
     }
   },
   "zh-CN": {
     approval: {
-      approved: "负责人已批准",
+      approved: "内部确认完成",
       draft: "草稿",
-      pendingReview: "需要负责人审核",
+      pendingReview: "需要内部确认",
       published: "已发布给客户",
-      reviewedAt: "审核时间",
-      reviewer: "审核人",
+      reviewedAt: "确认时间",
+      reviewer: "确认人",
       unassigned: "未指定",
-      unreviewed: "审核前"
+      unreviewed: "确认前"
     },
     labels: {
-      autoPreliminary: "自动初步诊断 / 负责人审核前",
+      autoPreliminary: "自动初步诊断 / 内部确认前",
       basisDate: "查询基准日",
       generatedAt: "生成时间",
       import: "进口",
@@ -118,7 +118,7 @@ const dictionaries = {
       requestId: "请求ID"
     },
     page: {
-      description: "在报告生成时锁定来源快照和规则版本，并将负责人审核状态与客户显示内容分离。",
+      description: "在报告生成时锁定来源快照和规则版本，并将内部确认状态与客户显示内容分离。",
       title: "报告预览"
     },
     sections: {
@@ -127,7 +127,7 @@ const dictionaries = {
       pdfTitle: "PDF输出",
       sourceLocksDescription: "报告生成时的来源快照和规则版本。",
       sourceLocksTitle: "Source Locks",
-      staffNotes: "负责人备注"
+      staffNotes: "内部确认备注"
     }
   }
 } satisfies Record<AppLocale, ReportPreviewDictionary>;

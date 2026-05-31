@@ -13,7 +13,7 @@ function approvalLabel(status: MockReport["approval"]["status"], dictionary: Rep
 }
 
 function statusTone(status: string): "warning" | "info" | "neutral" | "success" {
-  if (status.includes("검토") || status === "추가 확인 필요") return "warning";
+  if (status.includes("검토") || status.includes("내부 확인") || status === "추가 확인 필요") return "warning";
   if (status === "가능성 있음") return "info";
   if (status === "예비진단") return "neutral";
   return "success";

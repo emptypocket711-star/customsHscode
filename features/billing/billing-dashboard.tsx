@@ -33,7 +33,7 @@ export function BillingDashboard() {
       <Card>
         <CardHeader
           title="현재 구독"
-          description="케이스, 리포트 크레딧, 일괄 조회 사용량을 표시합니다. 결제 상태는 예비진단 결과와 분리됩니다."
+          description="케이스, 리포트 생성량, 일괄 조회 사용량을 표시합니다. 결제 상태는 예비진단 결과와 분리됩니다."
           action={<Badge tone="info">{dashboard.subscription.status}</Badge>}
         />
         <CardBody>
@@ -62,7 +62,7 @@ export function BillingDashboard() {
               />
               <UsageBar
                 detail={`${dashboard.subscription.usedReportCredits}/${dashboard.currentPlan.reportCredits}`}
-                label="리포트 크레딧"
+                label="리포트 생성량"
                 value={dashboard.usage.reportCreditUsagePercent}
               />
             </div>
@@ -99,7 +99,7 @@ export function BillingDashboard() {
 
       <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
         <Card>
-          <CardHeader title="과금 정책" description="유료 크레딧은 사용량 추적 단위이며 법률적 확정이나 승인 우회를 의미하지 않습니다." />
+          <CardHeader title="사용량 정책" description="사용량 한도는 서비스 이용 범위 관리용이며 법률적 확정이나 승인 우회를 의미하지 않습니다." />
           <CardBody>
             <ul className="grid gap-3">
               {dashboard.policyNotes.map((note) => (

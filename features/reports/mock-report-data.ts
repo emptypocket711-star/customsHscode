@@ -29,7 +29,7 @@ export type MockReport = {
   customerSummary: string;
   sections: Array<{
     title: string;
-    status: "예비진단" | "가능성 있음" | "추가 확인 필요" | "담당자 검토 필요";
+    status: "예비진단" | "가능성 있음" | "추가 확인 필요" | "내부 확인 필요";
     items: string[];
   }>;
   sourceLocks: ReportSourceLock[];

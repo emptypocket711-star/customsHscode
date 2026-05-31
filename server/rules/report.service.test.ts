@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { generateMockReport } from "@/server/rules/report.service";
 
 describe("report service", () => {
-  it("generates an import report with source locks and pending review", () => {
+  it("generates an import report with source locks and internal check state", () => {
     const report = generateMockReport("import");
 
     expect(report.sourceLocks.length).toBeGreaterThan(0);
@@ -14,6 +14,6 @@ describe("report service", () => {
     const report = generateMockReport("export");
 
     expect(report.sections.some((section) => section.title.includes("전략물자"))).toBe(true);
-    expect(report.customerSummary).toContain("담당자 검토");
+    expect(report.customerSummary).toContain("상세 자료 확인");
   });
 });
