@@ -63,7 +63,16 @@ function truncate(value: string | null, maxLength: number) {
 }
 
 function roleLabel(role: ManagedUser["role"]) {
-  if (role === "customs_staff") return "staff";
+  if (role === "client") return "일반 사용자";
+  if (role === "customs_staff") return "검토 담당";
+  if (role === "admin") return "운영 관리자";
+  if (role === "developer") return "개발자";
+  return role;
+}
+
+function companyRoleLabel(role: string) {
+  if (role === "admin") return "회사 관리자";
+  if (role === "member") return "일반 구성원";
   return role;
 }
 
@@ -185,10 +194,10 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
                 </FilterSelect>
                 <FilterSelect label="권한" onChange={setRoleFilter} value={roleFilter}>
                   <option value="all">전체</option>
-                  <option value="client">client</option>
-                  <option value="customs_staff">customs_staff</option>
-                  <option value="admin">admin</option>
-                  <option value="developer">developer</option>
+                  <option value="client">일반 사용자</option>
+                  <option value="customs_staff">검토 담당</option>
+                  <option value="admin">운영 관리자</option>
+                  <option value="developer">개발자</option>
                 </FilterSelect>
               </div>
             </details>
@@ -269,9 +278,9 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
                   <label className="grid gap-1 text-sm font-medium text-slate-700">
                     앱 권한
                     <select className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-950" name="role" defaultValue="client">
-                      <option value="client">client</option>
-                      <option value="customs_staff">customs_staff</option>
-                      <option value="admin">admin</option>
+                      <option value="client">일반 사용자</option>
+                      <option value="customs_staff">검토 담당</option>
+                      <option value="admin">운영 관리자</option>
                     </select>
                   </label>
                   <label className="grid gap-1 text-sm font-medium text-slate-700">
@@ -324,8 +333,8 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
                       name="companyRole"
                       defaultValue="member"
                     >
-                      <option value="member">member</option>
-                      <option value="admin">admin</option>
+                      <option value="member">일반 구성원</option>
+                      <option value="admin">회사 관리자</option>
                     </select>
                   </label>
                   <label className="grid gap-1 text-sm font-medium text-slate-700">
@@ -455,10 +464,10 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
                   <label className="grid gap-1 text-sm font-medium text-slate-700">
                     권한
                     <select className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-950" name="role" defaultValue={user.role}>
-                      <option value="client">client</option>
-                      <option value="customs_staff">customs_staff</option>
-                      <option value="admin">admin</option>
-                      <option value="developer">developer</option>
+                      <option value="client">일반 사용자</option>
+                      <option value="customs_staff">검토 담당</option>
+                      <option value="admin">운영 관리자</option>
+                      <option value="developer">개발자</option>
                     </select>
                   </label>
                   <label className="grid gap-1 text-sm font-medium text-slate-700">
@@ -484,8 +493,8 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
                   <label className="grid gap-1 text-sm font-medium text-slate-700">
                     회사 내 권한
                     <select className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-950" name="companyRole" defaultValue={user.companyRole}>
-                      <option value="member">member</option>
-                      <option value="admin">admin</option>
+                      <option value="member">일반 구성원</option>
+                      <option value="admin">회사 관리자</option>
                     </select>
                   </label>
                   <label className="grid gap-1 text-sm font-medium text-slate-700">
@@ -504,7 +513,7 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
                 <div className="grid gap-2 rounded-md bg-slate-50 p-3 text-xs text-slate-600 md:grid-cols-3">
                   <span>이메일 인증: {formatDate(user.emailConfirmedAt)}</span>
                   <span>온보딩 완료: {formatDate(user.onboardingCompletedAt)}</span>
-                  <span>회사 타입: {user.companyType || "-"}</span>
+                  <span>회사 내 권한: {companyRoleLabel(user.companyRole)}</span>
                 </div>
 
                 {user.accountType === "company" ? (
