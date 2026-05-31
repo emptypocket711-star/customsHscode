@@ -1043,6 +1043,7 @@ function ProductCandidateCard({
   destinationCountry,
   direction,
   displaySearchQuery,
+  hs6Label,
   isPrimary,
   lookup,
   originCountry,
@@ -1052,6 +1053,7 @@ function ProductCandidateCard({
   destinationCountry: string;
   direction: "import" | "export";
   displaySearchQuery: string;
+  hs6Label: string;
   isPrimary?: boolean;
   lookup?: HsDirectLookupResult;
   originCountry: string;
@@ -1173,7 +1175,7 @@ function ProductCandidateCard({
               </p>
             )}
             <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-              <span className="text-xs font-semibold text-slate-500">HS6</span>
+              <span className="text-xs font-semibold text-slate-500">{hs6Label}</span>
               <Link className="font-mono font-semibold text-blue-700 underline-offset-2 hover:underline" data-navigation-progress="상세조회" href={hs6Href}>
                 {formatHsCode(candidate.hs6)}
               </Link>
@@ -3712,6 +3714,7 @@ export async function HsDirectLookupPanel({
                   destinationCountry={selectedDestinationCountry}
                   direction={lookupDirection}
                   displaySearchQuery={displaySearchQuery}
+                  hs6Label={dictionary.product.hs6}
                   isPrimary={index === 0}
                   key={candidateGroup.representative.hskCode}
                   lookup={productCandidateLookupByHsk.get(candidateGroup.representative.hskCode)}
@@ -3731,6 +3734,7 @@ export async function HsDirectLookupPanel({
                         destinationCountry={selectedDestinationCountry}
                         direction={lookupDirection}
                         displaySearchQuery={displaySearchQuery}
+                        hs6Label={dictionary.product.hs6}
                         key={candidateGroup.representative.hskCode}
                         lookup={productCandidateLookupByHsk.get(candidateGroup.representative.hskCode)}
                         originCountry={selectedOriginCountry}
