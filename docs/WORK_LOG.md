@@ -1789,3 +1789,20 @@
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 - `E2E_BASE_URL=https://hsfinder.co.kr npm run e2e:product-supplement`
 - Playwright 실사이트 측정: `/cargo`, `/duty-estimator`, `/used-car-export` 모바일 390px/태블릿 768px 모두 `scrollWidth=viewport`
+
+### 관리 화면 안내 밀도 축소
+
+- 이전 작업은 실무 도구 모바일 폭을 고친 것이고, 이번 작업은 대표/개발자 혼자 운영할 때 관리 화면 첫 화면에 보이는 안내문 밀도를 낮춘 것이다.
+- `/operations/users`, `/operations/notices`, `/legal-updates` 상단에 항상 보이던 3개짜리 운영 기준 안내 카드를 `운영 기준 보기` 접힘 영역으로 이동했다.
+- 기능은 제거하지 않았다. 고객 계정 검색/필터, 수동 계정 발급, 공지 등록/수정/삭제, 자료 갱신·게시 실행, 상세 데이터 점검 흐름은 그대로 유지했다.
+- 첫 화면은 숫자 요약, 검색/필터, 오늘 볼 조치 항목을 우선 보여주고, 운영 기준 도움말은 필요할 때만 펼치도록 정리했다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test -- server/repositories/lookup-governance.test.ts lib/i18n/dashboard.test.ts`
+- `npm run build`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
+- `E2E_BASE_URL=https://hsfinder.co.kr npm run e2e:product-supplement`
+- Playwright 실사이트 확인: 테스트 계정은 `/operations/users`, `/operations/notices`, `/legal-updates`에서 개발자 전용 접근 차단 유지
