@@ -890,6 +890,15 @@ export default async function OperationsHealthPage({
           </Badge>
         </summary>
         <div className="grid gap-5 border-t border-slate-200 bg-slate-50/45 p-4">
+          <details className="rounded-lg border border-slate-200 bg-white shadow-sm">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
+              <span>
+                <span className="block text-sm font-semibold text-slate-950">배포 후 확인</span>
+                <span className="mt-1 block text-xs text-slate-500">외부 연동, DB 스키마, HS snapshot, 수동 명령은 배포 직후나 장애 대응 때만 확인합니다.</span>
+              </span>
+              <Badge tone={schemaHealthReport.summary.blockerCount > 0 || !snapshotIsToday ? "warning" : "success"}>4개 항목</Badge>
+            </summary>
+            <div className="grid gap-5 border-t border-slate-200 bg-slate-50/45 p-4">
       <Card id="integrations" className="scroll-mt-6">
         <CardHeader
           title="외부 연동 준비 상태"
@@ -1067,7 +1076,18 @@ export default async function OperationsHealthPage({
           </div>
         </CardBody>
       </Card>
+            </div>
+          </details>
 
+          <details className="rounded-lg border border-slate-200 bg-white shadow-sm">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
+              <span>
+                <span className="block text-sm font-semibold text-slate-950">작업·알림 이력</span>
+                <span className="mt-1 block text-xs text-slate-500">보존 상태, worker queue, worker 실행, 운영 알림 이력은 실패나 정리 후보가 있을 때 확인합니다.</span>
+              </span>
+              <Badge tone={totalRetentionCandidates > 0 || backgroundJobSummary.dead > 0 || backgroundJobRunSummary.failedRuns > 0 || operationsAlertSummary.failed > 0 ? "warning" : "success"}>4개 항목</Badge>
+            </summary>
+            <div className="grid gap-5 border-t border-slate-200 bg-slate-50/45 p-4">
       <Card id="retention-health" className="scroll-mt-6">
         <CardHeader
           title="운영 이력 보존 상태"
@@ -1365,6 +1385,8 @@ export default async function OperationsHealthPage({
           )}
         </CardBody>
       </Card>
+            </div>
+          </details>
         </div>
       </details>
 
