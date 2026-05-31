@@ -437,6 +437,19 @@ function lookupBasisLabel(value: string | null) {
   return value ? labels[value] ?? value : "-";
 }
 
+function sourceModeLabel(value: string | null) {
+  const labels: Record<string, string> = {
+    snapshot_rpc: "snapshot RPC",
+    source_tables: "source table fallback",
+    mock: "mock",
+    openai: "OpenAI",
+    supabase_gpt_only: "GPT 중심",
+    local: "local"
+  };
+
+  return value ? labels[value] ?? value : "-";
+}
+
 function formatCandidateCounts(event: LookupTelemetryEvent) {
   const hs4 = payloadNumber(event.payload, "normalizationHs4Count") ?? 0;
   const hs6 = payloadNumber(event.payload, "normalizationHs6Count") ?? 0;
@@ -521,6 +534,58 @@ function summarizeLookupTelemetryByRoute(events: LookupTelemetryEvent[]) {
     if (b.total !== a.total) return b.total - a.total;
     return a.route.localeCompare(b.route);
   }).slice(0, 6);
+}
+
+function summarizeHsDirectLookupSources(events: LookupTelemetryEvent[]) {
+  const rows = new Map<string, {
+    sourceMode: string;
+    total: number;
+    fallback: number;
+    failed: number;
+    durationTotal: number;
+    durationCount: number;
+    maxDuration: number | null;
+  }>();
+
+  for (const event of events) {
+    if (event.eventType !== "hs_direct_lookup_resolved") continue;
+    const sourceMode = event.sourceMode ?? "unknown";
+    const current = rows.get(sourceMode) ?? {
+      sourceMode,
+      total: 0,
+      fallback: 0,
+      failed: 0,
+      durationTotal: 0,
+      durationCount: 0,
+      maxDuration: null
+    };
+    const duration = event.durationMs ?? payloadNumber(event.payload, "durationMs");
+    current.total += 1;
+    current.fallback += event.status === "fallback" ? 1 : 0;
+    current.failed += event.status === "failed" || event.status === "error" ? 1 : 0;
+    if (duration !== null) {
+      current.durationTotal += duration;
+      current.durationCount += 1;
+      current.maxDuration = current.maxDuration === null ? duration : Math.max(current.maxDuration, duration);
+    }
+    rows.set(sourceMode, current);
+  }
+
+  const total = [...rows.values()].reduce((sum, row) => sum + row.total, 0);
+
+  return [...rows.values()].map((row) => ({
+    sourceMode: row.sourceMode,
+    label: sourceModeLabel(row.sourceMode),
+    total: row.total,
+    share: formatPercent(row.total, total),
+    fallback: row.fallback,
+    failed: row.failed,
+    averageDurationMs: row.durationCount > 0 ? row.durationTotal / row.durationCount : null,
+    maxDurationMs: row.maxDuration
+  })).sort((a, b) => {
+    if (b.total !== a.total) return b.total - a.total;
+    return a.sourceMode.localeCompare(b.sourceMode);
+  });
 }
 
 async function loadLookupTelemetryEvents() {
@@ -622,6 +687,7 @@ export default async function OperationsHealthPage({
   const lookupIssueSummary = lookupDiagnosisSummary.filter((item) => item.issueCount > 0).slice(0, 4);
   const lookupDailySummary = summarizeLookupTelemetryByDay(lookupTelemetryEvents);
   const lookupRouteSummary = summarizeLookupTelemetryByRoute(lookupTelemetryEvents);
+  const hsDirectSourceSummary = summarizeHsDirectLookupSources(lookupTelemetryEvents);
   const recurringLookupIssues = summarizeRecurringLookupTelemetryIssues(lookupTelemetryEvents, 3);
   const priorityLookupEvents = lookupTelemetryEvents.filter(isLookupTelemetryIssue).slice(0, 8);
   const normalLookupSamples = lookupTelemetryEvents.filter((event) => !isLookupTelemetryIssue(event)).slice(0, 3);
@@ -1871,6 +1937,32 @@ export default async function OperationsHealthPage({
                   </div>
                 </div>
               ) : null}
+              {hsDirectSourceSummary.length ? (
+                <div className="border-b border-slate-200 bg-white p-3">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs font-semibold text-slate-500">HS 직접조회 source 경로</p>
+                    <p className="text-xs text-slate-500">최근 `hs_direct_lookup_resolved` 이벤트 기준</p>
+                  </div>
+                  <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                    {hsDirectSourceSummary.map((summary) => (
+                      <div
+                        className={summary.fallback > 0 || summary.failed > 0 ? "rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm" : "rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm"}
+                        key={summary.sourceMode}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="font-semibold text-slate-950">{summary.label}</p>
+                          <Badge tone={summary.fallback > 0 || summary.failed > 0 ? "warning" : "success"}>{summary.share}</Badge>
+                        </div>
+                        <p className="mt-1 text-xs leading-5 text-slate-600">
+                          전체 {summary.total} · fallback {summary.fallback} · 실패 {summary.failed}
+                          <br />
+                          평균 {formatMs(summary.averageDurationMs)} · 최대 {formatMs(summary.maxDurationMs)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
               {priorityLookupEvents.length ? (
                 <div className="border-b border-slate-200 bg-amber-50/40 p-3">
                   <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
@@ -2002,7 +2094,7 @@ export default async function OperationsHealthPage({
                           <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-600">{formatDate(event.createdAt)}</td>
                           <td className="px-5 py-4">
                             <p className="font-semibold text-slate-950">{eventLabel(event.eventType)}</p>
-                            <p className="mt-1 font-mono text-xs text-slate-500">{event.sourceMode ?? payloadValue(event.payload, "provider")}</p>
+                            <p className="mt-1 font-mono text-xs text-slate-500">{sourceModeLabel(event.sourceMode ?? payloadString(event.payload, "provider"))}</p>
                           </td>
                           <td className="px-5 py-4">
                             <Badge tone={eventTone(event)}>{telemetryStatusLabel(event.status)}</Badge>
