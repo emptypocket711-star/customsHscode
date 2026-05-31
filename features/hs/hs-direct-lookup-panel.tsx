@@ -2299,18 +2299,7 @@ async function uncachedInternalTaxCodesForResults({
 
   try {
     const supabase = await createSupabaseServerClient();
-    const { data: statisticalCodeRows, error: statisticalCodeError } = await supabase
-      .from("customs_statistical_codes")
-      .select("code_type, code, korean_name, korean_abbreviation, english_abbreviation, english_note, internal_tax_rate, source_name, source_version, effective_from, effective_to, status")
-      .eq("code_type", "A01")
-      .lte("effective_from", basisDate)
-      .or(`effective_to.is.null,effective_to.gte.${basisDate}`)
-      .eq("status", "published")
-      .order("code");
-
-    if (statisticalCodeError) throw new Error(statisticalCodeError.message);
-
-    const statisticalCodes = (statisticalCodeRows ?? []) as CustomsStatisticalCodeRecord[];
+    const statisticalCodes = await cachedInternalTaxStatisticalCodes(basisDate);
     const codeResults = await Promise.all(
       results.map(async (result) => {
         const lawRules = await findInternalTaxLawRuleMatches(supabase, {
@@ -2336,6 +2325,30 @@ async function uncachedInternalTaxCodesForResults({
   }
 
   return rowsByHsk;
+}
+
+function cachedInternalTaxStatisticalCodes(basisDate: string) {
+  return cachedLookup({
+    key: lookupCacheKey("internal-tax-statistical-codes", { basisDate }),
+    ttlMs: hsPrefixLookupCacheTtlMs,
+    load: async () => {
+      if (!hasSupabaseEnv()) return [] as CustomsStatisticalCodeRecord[];
+
+      const supabase = await createSupabaseServerClient();
+      const { data, error } = await supabase
+        .from("customs_statistical_codes")
+        .select("code_type, code, korean_name, korean_abbreviation, english_abbreviation, english_note, internal_tax_rate, source_name, source_version, effective_from, effective_to, status")
+        .eq("code_type", "A01")
+        .lte("effective_from", basisDate)
+        .or(`effective_to.is.null,effective_to.gte.${basisDate}`)
+        .eq("status", "published")
+        .order("code");
+
+      if (error) throw new Error(error.message);
+
+      return (data ?? []) as CustomsStatisticalCodeRecord[];
+    }
+  });
 }
 
 function EmptyDestinationTariffState({ dictionary }: { dictionary: HsDirectDictionary }) {
@@ -3481,12 +3494,14 @@ export async function HsDirectLookupPanel({
             }).catch(() => null))
         ).then((rows) => rows.filter((result): result is ExportDiagnosisResult => Boolean(result)))
       : Promise.resolve([]),
-    destinationTariffsForResults({
-      results: exportLookupSources,
-      direction: showDestinationExportResults ? "export" : "import",
-      destinationCountry: selectedDestinationCountry,
-      basisDate: resolvedBasisDate
-    }),
+    showDestinationExportResults && exportLookupSources.length
+      ? destinationTariffsForResults({
+          results: exportLookupSources,
+          direction: "export",
+          destinationCountry: selectedDestinationCountry,
+          basisDate: resolvedBasisDate
+        })
+      : Promise.resolve(new Map<string, ExportDestinationTariffItem[]>()),
     shouldLoadImportDetailData ? internalTaxCodesForResults({
       results,
       basisDate: resolvedBasisDate
