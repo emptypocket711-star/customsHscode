@@ -1,4 +1,5 @@
 import { hasUpstashRestEnv, upstashCommand, upstashPipeline } from "@/lib/upstash-rest";
+import { createSupabaseServiceRoleClient, hasSupabaseServiceRoleEnv } from "@/lib/supabase/service-role";
 
 type CacheEntry<T> = {
   expiresAt: number;
@@ -29,7 +30,21 @@ function cacheNamespace(key: string) {
   return key.split(":", 1)[0] || "lookup";
 }
 
-function logCacheEvent(event: "redis-hit" | "memory-hit" | "inflight-hit" | "miss" | "set", key: string) {
+function supabaseCacheNamespaces() {
+  return new Set(
+    (process.env.LOOKUP_SUPABASE_CACHE_NAMESPACES || "ai-product-normalization,hs-product-recommendations")
+      .split(",")
+      .map((namespace) => namespace.trim())
+      .filter(Boolean)
+  );
+}
+
+function shouldUseSupabaseCache(key: string) {
+  if (!hasSupabaseServiceRoleEnv()) return false;
+  return supabaseCacheNamespaces().has(cacheNamespace(key));
+}
+
+function logCacheEvent(event: "redis-hit" | "supabase-hit" | "memory-hit" | "inflight-hit" | "miss" | "set", key: string) {
   if (!shouldLogCacheEvents()) return;
   console.info("[lookup-cache]", event, { namespace: cacheNamespace(key) });
 }
@@ -94,6 +109,54 @@ function decodeCacheValue<T>(value: unknown): T | null {
   }
 }
 
+async function readSupabaseCache<T>(key: string, now: number): Promise<T | null> {
+  if (!shouldUseSupabaseCache(key)) return null;
+
+  const supabase = createSupabaseServiceRoleClient();
+  const namespace = cacheNamespace(key);
+  const { data, error } = await supabase
+    .from("lookup_cache_entries")
+    .select("encoded_value,expires_at")
+    .eq("namespace", namespace)
+    .eq("cache_key", key)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  if (new Date(data.expires_at).getTime() <= now) {
+    void supabase
+      .from("lookup_cache_entries")
+      .delete()
+      .eq("namespace", namespace)
+      .eq("cache_key", key);
+    return null;
+  }
+
+  return decodeCacheValue<T>(data.encoded_value);
+}
+
+async function writeSupabaseCache(key: string, encodedValue: string, ttlMs: number) {
+  if (!shouldUseSupabaseCache(key)) return;
+
+  const supabase = createSupabaseServiceRoleClient();
+  const namespace = cacheNamespace(key);
+  try {
+    await supabase
+      .from("lookup_cache_entries")
+      .upsert({
+        namespace,
+        cache_key: key,
+        encoded_value: encodedValue,
+        expires_at: new Date(Date.now() + ttlMs).toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select("namespace")
+      .maybeSingle();
+  } catch {
+    // Cache persistence is opportunistic; lookup should continue on failures.
+  }
+}
+
 export function lookupCacheKey(namespace: string, input: unknown) {
   return `${namespace}:${stableStringify(input)}`;
 }
@@ -132,6 +195,14 @@ export async function cachedLookup<T>({
     cacheStore.delete(key);
   }
 
+  const supabaseCached = await readSupabaseCache<T>(key, now).catch(() => null);
+  if (supabaseCached !== null) {
+    cacheStore.set(key, { value: supabaseCached, expiresAt: now + ttlMs });
+    pruneMemoryCache(now);
+    logCacheEvent("supabase-hit", key);
+    return supabaseCached;
+  }
+
   const inflight = inflightStore.get(key) as Promise<T> | undefined;
   if (inflight) {
     logCacheEvent("inflight-hit", key);
@@ -152,6 +223,10 @@ export async function cachedLookup<T>({
               ["SETEX", `lookup:${key}`, Math.max(1, Math.ceil(ttlMs / 1000)), encoded]
             ]).catch(() => null);
           }
+        }
+        if (shouldUseSupabaseCache(key)) {
+          const encoded = encodeCacheValue(value);
+          if (encoded) void writeSupabaseCache(key, encoded, ttlMs);
         }
       }
       return value;
