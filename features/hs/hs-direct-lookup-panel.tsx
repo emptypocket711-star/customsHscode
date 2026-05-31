@@ -4119,12 +4119,15 @@ export async function HsDirectLookupPanel({
 
                 <InternalTaxSection dictionary={dictionary} rows={internalTaxCodesByHsk.get(result.hskCode) ?? []} />
 
-                <div className="border-t border-slate-200">
-                  <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">{dictionary.result.standardProduct}</div>
+                <details className="border-t border-slate-200">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-2 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">
+                    <span>{dictionary.result.standardProduct}</span>
+                    <span className="text-xs font-medium text-slate-500">{result.standardProductNames.length}건</span>
+                  </summary>
                   {result.standardProductNames.length ? (
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto border-t border-slate-200">
                       <table className="w-full min-w-[720px] text-left text-sm">
-                        <thead className="border-y border-slate-200 text-xs font-semibold text-slate-500">
+                        <thead className="border-b border-slate-200 text-xs font-semibold text-slate-500">
                           <tr>
                             <th className="px-3 py-2">{dictionary.result.standardProductName}</th>
                             <th className="px-3 py-2">{dictionary.result.requiredSpec}</th>
@@ -4143,7 +4146,7 @@ export async function HsDirectLookupPanel({
                   ) : (
                     <EmptySectionState>{dictionary.result.standardProductEmpty}</EmptySectionState>
                   )}
-                </div>
+                </details>
 
                 <div className="border-t border-slate-200">
                     <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">{dictionary.result.importRequirement}</div>
@@ -4186,17 +4189,24 @@ export async function HsDirectLookupPanel({
                     )}
                 </div>
 
-                <HsNavigationStatsLazySection
-                  hskCode={result.hskCode}
-                  labels={{
-                    count: dictionary.result.statisticCount,
-                    empty: dictionary.result.statisticEmpty,
-                    loading: dictionary.result.statisticLoading,
-                    productName: dictionary.result.statisticProductName,
-                    rank: dictionary.result.statisticRank,
-                    title: dictionary.result.statisticTitle
-                  }}
-                />
+                <details className="border-t border-slate-200">
+                  <summary className="cursor-pointer list-none bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">
+                    {dictionary.result.statisticTitle}
+                  </summary>
+                  <div className="border-t border-slate-200">
+                    <HsNavigationStatsLazySection
+                      hskCode={result.hskCode}
+                      labels={{
+                        count: dictionary.result.statisticCount,
+                        empty: dictionary.result.statisticEmpty,
+                        loading: dictionary.result.statisticLoading,
+                        productName: dictionary.result.statisticProductName,
+                        rank: dictionary.result.statisticRank,
+                        title: dictionary.result.statisticTitle
+                      }}
+                    />
+                  </div>
+                </details>
 
                 <div className="px-3 pb-3">
                   <SourceFooter basisDate={result.basisDate} showVersion={false} sourceName={result.sourceName} sourceVersion={result.sourceVersion} />
