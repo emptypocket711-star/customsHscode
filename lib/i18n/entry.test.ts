@@ -9,7 +9,7 @@ describe("getEntryDictionary", () => {
 
       expect(dictionary.title).toBeTruthy();
       expect(dictionary.entries).toHaveLength(4);
-      expect(dictionary.entries.map((entry) => entry.key)).toEqual(["direct", "export", "cargo", "duty"]);
+      expect(dictionary.entries.map((entry) => entry.key)).toEqual(["direct", "overseas", "cargo", "duty"]);
     }
   });
 });

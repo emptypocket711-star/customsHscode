@@ -9,7 +9,7 @@ const entryIcons = {
   cargo: PackageSearch,
   direct: Search,
   duty: Calculator,
-  export: Globe2
+  overseas: Globe2
 };
 
 export default async function EntryPage() {
