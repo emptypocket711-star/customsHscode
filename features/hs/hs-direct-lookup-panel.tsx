@@ -986,29 +986,20 @@ function ProductClassificationFlowPanel({
   const primary = candidates[0];
   const summaryLines = [
     clarification?.summary || `"${productName}" 품명의 제품 의미를 먼저 해석했습니다.`,
-    primary ? `가장 가까운 방향: ${formatHsCode(primary.hskCode)} ${primary.koreanName}` : "현재 입력값만으로는 표시할 HS CODE가 부족합니다.",
-    uniqueProductQuestions(candidates, clarification).length ? "보완사항을 입력하면 더 정확한 코드로 좁힐 수 있습니다." : "상세 조회 전 실제 재질, 용도, 구성은 다시 확인하세요."
-  ];
+    primary ? `가장 가까운 방향: ${formatHsCode(primary.hskCode)} ${primary.koreanName}` : "현재 입력값만으로는 표시할 HS CODE가 부족합니다."
+  ].filter(Boolean);
 
   return (
-    <section className="mt-5 overflow-hidden rounded-md border border-blue-200 bg-white">
-      <div className="border-b border-blue-100 bg-blue-50 px-3 py-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-sm font-semibold text-blue-950">AI 분류 흐름 요약</h2>
-              <Badge tone={hasCandidates ? "success" : "warning"}>{hasCandidates ? "분류 완료" : "보완 필요"}</Badge>
-            </div>
-            <p className="mt-1 text-xs leading-5 text-blue-900">
-              제품 의미, HS 방향, 보완 필요 정보를 간단히 정리했습니다.
-            </p>
-          </div>
-          <div className="rounded-md bg-white px-3 py-2 text-xs font-semibold text-blue-800 ring-1 ring-blue-100">
-            {productName}
-          </div>
-        </div>
-      </div>
-      <div className="grid gap-2 p-3 text-sm leading-6 text-slate-700 md:grid-cols-3">
+    <details className="mt-4 rounded-md border border-blue-100 bg-blue-50">
+      <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm font-semibold text-blue-950">
+        <span className="inline-flex items-center gap-2">
+          <CheckCircle2 aria-hidden="true" size={17} />
+          AI 분류 흐름
+          <Badge tone={hasCandidates ? "success" : "warning"}>{hasCandidates ? "완료" : "보완 필요"}</Badge>
+        </span>
+        <span className="text-xs font-medium text-blue-800">{productName}</span>
+      </summary>
+      <div className="grid gap-2 border-t border-blue-100 bg-white p-3 text-sm leading-6 text-slate-700 md:grid-cols-2">
         {summaryLines.map((line, index) => (
           <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2" key={`${line}-${index}`}>
             <span className="mr-2 font-mono text-xs font-semibold text-blue-700">{index + 1}</span>
@@ -1016,23 +1007,7 @@ function ProductClassificationFlowPanel({
           </div>
         ))}
       </div>
-      <div className={cn(
-        "flex flex-wrap items-start gap-2 border-t px-3 py-3 text-sm leading-6",
-        hasCandidates ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-amber-200 bg-amber-50 text-amber-900"
-      )}>
-        <CheckCircle2 aria-hidden="true" className="mt-0.5 shrink-0" size={18} />
-        <div className="min-w-0 flex-1">
-          <p className="font-semibold">
-            {hasCandidates ? "AI 분류가 완료되었습니다." : "AI 분류는 진행했지만 보완 정보가 필요합니다."}
-          </p>
-          <p className="text-xs">
-            {hasCandidates
-              ? "실제 물품과 가장 가까운 HS CODE를 선택하면 관세율, FTA, 수입요건, 원산지표시 조회로 이어집니다. 신고 전 제품 사양 기준 재확인이 필요합니다."
-              : "아래 보완 항목을 확인한 뒤 품명, 재질, 용도, 모델 정보를 추가해 다시 검색하세요."}
-          </p>
-        </div>
-      </div>
-    </section>
+    </details>
   );
 }
 
@@ -2933,11 +2908,7 @@ function AiClarificationPanel({
   originCountry: string;
   productName: string;
 }) {
-  const candidateByCode = new Map(candidates.map((candidate) => [candidate.hskCode, candidate]));
   const presentation = productSearchPresentationState(candidates, analysis);
-  const candidateCodes = analysis.suggestedCandidateCodes.length
-    ? analysis.suggestedCandidateCodes
-    : candidates.slice(0, 3).map((candidate) => candidate.hskCode);
   const retryQuestions = presentation.questions.slice(0, 3);
 
   return (
@@ -2960,13 +2931,13 @@ function AiClarificationPanel({
           <p className={cn(
             "mt-1 text-xs leading-5",
             presentation.tone === "warning" ? "text-amber-900" : "text-blue-900"
-          )}>{analysis.summary || presentation.description}</p>
+          )}>필요한 정보만 보완하면 같은 품명으로 다시 분류할 수 있습니다.</p>
         </div>
         <Badge tone={analysis.confidence === "low" ? "warning" : "info"}>
           {analysis.confidence === "low" ? "검토 필요" : "검토"}
         </Badge>
       </div>
-      <div className="grid gap-4 p-3 lg:grid-cols-[1fr_0.9fr]">
+      <div className="grid gap-3 p-3">
         <div>
           <p className={cn(
             "text-xs font-semibold",
@@ -2974,7 +2945,7 @@ function AiClarificationPanel({
           )}>보완하면 좋아지는 정보</p>
           {presentation.questions.length ? (
             <ol className="mt-2 grid gap-2">
-              {presentation.questions.slice(0, 5).map((question, index) => (
+              {retryQuestions.map((question, index) => (
                 <li className={cn(
                   "rounded-md border bg-white px-3 py-2 text-sm leading-6 text-slate-700",
                   presentation.tone === "warning" ? "border-amber-100" : "border-blue-100"
@@ -3005,53 +2976,16 @@ function AiClarificationPanel({
             tone={presentation.tone === "warning" ? "amber" : "blue"}
           />
         </div>
-        <div>
-          <p className={cn(
-            "text-xs font-semibold",
-            presentation.tone === "warning" ? "text-amber-900" : "text-blue-900"
-          )}>함께 볼 수 있는 코드</p>
-          <div className="mt-2 grid gap-2">
-            {candidateCodes.length ? candidateCodes.map((code) => {
-              const candidate = candidateByCode.get(code);
-              const href = hsLookupHref({
-                hskCode: code,
-                direction,
-                destinationCountry,
-                originCountry,
-                basisDate: candidate?.basisDate ?? getSeoulDateString()
-              });
-              return (
-                <div className={cn(
-                  "rounded-md border bg-white px-3 py-2",
-                  presentation.tone === "warning" ? "border-amber-100" : "border-blue-100"
-                )} key={code}>
-                  <Link
-                    className="font-mono text-sm font-semibold text-blue-700 underline-offset-2 hover:underline"
-                    data-navigation-progress="상세조회"
-                    href={href}
-                  >
-                    {formatHsCode(code)}
-                  </Link>
-                  <div className="mt-1 text-sm font-medium text-slate-900">{candidate?.koreanName ?? "품명 확인 필요"}</div>
-                </div>
-              );
-            }) : (
-              <div className={cn(
-                "rounded-md border bg-white px-3 py-2 text-sm text-slate-600",
-                presentation.tone === "warning" ? "border-amber-100" : "border-blue-100"
-              )}>
-                입력 정보가 부족하여 함께 볼 수 있는 코드를 표시할 수 없습니다.
-              </div>
-            )}
-          </div>
-          <p className={cn(
-            "mt-3 text-xs font-semibold",
-            presentation.tone === "warning" ? "text-amber-900" : "text-blue-900"
-          )}>주의사항</p>
-          <ul className="mt-2 grid gap-1 text-xs leading-5 text-slate-600">
-            {analysis.riskNotes.map((note) => <li key={note}>{note}</li>)}
-          </ul>
-        </div>
+        {analysis.riskNotes.length ? (
+          <details className="rounded-md border border-slate-200 bg-white">
+            <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-slate-700">
+              주의사항 보기
+            </summary>
+            <ul className="grid gap-1 border-t border-slate-200 p-3 text-xs leading-5 text-slate-600">
+              {analysis.riskNotes.map((note) => <li key={note}>{note}</li>)}
+            </ul>
+          </details>
+        ) : null}
       </div>
     </section>
   );
