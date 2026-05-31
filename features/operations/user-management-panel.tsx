@@ -130,19 +130,20 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
       return matchesQuery && matchesAccountType && matchesStatus && matchesRole;
     });
   }, [accountTypeFilter, query, roleFilter, statusFilter, users]);
+  const hasDetailedFilters = accountTypeFilter !== "all" || statusFilter !== "all" || roleFilter !== "all";
 
   return (
     <div className="grid gap-5">
       <Card>
         <CardHeader
-          title="가입 사용자 관리"
-          description="Supabase Auth 사용자와 앱 프로필, 회사 정보를 연결해 조회합니다. 수정·삭제는 개발자 계정에서만 실행됩니다."
-          action={<Badge tone="warning">developer only</Badge>}
+          title="고객 계정 요약"
+          description="평소에는 사용자 수와 검색만 확인합니다. 회원 유형, 가입 상태, 권한 조건은 필요할 때만 상세 필터를 펼칩니다."
+          action={<Badge tone="warning">운영자 전용</Badge>}
         />
         <CardBody className="grid gap-4">
           <div className="grid gap-3 sm:grid-cols-4">
             <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs font-semibold text-slate-500">전체 Auth 유저</p>
+              <p className="text-xs font-semibold text-slate-500">전체 사용자</p>
               <p className="mt-1 text-2xl font-semibold text-slate-950">{users.length}</p>
             </div>
             <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
@@ -158,7 +159,7 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
               <p className="mt-1 text-2xl font-semibold text-slate-950">{userSummary.staff}</p>
             </div>
           </div>
-          <div className="grid gap-3 rounded-md border border-slate-200 bg-white p-3 lg:grid-cols-[minmax(260px,1fr)_160px_160px_160px]">
+          <div className="grid gap-3 rounded-md border border-slate-200 bg-white p-3">
             <label className="grid gap-1 text-sm font-medium text-slate-700">
               검색
               <span className="relative">
@@ -171,28 +172,39 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
                 />
               </span>
             </label>
-            <FilterSelect label="회원 유형" onChange={setAccountTypeFilter} value={accountTypeFilter}>
-              <option value="all">전체</option>
-              <option value="personal">개인회원</option>
-              <option value="company">기업회원</option>
-            </FilterSelect>
-            <FilterSelect label="가입 상태" onChange={setStatusFilter} value={statusFilter}>
-              <option value="all">전체</option>
-              <option value="completed">가입 완료</option>
-              <option value="incomplete">추가정보 미완료</option>
-            </FilterSelect>
-            <FilterSelect label="권한" onChange={setRoleFilter} value={roleFilter}>
-              <option value="all">전체</option>
-              <option value="client">client</option>
-              <option value="customs_staff">customs_staff</option>
-              <option value="admin">admin</option>
-              <option value="developer">developer</option>
-            </FilterSelect>
+            <details className="rounded-md border border-slate-200 bg-slate-50" open={hasDetailedFilters}>
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-semibold text-slate-700">
+                <span className="inline-flex items-center gap-2">
+                  <Filter aria-hidden="true" size={16} />
+                  상세 필터
+                </span>
+                <Badge tone={hasDetailedFilters ? "info" : "neutral"}>{hasDetailedFilters ? "적용 중" : "전체"}</Badge>
+              </summary>
+              <div className="grid gap-3 border-t border-slate-200 bg-white p-3 lg:grid-cols-3">
+                <FilterSelect label="회원 유형" onChange={setAccountTypeFilter} value={accountTypeFilter}>
+                  <option value="all">전체</option>
+                  <option value="personal">개인회원</option>
+                  <option value="company">기업회원</option>
+                </FilterSelect>
+                <FilterSelect label="가입 상태" onChange={setStatusFilter} value={statusFilter}>
+                  <option value="all">전체</option>
+                  <option value="completed">가입 완료</option>
+                  <option value="incomplete">추가정보 미완료</option>
+                </FilterSelect>
+                <FilterSelect label="권한" onChange={setRoleFilter} value={roleFilter}>
+                  <option value="all">전체</option>
+                  <option value="client">client</option>
+                  <option value="customs_staff">customs_staff</option>
+                  <option value="admin">admin</option>
+                  <option value="developer">developer</option>
+                </FilterSelect>
+              </div>
+            </details>
           </div>
           <div className="flex items-center gap-2 text-sm text-slate-600">
             <Filter aria-hidden="true" size={16} />
             <span>표시 중 {filteredUsers.length}명 / 전체 {users.length}명</span>
-            {query || accountTypeFilter !== "all" || statusFilter !== "all" || roleFilter !== "all" ? (
+            {query || hasDetailedFilters ? (
               <span className="rounded bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">필터 적용</span>
             ) : null}
           </div>
