@@ -26,8 +26,6 @@ import { OriginMarkingLinks } from "@/features/hs/origin-marking-dialogs";
 import { hsDirectLookupSchema } from "@/features/hs/schemas";
 import {
   buildHsSupplementGuidance,
-  buildProductSupplementGuidance,
-  isWeakProductName,
   type HsSupplementGuidance
 } from "@/features/hs/hs-supplement-guidance";
 import { formatHsCode, normalizeHsCode } from "@/lib/hs-code";
@@ -3628,9 +3626,7 @@ export async function HsDirectLookupPanel({
   const lookupHierarchyPath = results[0]?.hierarchyPath.filter((node) => normalizeHsInput(node.code).length <= normalizedQuery.length) ?? [];
   const supplementGuidance = shouldLookupHs && normalizedQuery.length >= 4 && normalizedQuery.length < 10
     ? buildHsSupplementGuidance(normalizedQuery)
-    : shouldLookupProduct && isWeakProductName(searchQuery)
-      ? buildProductSupplementGuidance(searchQuery)
-      : null;
+    : null;
   const favoriteReturnTo = currentHsDirectReturnTo({
     query: searchQuery,
     direction: lookupDirection,
