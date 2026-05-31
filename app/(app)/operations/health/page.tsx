@@ -1399,13 +1399,23 @@ export default async function OperationsHealthPage({
         </div>
       </details>
 
-      <Card id="issue-events" className="scroll-mt-6">
-        <CardHeader
-          title="운영 이슈 처리 상태"
-          description="반복 조회 품질 이슈처럼 운영자가 후속 조치해야 하는 항목을 상태와 함께 확인합니다."
-          action={<Badge tone={operationsIssueSummary.open > 0 ? "warning" : "success"}>미해결 {operationsIssueSummary.open}건</Badge>}
-        />
-        <CardBody className="p-0">
+      <details
+        id="issue-events"
+        className="scroll-mt-6 rounded-lg border border-slate-200 bg-white shadow-sm"
+        open={hasOperationsIssueFilters}
+      >
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4">
+          <span>
+            <span className="block text-base font-semibold text-slate-950">운영 이슈 처리 상태</span>
+            <span className="mt-1 block text-sm text-slate-500">
+              반복 조회 품질 이슈처럼 후속 조치가 필요한 항목입니다. 필터를 적용했을 때만 자동으로 펼칩니다.
+            </span>
+          </span>
+          <Badge tone={operationsIssueSummary.open > 0 ? "warning" : "success"}>미해결 {operationsIssueSummary.open}건</Badge>
+        </summary>
+        <div className="border-t border-slate-200 bg-slate-50/45 p-4">
+          <Card>
+            <CardBody className="p-0">
           <div className="grid gap-2 border-b border-slate-200 bg-slate-50 p-3 text-sm md:grid-cols-5">
             <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
               <p className="text-xs font-semibold text-slate-500">최근 이슈</p>
@@ -1937,15 +1947,17 @@ export default async function OperationsHealthPage({
           )}
             </div>
           </details>
-        </CardBody>
-      </Card>
+            </CardBody>
+          </Card>
+        </div>
+      </details>
 
-      <details id="lookup-quality" className="scroll-mt-6 rounded-lg border border-slate-200 bg-white shadow-sm" open={lookupIssueCount > 0}>
+      <details id="lookup-quality" className="scroll-mt-6 rounded-lg border border-slate-200 bg-white shadow-sm">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4">
           <span>
             <span className="block text-base font-semibold text-slate-950">조회 품질 로그</span>
             <span className="mt-1 block text-sm text-slate-500">
-              점검 대상이 있을 때만 자동으로 펼칩니다. 정상 로그와 원시 telemetry 표는 필요할 때 확인합니다.
+              품명 AI 검색과 후보 생성 로그입니다. 정상 로그와 원시 telemetry 표는 필요할 때만 펼쳐 확인합니다.
             </span>
           </span>
           <Badge tone={lookupIssueCount > 0 ? "warning" : "success"}>점검 대상 {lookupIssueCount}건</Badge>
