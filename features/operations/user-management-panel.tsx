@@ -141,22 +141,14 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
           action={<Badge tone="warning">운영자 전용</Badge>}
         />
         <CardBody className="grid gap-4">
-          <div className="grid gap-3 sm:grid-cols-4">
-            <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs font-semibold text-slate-500">전체 사용자</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-950">{users.length}</p>
-            </div>
-            <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs font-semibold text-slate-500">가입 완료</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-950">{userSummary.completed}</p>
-            </div>
-            <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs font-semibold text-slate-500">기업회원</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-950">{userSummary.company}</p>
-            </div>
-            <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs font-semibold text-slate-500">운영 권한</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-950">{userSummary.staff}</p>
+          <div className="rounded-md border border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+              <span>
+                <span className="font-semibold text-slate-950">전체 {users.length}명</span>
+              </span>
+              <span className="text-slate-600">가입 완료 {userSummary.completed}명</span>
+              <span className="text-slate-600">기업회원 {userSummary.company}명</span>
+              <span className="text-slate-600">운영 권한 {userSummary.staff}명</span>
             </div>
           </div>
           <div className="grid gap-3 rounded-md border border-slate-200 bg-white p-3">
@@ -224,10 +216,10 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
           <span>
             <span className="inline-flex items-center gap-2 text-base font-semibold text-slate-950">
               <UserPlus aria-hidden="true" size={18} />
-              유저 직접 생성
+              테스트·수동 계정 발급
             </span>
             <span className="mt-1 block text-sm text-slate-600">
-              개발자가 로그인 아이디와 임시 비밀번호를 직접 발급합니다. 생성 내역은 감사 로그에 기록됩니다.
+              테스트 계정이나 수동 지원이 필요할 때만 펼쳐서 사용합니다. 생성 내역은 감사 로그에 기록됩니다.
             </span>
           </span>
           <ChevronDown
@@ -592,78 +584,86 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
                 </div>
               </form>
 
-              <form action={testLoginAction} className="grid gap-3 rounded-md border border-amber-200 bg-amber-50 p-3">
-                <input name="userId" type="hidden" value={user.id} />
-                <input name="email" type="hidden" value={user.email} />
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                  <div>
-                    <p className="inline-flex items-center gap-2 text-sm font-semibold text-amber-950">
-                      <KeyRound aria-hidden="true" size={16} />
-                      테스트 로그인 링크
-                    </p>
-                    <p className="mt-1 text-xs leading-5 text-amber-900">
-                      개발자 테스트 전용입니다. 링크를 받은 사람은 비밀번호 없이 해당 계정으로 접속할 수 있으므로 공유하지 마세요.
-                    </p>
-                  </div>
-                  <button
-                    className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-md bg-amber-700 px-4 text-sm font-semibold text-white hover:bg-amber-800 disabled:cursor-not-allowed disabled:bg-slate-500"
-                    disabled={testLoginPending}
-                    type="submit"
-                  >
-                    <KeyRound aria-hidden="true" size={16} />
-                    {testLoginPending ? "생성 중" : "링크 생성"}
-                  </button>
-                </div>
-                {testLoginState.status === "success" && testLoginState.targetUserId === user.id && testLoginState.testLoginUrl ? (
-                  <div className="grid gap-2 rounded-md border border-amber-300 bg-white p-3">
-                    <label className="grid gap-1 text-xs font-semibold text-slate-700">
-                      생성된 링크
-                      <input
-                        className="focus-ring rounded-md border border-slate-300 px-3 py-2 font-mono text-xs text-slate-950"
-                        readOnly
-                        value={testLoginState.testLoginUrl}
-                      />
-                    </label>
-                    <a
-                      className="focus-ring inline-flex h-10 w-fit items-center gap-2 rounded-md bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-800"
-                      href={testLoginState.testLoginUrl}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      <ExternalLink aria-hidden="true" size={16} />
-                      새 창에서 테스트 로그인
-                    </a>
-                  </div>
-                ) : null}
-              </form>
+              <details className="rounded-md border border-slate-200 bg-slate-50">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-semibold text-slate-800">
+                  <span>테스트·위험 작업</span>
+                  <Badge tone="warning">필요할 때만</Badge>
+                </summary>
+                <div className="grid gap-3 border-t border-slate-200 p-3">
+                  <form action={testLoginAction} className="grid gap-3 rounded-md border border-amber-200 bg-amber-50 p-3">
+                    <input name="userId" type="hidden" value={user.id} />
+                    <input name="email" type="hidden" value={user.email} />
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                      <div>
+                        <p className="inline-flex items-center gap-2 text-sm font-semibold text-amber-950">
+                          <KeyRound aria-hidden="true" size={16} />
+                          테스트 로그인 링크
+                        </p>
+                        <p className="mt-1 text-xs leading-5 text-amber-900">
+                          개발자 테스트 전용입니다. 링크를 받은 사람은 비밀번호 없이 해당 계정으로 접속할 수 있으므로 공유하지 마세요.
+                        </p>
+                      </div>
+                      <button
+                        className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-md bg-amber-700 px-4 text-sm font-semibold text-white hover:bg-amber-800 disabled:cursor-not-allowed disabled:bg-slate-500"
+                        disabled={testLoginPending}
+                        type="submit"
+                      >
+                        <KeyRound aria-hidden="true" size={16} />
+                        {testLoginPending ? "생성 중" : "링크 생성"}
+                      </button>
+                    </div>
+                    {testLoginState.status === "success" && testLoginState.targetUserId === user.id && testLoginState.testLoginUrl ? (
+                      <div className="grid gap-2 rounded-md border border-amber-300 bg-white p-3">
+                        <label className="grid gap-1 text-xs font-semibold text-slate-700">
+                          생성된 링크
+                          <input
+                            className="focus-ring rounded-md border border-slate-300 px-3 py-2 font-mono text-xs text-slate-950"
+                            readOnly
+                            value={testLoginState.testLoginUrl}
+                          />
+                        </label>
+                        <a
+                          className="focus-ring inline-flex h-10 w-fit items-center gap-2 rounded-md bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-800"
+                          href={testLoginState.testLoginUrl}
+                          rel="noreferrer"
+                          target="_blank"
+                        >
+                          <ExternalLink aria-hidden="true" size={16} />
+                          새 창에서 테스트 로그인
+                        </a>
+                      </div>
+                    ) : null}
+                  </form>
 
-              <form
-                action={deleteAction}
-                className="grid gap-3 rounded-md border border-red-200 bg-red-50 p-3"
-                onSubmit={(event) => {
-                  if (!window.confirm(`${user.email} 사용자를 삭제할까요? 이 작업은 되돌릴 수 없습니다.`)) {
-                    event.preventDefault();
-                  }
-                }}
-              >
-                <input name="userId" type="hidden" value={user.id} />
-                <input name="companyId" type="hidden" value={user.companyId} />
-                <div className="grid gap-2 md:grid-cols-[1fr_auto] md:items-end">
-                  <label className="grid gap-1 text-sm font-medium text-red-900">
-                    삭제 확인
-                    <input className="focus-ring rounded-md border border-red-200 bg-white px-3 py-2 text-slate-950" name="confirmation" placeholder="DELETE 입력" />
-                  </label>
-                  <button
-                    className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-md bg-red-700 px-4 text-sm font-semibold text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:bg-slate-500"
-                    disabled={deletePending}
-                    type="submit"
+                  <form
+                    action={deleteAction}
+                    className="grid gap-3 rounded-md border border-red-200 bg-red-50 p-3"
+                    onSubmit={(event) => {
+                      if (!window.confirm(`${user.email} 사용자를 삭제할까요? 이 작업은 되돌릴 수 없습니다.`)) {
+                        event.preventDefault();
+                      }
+                    }}
                   >
-                    <Trash2 aria-hidden="true" size={16} />
-                    사용자 삭제
-                  </button>
+                    <input name="userId" type="hidden" value={user.id} />
+                    <input name="companyId" type="hidden" value={user.companyId} />
+                    <div className="grid gap-2 md:grid-cols-[1fr_auto] md:items-end">
+                      <label className="grid gap-1 text-sm font-medium text-red-900">
+                        삭제 확인
+                        <input className="focus-ring rounded-md border border-red-200 bg-white px-3 py-2 text-slate-950" name="confirmation" placeholder="DELETE 입력" />
+                      </label>
+                      <button
+                        className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-md bg-red-700 px-4 text-sm font-semibold text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:bg-slate-500"
+                        disabled={deletePending}
+                        type="submit"
+                      >
+                        <Trash2 aria-hidden="true" size={16} />
+                        사용자 삭제
+                      </button>
+                    </div>
+                    <p className="text-xs text-red-800">Auth 사용자 삭제 후 연결된 프로필은 자동 삭제됩니다. 남은 사용자가 없는 회사 공간은 함께 정리됩니다.</p>
+                  </form>
                 </div>
-                <p className="text-xs text-red-800">Auth 사용자 삭제 후 연결된 프로필은 자동 삭제됩니다. 남은 사용자가 없는 회사 공간은 함께 정리됩니다.</p>
-              </form>
+              </details>
                 </CardBody>
               </div>
             </div>
