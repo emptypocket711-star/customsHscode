@@ -80,9 +80,9 @@ export function ReportPreview({ dictionary, report }: { dictionary: ReportPrevie
               {report.sourceLocks.map((lock) => (
                 <div className="rounded-md border border-slate-200 p-3" key={lock.id}>
                   <p className="text-sm font-semibold text-slate-950">{lock.sourceName}</p>
-                  <p className="mt-1 text-xs text-slate-500">{lock.sourceVersion}</p>
-                  <p className="mt-1 text-xs text-slate-500">snapshot: {lock.sourceSnapshotId}</p>
-                  <p className="mt-1 text-xs text-slate-500">rule: {lock.ruleVersionId}</p>
+                  <p className="mt-1 text-xs text-slate-500">{dictionary.sections.sourceVersionLabel}: {lock.sourceVersion}</p>
+                  <p className="mt-1 text-xs text-slate-500">{dictionary.sections.sourceSnapshotLabel}: {lock.sourceSnapshotId}</p>
+                  <p className="mt-1 text-xs text-slate-500">{dictionary.sections.ruleVersionLabel}: {lock.ruleVersionId}</p>
                 </div>
               ))}
             </CardBody>

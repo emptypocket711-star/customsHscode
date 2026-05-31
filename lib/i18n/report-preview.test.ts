@@ -19,4 +19,12 @@ describe("getReportPreviewDictionary", () => {
 
     expect(text).not.toMatch(/guaranteed|definitely|final classification/i);
   });
+
+  it("uses Korean-facing source lock labels in Korean locale", () => {
+    const dictionary = getReportPreviewDictionary("ko-KR");
+
+    expect(dictionary.sections.sourceLocksTitle).toBe("근거 자료 고정");
+    expect(dictionary.sections.sourceSnapshotLabel).toBe("자료 보관본");
+    expect(dictionary.sections.ruleVersionLabel).toBe("판정 규칙");
+  });
 });

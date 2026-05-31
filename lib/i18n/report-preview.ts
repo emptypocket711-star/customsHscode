@@ -27,8 +27,11 @@ export type ReportPreviewDictionary = {
     disclaimer: string;
     pdfDescription: string;
     pdfTitle: string;
+    ruleVersionLabel: string;
+    sourceSnapshotLabel: string;
     sourceLocksDescription: string;
     sourceLocksTitle: string;
+    sourceVersionLabel: string;
     staffNotes: string;
   };
 };
@@ -54,15 +57,18 @@ const dictionaries = {
       requestId: "요청 ID"
     },
     page: {
-      description: "보고서 생성 시점의 source snapshot과 rule version을 잠그고, 내부 확인 상태를 고객 표시와 분리합니다.",
+      description: "보고서 생성 시점의 원천자료 보관본과 판정 규칙 버전을 고정하고, 내부 확인 상태를 고객 표시와 분리합니다.",
       title: "리포트 미리보기"
     },
     sections: {
       disclaimer: "고지사항",
       pdfDescription: "PDF 라이브러리 도입 전 단계입니다. 현재는 브라우저 인쇄용 레이아웃만 제공합니다.",
       pdfTitle: "PDF 출력",
-      sourceLocksDescription: "보고서 생성 시점의 원천 snapshot과 rule version입니다.",
-      sourceLocksTitle: "Source Locks",
+      ruleVersionLabel: "판정 규칙",
+      sourceSnapshotLabel: "자료 보관본",
+      sourceLocksDescription: "보고서 생성 시점에 사용한 공식 자료와 판정 규칙을 고정해 표시합니다.",
+      sourceLocksTitle: "근거 자료 고정",
+      sourceVersionLabel: "자료 버전",
       staffNotes: "내부 확인 메모"
     }
   },
@@ -93,8 +99,11 @@ const dictionaries = {
       disclaimer: "Notice",
       pdfDescription: "PDF library integration is not enabled yet. This page currently provides a browser print layout only.",
       pdfTitle: "PDF output",
+      ruleVersionLabel: "Rule version",
+      sourceSnapshotLabel: "Source snapshot",
       sourceLocksDescription: "Source snapshots and rule versions at the time this report was generated.",
       sourceLocksTitle: "Source Locks",
+      sourceVersionLabel: "Source version",
       staffNotes: "Internal check notes"
     }
   },
@@ -125,8 +134,11 @@ const dictionaries = {
       disclaimer: "告知事项",
       pdfDescription: "PDF库尚未接入。目前仅提供浏览器打印用版式。",
       pdfTitle: "PDF输出",
+      ruleVersionLabel: "判定规则",
+      sourceSnapshotLabel: "资料快照",
       sourceLocksDescription: "报告生成时的来源快照和规则版本。",
-      sourceLocksTitle: "Source Locks",
+      sourceLocksTitle: "依据资料锁定",
+      sourceVersionLabel: "资料版本",
       staffNotes: "内部确认备注"
     }
   }

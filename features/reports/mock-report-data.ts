@@ -49,7 +49,7 @@ export const mockSourceLocks: ReportSourceLock[] = [
   },
   {
     id: "lock-import-rules-001",
-    sourceName: "HS FINDER mock import rules",
+    sourceName: "HS FINDER 수입 진단 규칙(샘플)",
     sourceUrl: "internal://mock/import-diagnosis",
     sourceVersion: "mock-import-rules-2026",
     sourceSnapshotId: "snapshot-import-rules-mock-2026",
@@ -58,7 +58,7 @@ export const mockSourceLocks: ReportSourceLock[] = [
   },
   {
     id: "lock-export-rules-001",
-    sourceName: "HS FINDER mock export rules",
+    sourceName: "HS FINDER 수출 진단 규칙(샘플)",
     sourceUrl: "internal://mock/export-diagnosis",
     sourceVersion: "mock-export-rules-2026",
     sourceSnapshotId: "snapshot-export-rules-mock-2026",
