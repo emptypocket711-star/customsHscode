@@ -124,7 +124,7 @@ export function NoticeManagementPanel({ notices }: { notices: AppNotice[] }) {
         <CardHeader
           title="공지 현황"
           description="평소에는 노출 상태만 확인하고, 작성·수정이 필요할 때 항목을 펼쳐서 관리합니다."
-          action={<Badge tone="warning">developer only</Badge>}
+          action={<Badge tone="warning">운영자 전용</Badge>}
         />
         <CardBody className="grid gap-4">
           <div className="grid gap-2 sm:grid-cols-4">
@@ -157,7 +157,7 @@ export function NoticeManagementPanel({ notices }: { notices: AppNotice[] }) {
           type="button"
         >
           <span>
-            <span className="block text-base font-semibold text-slate-950">공지 작성</span>
+            <span className="block text-base font-semibold text-slate-950">새 공지 등록</span>
             <span className="mt-1 block text-sm text-slate-600">새 공지는 필요할 때만 열어서 등록합니다.</span>
           </span>
           <ChevronDown
@@ -176,7 +176,7 @@ export function NoticeManagementPanel({ notices }: { notices: AppNotice[] }) {
                 type="submit"
               >
                 <Save aria-hidden="true" size={16} />
-                {upsertPending ? "저장 중" : "공지 작성"}
+                {upsertPending ? "저장 중" : "새 공지 등록"}
               </button>
             </form>
           </CardBody>
@@ -252,7 +252,7 @@ export function NoticeManagementPanel({ notices }: { notices: AppNotice[] }) {
                       type="submit"
                     >
                       <Trash2 aria-hidden="true" size={16} />
-                      삭제
+                      공지 삭제
                     </button>
                   </div>
                 </form>
