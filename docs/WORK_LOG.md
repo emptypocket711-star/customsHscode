@@ -1886,3 +1886,24 @@
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 - `E2E_BASE_URL=https://hsfinder.co.kr npm run e2e:product-supplement`
 - Playwright 실사이트 확인: 일반 테스트 계정은 `/operations/health`에서 접근 차단 유지, 운영 UI 미노출
+
+### API001/API012 정기 작업 상태 운영 표시
+
+- 이전 작업은 반입계 출력 실패를 운영자가 이해할 수 있는 상태로 요약한 것이고, 이번 작업은 API001 화물 감시와 API012 관세환율 수집 정기 작업의 성공/실패를 운영 화면에 남긴 것이다.
+- `protected_job_events` 테이블을 추가하고 service role만 insert, developer만 read 하도록 RLS를 설정했다.
+- `/api/jobs/cargo-watch`와 `/api/jobs/exchange-rates` 실행 결과를 성공/실패, 소요시간, 짧은 메시지, 민감하지 않은 집계 metadata로 저장한다.
+- `/operations/health`의 오늘 할 일과 상세 진단에 `외부 API 정기 작업 상태`를 추가했다.
+- 운영자는 `정상`, `주의`, `조치 필요`만 먼저 보고, 개발자용 실행 상세는 접힌 표에서 확인하도록 했다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test -- server/repositories/protected-job-event.repository.test.ts server/repositories/lookup-governance.test.ts server/operations/environment-health.service.test.ts`
+- `npm run build`
+- Supabase production DB에 `20260531011000_protected_job_events.sql` migration 적용
+- `vercel env run -e production -- npm run health:db`
+- Vercel production deployment: `customs-hscode-pktutpnjz-koo-apps.vercel.app`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
+- `E2E_BASE_URL=https://hsfinder.co.kr npm run e2e:product-supplement`
+- Playwright 실사이트 확인: 일반 테스트 계정은 `/operations/health`에서 접근 차단 유지, 운영 UI 미노출
