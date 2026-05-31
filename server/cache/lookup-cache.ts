@@ -166,12 +166,14 @@ export async function cachedLookup<T>({
   ttlMs,
   load,
   shouldCache = () => true,
+  valueTtlMs,
   now = Date.now()
 }: {
   key: string;
   ttlMs: number;
   load: () => Promise<T>;
   shouldCache?: (value: T) => boolean;
+  valueTtlMs?: (value: T) => number;
   now?: number;
 }): Promise<T> {
   if (hasUpstashRestEnv()) {
@@ -213,20 +215,21 @@ export async function cachedLookup<T>({
   const promise = load()
     .then((value) => {
       if (shouldCache(value)) {
-        cacheStore.set(key, { value, expiresAt: Date.now() + ttlMs });
+        const resolvedTtlMs = valueTtlMs?.(value) ?? ttlMs;
+        cacheStore.set(key, { value, expiresAt: Date.now() + resolvedTtlMs });
         pruneMemoryCache();
         logCacheEvent("set", key);
         if (hasUpstashRestEnv()) {
           const encoded = encodeCacheValue(value);
           if (encoded) {
             void upstashPipeline([
-              ["SETEX", `lookup:${key}`, Math.max(1, Math.ceil(ttlMs / 1000)), encoded]
+              ["SETEX", `lookup:${key}`, Math.max(1, Math.ceil(resolvedTtlMs / 1000)), encoded]
             ]).catch(() => null);
           }
         }
         if (shouldUseSupabaseCache(key)) {
           const encoded = encodeCacheValue(value);
-          if (encoded) void writeSupabaseCache(key, encoded, ttlMs);
+          if (encoded) void writeSupabaseCache(key, encoded, resolvedTtlMs);
         }
       }
       return value;

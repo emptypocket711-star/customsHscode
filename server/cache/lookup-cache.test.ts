@@ -87,6 +87,21 @@ describe("lookup cache", () => {
     expect(lookupCacheInternals.cacheStore.has("test:skip")).toBe(false);
   });
 
+  it("can assign a shorter ttl based on the loaded value", async () => {
+    clearLookupCache();
+
+    await cachedLookup({
+      key: "test:value-ttl",
+      ttlMs: 1000,
+      load: async () => [] as string[],
+      valueTtlMs: (value) => value.length ? 1000 : 100
+    });
+
+    const entry = lookupCacheInternals.cacheStore.get("test:value-ttl");
+
+    expect(entry?.expiresAt).toBeLessThanOrEqual(Date.now() + 100);
+  });
+
   it("encodes and decodes Map values for distributed cache compatibility", () => {
     const encoded = lookupCacheInternals.encodeCacheValue(new Map([["3304991000", [{ rate: "8%" }]]]));
     const decoded = lookupCacheInternals.decodeCacheValue<Map<string, Array<{ rate: string }>>>(encoded);

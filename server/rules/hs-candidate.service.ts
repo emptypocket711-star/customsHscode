@@ -1312,7 +1312,9 @@ export async function recommendHsCandidatesForProduct(input: ProductHsRecommenda
     key: productRecommendationCacheKey(input),
     ttlMs: Number(process.env.PRODUCT_RECOMMENDATION_CACHE_TTL_MS || 30 * 60 * 1000),
     load: () => recommendHsCandidatesForProductUncached(input),
-    shouldCache: (candidates) => candidates.length > 0
+    valueTtlMs: (candidates) => candidates.length > 0
+      ? Number(process.env.PRODUCT_RECOMMENDATION_CACHE_TTL_MS || 30 * 60 * 1000)
+      : Number(process.env.PRODUCT_RECOMMENDATION_EMPTY_CACHE_TTL_MS || 5 * 60 * 1000)
   });
 }
 
