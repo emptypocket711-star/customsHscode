@@ -720,24 +720,17 @@ export default async function OperationsHealthPage({
     : 0;
   const items = groups.flatMap((group) => group.items);
   const missingRequiredCount = items.filter((item) => item.status === "missing").length;
-  const configuredCount = items.filter((item) => item.status === "ok").length;
   const schemaStatusTone = schemaHealthReport.status === "ok" ? "success" : "warning";
   const schemaStatusLabel = schemaHealthReport.status === "ok" ? "정상" : schemaHealthReport.status === "warn" ? "주의" : "차단";
   const operationalSummary = [
     {
-      label: "배포 설정",
-      value: missingRequiredCount > 0 ? `${missingRequiredCount}건 확인` : "준비됨",
-      detail: `설정됨 ${configuredCount}건`,
-      tone: missingRequiredCount > 0 ? "warning" : "success"
+      label: "서비스 준비",
+      value: missingRequiredCount > 0 || schemaHealthReport.summary.blockerCount > 0 ? "확인 필요" : "정상",
+      detail: `설정 누락 ${missingRequiredCount} / DB 차단 ${schemaHealthReport.summary.blockerCount}`,
+      tone: missingRequiredCount > 0 || schemaHealthReport.summary.blockerCount > 0 ? "warning" : "success"
     },
     {
-      label: "DB 스키마",
-      value: schemaStatusLabel,
-      detail: `차단 ${schemaHealthReport.summary.blockerCount} / 주의 ${schemaHealthReport.summary.warnCount}`,
-      tone: schemaStatusTone
-    },
-    {
-      label: "HS snapshot",
+      label: "HS 데이터",
       value: snapshotBasisDate ?? "미확인",
       detail: domesticLookupSnapshotCoverage
         ? `HSK ${domesticLookupSnapshotCoverage.totalHsk10.toLocaleString("ko-KR")}건 / 갱신 ${domesticLookupSnapshotCoverage.lastRefreshedAt ? formatDate(domesticLookupSnapshotCoverage.lastRefreshedAt) : "-"}`
@@ -745,34 +738,16 @@ export default async function OperationsHealthPage({
       tone: snapshotIsToday ? "success" : "warning"
     },
     {
-      label: "worker",
-      value: backgroundJobRunSummary.latestStatus ? backgroundJobRunStatusLabel(backgroundJobRunSummary.latestStatus) : "-",
-      detail: `작업 실패 ${backgroundJobRunSummary.failedJobs}건`,
-      tone: backgroundJobRunSummary.failedJobs > 0 || backgroundJobRunSummary.latestStatus === "failed" ? "warning" : "success"
+      label: "자동 작업",
+      value: backgroundJobRunSummary.latestStatus ? backgroundJobRunStatusLabel(backgroundJobRunSummary.latestStatus) : "이력 없음",
+      detail: `진행 ${backgroundJobSummary.queued + backgroundJobSummary.running} / 실패 ${backgroundJobSummary.dead + backgroundJobRunSummary.failedJobs}`,
+      tone: backgroundJobSummary.dead > 0 || backgroundJobSummary.failed > 0 || backgroundJobRunSummary.failedJobs > 0 || backgroundJobRunSummary.latestStatus === "failed" ? "warning" : "success"
     },
     {
-      label: "작업 큐",
-      value: `${backgroundJobSummary.queued + backgroundJobSummary.running}건 진행`,
-      detail: `최종 실패 ${backgroundJobSummary.dead}건`,
-      tone: backgroundJobSummary.dead > 0 || backgroundJobSummary.failed > 0 ? "warning" : "success"
-    },
-    {
-      label: "운영 알림",
-      value: operationsAlertSummary.latestStatus ? operationsAlertStatusLabel(operationsAlertSummary.latestStatus) : "-",
-      detail: `발송 실패 ${operationsAlertSummary.failed}건`,
-      tone: operationsAlertSummary.failed > 0 ? "warning" : "success"
-    },
-    {
-      label: "운영 이슈",
+      label: "조치할 일",
       value: `${operationsIssueSummary.open}건 미해결`,
-      detail: `차단 ${operationsIssueSummary.blocker} / 주의 ${operationsIssueSummary.warning}`,
-      tone: operationsIssueSummary.open > 0 ? "warning" : "success"
-    },
-    {
-      label: "정리 후보",
-      value: `${totalRetentionCandidates}건`,
-      detail: operationsRetentionStatus ? `최근 확인 ${formatDate(operationsRetentionStatus.checkedAt)}` : "상태 미확인",
-      tone: totalRetentionCandidates > 0 || !operationsRetentionStatus ? "warning" : "success"
+      detail: `이슈 ${operationsIssueSummary.open} / 알림 실패 ${operationsAlertSummary.failed}`,
+      tone: operationsIssueSummary.open > 0 || operationsAlertSummary.failed > 0 ? "warning" : "success"
     },
     {
       label: "조회 품질",
@@ -799,11 +774,11 @@ export default async function OperationsHealthPage({
       <Card>
         <CardHeader
           title="핵심 운영 요약"
-          description="배포 설정, 스키마, worker, 알림, 보존 정책, 조회 품질을 한 번에 확인합니다."
+          description="매일 볼 판단 항목만 표시합니다. 세부 환경값, 스키마, worker 이력은 상세 진단에 접어 두었습니다."
           action={<Badge tone={operationalSummary.some((item) => item.tone === "warning") ? "warning" : "success"}>점검 {operationalSummary.filter((item) => item.tone === "warning").length}건</Badge>}
         />
         <CardBody>
-          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-5">
             {operationalSummary.map((item) => (
               <div key={item.label} className="rounded-md border border-slate-200 bg-white px-3 py-3">
                 <div className="flex items-start justify-between gap-2">
