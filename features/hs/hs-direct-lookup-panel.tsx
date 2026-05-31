@@ -995,7 +995,7 @@ function ProductClassificationFlowPanel({
       <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm font-semibold text-blue-950">
         <span className="inline-flex items-center gap-2">
           <CheckCircle2 aria-hidden="true" size={17} />
-          AI 분류 요약
+          AI 분류 흐름 요약
           <Badge tone={hasCandidates ? "success" : "warning"}>{hasCandidates ? "완료" : "보완 필요"}</Badge>
         </span>
         <span className="text-xs font-medium text-blue-800">{productName}</span>
