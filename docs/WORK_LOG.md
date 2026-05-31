@@ -1701,3 +1701,23 @@
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 - Playwright 실사이트 검색: `텀블러` 6483ms / 후보 2개, `가방` 6250ms / 후보 1개, `손선풍기` 5844ms / 후보 1개, `핸드크림` 6029ms / 후보 1개
 - Playwright 실사이트 검색: `사탕` 7551ms / `HS 1704`, `초콜릿 사탕` 6685ms / `HS 1704`
+
+### HS explorer snapshot payload 축소와 운영 화면 정리
+
+- 이전 작업은 앱 서버에서 불필요한 후속 조회를 줄인 것이고, 이번 작업은 HS4/HS6 explorer RPC가 내려주는 nested HSK child payload 자체를 줄인 것이다.
+- `lookup_hs6_explorer`, `lookup_hs4_explorer`가 화면에 쓰지 않는 `internal_taxes`, coverage flags, derived count, refresh metadata를 child JSON에서 제거하도록 migration을 추가하고 운영 DB에 적용했다.
+- 4자리/6자리 탐색 화면에 필요한 관세율·요건 요약은 유지하고, 10자리 상세조회는 기존 full detail RPC를 계속 사용한다.
+- 운영 홈에서 조회 품질 로그는 점검 대상이 있을 때만 자동으로 펼치고, 정상 상태에서는 summary만 보이도록 접었다.
+- 운영 수동 명령의 production smoke 예상 결과를 현재 10개 경로 기준으로 정정했다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `npm run health`
+- `npm test -- features/hs/import-tariff-display.test.ts`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
+- `npm run e2e:product-supplement`
+- Playwright 실사이트 조회: `1704`, `170490`, `1704902090`
+- SQL 운영 확인: HS4/HS6 explorer payload에서 `internal_taxes`, `coverage_flags` 제거 및 `tariff_rates` 유지
