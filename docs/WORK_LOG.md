@@ -1806,3 +1806,22 @@
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 - `E2E_BASE_URL=https://hsfinder.co.kr npm run e2e:product-supplement`
 - Playwright 실사이트 확인: 테스트 계정은 `/operations/users`, `/operations/notices`, `/legal-updates`에서 개발자 전용 접근 차단 유지
+
+### 사용자 관리 상세 행 밀도 축소
+
+- 이전 작업은 관리 화면 상단의 공통 안내 카드를 접은 것이고, 이번 작업은 `/operations/users`에서 특정 사용자를 펼쳤을 때 보이는 긴 상세 조작 영역을 나눈 것이다.
+- 사용자 ID, 가입일, 마지막 로그인은 즉시 보이게 유지했다.
+- 이메일, 이름, 권한, 회원 유형, 회사 정보, 허용 IP 수 수정 폼은 `기본정보 수정` 접힘 영역으로 이동했다.
+- `최근 접속 이력`과 `테스트·위험 작업`은 별도 접힘 영역으로 유지해 평상시 운영 확인과 위험 조작을 분리했다.
+- 기능은 제거하지 않았다. 저장, 테스트 로그인 링크 생성, 사용자 삭제 흐름은 기존 server action을 그대로 사용한다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test -- server/repositories/lookup-governance.test.ts`
+- `npm run build`
+- Vercel production deployment: `customs-hscode-4ub93icf7-koo-apps.vercel.app`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
+- `E2E_BASE_URL=https://hsfinder.co.kr npm run e2e:product-supplement`
+- Playwright 실사이트 확인: 일반 테스트 계정은 `/operations/users`에서 접근 차단 유지, 운영 UI 미노출
