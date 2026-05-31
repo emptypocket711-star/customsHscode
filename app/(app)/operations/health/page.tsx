@@ -130,7 +130,7 @@ const operationsManualCommands = [
     command: "SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production",
     useWhen: "배포 후 실제 도메인의 로그인 보호와 주요 route 응답을 확인할 때 사용합니다.",
     purpose: "로그인 보호와 주요 route 응답 상태를 빠르게 확인합니다.",
-    expected: "summary total=10 success=10 failed=0이면 정상입니다."
+    expected: "summary total=9 success=9 failed=0이면 정상입니다."
   }
 ];
 
@@ -144,11 +144,24 @@ const operationsSectionLinks = [
     href: "#lookup-quality",
     label: "조회 품질",
     detail: "품명 검색 품질"
+  }
+];
+
+const operationsUsageGuide = [
+  {
+    label: "매일",
+    title: "운영 이슈·조회 품질",
+    detail: "사용자 검색에서 반복되는 문제와 미해결 이슈만 먼저 확인합니다."
   },
   {
-    href: "#advanced-operations",
-    label: "상세 진단",
-    detail: "환경·스키마·worker"
+    label: "가끔",
+    title: "공지·계정·자료 관리",
+    detail: "공지 노출, 테스트 계정, 법령·뉴스 자료 수집이 필요할 때만 엽니다."
+  },
+  {
+    label: "배포 후",
+    title: "상세 진단",
+    detail: "환경변수, DB 스키마, worker, 운영 명령은 장애 대응이나 배포 검증 때만 확인합니다."
   }
 ];
 
@@ -796,10 +809,10 @@ export default async function OperationsHealthPage({
       <Card>
         <CardHeader
           title="오늘 볼 항목"
-          description="1인 운영 기준으로 평소에는 운영 이슈와 조회 품질만 먼저 확인합니다."
+          description="1인 운영 기준으로 매일 확인할 항목만 남겼습니다. 상세 진단은 장애 대응이나 배포 후 검증 때만 펼칩니다."
         />
         <CardBody>
-          <nav className="grid gap-2 sm:grid-cols-3" aria-label="운영 핵심 섹션">
+          <nav className="grid gap-2 sm:grid-cols-2" aria-label="운영 핵심 섹션">
             {operationsSectionLinks.map((item) => (
               <a
                 className="rounded-md border border-slate-200 bg-white px-3 py-3 text-sm transition hover:border-blue-200 hover:bg-blue-50"
@@ -811,6 +824,15 @@ export default async function OperationsHealthPage({
               </a>
             ))}
           </nav>
+          <div className="mt-4 grid gap-2 border-t border-slate-100 pt-4 lg:grid-cols-3">
+            {operationsUsageGuide.map((item) => (
+              <div className="rounded-md bg-slate-50 px-3 py-3 text-sm" key={item.label}>
+                <p className="text-xs font-semibold text-slate-500">{item.label}</p>
+                <p className="mt-1 font-semibold text-slate-950">{item.title}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">{item.detail}</p>
+              </div>
+            ))}
+          </div>
         </CardBody>
       </Card>
 
