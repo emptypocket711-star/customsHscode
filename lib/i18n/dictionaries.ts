@@ -34,6 +34,7 @@ type ChromeDictionary = {
     menuHint: string;
     sections: {
       operations: string;
+      resources: string;
       secondary: string;
       workspace: string;
     };
@@ -69,7 +70,7 @@ const dictionaries = {
         legalUpdates: "자료 관리",
         notices: "공지사항",
         staffReview: "검토 큐",
-        tradeNews: "무역 뉴스",
+        tradeNews: "무역 정보",
         usedCarExport: "중고차 수출",
         users: "사용자 관리"
       },
@@ -77,6 +78,7 @@ const dictionaries = {
       menuHint: "조회 화면 이동",
       sections: {
         operations: "관리",
+        resources: "정보·자료",
         secondary: "실무 도구",
         workspace: "업무 조회"
       }
@@ -110,7 +112,7 @@ const dictionaries = {
         legalUpdates: "Data Management",
         notices: "Notices",
         staffReview: "Review Queue",
-        tradeNews: "Trade News",
+        tradeNews: "Trade Resources",
         usedCarExport: "Used-Car Export",
         users: "User Management"
       },
@@ -118,6 +120,7 @@ const dictionaries = {
       menuHint: "Open workflow",
       sections: {
         operations: "Operations",
+        resources: "Resources",
         secondary: "Practical Tools",
         workspace: "Workflows"
       }
@@ -159,6 +162,7 @@ const dictionaries = {
       menuHint: "切换页面",
       sections: {
         operations: "运营",
+        resources: "资讯资料",
         secondary: "实务工具",
         workspace: "业务查询"
       }

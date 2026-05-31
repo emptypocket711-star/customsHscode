@@ -35,7 +35,7 @@ export type TradeNewsDictionary = {
 const dictionaries = {
   "ko-KR": {
     categories: {
-      auxiliary: { label: "보조 뉴스", description: "뉴스 검색 API 등 보조 검색 소스" },
+      auxiliary: { label: "보조 자료", description: "뉴스 검색 API 등 보조 확인 소스" },
       customs: { label: "관세/통관", description: "관세청 보도자료와 통관·원산지·품목분류 관련 소식" },
       global: { label: "국제통상", description: "WTO 등 국제기구의 무역 규범·분쟁·통상 뉴스" },
       government: { label: "정부 정책", description: "정부 보도자료 중 무역 실무자가 확인할 만한 발표" },
@@ -65,18 +65,18 @@ const dictionaries = {
     },
     hero: {
       countryFilter: "국가 필터",
-      eyebrow: "무역 뉴스",
-      lead: "국가를 선택하면 해당 국가명이 포함된 KOTRA·정부·국제통상 글만 모아 보여줍니다. 원문을 열기 전 제목과 짧은 요약을 먼저 확인할 수 있습니다.",
-      title: "국가별 주요 무역 이슈를 카드로 확인합니다."
+      eyebrow: "정보·자료",
+      lead: "업무 판단 결과가 아니라 공식 출처 원문을 빠르게 찾기 위한 자료 모음입니다. 국가를 선택하면 해당 국가명이 포함된 KOTRA·정부·국제통상 글을 먼저 확인할 수 있습니다.",
+      title: "국가별 무역 이슈와 공식자료를 확인합니다."
     },
     page: {
-      description: "관세, 통관, 통상, 공급망, 국제통상 뉴스를 공식 출처 중심으로 모아봅니다.",
-      title: "무역 뉴스"
+      description: "관세, 통관, 통상, 공급망, 국제통상 관련 공식 출처 글을 정보 자료로 모아봅니다.",
+      title: "무역 정보·뉴스"
     }
   },
   "en-US": {
     categories: {
-      auxiliary: { label: "Auxiliary news", description: "Supplementary search sources such as news-search APIs" },
+      auxiliary: { label: "Auxiliary resources", description: "Supplementary reference sources such as news-search APIs" },
       customs: { label: "Customs / clearance", description: "Customs authority releases and classification, origin, and clearance-related news" },
       global: { label: "Global trade", description: "Trade rules, disputes, and international trade news from WTO and other organizations" },
       government: { label: "Government policy", description: "Government releases worth checking for trade operations" },
@@ -106,18 +106,18 @@ const dictionaries = {
     },
     hero: {
       countryFilter: "Country filter",
-      eyebrow: "Trade news",
-      lead: "Select a country to focus KOTRA, government, and international trade articles that mention it. Review the title and short summary before opening the original.",
-      title: "Review key trade issues by country in card format."
+      eyebrow: "Resources",
+      lead: "This is a source-finding resource, not an operational decision result. Select a country to focus KOTRA, government, and international trade articles that mention it.",
+      title: "Review country trade issues and official resources."
     },
     page: {
-      description: "Collect customs, clearance, trade, supply-chain, and international trade news from official sources.",
-      title: "Trade News"
+      description: "Collect customs, clearance, trade, supply-chain, and international trade items from official sources as reference material.",
+      title: "Trade Resources & News"
     }
   },
   "zh-CN": {
     categories: {
-      auxiliary: { label: "辅助新闻", description: "新闻搜索API等辅助检索来源" },
+      auxiliary: { label: "辅助资料", description: "新闻搜索API等辅助确认来源" },
       customs: { label: "海关/通关", description: "海关公告及通关、原产地、品目归类相关消息" },
       global: { label: "国际通商", description: "WTO等国际组织的贸易规则、争端和通商新闻" },
       government: { label: "政府政策", description: "贸易实务人员可关注的政府发布内容" },
@@ -147,13 +147,13 @@ const dictionaries = {
     },
     hero: {
       countryFilter: "国家筛选",
-      eyebrow: "贸易新闻",
-      lead: "选择国家后，将汇集包含该国家名称的KOTRA、政府和国际通商文章。打开原文前可先查看标题和简短摘要。",
-      title: "以卡片形式查看各国主要贸易议题。"
+      eyebrow: "资讯资料",
+      lead: "这是用于快速查找官方来源原文的资料汇总，并非业务判断结果。选择国家后，可优先查看包含该国家名称的KOTRA、政府和国际通商文章。",
+      title: "查看各国贸易议题和官方资料。"
     },
     page: {
-      description: "以官方来源为中心汇集海关、通关、通商、供应链和国际通商新闻。",
-      title: "贸易新闻"
+      description: "以官方来源为中心汇集海关、通关、通商、供应链和国际通商相关资料。",
+      title: "贸易资讯·新闻"
     }
   }
 } satisfies Record<AppLocale, TradeNewsDictionary>;

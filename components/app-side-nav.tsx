@@ -37,7 +37,10 @@ const primaryNavItems: NavItem[] = [
 const secondaryNavItems: NavItem[] = [
   { href: "/hs/batch", labelKey: "hsBatch", icon: FileSpreadsheet },
   { href: "/duty-estimator", labelKey: "dutyEstimator", icon: Calculator },
-  { href: "/used-car-export", labelKey: "usedCarExport", icon: Car },
+  { href: "/used-car-export", labelKey: "usedCarExport", icon: Car }
+];
+
+const resourceNavItems: NavItem[] = [
   { href: "/trade-news", labelKey: "tradeNews", icon: Newspaper }
 ];
 
@@ -162,6 +165,7 @@ export function AppSideNav({
         <nav className="mt-2 grid gap-3 rounded-md border border-slate-200 bg-white p-2 shadow-sm">
           <NavGroup items={primaryNavItems} labels={dictionary.nav.items} pathname={pathname} title={dictionary.nav.sections.workspace} />
           <NavDetailsGroup items={secondaryNavItems} labels={dictionary.nav.items} pathname={pathname} title={dictionary.nav.sections.secondary} />
+          <NavDetailsGroup items={resourceNavItems} labels={dictionary.nav.items} pathname={pathname} title={dictionary.nav.sections.resources} />
           {showOperations ? <NavGroup items={operationNavItems} labels={dictionary.nav.items} pathname={pathname} title={dictionary.nav.sections.operations} /> : null}
         </nav>
       </details>
@@ -194,6 +198,13 @@ export function AppSideNav({
             ) : null
           ) : (
             <NavDetailsGroup items={secondaryNavItems} labels={dictionary.nav.items} pathname={pathname} title={dictionary.nav.sections.secondary} />
+          )}
+          {collapsed ? (
+            hasActiveItem(pathname, resourceNavItems) ? (
+              <NavGroup collapsed items={resourceNavItems.filter((item) => isActivePath(pathname, item.href))} labels={dictionary.nav.items} pathname={pathname} title={dictionary.nav.sections.resources} />
+            ) : null
+          ) : (
+            <NavDetailsGroup items={resourceNavItems} labels={dictionary.nav.items} pathname={pathname} title={dictionary.nav.sections.resources} />
           )}
           {showOperations ? (
             <NavGroup
