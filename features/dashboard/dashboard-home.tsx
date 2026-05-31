@@ -151,7 +151,7 @@ export function DashboardHome({
 
       <DashboardWorkflowLinks locale={locale} />
 
-      <section className="grid min-w-0 gap-5 lg:grid-cols-3">
+      <section className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-3">
         <DashboardNoticeCard locale={locale} notices={notices} />
         <DashboardListCard
           description={dictionary.lists.favorites.description}

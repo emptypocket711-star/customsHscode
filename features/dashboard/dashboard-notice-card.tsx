@@ -177,7 +177,7 @@ export function DashboardNoticeCard({
   const dictionary = getDashboardDictionary(locale).notices;
 
   return (
-    <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface)] shadow-[var(--shadow-panel)]">
+    <div className="min-w-0 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface)] shadow-[var(--shadow-panel)]">
       <div className="flex items-start justify-between gap-3 border-b border-[var(--border-subtle)] px-5 py-4">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
