@@ -136,54 +136,19 @@ const operationsManualCommands = [
 
 const operationsSectionLinks = [
   {
-    href: "#manual-commands",
-    label: "수동 명령",
-    detail: "장애 대응·검증 명령"
-  },
-  {
-    href: "#integrations",
-    label: "외부 연동",
-    detail: "환경변수·호출 경로"
-  },
-  {
-    href: "#hs-lookup-snapshot",
-    label: "HS snapshot",
-    detail: "기준일·refresh"
-  },
-  {
-    href: "#schema-health",
-    label: "DB 스키마",
-    detail: "migration drift"
-  },
-  {
-    href: "#retention-health",
-    label: "보존 상태",
-    detail: "정리 후보"
-  },
-  {
-    href: "#background-jobs",
-    label: "작업 큐",
-    detail: "대기·실패 job"
-  },
-  {
-    href: "#worker-runs",
-    label: "worker 실행",
-    detail: "cron 실행 이력"
-  },
-  {
-    href: "#alert-events",
-    label: "운영 알림",
-    detail: "발송·생략·실패"
-  },
-  {
     href: "#issue-events",
     label: "운영 이슈",
-    detail: "반복 이슈·처리 상태"
+    detail: "지금 조치할 항목"
   },
   {
     href: "#lookup-quality",
     label: "조회 품질",
-    detail: "무결과·fallback"
+    detail: "품명 검색 품질"
+  },
+  {
+    href: "#advanced-operations",
+    label: "상세 진단",
+    detail: "환경·스키마·worker"
   }
 ];
 
@@ -837,11 +802,11 @@ export default async function OperationsHealthPage({
 
       <Card>
         <CardHeader
-          title="상세 점검 바로가기"
-          description="요약에서 확인이 필요한 항목을 발견하면 해당 상세 섹션으로 바로 이동합니다."
+          title="오늘 볼 항목"
+          description="1인 운영 기준으로 평소에는 운영 이슈와 조회 품질만 먼저 확인합니다."
         />
         <CardBody>
-          <nav className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4" aria-label="운영 상세 섹션">
+          <nav className="grid gap-2 sm:grid-cols-3" aria-label="운영 핵심 섹션">
             {operationsSectionLinks.map((item) => (
               <a
                 className="rounded-md border border-slate-200 bg-white px-3 py-3 text-sm transition hover:border-blue-200 hover:bg-blue-50"
@@ -856,6 +821,17 @@ export default async function OperationsHealthPage({
         </CardBody>
       </Card>
 
+      <details id="advanced-operations" className="scroll-mt-6 rounded-lg border border-slate-200 bg-white shadow-sm">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4">
+          <span>
+            <span className="block text-base font-semibold text-slate-950">상세 진단</span>
+            <span className="mt-1 block text-sm text-slate-500">환경변수, 스키마, snapshot, worker, 알림, 수동 명령은 필요할 때만 펼쳐 확인합니다.</span>
+          </span>
+          <Badge tone={operationalSummary.some((item) => item.tone === "warning") ? "warning" : "success"}>
+            상세 확인 {operationalSummary.filter((item) => item.tone === "warning").length}건
+          </Badge>
+        </summary>
+        <div className="grid gap-5 border-t border-slate-200 bg-slate-50/45 p-4">
       <Card id="integrations" className="scroll-mt-6">
         <CardHeader
           title="외부 연동 준비 상태"
@@ -1331,6 +1307,8 @@ export default async function OperationsHealthPage({
           )}
         </CardBody>
       </Card>
+        </div>
+      </details>
 
       <Card id="issue-events" className="scroll-mt-6">
         <CardHeader
@@ -2155,38 +2133,42 @@ export default async function OperationsHealthPage({
       </Card>
 
       {groups.map((group) => (
-        <Card key={group.title}>
-          <CardHeader title={group.title} description={group.description} />
-          <CardBody className="p-0">
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-left text-sm">
-                <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
-                  <tr>
-                    <th className="px-5 py-3">항목</th>
-                    <th className="px-5 py-3">상태</th>
-                    <th className="px-5 py-3">값</th>
-                    <th className="px-5 py-3">설명</th>
+        <details className="rounded-lg border border-slate-200 bg-white shadow-sm" key={group.title}>
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4">
+            <span>
+              <span className="block font-semibold text-slate-950">{group.title}</span>
+              <span className="mt-1 block text-sm text-slate-500">{group.description}</span>
+            </span>
+            <Badge tone={group.items.some((item) => item.status === "missing") ? "warning" : "neutral"}>{group.items.length}개 항목</Badge>
+          </summary>
+          <div className="overflow-x-auto border-t border-slate-200">
+            <table className="min-w-full text-left text-sm">
+              <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
+                <tr>
+                  <th className="px-5 py-3">항목</th>
+                  <th className="px-5 py-3">상태</th>
+                  <th className="px-5 py-3">값</th>
+                  <th className="px-5 py-3">설명</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {group.items.map((item) => (
+                  <tr key={item.key}>
+                    <td className="px-5 py-4">
+                      <p className="font-semibold text-slate-950">{item.label}</p>
+                      <p className="mt-1 font-mono text-xs text-slate-500">{item.key}</p>
+                    </td>
+                    <td className="px-5 py-4">
+                      <Badge tone={statusTone(item.status)}>{statusLabel(item.status)}</Badge>
+                    </td>
+                    <td className="px-5 py-4 font-mono text-xs text-slate-700">{item.valuePreview}</td>
+                    <td className="max-w-xl px-5 py-4 text-slate-600">{item.description}</td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {group.items.map((item) => (
-                    <tr key={item.key}>
-                      <td className="px-5 py-4">
-                        <p className="font-semibold text-slate-950">{item.label}</p>
-                        <p className="mt-1 font-mono text-xs text-slate-500">{item.key}</p>
-                      </td>
-                      <td className="px-5 py-4">
-                        <Badge tone={statusTone(item.status)}>{statusLabel(item.status)}</Badge>
-                      </td>
-                      <td className="px-5 py-4 font-mono text-xs text-slate-700">{item.valuePreview}</td>
-                      <td className="max-w-xl px-5 py-4 text-slate-600">{item.description}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardBody>
-        </Card>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
       ))}
     </div>
   );
