@@ -36,13 +36,13 @@ export function HsDirectSubmitStatus({ submitLabel }: { submitLabel: string }) {
             <div>
               <p className="font-semibold">AI가 HS 분류 흐름을 검토하고 있습니다.</p>
               <p className="mt-1 text-xs leading-5 text-blue-900">
-                제품 의미 해석, 류·호 후보 검토, HSK 후보 정리, 조회 연결 가능성을 순서대로 확인합니다.
+                제품 의미 해석, 류·호 검토, HSK 정리, 조회 연결 가능성을 순서대로 확인합니다.
               </p>
             </div>
             <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-blue-800 ring-1 ring-blue-100">AI 분석 중</span>
           </div>
           <ol className="mt-3 grid gap-2 md:grid-cols-4">
-            {["제품 의미 해석", "류·호 후보 검토", "HSK 후보 정리", "관세율·요건 연결"].map((step, index) => (
+            {["제품 의미 해석", "류·호 검토", "HSK 정리", "관세율·요건 연결"].map((step, index) => (
               <li className="rounded-md border border-blue-100 bg-white px-3 py-2" key={step}>
                 <span className="font-mono text-xs font-semibold text-blue-700">{index + 1}</span>
                 <span className="ml-2 text-xs font-medium text-slate-800">{step}</span>

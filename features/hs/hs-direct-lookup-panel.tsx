@@ -1928,7 +1928,7 @@ function HsPrefixExplorerSummary({
       <p className="rounded-md border border-slate-200 bg-white px-3 py-2 leading-6 text-slate-700 lg:col-span-3">
         {mode === "hs4_explorer"
           ? "4자리 호는 최종 신고 세번이 아니므로, 하위 6자리 소호와 10자리 HSK를 좁혀 선택하는 탐색 화면으로 표시합니다."
-          : "6자리 소호는 국제 공통 기준입니다. 실제 국내 신고에는 하위 10자리 HSK 선택이 필요하므로 아래 후보 중 실제 품명과 가장 가까운 항목을 선택해 상세조회합니다."}
+          : "6자리 소호는 국제 공통 기준입니다. 실제 국내 신고에는 하위 10자리 HSK 선택이 필요하므로 아래 목록에서 실제 품명과 가장 가까운 항목을 선택해 상세조회합니다."}
       </p>
     </div>
   );
