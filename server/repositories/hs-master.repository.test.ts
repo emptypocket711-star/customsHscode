@@ -45,6 +45,61 @@ describe("hs master repository mock lookup", () => {
         }
       },
       standardNames: [{ name: "기타 플라스틱 제품", requiredSpec: "재질", sourceName: "표준품명", sourceVersion: "standard-v1" }],
+      importRequirements: [
+        {
+          type: "세관장확인",
+          name: "수입승인",
+          relatedLaw: "예시법",
+          agencyCode: "MOCK",
+          agency: "예시기관",
+          agencyContact: {
+            agencyCode: "MOCK",
+            agencyName: "예시기관",
+            phone: "02-0000-0000",
+            email: null,
+            websiteUrl: "https://example.com/agency",
+            note: null
+          },
+          procedureSummary: null,
+          playbook: {
+            applicationMethod: "전자민원",
+            requiredDocuments: ["신청서"],
+            expectedLeadTime: "3영업일",
+            exemptionPossibility: null,
+            commonRejectionReasons: [],
+            customerRequestTemplate: null,
+            staffChecklist: ["서류 확인"],
+            category: "approval",
+            riskLevel: "medium",
+            workflowType: "document",
+            workflowSteps: ["신청"],
+            sourceName: "내부 요건 플레이북",
+            sourceUrl: "internal://requirement_playbooks",
+            sourceVersion: "playbook-v1"
+          },
+          sourceName: "요건",
+          sourceVersion: "requirement-v1"
+        }
+      ],
+      originMarking: {
+        isTarget: true,
+        matchedPattern: "3926",
+        patternType: "hs4",
+        conditionText: null,
+        targetSourceName: "원산지표시 대상",
+        targetSourceUrl: "https://example.com/origin-target",
+        targetSourceVersion: "origin-target-v1",
+        method: {
+          matchedPattern: "3926",
+          itemName: "플라스틱 제품",
+          methodSummary: "현품에 원산지 표시",
+          note: null,
+          sourceName: "원산지표시 방법",
+          sourceUrl: "https://example.com/origin-method",
+          sourceVersion: "origin-method-v1"
+        },
+        methods: []
+      },
       siblings: [{ hskCode: "3926909000", koreanName: "기타", isSelected: true }]
     }, "2026-05-31");
 
@@ -53,6 +108,9 @@ describe("hs master repository mock lookup", () => {
     expect(result.tariffPreviews[0]?.label).toBe("기본세율");
     expect(result.tariffPreviews[0]?.rateText).toBe("8%");
     expect(result.importRequirements[0]?.type).toBe("세관장확인");
+    expect(result.importRequirements[0]?.agencyContact?.agencyName).toBe("예시기관");
+    expect(result.importRequirements[0]?.playbook?.sourceVersion).toBe("playbook-v1");
+    expect(result.originMarking?.method?.methodSummary).toBe("현품에 원산지 표시");
     expect(result.standardProductNames[0]?.sourceVersion).toBe("standard-v1");
     expect(result.classificationSiblings[0]?.isSelected).toBe(true);
   });

@@ -94,12 +94,12 @@ and status = 'published'
 1. Keep the existing repository as fallback.
 2. Add read-model tables and refresh functions.
 3. Populate read models from current published source data.
-4. Switch 10-digit lookup to snapshot-first/fallback-second.
-5. Switch 4/6 explorer lookup to snapshot-first/fallback-second.
+4. Switch 4/6 explorer lookup to snapshot-first/fallback-second.
+5. Switch 10-digit lookup to snapshot-first/fallback-second after detail parity.
 6. Split heavy sections into lazy-loaded server actions or API routes.
 
 ## Current Implementation Note
 
-The HS4/HS6 explorer modes can safely use snapshot-first lookup because those screens only need grouped child HSK rows and summary columns.
+The HS4/HS6 explorer modes use snapshot-first lookup because those screens only need grouped child HSK rows and summary columns.
 
-The HSK 10-digit detail RPC is available, but the app keeps full-detail fallback as the default until the snapshot contains detail parity for origin marking, requirement playbooks, agency contacts, statistics, and any user-visible legal-risk notes. It can be enabled with `HSK_DETAIL_SNAPSHOT_ENABLED=true` after parity verification.
+The HSK 10-digit detail RPC now includes the user-visible first-screen parity needed for snapshot-first lookup: standard product names, same-HS6 siblings, tariff previews, import requirements with agency contacts and playbooks, and origin marking target/method summaries. If a snapshot row is missing for the requested basis date, the repository falls back to the source-table composition path.

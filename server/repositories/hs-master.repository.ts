@@ -142,6 +142,8 @@ type HskLookupSnapshotRow = {
     sourceName?: string;
     sourceVersion?: string;
   }>;
+  importRequirements?: HsDirectLookupResult["importRequirements"];
+  originMarking?: HsDirectLookupResult["originMarking"];
   siblings?: Array<{
     hskCode?: string;
     koreanName?: string;
@@ -752,6 +754,21 @@ function mapSnapshotTariffs(rows: unknown[]): HsDirectLookupResult["tariffPrevie
 }
 
 function mapSnapshotRequirements(row: HskLookupSnapshotRow): HsDirectLookupResult["importRequirements"] {
+  if (Array.isArray(row.importRequirements)) {
+    return row.importRequirements.map((item) => ({
+      type: snapshotString(item.type, "-"),
+      name: snapshotString(item.name, "-"),
+      relatedLaw: snapshotString(item.relatedLaw, "-"),
+      agencyCode: typeof item.agencyCode === "string" ? item.agencyCode : null,
+      agency: typeof item.agency === "string" ? item.agency : null,
+      agencyContact: item.agencyContact ?? null,
+      procedureSummary: typeof item.procedureSummary === "string" ? item.procedureSummary : null,
+      playbook: item.playbook ?? null,
+      sourceName: snapshotString(item.sourceName, "-"),
+      sourceVersion: snapshotString(item.sourceVersion, "-")
+    }));
+  }
+
   const customs = snapshotArray(row.customs_confirmation_requirements).map((item) => {
     const requirement = item as {
       documentName?: unknown;
@@ -845,7 +862,7 @@ function mapSnapshotRowToResult(row: HskLookupSnapshotRow, basisDate: string): H
     })).filter((item) => item.hskCode),
     tariffPreviews: mapSnapshotTariffs(snapshotArray(row.tariff_rates)),
     importRequirements: mapSnapshotRequirements(row),
-    originMarking: null,
+    originMarking: row.originMarking ?? null,
     classificationCases: [],
     hierarchyPath
   };
@@ -873,7 +890,6 @@ async function lookupWithSnapshotRpc(
 ): Promise<HsDirectLookupResult[] | null> {
   const normalizedCode = normalizeHskCode(hskCode);
   if (!normalizedCode) return null;
-  if (normalizedCode.length > 6 && process.env.HSK_DETAIL_SNAPSHOT_ENABLED !== "true") return null;
 
   const rpcCall = normalizedCode.length < 6
     ? supabase.rpc("lookup_hs4_explorer", { p_hs4: normalizedCode, p_basis_date: basisDate })
