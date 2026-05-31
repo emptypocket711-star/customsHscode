@@ -14,15 +14,15 @@ type WorkflowLink = {
 const workflowLinks: WorkflowLink[] = [
   {
     group: "primary",
-    href: "/cargo",
-    id: "cargo",
-    tone: "amber"
-  },
-  {
-    group: "primary",
     href: "/hs/batch",
     id: "batch",
     tone: "emerald"
+  },
+  {
+    group: "primary",
+    href: "/cargo",
+    id: "cargo",
+    tone: "amber"
   },
   {
     group: "tools",
@@ -92,6 +92,9 @@ export function DashboardWorkflowLinks({ locale }: { locale: AppLocale }) {
                     <span>
                       <span className="block font-semibold text-[var(--text-primary)]">{dictionary.items[workflow.id].title}</span>
                       <span className="mt-1 block text-sm leading-5 text-[var(--text-secondary)]">{dictionary.items[workflow.id].description}</span>
+                      <span className="mt-2 block rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-medium leading-5 text-slate-600">
+                        {dictionary.whenLabel}: {dictionary.items[workflow.id].when}
+                      </span>
                     </span>
                     <span className="mt-auto inline-flex items-center gap-1 text-xs font-semibold text-blue-700">
                       {dictionary.open}

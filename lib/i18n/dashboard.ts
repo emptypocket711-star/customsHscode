@@ -64,6 +64,7 @@ export type DashboardDictionary = {
   };
   workflows: {
     open: string;
+    whenLabel: string;
     description: string;
     title: string;
     groups: {
@@ -74,6 +75,7 @@ export type DashboardDictionary = {
     items: Record<"batch" | "cargo" | "duty" | "trade-news" | "vehicle-spec", {
       description: string;
       title: string;
+      when: string;
     }>;
   };
 };
@@ -150,6 +152,7 @@ const dictionaries = {
     },
     workflows: {
       open: "열기",
+      whenLabel: "사용 시점",
       description: "상단 검색 이후 자주 이어지는 실무 작업입니다.",
       title: "후속 업무·실무 도구",
       groups: {
@@ -158,11 +161,11 @@ const dictionaries = {
         tools: "실무 도구"
       },
       items: {
-        batch: { description: "여러 품목을 한 번에 확인", title: "HS 일괄 조회" },
-        cargo: { description: "HBL 진행 상태와 알림", title: "적하목록 조회" },
-        duty: { description: "입력값 기준 관세·내국세 예비 산출", title: "예상 납세액 산출" },
-        "trade-news": { description: "무역 뉴스와 실무 참고자료 확인", title: "무역 정보" },
-        "vehicle-spec": { description: "제원·컨테이너·터미널 실무 확인", title: "중고차 수출" }
+        batch: { description: "여러 품목을 한 번에 확인", title: "HS 일괄 조회", when: "엑셀 품목이 여러 줄일 때" },
+        cargo: { description: "HBL 진행 상태와 알림", title: "적하목록 조회", when: "선적 후 통관 진행을 볼 때" },
+        duty: { description: "입력값 기준 관세·내국세 예비 산출", title: "예상 납세액 산출", when: "수입 전 비용을 가늠할 때" },
+        "trade-news": { description: "무역 뉴스와 실무 참고자료 확인", title: "무역 정보", when: "제도 변화와 시장 동향을 볼 때" },
+        "vehicle-spec": { description: "제원·컨테이너·터미널 실무 확인", title: "중고차 수출", when: "중고차 수출 실무를 확인할 때" }
       }
     }
   },
@@ -237,6 +240,7 @@ const dictionaries = {
     },
     workflows: {
       open: "Open",
+      whenLabel: "Use when",
       description: "Frequent follow-up work after the main search.",
       title: "Follow-up work and tools",
       groups: {
@@ -245,11 +249,11 @@ const dictionaries = {
         tools: "Practical tools"
       },
       items: {
-        batch: { description: "Check multiple items at once", title: "Batch HS lookup" },
-        cargo: { description: "HBL progress and alerts", title: "Cargo manifest" },
-        duty: { description: "Preliminary duty and tax estimate", title: "Estimated duties" },
-        "trade-news": { description: "Trade news and practical references", title: "Trade resources" },
-        "vehicle-spec": { description: "Vehicle specs, containers, and terminal checks", title: "Used-car export" }
+        batch: { description: "Check multiple items at once", title: "Batch HS lookup", when: "You have multiple spreadsheet lines" },
+        cargo: { description: "HBL progress and alerts", title: "Cargo manifest", when: "You need shipment progress" },
+        duty: { description: "Preliminary duty and tax estimate", title: "Estimated duties", when: "You need an import cost estimate" },
+        "trade-news": { description: "Trade news and practical references", title: "Trade resources", when: "You track policy and market changes" },
+        "vehicle-spec": { description: "Vehicle specs, containers, and terminal checks", title: "Used-car export", when: "You handle used-car export work" }
       }
     }
   },
@@ -324,6 +328,7 @@ const dictionaries = {
     },
     workflows: {
       open: "打开",
+      whenLabel: "使用场景",
       description: "主搜索之后常用的后续实务操作。",
       title: "后续业务和实务工具",
       groups: {
@@ -332,11 +337,11 @@ const dictionaries = {
         tools: "实务工具"
       },
       items: {
-        batch: { description: "一次确认多个品目", title: "HS批量查询" },
-        cargo: { description: "HBL进度和提醒", title: "舱单查询" },
-        duty: { description: "关税和内税的初步估算", title: "预计税费" },
-        "trade-news": { description: "查看贸易资讯和实务参考", title: "贸易资讯" },
-        "vehicle-spec": { description: "车辆参数、集装箱和码头实务确认", title: "二手车出口" }
+        batch: { description: "一次确认多个品目", title: "HS批量查询", when: "有多行商品资料时" },
+        cargo: { description: "HBL进度和提醒", title: "舱单查询", when: "需要确认货物进度时" },
+        duty: { description: "关税和内税的初步估算", title: "预计税费", when: "需要估算进口成本时" },
+        "trade-news": { description: "查看贸易资讯和实务参考", title: "贸易资讯", when: "关注政策和市场变化时" },
+        "vehicle-spec": { description: "车辆参数、集装箱和码头实务确认", title: "二手车出口", when: "处理中古车出口业务时" }
       }
     }
   }
