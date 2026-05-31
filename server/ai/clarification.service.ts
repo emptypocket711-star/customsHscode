@@ -37,9 +37,63 @@ function productInputText(input: ProductClarificationInput) {
   ].filter(Boolean).join("\n");
 }
 
+function uniqueStrings(values: string[], limit: number) {
+  return values
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .filter((value, index, items) => items.indexOf(value) === index)
+    .slice(0, limit);
+}
+
+function confidenceFromCandidates(candidates: HsCandidateRecommendation[]): AiClarificationResult["confidence"] {
+  const topScore = Math.max(...candidates.map((candidate) => candidate.confidenceScore));
+  if (topScore >= 0.82) return "high";
+  if (topScore >= 0.6) return "medium";
+  return "low";
+}
+
+function summarizeProductClarificationFromCandidates(
+  input: ProductClarificationInput,
+  redacted: RedactionResult,
+  allowedCandidateCodes: string[]
+): ProductClarificationResult | null {
+  if (!input.officialCandidates.length) return null;
+
+  const provider = getAiProvider();
+  const sortedCandidates = [...input.officialCandidates].sort((a, b) =>
+    b.confidenceScore - a.confidenceScore || a.hskCode.localeCompare(b.hskCode)
+  );
+  const missingQuestions = uniqueStrings([
+    ...sortedCandidates.flatMap((candidate) => candidate.requiredQuestions),
+    "제품의 실제 용도, 재질, 구성, 완제품/부분품 여부를 확인해 주세요."
+  ], 6);
+  const riskNotes = uniqueStrings([
+    ...sortedCandidates.map((candidate) => candidate.riskNotes),
+    "AI 보조 분석은 HS CODE를 확정하지 않으며, 실제 신고 전에는 품목분류 근거 확인이 필요합니다.",
+    "관세율, 수입요건, FTA 적용 여부는 선택된 HSK 기준 공식 데이터로 별도 확인해야 합니다."
+  ], 5);
+
+  return {
+    provider: provider.name,
+    model: provider.model,
+    confidence: confidenceFromCandidates(sortedCandidates),
+    summary: sortedCandidates.length > 1
+      ? "입력 품명과 공식 데이터 후보를 비교해 우선 검토할 HS CODE 후보와 보완 항목을 정리했습니다."
+      : "입력 품명 기준으로 가장 유력한 HS CODE 후보와 확인이 필요한 보완 항목을 정리했습니다.",
+    missingQuestions,
+    suggestedCandidateCodes: sortedCandidates.slice(0, 5).map((candidate) => candidate.hskCode),
+    riskNotes,
+    redaction: redacted.redactionCounts,
+    allowedCandidateCodes
+  };
+}
+
 export async function analyzeProductClarification(input: ProductClarificationInput): Promise<ProductClarificationResult> {
   const allowedCandidateCodes = input.officialCandidates.map((candidate) => candidate.hskCode);
   const redacted = redactSensitiveText(productInputText(input));
+  const candidateSummary = summarizeProductClarificationFromCandidates(input, redacted, allowedCandidateCodes);
+  if (candidateSummary) return candidateSummary;
+
   if (!input.officialCandidates.length) {
     const normalization = await normalizeProductSearchInput({
       productName: input.productName,

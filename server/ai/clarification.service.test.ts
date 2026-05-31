@@ -6,7 +6,7 @@ import {
   normalizeProductSearchInput,
   prioritizePrincipalArticleHsHints
 } from "@/server/ai/product-search-normalization.service";
-import { aiProviderInternals, OpenAiProvider } from "@/server/ai/provider";
+import { aiProviderInternals, MockAiProvider, OpenAiProvider } from "@/server/ai/provider";
 import { redactSensitiveText } from "@/server/ai/redaction";
 import { extractShipmentDocument } from "@/server/rules/document-extraction.service";
 import type { HsCandidateRecommendation } from "@/server/rules/hs-candidate.service";
@@ -47,6 +47,7 @@ describe("redactSensitiveText", () => {
 
 describe("analyzeProductClarification", () => {
   it("keeps AI suggested candidate codes inside the official candidate set", async () => {
+    const clarifySpy = vi.spyOn(MockAiProvider.prototype, "clarify");
     const result = await analyzeProductClarification({
       productName: "cream",
       basisDate: "2026-05-24",
@@ -57,6 +58,7 @@ describe("analyzeProductClarification", () => {
     expect(result.allowedCandidateCodes).toEqual(["3304991000"]);
     expect(result.suggestedCandidateCodes).toEqual(["3304991000"]);
     expect(result.missingQuestions.length).toBeGreaterThan(0);
+    expect(clarifySpy).not.toHaveBeenCalled();
   });
 
   it("keeps provisional GPT HS directions when official candidate expansion is empty", async () => {
