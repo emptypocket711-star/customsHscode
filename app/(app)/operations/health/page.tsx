@@ -1940,13 +1940,24 @@ export default async function OperationsHealthPage({
         </CardBody>
       </Card>
 
-      <Card id="lookup-quality" className="scroll-mt-6">
-        <CardHeader
-          title="최근 조회 품질 로그"
-          description="품명 AI 검색과 후보 생성의 실패·무결과·fallback 흐름을 원문 없이 확인합니다. 원문 품명, 이메일, 문서 내용은 저장하지 않습니다."
-          action={<Badge tone={lookupIssueCount > 0 ? "warning" : "success"}>점검 대상 {lookupIssueCount}건</Badge>}
-        />
-        <CardBody className="p-0">
+      <details id="lookup-quality" className="scroll-mt-6 rounded-lg border border-slate-200 bg-white shadow-sm" open={lookupIssueCount > 0}>
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4">
+          <span>
+            <span className="block text-base font-semibold text-slate-950">조회 품질 로그</span>
+            <span className="mt-1 block text-sm text-slate-500">
+              점검 대상이 있을 때만 자동으로 펼칩니다. 정상 로그와 원시 telemetry 표는 필요할 때 확인합니다.
+            </span>
+          </span>
+          <Badge tone={lookupIssueCount > 0 ? "warning" : "success"}>점검 대상 {lookupIssueCount}건</Badge>
+        </summary>
+        <div className="border-t border-slate-200 bg-slate-50/45 p-4">
+          <Card>
+            <CardHeader
+              title="최근 조회 품질 로그"
+              description="품명 AI 검색과 후보 생성의 실패·무결과·fallback 흐름을 원문 없이 확인합니다. 원문 품명, 이메일, 문서 내용은 저장하지 않습니다."
+              action={<Badge tone={lookupIssueCount > 0 ? "warning" : "success"}>점검 대상 {lookupIssueCount}건</Badge>}
+            />
+            <CardBody className="p-0">
           {lookupTelemetryEvents.length ? (
             <>
               <div className="grid gap-2 border-b border-slate-200 bg-slate-50 p-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
@@ -2247,8 +2258,10 @@ export default async function OperationsHealthPage({
               저장된 조회 품질 로그가 없습니다. 운영에서 `LOOKUP_TELEMETRY_ENABLED=true`와 `SUPABASE_SERVICE_ROLE_KEY`가 설정되어야 기록됩니다.
             </div>
           )}
-        </CardBody>
-      </Card>
+            </CardBody>
+          </Card>
+        </div>
+      </details>
 
       {groups.map((group) => (
         <details className="rounded-lg border border-slate-200 bg-white shadow-sm" key={group.title}>
