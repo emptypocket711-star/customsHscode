@@ -105,6 +105,13 @@ const dataManagementGuide = [
   }
 ];
 
+type DataActionItem = {
+  title: string;
+  detail: string;
+  section: string;
+  tone: "success" | "warning" | "info" | "neutral";
+};
+
 export async function LegalUpdateCenter() {
   const dashboard = getLegalUpdateDashboard();
   const basisDate = getSeoulDateString();
@@ -112,6 +119,52 @@ export async function LegalUpdateCenter() {
     getSourceVersionInventory(),
     loadDestinationCoverage()
   ]);
+  const actionItems: DataActionItem[] = [];
+
+  if (dashboard.summary.blockedCount > 0) {
+    actionItems.push({
+      title: "게시 차단 변경 확인",
+      detail: `${dashboard.summary.blockedCount}건이 담당자 검토 전이라 게시 전환을 막고 있습니다.`,
+      section: "변경 확인·영향 기록",
+      tone: "warning"
+    });
+  }
+
+  if (inventory.summary.diagnosticCounts.danger > 0) {
+    actionItems.push({
+      title: "원천자료 적재 문제 확인",
+      detail: `${inventory.summary.diagnosticCounts.danger}개 원천에서 행 수, 버전, 게시 상태 중 점검할 항목이 있습니다.`,
+      section: "상세 데이터 점검",
+      tone: "warning"
+    });
+  }
+
+  if (dashboard.summary.criticalCount > 0) {
+    actionItems.push({
+      title: "중요 변경 영향 확인",
+      detail: `${dashboard.summary.criticalCount}건의 중요 변경이 기존 진단 결과에 영향을 줄 수 있습니다.`,
+      section: "변경 확인·영향 기록",
+      tone: "warning"
+    });
+  }
+
+  if (inventory.domesticLookupCoverage.missingTariffRates > 0) {
+    actionItems.push({
+      title: "10자리 조회 스냅샷 보완",
+      detail: `관세율이 연결되지 않은 HSK가 ${inventory.domesticLookupCoverage.missingTariffRates.toLocaleString("ko-KR")}건 있습니다.`,
+      section: "상세 데이터 점검",
+      tone: "info"
+    });
+  }
+
+  if (!actionItems.length) {
+    actionItems.push({
+      title: "오늘 즉시 조치할 자료 이슈 없음",
+      detail: "게시 차단, 중요 변경, 적재 문제가 없으면 갱신·게시 도구는 열지 않아도 됩니다.",
+      section: "자료 상태 요약",
+      tone: "success"
+    });
+  }
 
   return (
     <div className="grid gap-5">
@@ -138,6 +191,35 @@ export async function LegalUpdateCenter() {
             <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
               <p className="text-sm font-medium text-slate-600">적재 문제</p>
               <p className="mt-2 text-3xl font-semibold text-slate-950">{inventory.summary.diagnosticCounts.danger}</p>
+            </div>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-white">
+            <div className="flex flex-col gap-2 border-b border-slate-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-slate-950">지금 볼 자료 관리 작업</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">평소에는 이 목록만 보고, 표시된 위치의 접힌 영역만 펼치면 됩니다.</p>
+              </div>
+              <Badge tone={actionItems.some((item) => item.tone === "warning") ? "warning" : "success"}>
+                {actionItems.some((item) => item.tone === "warning") ? "조치 필요" : "정상"}
+              </Badge>
+            </div>
+            <div className="grid gap-2 p-3">
+              {actionItems.map((item) => (
+                <div className="grid gap-3 rounded-md border border-slate-100 bg-slate-50 px-3 py-3 md:grid-cols-[minmax(0,1fr)_10rem]" key={`${item.section}-${item.title}`}>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge tone={item.tone}>{item.tone === "warning" ? "확인 필요" : item.tone === "success" ? "정상" : "참고"}</Badge>
+                      <p className="text-sm font-semibold text-slate-950">{item.title}</p>
+                    </div>
+                    <p className="mt-1 text-xs leading-5 text-slate-600">{item.detail}</p>
+                  </div>
+                  <div className="flex items-center md:justify-end">
+                    <span className="rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600">
+                      위치: {item.section}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
           <div className="grid gap-2 border-t border-slate-100 pt-4 lg:grid-cols-3">
