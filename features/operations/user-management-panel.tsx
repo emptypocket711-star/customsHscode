@@ -482,97 +482,118 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
                     <span>마지막 로그인: {formatDate(user.lastSignInAt)}</span>
                   </div>
 
-              <form action={updateAction} className="grid gap-4">
-                <input name="userId" type="hidden" value={user.id} />
-                <input name="companyId" type="hidden" value={user.companyId} />
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                  <label className="grid gap-1 text-sm font-medium text-slate-700">
-                    이메일
-                    <input className="focus-ring rounded-md border border-slate-300 px-3 py-2 text-slate-950" name="email" defaultValue={user.email} type="email" />
-                  </label>
-                  <label className="grid gap-1 text-sm font-medium text-slate-700">
-                    이름
-                    <input className="focus-ring rounded-md border border-slate-300 px-3 py-2 text-slate-950" name="fullName" defaultValue={user.fullName} />
-                  </label>
-                  <label className="grid gap-1 text-sm font-medium text-slate-700">
-                    권한
-                    <select className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-950" name="role" defaultValue={user.role}>
-                      <option value="client">일반 사용자</option>
-                      <option value="customs_staff">검토 담당</option>
-                      <option value="admin">운영 관리자</option>
-                      <option value="developer">개발자</option>
-                    </select>
-                  </label>
-                  <label className="grid gap-1 text-sm font-medium text-slate-700">
-                    회원 유형
-                    <select className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-950" name="accountType" defaultValue={user.accountType}>
-                      <option value="personal">개인회원</option>
-                      <option value="company">기업회원</option>
-                    </select>
-                  </label>
-                  <label className="grid gap-1 text-sm font-medium text-slate-700">
-                    회사/공간명
-                    <input className="focus-ring rounded-md border border-slate-300 px-3 py-2 text-slate-950" name="companyName" defaultValue={user.companyName} />
-                  </label>
-                  <label className="grid gap-1 text-sm font-medium text-slate-700">
-                    사업자등록번호
-                    <input
-                      className="focus-ring rounded-md border border-slate-300 px-3 py-2 text-slate-950"
-                      name="businessNo"
-                      defaultValue={formatBusinessNo(user.businessNo)}
-                      placeholder="000-00-00000"
-                    />
-                  </label>
-                  <label className="grid gap-1 text-sm font-medium text-slate-700">
-                    회사 내 권한
-                    <select className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-950" name="companyRole" defaultValue={user.companyRole}>
-                      <option value="member">일반 구성원</option>
-                      <option value="admin">회사 관리자</option>
-                    </select>
-                  </label>
-                  <label className="grid gap-1 text-sm font-medium text-slate-700">
-                    허용 IP 수
-                    <input
-                      className="focus-ring rounded-md border border-slate-300 px-3 py-2 text-slate-950"
-                      min={1}
-                      max={100}
-                      name="allowedIpCount"
-                      defaultValue={user.allowedIpCount}
-                      type="number"
-                    />
-                  </label>
-                </div>
-
-                <div className="grid gap-2 rounded-md bg-slate-50 p-3 text-xs text-slate-600 md:grid-cols-3">
-                  <span>이메일 인증: {formatDate(user.emailConfirmedAt)}</span>
-                  <span>온보딩 완료: {formatDate(user.onboardingCompletedAt)}</span>
-                  <span>회사 내 권한: {companyRoleLabel(user.companyRole)}</span>
-                </div>
-
-                {user.accountType === "company" ? (
-                  <div className="rounded-md border border-slate-200 bg-white p-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="inline-flex items-center gap-2 text-sm font-semibold text-slate-800">
-                        <Network aria-hidden="true" size={16} />
-                        기업회원 IP 사용 현황
-                      </p>
-                      <Badge tone={user.usedLoginIps.length > user.allowedIpCount ? "warning" : "neutral"}>
-                        {user.usedLoginIps.length} / {user.allowedIpCount}
-                      </Badge>
-                    </div>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {user.usedLoginIps.length === 0 ? (
-                        <span className="text-xs text-slate-500">로그인 성공 IP가 아직 없습니다.</span>
-                      ) : (
-                        user.usedLoginIps.map((ip) => (
-                          <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700" key={ip}>
-                            {ip}
-                          </span>
-                        ))
-                      )}
-                    </div>
+              <details className="rounded-md border border-slate-200 bg-white">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-semibold text-slate-800">
+                  <span className="inline-flex items-center gap-2">
+                    <Save aria-hidden="true" size={16} />
+                    기본정보 수정
+                  </span>
+                  <Badge tone="neutral">필요할 때</Badge>
+                </summary>
+                <form action={updateAction} className="grid gap-4 border-t border-slate-200 bg-slate-50/60 p-3">
+                  <input name="userId" type="hidden" value={user.id} />
+                  <input name="companyId" type="hidden" value={user.companyId} />
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <label className="grid gap-1 text-sm font-medium text-slate-700">
+                      이메일
+                      <input className="focus-ring rounded-md border border-slate-300 px-3 py-2 text-slate-950" name="email" defaultValue={user.email} type="email" />
+                    </label>
+                    <label className="grid gap-1 text-sm font-medium text-slate-700">
+                      이름
+                      <input className="focus-ring rounded-md border border-slate-300 px-3 py-2 text-slate-950" name="fullName" defaultValue={user.fullName} />
+                    </label>
+                    <label className="grid gap-1 text-sm font-medium text-slate-700">
+                      권한
+                      <select className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-950" name="role" defaultValue={user.role}>
+                        <option value="client">일반 사용자</option>
+                        <option value="customs_staff">검토 담당</option>
+                        <option value="admin">운영 관리자</option>
+                        <option value="developer">개발자</option>
+                      </select>
+                    </label>
+                    <label className="grid gap-1 text-sm font-medium text-slate-700">
+                      회원 유형
+                      <select className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-950" name="accountType" defaultValue={user.accountType}>
+                        <option value="personal">개인회원</option>
+                        <option value="company">기업회원</option>
+                      </select>
+                    </label>
+                    <label className="grid gap-1 text-sm font-medium text-slate-700">
+                      회사/공간명
+                      <input className="focus-ring rounded-md border border-slate-300 px-3 py-2 text-slate-950" name="companyName" defaultValue={user.companyName} />
+                    </label>
+                    <label className="grid gap-1 text-sm font-medium text-slate-700">
+                      사업자등록번호
+                      <input
+                        className="focus-ring rounded-md border border-slate-300 px-3 py-2 text-slate-950"
+                        name="businessNo"
+                        defaultValue={formatBusinessNo(user.businessNo)}
+                        placeholder="000-00-00000"
+                      />
+                    </label>
+                    <label className="grid gap-1 text-sm font-medium text-slate-700">
+                      회사 내 권한
+                      <select className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-950" name="companyRole" defaultValue={user.companyRole}>
+                        <option value="member">일반 구성원</option>
+                        <option value="admin">회사 관리자</option>
+                      </select>
+                    </label>
+                    <label className="grid gap-1 text-sm font-medium text-slate-700">
+                      허용 IP 수
+                      <input
+                        className="focus-ring rounded-md border border-slate-300 px-3 py-2 text-slate-950"
+                        min={1}
+                        max={100}
+                        name="allowedIpCount"
+                        defaultValue={user.allowedIpCount}
+                        type="number"
+                      />
+                    </label>
                   </div>
-                ) : null}
+
+                  <div className="grid gap-2 rounded-md bg-white p-3 text-xs text-slate-600 md:grid-cols-3">
+                    <span>이메일 인증: {formatDate(user.emailConfirmedAt)}</span>
+                    <span>온보딩 완료: {formatDate(user.onboardingCompletedAt)}</span>
+                    <span>회사 내 권한: {companyRoleLabel(user.companyRole)}</span>
+                  </div>
+
+                  {user.accountType === "company" ? (
+                    <div className="rounded-md border border-slate-200 bg-white p-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="inline-flex items-center gap-2 text-sm font-semibold text-slate-800">
+                          <Network aria-hidden="true" size={16} />
+                          기업회원 IP 사용 현황
+                        </p>
+                        <Badge tone={user.usedLoginIps.length > user.allowedIpCount ? "warning" : "neutral"}>
+                          {user.usedLoginIps.length} / {user.allowedIpCount}
+                        </Badge>
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {user.usedLoginIps.length === 0 ? (
+                          <span className="text-xs text-slate-500">로그인 성공 IP가 아직 없습니다.</span>
+                        ) : (
+                          user.usedLoginIps.map((ip) => (
+                            <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700" key={ip}>
+                              {ip}
+                            </span>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      className="focus-ring inline-flex items-center gap-2 rounded-md bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-500"
+                      disabled={updatePending}
+                      type="submit"
+                    >
+                      <Save aria-hidden="true" size={16} />
+                      저장
+                    </button>
+                  </div>
+                </form>
+              </details>
 
                 <details className="rounded-md border border-slate-200 bg-white">
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-semibold text-slate-800">
@@ -613,18 +634,6 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
                     )}
                   </div>
                 </details>
-
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    className="focus-ring inline-flex items-center gap-2 rounded-md bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-500"
-                    disabled={updatePending}
-                    type="submit"
-                  >
-                    <Save aria-hidden="true" size={16} />
-                    저장
-                  </button>
-                </div>
-              </form>
 
               <details className="rounded-md border border-slate-200 bg-slate-50">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-semibold text-slate-800">
