@@ -140,24 +140,35 @@ export async function LegalUpdateCenter() {
         </div>
       </details>
 
-      <Card>
-        <CardHeader
-          title="목적국 데이터 커버리지"
-          description="수출 목적국 조회에 사용되는 관세율, 내국세, 수입요건, 추가관세 적재 현황입니다."
-          action={<Badge tone="info">coverage</Badge>}
-        />
-        <CardBody>
-          <DestinationCoverageTable rows={destinationCoverageRows} />
-        </CardBody>
-      </Card>
+      <details className="rounded-lg border border-slate-200 bg-white shadow-sm">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4">
+          <span>
+            <span className="block text-base font-semibold text-slate-950">상세 데이터 현황</span>
+            <span className="mt-1 block text-sm text-slate-500">목적국 커버리지, source inventory, 업데이트 체크리스트, 최근 수집은 필요할 때 펼쳐 확인합니다.</span>
+          </span>
+          <Badge tone={inventory.summary.diagnosticCounts.danger ? "warning" : "success"}>
+            적재 문제 {inventory.summary.diagnosticCounts.danger}
+          </Badge>
+        </summary>
+        <div className="grid gap-5 border-t border-slate-200 bg-slate-50/45 p-4">
+          <Card>
+            <CardHeader
+              title="목적국 데이터 커버리지"
+              description="수출 목적국 조회에 사용되는 관세율, 내국세, 수입요건, 추가관세 적재 현황입니다."
+              action={<Badge tone="info">coverage</Badge>}
+            />
+            <CardBody>
+              <DestinationCoverageTable rows={destinationCoverageRows} />
+            </CardBody>
+          </Card>
 
-      <Card>
-        <CardHeader
-          title="관세청 source inventory"
-          description="공식 엑셀/API 원천이 테이블과 source_version 단위로 몇 건 적재되었는지 확인합니다."
-          action={<Badge tone={inventory.dataSource === "supabase" ? "success" : "warning"}>{inventory.dataSource}</Badge>}
-        />
-        <CardBody>
+          <Card>
+            <CardHeader
+              title="관세청 source inventory"
+              description="공식 엑셀/API 원천이 테이블과 source_version 단위로 몇 건 적재되었는지 확인합니다."
+              action={<Badge tone={inventory.dataSource === "supabase" ? "success" : "warning"}>{inventory.dataSource}</Badge>}
+            />
+            <CardBody>
           <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50 p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -409,16 +420,16 @@ export async function LegalUpdateCenter() {
               </tbody>
             </table>
           </div>
-        </CardBody>
-      </Card>
+            </CardBody>
+          </Card>
 
-      <Card>
-        <CardHeader
-          title="자료 업데이트 실행 체크리스트"
-          description="연도 변경 또는 공식자료 갱신 시 다시 실행할 수 있도록 원천, 스크립트, 검증 항목을 묶어 표시합니다."
-          action={<Badge tone="info">update runbook</Badge>}
-        />
-        <CardBody>
+          <Card>
+            <CardHeader
+              title="자료 업데이트 실행 체크리스트"
+              description="연도 변경 또는 공식자료 갱신 시 다시 실행할 수 있도록 원천, 스크립트, 검증 항목을 묶어 표시합니다."
+              action={<Badge tone="info">update runbook</Badge>}
+            />
+            <CardBody>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[980px] border-collapse text-left text-sm">
               <thead>
@@ -441,16 +452,16 @@ export async function LegalUpdateCenter() {
               </tbody>
             </table>
           </div>
-        </CardBody>
-      </Card>
+            </CardBody>
+          </Card>
 
-      <Card>
-        <CardHeader
-          title="최근 원천 수집"
-          description="각 원천은 checksum과 source_version으로 추적합니다. 실제 게시 전에는 snapshot diff와 담당자 검토가 필요합니다."
-          action={<Badge tone="info">source snapshot</Badge>}
-        />
-        <CardBody>
+          <Card>
+            <CardHeader
+              title="최근 원천 수집"
+              description="각 원천은 checksum과 source_version으로 추적합니다. 실제 게시 전에는 snapshot diff와 담당자 검토가 필요합니다."
+              action={<Badge tone="info">source snapshot</Badge>}
+            />
+            <CardBody>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] border-collapse text-left text-sm">
               <thead>
@@ -477,16 +488,29 @@ export async function LegalUpdateCenter() {
               </tbody>
             </table>
           </div>
-        </CardBody>
-      </Card>
+            </CardBody>
+          </Card>
+        </div>
+      </details>
 
-      <Card>
-        <CardHeader
-          title="변경 검토 큐"
-          description="medium/high/critical 변경은 담당자 승인 전 published 전환을 차단합니다."
-          action={<Badge tone="warning">staff review required</Badge>}
-        />
-        <CardBody className="grid gap-3">
+      <details className="rounded-lg border border-slate-200 bg-white shadow-sm">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4">
+          <span>
+            <span className="block text-base font-semibold text-slate-950">검토·영향 기록</span>
+            <span className="mt-1 block text-sm text-slate-500">변경 검토 큐, 승인 변경, 영향 리포트, pipeline 상태를 한 번에 확인합니다.</span>
+          </span>
+          <Badge tone={dashboard.summary.pendingCount || dashboard.summary.impactedReportCount ? "warning" : "success"}>
+            대기 {dashboard.summary.pendingCount} / 영향 {dashboard.summary.impactedReportCount}
+          </Badge>
+        </summary>
+        <div className="grid gap-5 border-t border-slate-200 bg-slate-50/45 p-4">
+          <Card>
+            <CardHeader
+              title="변경 검토 큐"
+              description="medium/high/critical 변경은 담당자 승인 전 published 전환을 차단합니다."
+              action={<Badge tone="warning">staff review required</Badge>}
+            />
+            <CardBody className="grid gap-3">
           {dashboard.pendingChanges.map((change) => (
             <article className="rounded-lg border border-slate-200 p-4" key={change.id}>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -522,11 +546,11 @@ export async function LegalUpdateCenter() {
               </div>
             </article>
           ))}
-        </CardBody>
-      </Card>
+            </CardBody>
+          </Card>
 
-      <div className="grid gap-5 lg:grid-cols-2">
-        <Card>
+          <div className="grid gap-5 lg:grid-cols-2">
+            <Card>
           <CardHeader title="승인된 변경" description="승인 후 publish job이 source/version을 전환하는 대상입니다." action={<CheckCircle2 aria-hidden="true" className="text-emerald-600" size={20} />} />
           <CardBody className="grid gap-3">
             {dashboard.approvedChanges.map((change) => (
@@ -540,9 +564,9 @@ export async function LegalUpdateCenter() {
               </div>
             ))}
           </CardBody>
-        </Card>
+            </Card>
 
-        <Card>
+            <Card>
           <CardHeader title="영향 리포트" description="게시 후 변경된 원천이 과거 보고서에 영향을 줄 수 있는 큐입니다." action={<FileWarning aria-hidden="true" className="text-amber-600" size={20} />} />
           <CardBody className="grid gap-3">
             {dashboard.impactedReports.map((report) => (
@@ -559,12 +583,12 @@ export async function LegalUpdateCenter() {
               </div>
             ))}
           </CardBody>
-        </Card>
-      </div>
+            </Card>
+          </div>
 
-      <Card>
-        <CardHeader title="Pipeline 상태" description="Phase 6의 실제 fetch/parser/publish job은 아직 연결 전입니다." action={<Clock aria-hidden="true" className="text-blue-700" size={20} />} />
-        <CardBody>
+          <Card>
+            <CardHeader title="Pipeline 상태" description="Phase 6의 실제 fetch/parser/publish job은 아직 연결 전입니다." action={<Clock aria-hidden="true" className="text-blue-700" size={20} />} />
+            <CardBody>
           <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {["Fetch", "Checksum", "Parse/Staging", "Diff", "Review", "Publish", "Invalidate", "Report Impact"].map((step, index) => (
               <li className="rounded-md border border-slate-200 p-3" key={step}>
@@ -574,8 +598,10 @@ export async function LegalUpdateCenter() {
             ))}
           </ol>
           <SourceFooter sourceName="legal_source_snapshots / legal_change_events" sourceVersion="mock-update-engine-2026" />
-        </CardBody>
-      </Card>
+            </CardBody>
+          </Card>
+        </div>
+      </details>
     </div>
   );
 }
