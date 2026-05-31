@@ -4036,9 +4036,9 @@ export async function HsDirectLookupPanel({
 
                   <div className="min-w-0">
                   <section className="overflow-hidden border-b border-slate-200">
-                    <div className="flex h-10 items-center justify-between gap-2 bg-blue-700 px-3 text-sm font-semibold text-white">
-                      <span>{dictionary.result.itemDetail}</span>
-                      <div className="flex shrink-0 gap-2">
+                    <div className="flex min-h-10 flex-col items-stretch gap-2 bg-blue-700 px-3 py-2 text-sm font-semibold text-white sm:flex-row sm:items-center sm:justify-between sm:py-0">
+                      <span className="shrink-0">{dictionary.result.itemDetail}</span>
+                      <div className="flex flex-wrap gap-2 sm:shrink-0 sm:justify-end">
                         <HsFavoriteToggleButton
                           basisDate={result.basisDate}
                           displayName={result.koreanName}
