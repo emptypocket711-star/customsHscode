@@ -3997,6 +3997,18 @@ export async function HsDirectLookupPanel({
               const estimatorPreferentialTariff = selectedDestinationCountry === "ALL"
                 ? undefined
                 : lowestTariff(countryFilteredTariffs.filter((tariff) => isFtaTariffRate(tariff.rateType)));
+              const groupedRequirements = groupedImportRequirements(result.importRequirements);
+              const dutySummary = estimatorDutyTariff
+                ? tariffSummaryText(estimatorDutyTariff, selectedDestinationCountry)
+                : "표시할 관세율 데이터 없음";
+              const preferentialDutySummary = selectedDestinationCountry === "ALL"
+                ? "수입국 선택 시 확인"
+                : estimatorPreferentialTariff
+                  ? tariffSummaryText(estimatorPreferentialTariff, selectedDestinationCountry)
+                  : "표시 가능한 FTA 없음";
+              const requirementSummary = groupedRequirements.length
+                ? `${groupedRequirements.length}개 요건 가능성`
+                : "세관장확인 조회 없음";
 
               return (
               <article className="overflow-hidden rounded-md border border-slate-200" key={result.hskCode}>
@@ -4060,6 +4072,20 @@ export async function HsDirectLookupPanel({
                       <p className="mt-1 text-xs leading-5 text-blue-900">
                         아래 세율, 내국세, 수입요건은 이 10자리 HSK 기준으로 조회한 예비 정보입니다.
                       </p>
+                      <div className="mt-3 grid gap-2 md:grid-cols-3">
+                        <div className="rounded-md border border-blue-100 bg-white px-3 py-2">
+                          <p className="text-xs font-semibold text-slate-500">기준 세율</p>
+                          <p className="mt-1 text-sm font-semibold text-slate-950">{dutySummary}</p>
+                        </div>
+                        <div className="rounded-md border border-blue-100 bg-white px-3 py-2">
+                          <p className="text-xs font-semibold text-slate-500">FTA/특혜 세율</p>
+                          <p className="mt-1 text-sm font-semibold text-slate-950">{preferentialDutySummary}</p>
+                        </div>
+                        <div className="rounded-md border border-blue-100 bg-white px-3 py-2">
+                          <p className="text-xs font-semibold text-slate-500">수입요건</p>
+                          <p className="mt-1 text-sm font-semibold text-slate-950">{requirementSummary}</p>
+                        </div>
+                      </div>
                     </div>
                     <dl className="grid text-sm sm:grid-cols-[140px_1fr]">
                       <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.result.hsk}</dt>
@@ -4134,7 +4160,7 @@ export async function HsDirectLookupPanel({
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100">
-                            {groupedImportRequirements(result.importRequirements).map((item) => (
+                            {groupedRequirements.map((item) => (
                               <tr key={`${item.type}-${item.name}-${item.relatedLaw}`}>
                                 <td className="px-3 py-2"><RequirementKindBadges requirement={item} /></td>
                                 <td className="px-3 py-2">
