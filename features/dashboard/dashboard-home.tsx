@@ -63,8 +63,8 @@ export function DashboardHome({
   }).format(new Date(`${basisDate}T00:00:00+09:00`));
 
   return (
-    <div className="grid gap-4">
-      <section className="overflow-hidden rounded-lg border border-[var(--border-subtle)] bg-[var(--surface)] shadow-[var(--shadow-panel)]">
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4">
+      <section className="min-w-0 overflow-hidden rounded-lg border border-[var(--border-subtle)] bg-[var(--surface)] shadow-[var(--shadow-panel)]">
         <div className="border-b border-[var(--border-subtle)] bg-[var(--surface-raised)] px-4 py-5 sm:px-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0">
@@ -151,7 +151,7 @@ export function DashboardHome({
 
       <DashboardWorkflowLinks locale={locale} />
 
-      <section className="grid gap-5 lg:grid-cols-3">
+      <section className="grid min-w-0 gap-5 lg:grid-cols-3">
         <DashboardNoticeCard locale={locale} notices={notices} />
         <DashboardListCard
           description={dictionary.lists.favorites.description}
@@ -208,7 +208,7 @@ function DashboardListCard({
   title: string;
 }) {
   return (
-    <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface)] shadow-[var(--shadow-panel)]">
+    <div className="min-w-0 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface)] shadow-[var(--shadow-panel)]">
       <div className="flex items-start justify-between gap-3 border-b border-[var(--border-subtle)] px-5 py-4">
         <div className="min-w-0">
           <div className="flex items-center gap-2">

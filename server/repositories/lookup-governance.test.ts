@@ -131,7 +131,8 @@ describe("lookup governance guards", () => {
     expect(documentUploadPage).toContain("notReadyTitle");
     expect(overseasPage).toContain("recordHsLookupHistory");
     expect(overseasPage).toContain('direction: "export"');
-    expect(sideNav).toContain("showOperations ? <NavGroup");
+    expect(sideNav).toContain("showOperations ? <NavDetailsGroup");
+    expect(sideNav).toContain("showOperations ? (");
     expect(sideNav).toContain("/operations/health");
     expect(healthPage).toContain("/operations/notices");
     expect(healthPage).toContain("/operations/users");
@@ -172,7 +173,7 @@ describe("lookup governance guards", () => {
     expect(developerActions).toContain("requireCurrentDeveloper()");
     expect(developerActions).toContain("admin.auth.admin.generateLink");
     expect(developerActions).toContain("developer_test_login_link_create");
-    expect(userPanel).toContain("유저 직접 생성");
+    expect(userPanel).toContain("테스트·수동 계정 발급");
     expect(userPanel).toContain("테스트 로그인 링크");
   });
 

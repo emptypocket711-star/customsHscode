@@ -68,7 +68,7 @@ export function DashboardWorkflowLinks({ locale }: { locale: AppLocale }) {
   ];
 
   return (
-    <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface)] shadow-[var(--shadow-panel)]">
+    <section className="min-w-0 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface)] shadow-[var(--shadow-panel)]">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] px-5 py-4">
         <div className="flex items-center gap-2">
           <FileSpreadsheet aria-hidden="true" className="text-blue-700" size={18} />
@@ -77,11 +77,11 @@ export function DashboardWorkflowLinks({ locale }: { locale: AppLocale }) {
         <span className="text-xs font-medium text-[var(--text-muted)]">{dictionary.description}</span>
       </div>
 
-      <div className="grid gap-4 p-4 lg:grid-cols-3">
+      <div className="grid min-w-0 gap-4 p-4 lg:grid-cols-3">
         {groupedLinks.map((group) => (
-          <div className="grid gap-2" key={group.id}>
+          <div className="grid min-w-0 gap-2" key={group.id}>
             <h3 className="px-1 text-xs font-semibold text-[var(--text-muted)]">{dictionary.groups[group.id]}</h3>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid min-w-0 gap-3 sm:grid-cols-2">
               {group.items.map((workflow) => {
                 const Icon = iconById[workflow.id];
                 return (
@@ -89,7 +89,7 @@ export function DashboardWorkflowLinks({ locale }: { locale: AppLocale }) {
                     <span className={`grid size-10 place-items-center rounded-md ring-1 ${toneClass(workflow.tone)}`}>
                       <Icon aria-hidden="true" size={19} />
                     </span>
-                    <span>
+                    <span className="min-w-0">
                       <span className="block font-semibold text-[var(--text-primary)]">{dictionary.items[workflow.id].title}</span>
                       <span className="mt-1 block text-sm leading-5 text-[var(--text-secondary)]">{dictionary.items[workflow.id].description}</span>
                       <span className="mt-2 block rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-medium leading-5 text-slate-600">
