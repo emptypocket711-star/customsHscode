@@ -116,12 +116,16 @@ function parseProductSupplementQuery(value: string) {
 }
 
 const lookupCacheTtlMs = 5 * 60 * 1000;
+const hsPrefixLookupCacheTtlMs = 15 * 60 * 1000;
 
 function cachedHsDirectLookup(hskCode: string, basisDate: string) {
+  const normalizedCode = normalizeHsInput(hskCode);
+
   return cachedLookup({
-    key: lookupCacheKey("hs-direct", { hskCode: normalizeHsInput(hskCode), basisDate }),
+    key: lookupCacheKey("hs-direct", { hskCode: normalizedCode, basisDate }),
     ttlMs: lookupCacheTtlMs,
-    load: () => lookupHsDirect(hskCode, basisDate)
+    load: () => lookupHsDirect(hskCode, basisDate),
+    valueTtlMs: () => normalizedCode.length > 0 && normalizedCode.length <= 6 ? hsPrefixLookupCacheTtlMs : lookupCacheTtlMs
   });
 }
 

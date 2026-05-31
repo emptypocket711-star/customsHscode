@@ -110,6 +110,10 @@ describe("lookup cache", () => {
     expect(decoded?.get("3304991000")).toEqual([{ rate: "8%" }]);
   });
 
+  it("persists direct HS lookups in the default distributed cache namespaces", () => {
+    expect(lookupCacheInternals.supabaseCacheNamespaces()).toContain("hs-direct");
+  });
+
   it("removes expired memory entries before serving a lookup", async () => {
     clearLookupCache();
     lookupCacheInternals.cacheStore.set("test:expired", { value: "old", expiresAt: 100 });

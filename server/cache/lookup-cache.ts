@@ -32,7 +32,7 @@ function cacheNamespace(key: string) {
 
 function supabaseCacheNamespaces() {
   return new Set(
-    (process.env.LOOKUP_SUPABASE_CACHE_NAMESPACES || "ai-product-normalization,hs-product-recommendations")
+    (process.env.LOOKUP_SUPABASE_CACHE_NAMESPACES || "ai-product-normalization,hs-product-recommendations,hs-direct")
       .split(",")
       .map((namespace) => namespace.trim())
       .filter(Boolean)
@@ -253,5 +253,6 @@ export const lookupCacheInternals = {
   stableStringify,
   encodeCacheValue,
   decodeCacheValue,
-  pruneMemoryCache
+  pruneMemoryCache,
+  supabaseCacheNamespaces
 };
