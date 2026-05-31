@@ -68,16 +68,16 @@ const dictionaries = {
         hsDirect: "통합 조회",
         hsOverseas: "해외 HS CODE 조회",
         legalUpdates: "자료 관리",
-        notices: "공지사항",
+        notices: "공지 관리",
         staffReview: "검토 큐",
         tradeNews: "무역 정보",
         usedCarExport: "중고차 수출",
-        users: "사용자 관리"
+        users: "고객 계정"
       },
       menu: "메뉴",
       menuHint: "조회 화면 이동",
       sections: {
-        operations: "관리",
+        operations: "운영 관리",
         resources: "정보·자료",
         secondary: "실무 도구",
         workspace: "업무 조회"
@@ -110,16 +110,16 @@ const dictionaries = {
         hsDirect: "HS Lookup",
         hsOverseas: "Overseas HS Lookup",
         legalUpdates: "Data Management",
-        notices: "Notices",
+        notices: "Notice Management",
         staffReview: "Review Queue",
         tradeNews: "Trade Resources",
         usedCarExport: "Used-Car Export",
-        users: "User Management"
+        users: "Customer Accounts"
       },
       menu: "Menu",
       menuHint: "Open workflow",
       sections: {
-        operations: "Operations",
+        operations: "Operations Admin",
         resources: "Resources",
         secondary: "Practical Tools",
         workspace: "Workflows"
@@ -152,16 +152,16 @@ const dictionaries = {
         hsDirect: "HS 综合查询",
         hsOverseas: "海外 HS 编码查询",
         legalUpdates: "资料管理",
-        notices: "公告",
+        notices: "公告管理",
         staffReview: "复核队列",
         tradeNews: "贸易资讯",
         usedCarExport: "二手车出口",
-        users: "用户管理"
+        users: "客户账号"
       },
       menu: "菜单",
       menuHint: "切换页面",
       sections: {
-        operations: "运营",
+        operations: "运营管理",
         resources: "资讯资料",
         secondary: "实务工具",
         workspace: "业务查询"
