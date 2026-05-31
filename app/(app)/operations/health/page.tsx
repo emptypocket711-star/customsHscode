@@ -130,7 +130,7 @@ const operationsManualCommands = [
     command: "SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production",
     useWhen: "배포 후 실제 도메인의 로그인 보호와 주요 route 응답을 확인할 때 사용합니다.",
     purpose: "로그인 보호와 주요 route 응답 상태를 빠르게 확인합니다.",
-    expected: "summary total=9 success=9 failed=0이면 정상입니다."
+    expected: "summary total=10 success=10 failed=0이면 정상입니다."
   }
 ];
 
