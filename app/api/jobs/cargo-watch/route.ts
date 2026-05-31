@@ -19,6 +19,7 @@ import {
   loadCargoShedInfoByCode,
   statusMatched
 } from "@/server/services/cargo-status-classifier";
+import { logProtectedJobEvent } from "@/server/observability/protected-job-events";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -128,15 +129,33 @@ function isAuthorized(request: NextRequest) {
 }
 
 async function processCargoWatches(request: NextRequest) {
+  const startedAt = Date.now();
+  const route = "/api/jobs/cargo-watch";
+  const jobName = "cargo-watch";
+
   if (!isAuthorized(request)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
   if (!hasSupabaseServiceRoleEnv()) {
+    await logProtectedJobEvent({
+      durationMs: Date.now() - startedAt,
+      jobName,
+      message: "Supabase service role environment variables are not configured.",
+      route,
+      status: "failed"
+    });
     return NextResponse.json({ error: "Supabase service role environment variables are not configured." }, { status: 500 });
   }
 
   if (!hasCustomsOpenApiEnv("cargo_progress")) {
+    await logProtectedJobEvent({
+      durationMs: Date.now() - startedAt,
+      jobName,
+      message: "API001 cargo progress environment variables are not configured.",
+      route,
+      status: "failed"
+    });
     return NextResponse.json({ error: "API001 cargo progress environment variables are not configured." }, { status: 500 });
   }
 
@@ -161,6 +180,13 @@ async function processCargoWatches(request: NextRequest) {
     .limit(25);
 
   if (error) {
+    await logProtectedJobEvent({
+      durationMs: Date.now() - startedAt,
+      jobName,
+      message: error.message,
+      route,
+      status: "failed"
+    });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
@@ -395,6 +421,20 @@ async function processCargoWatches(request: NextRequest) {
     }
   }
 
+  await logProtectedJobEvent({
+    durationMs: Date.now() - startedAt,
+    jobName,
+    metadata: {
+      checked,
+      failed,
+      managementInspectionNotified,
+      matched,
+      notified
+    },
+    message: failed > 0 ? `${failed} cargo watch checks failed.` : null,
+    route,
+    status: failed > 0 ? "failed" : "succeeded"
+  });
   return NextResponse.json({ checked, matched, notified, managementInspectionNotified, failed });
 }
 

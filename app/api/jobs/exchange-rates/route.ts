@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { hasSupabaseServiceRoleEnv } from "@/lib/supabase/service-role";
 import { hasCustomsOpenApiEnv } from "@/server/integrations/customs/customs-api";
+import { logProtectedJobEvent } from "@/server/observability/protected-job-events";
 import { refreshCustomsExchangeRateCache } from "@/server/services/exchange-rate-cache.service";
 
 export const runtime = "nodejs";
@@ -18,21 +19,62 @@ function isAuthorized(request: NextRequest) {
 }
 
 async function handleRefresh(request: NextRequest) {
+  const startedAt = Date.now();
+  const route = "/api/jobs/exchange-rates";
+  const jobName = "exchange-rates";
+
   if (!isAuthorized(request)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
   if (!hasSupabaseServiceRoleEnv()) {
+    await logProtectedJobEvent({
+      durationMs: Date.now() - startedAt,
+      jobName,
+      message: "Supabase service role environment variables are not configured.",
+      route,
+      status: "failed"
+    });
     return NextResponse.json({ error: "Supabase service role environment variables are not configured." }, { status: 500 });
   }
 
   if (!hasCustomsOpenApiEnv("exchange_rate")) {
+    await logProtectedJobEvent({
+      durationMs: Date.now() - startedAt,
+      jobName,
+      message: "API012 exchange-rate environment variables are not configured.",
+      route,
+      status: "failed"
+    });
     return NextResponse.json({ error: "API012 exchange-rate environment variables are not configured." }, { status: 500 });
   }
 
   const basisDate = request.nextUrl.searchParams.get("basisDate") || undefined;
-  const result = await refreshCustomsExchangeRateCache(basisDate);
-  return NextResponse.json(result);
+  try {
+    const result = await refreshCustomsExchangeRateCache(basisDate);
+    await logProtectedJobEvent({
+      durationMs: Date.now() - startedAt,
+      jobName,
+      metadata: {
+        basisDate: result.basisDate,
+        resultCount: result.results.length,
+        upserted: result.results.reduce((sum, item) => sum + item.upserted, 0)
+      },
+      route,
+      status: "succeeded"
+    });
+    return NextResponse.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "API012 exchange-rate refresh failed.";
+    await logProtectedJobEvent({
+      durationMs: Date.now() - startedAt,
+      jobName,
+      message,
+      route,
+      status: "failed"
+    });
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
 
 export async function GET(request: NextRequest) {

@@ -56,6 +56,10 @@ import {
   summarizeContainerReceiptFailureEvents
 } from "@/server/repositories/container-receipt-failure-event.repository";
 import {
+  listRecentProtectedJobEvents,
+  summarizeProtectedJobEvents
+} from "@/server/repositories/protected-job-event.repository";
+import {
   getDomesticHsLookupSnapshotCoverageFromSupabase,
   type DomesticHsLookupSnapshotCoverage,
 } from "@/server/repositories/source-inventory.repository";
@@ -257,6 +261,27 @@ function containerReceiptFailureCodeLabel(code: string) {
   };
 
   return labels[code] ?? code;
+}
+
+function protectedJobStatusText(status: "normal" | "watch" | "action_needed") {
+  if (status === "action_needed") return "조치 필요";
+  if (status === "watch") return "주의";
+  return "정상";
+}
+
+function protectedJobStatusTone(status: "normal" | "watch" | "action_needed") {
+  if (status === "action_needed") return "warning";
+  if (status === "watch") return "neutral";
+  return "success";
+}
+
+function protectedJobLabel(jobName: string) {
+  const labels: Record<string, string> = {
+    "cargo-watch": "API001 화물 감시",
+    "exchange-rates": "API012 관세환율"
+  };
+
+  return labels[jobName] ?? jobName;
 }
 
 function operationsIssueStatusLabel(status: OperationsIssueStatus) {
@@ -646,6 +671,13 @@ async function loadContainerReceiptFailureEvents() {
   return listRecentContainerReceiptFailureEvents(supabase, 50).catch(() => []);
 }
 
+async function loadProtectedJobEvents() {
+  if (!hasSupabaseEnv()) return [];
+
+  const supabase = await createSupabaseServerClient();
+  return listRecentProtectedJobEvents(supabase, 50).catch(() => []);
+}
+
 async function loadOperationsIssueEvents() {
   if (!hasSupabaseEnv()) return [];
 
@@ -694,6 +726,7 @@ export default async function OperationsHealthPage({
     operationsAlertEvents,
     rateLimitEvents,
     containerReceiptFailureEvents,
+    protectedJobEvents,
     operationsIssueEvents,
     operationsRetentionStatus,
     schemaHealthReport,
@@ -705,6 +738,7 @@ export default async function OperationsHealthPage({
     loadOperationsAlertEvents(),
     loadRateLimitEvents(),
     loadContainerReceiptFailureEvents(),
+    loadProtectedJobEvents(),
     loadOperationsIssueEvents(),
     loadOperationsRetentionStatus(),
     getProductionSchemaHealthReport(),
@@ -731,6 +765,7 @@ export default async function OperationsHealthPage({
   const operationsAlertSummary = summarizeOperationsAlertEvents(operationsAlertEvents);
   const rateLimitEventSummary = summarizeRateLimitEvents(rateLimitEvents);
   const containerReceiptFailureSummary = summarizeContainerReceiptFailureEvents(containerReceiptFailureEvents);
+  const protectedJobEventSummary = summarizeProtectedJobEvents(protectedJobEvents);
   const filteredOperationsIssueEvents = sortOperationsIssueEventsForTriage(
     filterOperationsIssueEvents(operationsIssueEvents, issueFilters)
   );
@@ -784,7 +819,8 @@ export default async function OperationsHealthPage({
     backgroundJobSummary.dead > 0 || backgroundJobSummary.failed > 0 || backgroundJobRunSummary.failedRuns > 0 || backgroundJobRunSummary.failedJobs > 0 || backgroundJobRunSummary.latestStatus === "failed",
     operationsAlertSummary.failed > 0,
     rateLimitEventSummary.total > 0,
-    containerReceiptFailureSummary.status !== "normal"
+    containerReceiptFailureSummary.status !== "normal",
+    protectedJobEventSummary.status !== "normal"
   ].filter(Boolean).length;
   const operationalSummary = [
     {
@@ -828,6 +864,14 @@ export default async function OperationsHealthPage({
         ? `최근 실패 ${containerReceiptFailureSummary.total}건 / 반복 ${containerReceiptFailureSummary.repeatedBucketCount}개`
         : "최근 실패 없음",
       tone: containerReceiptFailureSummary.status === "action_needed" ? "warning" : "success"
+    },
+    {
+      label: "외부 API Job",
+      value: protectedJobStatusText(protectedJobEventSummary.status),
+      detail: protectedJobEventSummary.total > 0
+        ? `최근 실패 ${protectedJobEventSummary.failed}건 / 실행 ${protectedJobEventSummary.total}건`
+        : "최근 실행 이력 없음",
+      tone: protectedJobEventSummary.status === "action_needed" ? "warning" : "success"
     }
   ] satisfies Array<{
     label: string;
@@ -864,6 +908,17 @@ export default async function OperationsHealthPage({
           ? "일시 실패가 있어 추이를 확인합니다."
           : "최근 반입계 출력 실패가 없습니다.",
       tone: containerReceiptFailureSummary.status === "action_needed" ? "warning" : "success"
+    },
+    {
+      href: "#protected-job-events",
+      label: "외부 API Job",
+      value: protectedJobStatusText(protectedJobEventSummary.status),
+      detail: protectedJobEventSummary.status === "action_needed"
+        ? "API001/API012 정기 작업 실패가 반복됩니다."
+        : protectedJobEventSummary.status === "watch"
+          ? "최근 정기 작업 실패가 있어 추이를 확인합니다."
+          : "최근 정기 작업 실패가 없습니다.",
+      tone: protectedJobEventSummary.status === "action_needed" ? "warning" : "success"
     },
     {
       href: "#advanced-operations",
@@ -905,7 +960,7 @@ export default async function OperationsHealthPage({
           action={<Badge tone={operationalSummary.some((item) => item.tone === "warning") ? "warning" : "success"}>점검 {operationalSummary.filter((item) => item.tone === "warning").length}건</Badge>}
         />
         <CardBody>
-          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-6">
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-7">
             {operationalSummary.map((item) => (
               <div key={item.label} className="rounded-md border border-slate-200 bg-white px-3 py-3">
                 <div className="flex items-start justify-between gap-2">
@@ -926,7 +981,7 @@ export default async function OperationsHealthPage({
           description="1인 운영자가 먼저 판단할 항목입니다. 정상인 항목은 확인만 하고 넘어가면 됩니다."
         />
         <CardBody>
-          <nav className="grid gap-2 lg:grid-cols-5" aria-label="운영 오늘 할 일">
+          <nav className="grid gap-2 lg:grid-cols-6" aria-label="운영 오늘 할 일">
             {operatorActionItems.map((item) => (
               <a
                 className={item.tone === "warning"
@@ -1177,7 +1232,7 @@ export default async function OperationsHealthPage({
                 <span className="block text-sm font-semibold text-slate-950">작업·알림 이력</span>
                 <span className="mt-1 block text-xs text-slate-500">보존 상태, worker queue, worker 실행, 운영 알림 이력은 실패나 정리 후보가 있을 때 확인합니다.</span>
               </span>
-              <Badge tone={totalRetentionCandidates > 0 || backgroundJobSummary.dead > 0 || backgroundJobRunSummary.failedRuns > 0 || operationsAlertSummary.failed > 0 || rateLimitEventSummary.total > 0 || containerReceiptFailureSummary.status !== "normal" ? "warning" : "success"}>6개 항목</Badge>
+              <Badge tone={totalRetentionCandidates > 0 || backgroundJobSummary.dead > 0 || backgroundJobRunSummary.failedRuns > 0 || operationsAlertSummary.failed > 0 || rateLimitEventSummary.total > 0 || containerReceiptFailureSummary.status !== "normal" || protectedJobEventSummary.status !== "normal" ? "warning" : "success"}>7개 항목</Badge>
             </summary>
             <div className="grid gap-5 border-t border-slate-200 bg-slate-50/45 p-4">
       <Card id="retention-health" className="scroll-mt-6">
@@ -1473,6 +1528,98 @@ export default async function OperationsHealthPage({
           ) : (
             <div className="p-5 text-sm text-slate-600">
               아직 운영 알림 이력이 없습니다. worker 실패 알림 발송 또는 throttle 생략 후 표시됩니다.
+            </div>
+          )}
+        </CardBody>
+      </Card>
+
+      <Card id="protected-job-events" className="scroll-mt-6">
+        <CardHeader
+          title="외부 API 정기 작업 상태"
+          description="API001 화물 감시와 API012 관세환율 수집 작업이 정상 실행됐는지 확인합니다. 원문 API 응답과 조회값은 저장하지 않습니다."
+          action={
+            <Badge tone={protectedJobStatusTone(protectedJobEventSummary.status)}>
+              {protectedJobStatusText(protectedJobEventSummary.status)}
+            </Badge>
+          }
+        />
+        <CardBody className="p-0">
+          <div className="grid gap-2 border-b border-slate-200 bg-slate-50 p-3 text-sm md:grid-cols-3">
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">최근 실행</p>
+              <p className="mt-1 font-semibold text-slate-950">{protectedJobEventSummary.total}건</p>
+            </div>
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">실패</p>
+              <p className={protectedJobEventSummary.failed > 0 ? "mt-1 font-semibold text-amber-700" : "mt-1 font-semibold text-emerald-700"}>
+                {protectedJobEventSummary.failed}건
+              </p>
+            </div>
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">최근 실행 시각</p>
+              <p className="mt-1 font-semibold text-slate-950">
+                {protectedJobEventSummary.latestAt ? formatDate(protectedJobEventSummary.latestAt) : "-"}
+              </p>
+            </div>
+          </div>
+          {protectedJobEvents.length ? (
+            <>
+              <div className="grid gap-2 border-b border-slate-200 bg-white p-3 text-sm md:grid-cols-2">
+                {protectedJobEventSummary.jobs.slice(0, 4).map((job) => (
+                  <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2" key={`${job.jobName}-${job.route}`}>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge tone={job.latestStatus === "failed" || job.failed > 0 ? "warning" : "success"}>
+                        {job.latestStatus === "failed" ? "최근 실패" : job.failed > 0 ? "실패 있음" : "정상"}
+                      </Badge>
+                      <p className="text-sm font-semibold text-slate-950">{protectedJobLabel(job.jobName)}</p>
+                    </div>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                      실행 {job.total}건 · 실패 {job.failed}건 · 최근 {job.latestAt ? formatDate(job.latestAt) : "-"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <details className="border-b border-slate-200 bg-white">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-3 text-sm font-semibold text-slate-700">
+                  <span>개발자용 정기 작업 상세</span>
+                  <Badge tone="neutral">{protectedJobEvents.length}건</Badge>
+                </summary>
+                <div className="overflow-x-auto border-t border-slate-200">
+                  <table className="min-w-[900px] text-left text-sm">
+                    <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
+                      <tr>
+                        <th className="px-5 py-3">시간</th>
+                        <th className="px-5 py-3">작업</th>
+                        <th className="px-5 py-3">상태</th>
+                        <th className="px-5 py-3">소요</th>
+                        <th className="px-5 py-3">메시지</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {protectedJobEvents.slice(0, 20).map((event) => (
+                        <tr key={event.id} className={event.status === "failed" ? "bg-amber-50/45" : undefined}>
+                          <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-600">{formatDate(event.createdAt)}</td>
+                          <td className="px-5 py-4">
+                            <p className="font-semibold text-slate-800">{protectedJobLabel(event.jobName)}</p>
+                            <p className="mt-1 font-mono text-xs text-slate-500">{event.route}</p>
+                          </td>
+                          <td className="px-5 py-4">
+                            <Badge tone={event.status === "failed" ? "warning" : "success"}>
+                              {event.status === "failed" ? "실패" : "정상"}
+                            </Badge>
+                          </td>
+                          <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-600">{formatMs(event.durationMs)}</td>
+                          <td className="max-w-[360px] truncate px-5 py-4 text-xs text-slate-600">{event.message ?? "-"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
+            </>
+          ) : (
+            <div className="p-5 text-sm text-slate-600">
+              최근 API001/API012 정기 작업 실행 이력이 없습니다. 다음 실행부터 정상/실패 상태가 이곳에 표시됩니다.
             </div>
           )}
         </CardBody>
