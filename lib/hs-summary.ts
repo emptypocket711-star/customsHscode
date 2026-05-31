@@ -10,6 +10,11 @@ function isGenericLabel(value?: string | null) {
   return !normalized || normalized === "기타" || normalized === "other" || normalized.endsWith("소호");
 }
 
+function isResidualFamilyLabel(value?: string | null) {
+  const label = cleanedLabel(value).replace(/\s/g, "");
+  return !label || label === "기타" || label.startsWith("그밖") || label.startsWith("그외");
+}
+
 function hasFinalConsonant(value: string) {
   const last = value.trim().at(-1);
   if (!last) return false;
@@ -37,6 +42,17 @@ function hs6Node(hierarchyPath: HsHierarchyNode[], hs6: string) {
   return hierarchyPath.find((node) => node.level === 6 && normalizeHsCode(node.code) === hs6);
 }
 
+function preferredFamilyLabel(hierarchyPath: HsHierarchyNode[], hs6: string) {
+  const hs6Label = cleanedLabel(hs6Node(hierarchyPath, hs6)?.label);
+  if (hs6Label && !isGenericLabel(hs6Label) && !isResidualFamilyLabel(hs6Label)) return hs6Label;
+
+  const hs4 = hs6.slice(0, 4);
+  const hs4Label = cleanedLabel(hierarchyPath.find((node) => node.level === 4 && normalizeHsCode(node.code) === hs4)?.label);
+  if (hs4Label && !isGenericLabel(hs4Label) && !isResidualFamilyLabel(hs4Label)) return hs4Label;
+
+  return "";
+}
+
 export function buildHsBriefDescription(input: {
   hskCode: string;
   hs6?: string | null;
@@ -50,15 +66,18 @@ export function buildHsBriefDescription(input: {
 
   if (!hskCode) return koreanName || "-";
 
+  const familyLabel = preferredFamilyLabel(input.hierarchyPath ?? [], hs6);
+
   if (isGenericLabel(koreanName)) {
     const genericName = koreanName || "기타";
+    if (familyLabel) return `${familyLabel} 중 ${genericName} 품목`;
+
     const materialPhrase = materialProductPhrase(hsChapterName(hskCode));
     return materialPhrase ? materialPhrase.replace(/제품$/, `${genericName} 제품`) : `${basePhrase} 중 ${genericName} 품목`;
   }
 
-  const hs6Label = cleanedLabel(hs6Node(input.hierarchyPath ?? [], hs6)?.label);
-  if (hs6Label && !isGenericLabel(hs6Label) && hs6Label !== koreanName) {
-    return `${hs6Label} 중 ${koreanName}`;
+  if (familyLabel && familyLabel !== koreanName) {
+    return `${familyLabel} 중 ${koreanName}`;
   }
 
   return `${basePhrase} 중 ${koreanName}`;
