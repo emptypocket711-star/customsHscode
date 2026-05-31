@@ -4164,6 +4164,15 @@ export async function HsDirectLookupPanel({
                         />
                       </div>
                     </div>
+                    <div className="border-b border-slate-200 bg-blue-50 px-3 py-3">
+                      <p className="text-xs font-semibold text-blue-800">10자리 요약</p>
+                      <p className="mt-1 text-base font-semibold leading-6 text-slate-950">
+                        {formatHsCode(result.hskCode)} {result.briefDescription}
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-blue-900">
+                        아래 세율, 내국세, 수입요건은 이 10자리 HSK 기준으로 조회한 예비 정보입니다.
+                      </p>
+                    </div>
                     <dl className="grid text-sm sm:grid-cols-[140px_1fr]">
                       <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.result.hsk}</dt>
                       <dd
@@ -4174,8 +4183,6 @@ export async function HsDirectLookupPanel({
                       </dd>
                       <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.result.koreanName}</dt>
                       <dd className="border-b border-slate-200 px-3 py-2">{result.koreanName}</dd>
-                      <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">간략 정보</dt>
-                      <dd className="border-b border-slate-200 px-3 py-2 leading-6">{result.briefDescription}</dd>
                       <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.result.englishName}</dt>
                       <dd className="border-b border-slate-200 px-3 py-2">{displayValue(result.englishName)}</dd>
                       <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.result.unit}</dt>
