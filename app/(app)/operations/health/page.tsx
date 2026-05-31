@@ -1445,6 +1445,15 @@ export default async function OperationsHealthPage({
               </div>
             </div>
           </div>
+          <details className="border-b border-slate-200 bg-white" open={hasOperationsIssueFilters}>
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
+              <span>
+                <span className="block text-sm font-semibold text-slate-950">상세 목록·필터·처리</span>
+                <span className="mt-1 block text-xs text-slate-500">전체 테이블, 상세 필터, 상태 처리 폼은 운영 이슈를 실제로 처리할 때만 펼칩니다.</span>
+              </span>
+              <Badge tone={filteredOperationsIssueSummary.total > 0 ? "neutral" : "success"}>표시 {filteredOperationsIssueSummary.total}건</Badge>
+            </summary>
+            <div className="border-t border-slate-200">
           {operationsIssueResolutionSummary.closed > 0 ? (
             <div className="border-b border-slate-200 bg-white p-4">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -1895,6 +1904,8 @@ export default async function OperationsHealthPage({
               )}
             </div>
           )}
+            </div>
+          </details>
         </CardBody>
       </Card>
 
