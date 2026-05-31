@@ -1825,3 +1825,21 @@
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 - `E2E_BASE_URL=https://hsfinder.co.kr npm run e2e:product-supplement`
 - Playwright 실사이트 확인: 일반 테스트 계정은 `/operations/users`에서 접근 차단 유지, 운영 UI 미노출
+
+### 운영 점검 상세 로그 기본 접힘
+
+- 이전 작업은 `/operations/users`의 특정 사용자 상세 행을 정리한 것이고, 이번 작업은 `/operations/health` 첫 화면에서 큰 운영 이슈/조회 로그 표가 바로 펼쳐지지 않게 한 것이다.
+- `운영 이슈 처리 상태`를 접힘 영역으로 바꾸고, 필터가 적용된 상태에서만 자동으로 펼치도록 했다.
+- `조회 품질 로그`는 점검 대상이 있어도 기본 접힘 상태로 두어, 요약 카드와 오늘 할 일을 먼저 보게 했다.
+- 상세 데이터, 원시 telemetry, 이슈 처리 폼은 제거하지 않았다. 운영자가 필요할 때 영역을 펼치면 기존 기능을 그대로 사용할 수 있다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test -- server/repositories/operations-issue.repository.test.ts server/repositories/lookup-telemetry.repository.test.ts`
+- `npm run build`
+- Vercel production deployment: `customs-hscode-g9nv9le11-koo-apps.vercel.app`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
+- `E2E_BASE_URL=https://hsfinder.co.kr npm run e2e:product-supplement`
+- Playwright 실사이트 확인: 일반 테스트 계정은 `/operations/users`, `/operations/health`에서 접근 차단 유지, 운영 UI 미노출
