@@ -9,6 +9,10 @@
       "schedule": "0 6 * * 5"
     },
     {
+      "path": "/api/jobs/hs-lookup-snapshots",
+      "schedule": "10 15 * * *"
+    },
+    {
       "path": "/api/jobs/trade-news",
       "schedule": "15 */6 * * *"
     },

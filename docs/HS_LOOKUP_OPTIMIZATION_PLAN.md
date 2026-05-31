@@ -107,3 +107,5 @@ The HSK 10-digit detail RPC now includes the user-visible first-screen parity ne
 Snapshot refresh functions force the refresh transaction timezone to `Asia/Seoul`, so `current_date` in the materialized read model matches the app's default basis-date rule.
 
 The declaration-name statistics section is no longer part of the initial `/hs/direct` server render. The detail page renders the primary HSK, tariff, origin-marking, standard-name, and requirement data first, then loads declaration-name statistics through `/api/hs/navigation-stats`.
+
+The read-model refresh is exposed through the protected `/api/jobs/hs-lookup-snapshots` job route and scheduled in Vercel cron at `10 15 * * *` UTC, which is 00:10 KST. This refreshes `domestic_hs_lookup_snapshots`, `hs6_lookup_snapshot`, and `hs4_lookup_snapshot` together through `refresh_hs_lookup_snapshots()`.

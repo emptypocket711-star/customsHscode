@@ -20,6 +20,7 @@
     "ops:vercel:deployments": "vercel ls",
     "ops:job:cargo-watch": "node scripts/run_protected_job.mjs cargo-watch",
     "ops:job:exchange-rates": "node scripts/run_protected_job.mjs exchange-rates",
+    "ops:job:hs-lookup-snapshots": "node scripts/run_protected_job.mjs hs-lookup-snapshots",
     "ops:job:trade-news": "node scripts/run_protected_job.mjs trade-news",
     "ops:job:background": "node scripts/run_protected_job.mjs run",
     "ops:job:operations-retention": "node scripts/run_protected_job.mjs operations-retention",
