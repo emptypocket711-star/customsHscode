@@ -754,6 +754,14 @@ export default async function OperationsHealthPage({
   const missingRequiredCount = items.filter((item) => item.status === "missing").length;
   const schemaStatusTone = schemaHealthReport.status === "ok" ? "success" : "warning";
   const schemaStatusLabel = schemaHealthReport.status === "ok" ? "정상" : schemaHealthReport.status === "warn" ? "주의" : "차단";
+  const advancedDiagnosticsWarningCount = [
+    missingRequiredCount > 0,
+    schemaHealthReport.status !== "ok",
+    !snapshotIsToday,
+    totalRetentionCandidates > 0,
+    backgroundJobSummary.dead > 0 || backgroundJobSummary.failed > 0 || backgroundJobRunSummary.failedRuns > 0 || backgroundJobRunSummary.failedJobs > 0 || backgroundJobRunSummary.latestStatus === "failed",
+    operationsAlertSummary.failed > 0
+  ].filter(Boolean).length;
   const operationalSummary = [
     {
       label: "서비스 준비",
@@ -885,8 +893,8 @@ export default async function OperationsHealthPage({
             <span className="block text-base font-semibold text-slate-950">상세 진단</span>
             <span className="mt-1 block text-sm text-slate-500">환경변수, 스키마, snapshot, worker, 알림, 수동 명령은 필요할 때만 펼쳐 확인합니다.</span>
           </span>
-          <Badge tone={operationalSummary.some((item) => item.tone === "warning") ? "warning" : "success"}>
-            상세 확인 {operationalSummary.filter((item) => item.tone === "warning").length}건
+          <Badge tone={advancedDiagnosticsWarningCount > 0 ? "warning" : "success"}>
+            상세 확인 {advancedDiagnosticsWarningCount}건
           </Badge>
         </summary>
         <div className="grid gap-5 border-t border-slate-200 bg-slate-50/45 p-4">
