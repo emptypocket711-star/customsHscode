@@ -134,37 +134,6 @@ const operationsManualCommands = [
   }
 ];
 
-const operationsSectionLinks = [
-  {
-    href: "#issue-events",
-    label: "운영 이슈",
-    detail: "지금 조치할 항목"
-  },
-  {
-    href: "#lookup-quality",
-    label: "조회 품질",
-    detail: "품명 검색 품질"
-  }
-];
-
-const operationsUsageGuide = [
-  {
-    label: "매일",
-    title: "운영 이슈·조회 품질",
-    detail: "사용자 검색에서 반복되는 문제와 미해결 이슈만 먼저 확인합니다."
-  },
-  {
-    label: "가끔",
-    title: "공지·계정·자료 관리",
-    detail: "공지 노출, 테스트 계정, 법령·뉴스 자료 수집이 필요할 때만 엽니다."
-  },
-  {
-    label: "배포 후",
-    title: "상세 진단",
-    detail: "환경변수, DB 스키마, worker, 운영 명령은 장애 대응이나 배포 검증 때만 확인합니다."
-  }
-];
-
 const occasionalManagementLinks = [
   {
     href: "/operations/notices",
@@ -803,6 +772,41 @@ export default async function OperationsHealthPage({
     detail: string;
     tone: "success" | "warning";
   }>;
+  const operatorActionItems = [
+    {
+      href: "#issue-events",
+      label: "운영 이슈",
+      value: operationsIssueSummary.open > 0 ? `${operationsIssueSummary.open}건 처리 필요` : "처리할 이슈 없음",
+      detail: operationsIssueSummary.open > 0
+        ? "반복 조회 문제나 장애 징후를 먼저 확인합니다."
+        : "미해결 운영 이슈가 없습니다.",
+      tone: operationsIssueSummary.open > 0 ? "warning" : "success"
+    },
+    {
+      href: "#lookup-quality",
+      label: "조회 품질",
+      value: lookupIssueCount > 0 ? `${lookupIssueCount}건 점검` : "정상 처리",
+      detail: lookupIssueCount > 0
+        ? "무결과, fallback, GPT 실패 흐름을 확인합니다."
+        : `최근 로그 정상 ${lookupSuccessCount}건입니다.`,
+      tone: lookupIssueCount > 0 ? "warning" : "success"
+    },
+    {
+      href: "#advanced-operations",
+      label: "상세 진단",
+      value: advancedDiagnosticsWarningCount > 0 ? `${advancedDiagnosticsWarningCount}건 확인` : "배포 후 점검 정상",
+      detail: advancedDiagnosticsWarningCount > 0
+        ? "환경, DB, snapshot, worker, 알림 중 확인할 항목이 있습니다."
+        : "장애 대응이나 배포 직후에만 펼쳐 확인하면 됩니다.",
+      tone: advancedDiagnosticsWarningCount > 0 ? "warning" : "success"
+    }
+  ] satisfies Array<{
+    href: string;
+    label: string;
+    value: string;
+    detail: string;
+    tone: "success" | "warning";
+  }>;
 
   return (
     <div className="grid gap-5">
@@ -835,31 +839,28 @@ export default async function OperationsHealthPage({
 
       <Card>
         <CardHeader
-          title="오늘 볼 항목"
-          description="1인 운영 기준으로 매일 확인할 항목만 남겼습니다. 상세 진단은 장애 대응이나 배포 후 검증 때만 펼칩니다."
+          title="오늘 할 일"
+          description="1인 운영자가 먼저 판단할 항목입니다. 정상인 항목은 확인만 하고 넘어가면 됩니다."
         />
         <CardBody>
-          <nav className="grid gap-2 sm:grid-cols-2" aria-label="운영 핵심 섹션">
-            {operationsSectionLinks.map((item) => (
+          <nav className="grid gap-2 lg:grid-cols-3" aria-label="운영 오늘 할 일">
+            {operatorActionItems.map((item) => (
               <a
-                className="rounded-md border border-slate-200 bg-white px-3 py-3 text-sm transition hover:border-blue-200 hover:bg-blue-50"
+                className={item.tone === "warning"
+                  ? "rounded-md border border-amber-200 bg-amber-50 px-3 py-3 text-sm transition hover:border-amber-300 hover:bg-amber-100/70"
+                  : "rounded-md border border-emerald-100 bg-emerald-50 px-3 py-3 text-sm transition hover:border-emerald-200 hover:bg-emerald-100/70"}
                 href={item.href}
                 key={item.href}
               >
-                <span className="font-semibold text-slate-950">{item.label}</span>
-                <span className="mt-1 block text-xs text-slate-500">{item.detail}</span>
+                <span className="flex items-start justify-between gap-2">
+                  <span className="font-semibold text-slate-950">{item.label}</span>
+                  <Badge tone={item.tone}>{item.tone === "warning" ? "확인" : "정상"}</Badge>
+                </span>
+                <span className="mt-2 block text-base font-semibold text-slate-950">{item.value}</span>
+                <span className="mt-1 block text-xs leading-5 text-slate-600">{item.detail}</span>
               </a>
             ))}
           </nav>
-          <div className="mt-4 grid gap-2 border-t border-slate-100 pt-4 lg:grid-cols-3">
-            {operationsUsageGuide.map((item) => (
-              <div className="rounded-md bg-slate-50 px-3 py-3 text-sm" key={item.label}>
-                <p className="text-xs font-semibold text-slate-500">{item.label}</p>
-                <p className="mt-1 font-semibold text-slate-950">{item.title}</p>
-                <p className="mt-1 text-xs leading-5 text-slate-500">{item.detail}</p>
-              </div>
-            ))}
-          </div>
         </CardBody>
       </Card>
 
