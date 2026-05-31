@@ -108,4 +108,4 @@ Snapshot refresh functions force the refresh transaction timezone to `Asia/Seoul
 
 The declaration-name statistics section is no longer part of the initial `/hs/direct` server render. The detail page renders the primary HSK, tariff, origin-marking, standard-name, and requirement data first, then loads declaration-name statistics through `/api/hs/navigation-stats`.
 
-The read-model refresh is exposed through the protected `/api/jobs/hs-lookup-snapshots` job route and scheduled in Vercel cron at `10 15 * * *` UTC, which is 00:10 KST. This refreshes `domestic_hs_lookup_snapshots`, `hs6_lookup_snapshot`, and `hs4_lookup_snapshot` together through `refresh_hs_lookup_snapshots()`.
+The read-model refresh is exposed through the protected `/api/jobs/hs-lookup-snapshots` job route and scheduled in Vercel cron at `10 15 * * *` UTC, which is 00:10 KST. This refreshes `domestic_hs_lookup_snapshots`, `hs6_lookup_snapshot`, and `hs4_lookup_snapshot` together through `refresh_hs_lookup_snapshots()`. The refresh function sets its transaction timezone to `Asia/Seoul` and raises the local statement timeout for the materialized-view refresh only.
