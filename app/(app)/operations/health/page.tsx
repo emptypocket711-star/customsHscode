@@ -52,6 +52,10 @@ import {
   summarizeRateLimitEvents
 } from "@/server/repositories/rate-limit-event.repository";
 import {
+  listRecentContainerReceiptFailureEvents,
+  summarizeContainerReceiptFailureEvents
+} from "@/server/repositories/container-receipt-failure-event.repository";
+import {
   getDomesticHsLookupSnapshotCoverageFromSupabase,
   type DomesticHsLookupSnapshotCoverage,
 } from "@/server/repositories/source-inventory.repository";
@@ -228,6 +232,31 @@ function operationsAlertStatusTone(status: string) {
   if (status === "sent") return "success";
   if (status === "failed") return "warning";
   return "neutral";
+}
+
+function containerReceiptFailureStatusText(status: "normal" | "watch" | "action_needed") {
+  if (status === "action_needed") return "조치 필요";
+  if (status === "watch") return "주의";
+  return "정상";
+}
+
+function containerReceiptFailureStatusTone(status: "normal" | "watch" | "action_needed") {
+  if (status === "action_needed") return "warning";
+  if (status === "watch") return "neutral";
+  return "success";
+}
+
+function containerReceiptFailureCodeLabel(code: string) {
+  const labels: Record<string, string> = {
+    browser_launch_failed: "브라우저 실행 실패",
+    terminal_capture_failed: "터미널 화면 캡처 실패",
+    terminal_container_not_confirmed: "컨테이너 번호 미확인",
+    terminal_detail_not_populated: "상세 필드 미입력",
+    terminal_helper_page_stalled: "조회 이동 화면 정체",
+    terminal_loading_not_settled: "외부 로딩 미종료"
+  };
+
+  return labels[code] ?? code;
 }
 
 function operationsIssueStatusLabel(status: OperationsIssueStatus) {
@@ -610,6 +639,13 @@ async function loadRateLimitEvents() {
   return listRecentRateLimitEvents(supabase, 50).catch(() => []);
 }
 
+async function loadContainerReceiptFailureEvents() {
+  if (!hasSupabaseEnv()) return [];
+
+  const supabase = await createSupabaseServerClient();
+  return listRecentContainerReceiptFailureEvents(supabase, 50).catch(() => []);
+}
+
 async function loadOperationsIssueEvents() {
   if (!hasSupabaseEnv()) return [];
 
@@ -657,6 +693,7 @@ export default async function OperationsHealthPage({
     backgroundJobRuns,
     operationsAlertEvents,
     rateLimitEvents,
+    containerReceiptFailureEvents,
     operationsIssueEvents,
     operationsRetentionStatus,
     schemaHealthReport,
@@ -667,6 +704,7 @@ export default async function OperationsHealthPage({
     loadBackgroundJobRuns(),
     loadOperationsAlertEvents(),
     loadRateLimitEvents(),
+    loadContainerReceiptFailureEvents(),
     loadOperationsIssueEvents(),
     loadOperationsRetentionStatus(),
     getProductionSchemaHealthReport(),
@@ -692,6 +730,7 @@ export default async function OperationsHealthPage({
   const backgroundJobRunSummary = summarizeBackgroundJobRuns(backgroundJobRuns);
   const operationsAlertSummary = summarizeOperationsAlertEvents(operationsAlertEvents);
   const rateLimitEventSummary = summarizeRateLimitEvents(rateLimitEvents);
+  const containerReceiptFailureSummary = summarizeContainerReceiptFailureEvents(containerReceiptFailureEvents);
   const filteredOperationsIssueEvents = sortOperationsIssueEventsForTriage(
     filterOperationsIssueEvents(operationsIssueEvents, issueFilters)
   );
@@ -744,7 +783,8 @@ export default async function OperationsHealthPage({
     totalRetentionCandidates > 0,
     backgroundJobSummary.dead > 0 || backgroundJobSummary.failed > 0 || backgroundJobRunSummary.failedRuns > 0 || backgroundJobRunSummary.failedJobs > 0 || backgroundJobRunSummary.latestStatus === "failed",
     operationsAlertSummary.failed > 0,
-    rateLimitEventSummary.total > 0
+    rateLimitEventSummary.total > 0,
+    containerReceiptFailureSummary.status !== "normal"
   ].filter(Boolean).length;
   const operationalSummary = [
     {
@@ -780,6 +820,14 @@ export default async function OperationsHealthPage({
         ? `최다 ${recurringLookupIssues[0].label} ${recurringLookupIssues[0].issueCount}건`
         : `정상 ${lookupSuccessCount}건 / 무결과 ${zeroResultCount}건`,
       tone: lookupIssueCount > 0 ? "warning" : "success"
+    },
+    {
+      label: "반입계 출력",
+      value: containerReceiptFailureStatusText(containerReceiptFailureSummary.status),
+      detail: containerReceiptFailureSummary.total > 0
+        ? `최근 실패 ${containerReceiptFailureSummary.total}건 / 반복 ${containerReceiptFailureSummary.repeatedBucketCount}개`
+        : "최근 실패 없음",
+      tone: containerReceiptFailureSummary.status === "action_needed" ? "warning" : "success"
     }
   ] satisfies Array<{
     label: string;
@@ -805,6 +853,17 @@ export default async function OperationsHealthPage({
         ? "무결과, fallback, GPT 실패 흐름을 확인합니다."
         : `최근 로그 정상 ${lookupSuccessCount}건입니다.`,
       tone: lookupIssueCount > 0 ? "warning" : "success"
+    },
+    {
+      href: "#container-receipt-failures",
+      label: "반입계 출력",
+      value: containerReceiptFailureStatusText(containerReceiptFailureSummary.status),
+      detail: containerReceiptFailureSummary.status === "action_needed"
+        ? "반복 실패가 있습니다. 이 화면을 기준으로 개발 수정이 필요합니다."
+        : containerReceiptFailureSummary.status === "watch"
+          ? "일시 실패가 있어 추이를 확인합니다."
+          : "최근 반입계 출력 실패가 없습니다.",
+      tone: containerReceiptFailureSummary.status === "action_needed" ? "warning" : "success"
     },
     {
       href: "#advanced-operations",
@@ -846,7 +905,7 @@ export default async function OperationsHealthPage({
           action={<Badge tone={operationalSummary.some((item) => item.tone === "warning") ? "warning" : "success"}>점검 {operationalSummary.filter((item) => item.tone === "warning").length}건</Badge>}
         />
         <CardBody>
-          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-5">
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-6">
             {operationalSummary.map((item) => (
               <div key={item.label} className="rounded-md border border-slate-200 bg-white px-3 py-3">
                 <div className="flex items-start justify-between gap-2">
@@ -867,7 +926,7 @@ export default async function OperationsHealthPage({
           description="1인 운영자가 먼저 판단할 항목입니다. 정상인 항목은 확인만 하고 넘어가면 됩니다."
         />
         <CardBody>
-          <nav className="grid gap-2 lg:grid-cols-4" aria-label="운영 오늘 할 일">
+          <nav className="grid gap-2 lg:grid-cols-5" aria-label="운영 오늘 할 일">
             {operatorActionItems.map((item) => (
               <a
                 className={item.tone === "warning"
@@ -1118,7 +1177,7 @@ export default async function OperationsHealthPage({
                 <span className="block text-sm font-semibold text-slate-950">작업·알림 이력</span>
                 <span className="mt-1 block text-xs text-slate-500">보존 상태, worker queue, worker 실행, 운영 알림 이력은 실패나 정리 후보가 있을 때 확인합니다.</span>
               </span>
-              <Badge tone={totalRetentionCandidates > 0 || backgroundJobSummary.dead > 0 || backgroundJobRunSummary.failedRuns > 0 || operationsAlertSummary.failed > 0 || rateLimitEventSummary.total > 0 ? "warning" : "success"}>5개 항목</Badge>
+              <Badge tone={totalRetentionCandidates > 0 || backgroundJobSummary.dead > 0 || backgroundJobRunSummary.failedRuns > 0 || operationsAlertSummary.failed > 0 || rateLimitEventSummary.total > 0 || containerReceiptFailureSummary.status !== "normal" ? "warning" : "success"}>6개 항목</Badge>
             </summary>
             <div className="grid gap-5 border-t border-slate-200 bg-slate-50/45 p-4">
       <Card id="retention-health" className="scroll-mt-6">
@@ -1414,6 +1473,91 @@ export default async function OperationsHealthPage({
           ) : (
             <div className="p-5 text-sm text-slate-600">
               아직 운영 알림 이력이 없습니다. worker 실패 알림 발송 또는 throttle 생략 후 표시됩니다.
+            </div>
+          )}
+        </CardBody>
+      </Card>
+
+      <Card id="container-receipt-failures" className="scroll-mt-6">
+        <CardHeader
+          title="반입계 출력 실패 상태"
+          description="운영자는 정상/주의/조치 필요만 먼저 보면 됩니다. 반복 실패가 있으면 이 화면을 기준으로 개발 수정 대상을 좁힙니다."
+          action={
+            <Badge tone={containerReceiptFailureStatusTone(containerReceiptFailureSummary.status)}>
+              {containerReceiptFailureStatusText(containerReceiptFailureSummary.status)}
+            </Badge>
+          }
+        />
+        <CardBody className="p-0">
+          <div className="grid gap-2 border-b border-slate-200 bg-slate-50 p-3 text-sm md:grid-cols-3">
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">최근 실패</p>
+              <p className={containerReceiptFailureSummary.total > 0 ? "mt-1 font-semibold text-amber-700" : "mt-1 font-semibold text-emerald-700"}>
+                {containerReceiptFailureSummary.total}건
+              </p>
+            </div>
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">반복 실패 묶음</p>
+              <p className={containerReceiptFailureSummary.repeatedBucketCount > 0 ? "mt-1 font-semibold text-amber-700" : "mt-1 font-semibold text-emerald-700"}>
+                {containerReceiptFailureSummary.repeatedBucketCount}개
+              </p>
+            </div>
+            <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+              <p className="text-xs font-semibold text-slate-500">최근 발생</p>
+              <p className="mt-1 font-semibold text-slate-950">
+                {containerReceiptFailureSummary.latestAt ? formatDate(containerReceiptFailureSummary.latestAt) : "-"}
+              </p>
+            </div>
+          </div>
+          {containerReceiptFailureEvents.length ? (
+            <>
+              <div className="grid gap-2 border-b border-slate-200 bg-white p-3 text-sm md:grid-cols-3">
+                {containerReceiptFailureSummary.topBuckets.slice(0, 3).map((bucket) => (
+                  <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2" key={`${bucket.terminalCode}-${bucket.failureCode}`}>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge tone={bucket.total >= 3 ? "warning" : "neutral"}>{bucket.terminalCode.toUpperCase()}</Badge>
+                      <p className="text-sm font-semibold text-slate-950">{containerReceiptFailureCodeLabel(bucket.failureCode)}</p>
+                    </div>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                      실패 {bucket.total}건 · 최근 {bucket.latestAt ? formatDate(bucket.latestAt) : "-"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <details className="border-b border-slate-200 bg-white">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-3 text-sm font-semibold text-slate-700">
+                  <span>개발자용 실패 코드 상세</span>
+                  <Badge tone="neutral">{containerReceiptFailureEvents.length}건</Badge>
+                </summary>
+                <div className="overflow-x-auto border-t border-slate-200">
+                  <table className="min-w-[900px] text-left text-sm">
+                    <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
+                      <tr>
+                        <th className="px-5 py-3">시간</th>
+                        <th className="px-5 py-3">터미널</th>
+                        <th className="px-5 py-3">원인</th>
+                        <th className="px-5 py-3">코드</th>
+                        <th className="px-5 py-3">메시지</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {containerReceiptFailureEvents.slice(0, 20).map((event) => (
+                        <tr key={event.id}>
+                          <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-600">{formatDate(event.createdAt)}</td>
+                          <td className="px-5 py-4 font-semibold text-slate-800">{event.terminalCode.toUpperCase()}</td>
+                          <td className="px-5 py-4 text-slate-700">{containerReceiptFailureCodeLabel(event.failureCode)}</td>
+                          <td className="px-5 py-4 font-mono text-xs text-slate-500">{event.failureCode}</td>
+                          <td className="max-w-[360px] truncate px-5 py-4 text-xs text-slate-600">{event.message ?? "-"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
+            </>
+          ) : (
+            <div className="p-5 text-sm text-slate-600">
+              최근 반입계 출력 실패가 없습니다. 실패가 반복되면 터미널과 원인 묶음이 먼저 표시되고, 개발자용 세부 코드는 접힌 영역에 남습니다.
             </div>
           )}
         </CardBody>

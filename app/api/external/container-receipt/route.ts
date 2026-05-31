@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { Browser, Page } from "playwright-core";
 import { requireAuthenticatedApiRoute } from "@/server/auth/api-route-auth";
+import { logContainerReceiptFailure } from "@/server/observability/container-receipt-failure-events";
 import { externalIntegrationErrorResponse } from "@/server/services/external-integration-error";
 
 export const runtime = "nodejs";
@@ -272,6 +273,13 @@ export async function POST(request: Request) {
     browser = await launchChromium();
   } catch (error) {
     console.warn("[container-receipt] browser launch failed", { message: error instanceof Error ? error.message : "unknown" });
+    await logContainerReceiptFailure({
+      containerNo,
+      failureCode: "browser_launch_failed",
+      message: error instanceof Error ? error.message : "unknown",
+      terminalCode,
+      userId: auth.userId
+    });
     return externalIntegrationErrorResponse({
       code: "browser_launch_failed",
       level: "configuration",
@@ -295,6 +303,22 @@ export async function POST(request: Request) {
         code: failure.code,
         containerNo,
         message: error instanceof Error ? error.message : "unknown"
+      });
+      await logContainerReceiptFailure({
+        containerNo,
+        failureCode: failure.code,
+        message: error instanceof Error ? error.message : failure.message,
+        metadata: error instanceof ReceiptScreenNotReadyError
+          ? {
+              hasContainerNo: error.readiness.hasContainerNo,
+              hasLoadingOverlay: error.readiness.hasLoadingOverlay,
+              isHelperPage: error.readiness.isHelperPage,
+              populatedFieldCount: error.readiness.populatedFieldCount,
+              readyState: error.readiness.readyState
+            }
+          : {},
+        terminalCode,
+        userId: auth.userId
       });
       return externalIntegrationErrorResponse({
         code: failure.code,
