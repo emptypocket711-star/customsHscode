@@ -5,14 +5,17 @@ import {
   Car,
   ChevronLeft,
   ChevronRight,
+  Database,
   FileSpreadsheet,
   Globe2,
   LayoutDashboard,
+  Megaphone,
   Menu,
   Newspaper,
   PackageSearch,
   Search,
   ShieldCheck,
+  Users,
   type LucideIcon
 } from "lucide-react";
 import Link from "next/link";
@@ -45,7 +48,10 @@ const resourceNavItems: NavItem[] = [
 ];
 
 const operationNavItems: NavItem[] = [
-  { href: "/operations/health", labelKey: "health", icon: ShieldCheck }
+  { href: "/operations/health", labelKey: "health", icon: ShieldCheck },
+  { href: "/operations/notices", labelKey: "notices", icon: Megaphone },
+  { href: "/operations/users", labelKey: "users", icon: Users },
+  { href: "/legal-updates", labelKey: "legalUpdates", icon: Database }
 ];
 
 function isActivePath(pathname: string, href: string) {
@@ -166,7 +172,7 @@ export function AppSideNav({
           <NavGroup items={primaryNavItems} labels={dictionary.nav.items} pathname={pathname} title={dictionary.nav.sections.workspace} />
           <NavDetailsGroup items={secondaryNavItems} labels={dictionary.nav.items} pathname={pathname} title={dictionary.nav.sections.secondary} />
           <NavDetailsGroup items={resourceNavItems} labels={dictionary.nav.items} pathname={pathname} title={dictionary.nav.sections.resources} />
-          {showOperations ? <NavGroup items={operationNavItems} labels={dictionary.nav.items} pathname={pathname} title={dictionary.nav.sections.operations} /> : null}
+          {showOperations ? <NavDetailsGroup items={operationNavItems} labels={dictionary.nav.items} pathname={pathname} title={dictionary.nav.sections.operations} /> : null}
         </nav>
       </details>
 
@@ -207,13 +213,17 @@ export function AppSideNav({
             <NavDetailsGroup items={resourceNavItems} labels={dictionary.nav.items} pathname={pathname} title={dictionary.nav.sections.resources} />
           )}
           {showOperations ? (
-            <NavGroup
-              collapsed={collapsed}
-              items={operationNavItems}
-              labels={dictionary.nav.items}
-              pathname={pathname}
-              title={dictionary.nav.sections.operations}
-            />
+            collapsed ? (
+              <NavGroup
+                collapsed
+                items={operationNavItems.filter((item) => item.href === "/operations/health" || isActivePath(pathname, item.href))}
+                labels={dictionary.nav.items}
+                pathname={pathname}
+                title={dictionary.nav.sections.operations}
+              />
+            ) : (
+              <NavDetailsGroup items={operationNavItems} labels={dictionary.nav.items} pathname={pathname} title={dictionary.nav.sections.operations} />
+            )
           ) : null}
         </nav>
       </aside>
