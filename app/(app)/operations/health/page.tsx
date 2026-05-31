@@ -584,6 +584,24 @@ function summarizeHsDirectLookupSources(events: LookupTelemetryEvent[]) {
   });
 }
 
+function summarizeProductRecommendationCacheImpact(events: LookupTelemetryEvent[]) {
+  const productRecommendationEvents = events.filter((event) => event.eventType === "product_candidates_recommended");
+  const emptyEvents = productRecommendationEvents.filter((event) => event.resultCount === 0);
+  const durationValues = emptyEvents
+    .map((event) => event.durationMs ?? payloadNumber(event.payload, "durationMs"))
+    .filter((value): value is number => value !== null);
+  const gptFailedEmpty = emptyEvents.filter((event) => payloadString(event.payload, "normalizationStatus") === "failed").length;
+
+  return {
+    total: productRecommendationEvents.length,
+    empty: emptyEvents.length,
+    gptFailedEmpty,
+    averageEmptyDurationMs: durationValues.length
+      ? durationValues.reduce((sum, value) => sum + value, 0) / durationValues.length
+      : null
+  };
+}
+
 async function loadLookupTelemetryEvents() {
   if (!hasSupabaseEnv()) return [];
 
@@ -684,6 +702,7 @@ export default async function OperationsHealthPage({
   const lookupDailySummary = summarizeLookupTelemetryByDay(lookupTelemetryEvents);
   const lookupRouteSummary = summarizeLookupTelemetryByRoute(lookupTelemetryEvents);
   const hsDirectSourceSummary = summarizeHsDirectLookupSources(lookupTelemetryEvents);
+  const productRecommendationCacheImpact = summarizeProductRecommendationCacheImpact(lookupTelemetryEvents);
   const recurringLookupIssues = summarizeRecurringLookupTelemetryIssues(lookupTelemetryEvents, 3);
   const priorityLookupEvents = lookupTelemetryEvents.filter(isLookupTelemetryIssue).slice(0, 8);
   const normalLookupSamples = lookupTelemetryEvents.filter((event) => !isLookupTelemetryIssue(event)).slice(0, 3);
@@ -1888,7 +1907,7 @@ export default async function OperationsHealthPage({
         <CardBody className="p-0">
           {lookupTelemetryEvents.length ? (
             <>
-              <div className="grid gap-2 border-b border-slate-200 bg-slate-50 p-3 text-sm sm:grid-cols-3">
+              <div className="grid gap-2 border-b border-slate-200 bg-slate-50 p-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
                 <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
                   <p className="text-xs font-semibold text-slate-500">정상 처리</p>
                   <p className="mt-1 font-semibold text-emerald-700">{lookupSuccessCount}건</p>
@@ -1900,6 +1919,13 @@ export default async function OperationsHealthPage({
                 <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
                   <p className="text-xs font-semibold text-slate-500">무결과</p>
                   <p className="mt-1 font-semibold text-slate-950">{zeroResultCount}건</p>
+                </div>
+                <div className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2">
+                  <p className="text-xs font-semibold text-blue-800">무결과 단기 캐시 대상</p>
+                  <p className="mt-1 font-semibold text-blue-950">{productRecommendationCacheImpact.empty}건</p>
+                  <p className="mt-1 text-xs leading-5 text-blue-900">
+                    평균 {formatMs(productRecommendationCacheImpact.averageEmptyDurationMs)} · GPT 실패 {productRecommendationCacheImpact.gptFailedEmpty}건
+                  </p>
                 </div>
               </div>
               {recurringLookupIssues.length ? (
