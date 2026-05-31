@@ -457,7 +457,8 @@ function mapResult(
       hskCode: record.hsk_code,
       hs6: record.hs6,
       koreanName: record.korean_name,
-      hierarchyPath
+      hierarchyPath,
+      familyLabels: hierarchyLabels
     }),
     englishName: record.english_name,
     importNatureCode: record.import_nature_code,

@@ -34,6 +34,25 @@ describe("HS summary helpers", () => {
     expect(buildHsBriefDescription(input)).toBe("설탕과자류 중 기타 품목");
   });
 
+  it("prefers official intermediate HSK family labels when available", () => {
+    const input = {
+      hskCode: "1704902090",
+      hs6: "170490",
+      koreanName: "기타",
+      hierarchyPath: [
+        { code: "17", label: "당류와 설탕과자", level: 2 as const },
+        { code: "1704", label: "1704 호", level: 4 as const },
+        { code: "170490", label: "기타", level: 6 as const },
+        { code: "1704902090", label: "기타", level: 10 as const }
+      ],
+      familyLabels: {
+        "17049020": "캔디류"
+      }
+    };
+
+    expect(buildHsBriefDescription(input)).toBe("캔디류 중 기타 품목");
+  });
+
   it("uses available subheading labels for specific HSK names", () => {
     const input = {
       hskCode: "3304991000",

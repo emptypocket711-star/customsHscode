@@ -7,7 +7,7 @@ function cleanedLabel(value?: string | null) {
 
 function isGenericLabel(value?: string | null) {
   const normalized = cleanedLabel(value).replace(/[\s.:-]/g, "").toLowerCase();
-  return !normalized || normalized === "기타" || normalized === "other" || normalized.endsWith("소호");
+  return !normalized || normalized === "기타" || normalized === "other" || normalized.endsWith("소호") || /^\d{4,10}(호|품목)$/.test(normalized);
 }
 
 function isResidualFamilyLabel(value?: string | null) {
@@ -42,7 +42,22 @@ function hs6Node(hierarchyPath: HsHierarchyNode[], hs6: string) {
   return hierarchyPath.find((node) => node.level === 6 && normalizeHsCode(node.code) === hs6);
 }
 
-function preferredFamilyLabel(hierarchyPath: HsHierarchyNode[], hs6: string) {
+function preferredFamilyLabel(
+  hierarchyPath: HsHierarchyNode[],
+  hs6: string,
+  hskCode: string,
+  familyLabels: Record<string, string | null | undefined>
+) {
+  const intermediateCodes = [
+    hskCode.length > 8 ? hskCode.slice(0, 8) : "",
+    hskCode.length > 7 ? hskCode.slice(0, 7) : ""
+  ].filter(Boolean);
+
+  for (const code of intermediateCodes) {
+    const label = cleanedLabel(familyLabels[code]);
+    if (label && !isGenericLabel(label) && !isResidualFamilyLabel(label)) return label;
+  }
+
   const hs6Label = cleanedLabel(hs6Node(hierarchyPath, hs6)?.label);
   if (hs6Label && !isGenericLabel(hs6Label) && !isResidualFamilyLabel(hs6Label)) return hs6Label;
 
@@ -58,6 +73,7 @@ export function buildHsBriefDescription(input: {
   hs6?: string | null;
   koreanName?: string | null;
   hierarchyPath?: HsHierarchyNode[];
+  familyLabels?: Record<string, string | null | undefined>;
 }) {
   const hskCode = normalizeHsCode(input.hskCode);
   const hs6 = normalizeHsCode(input.hs6 || hskCode.slice(0, 6));
@@ -66,7 +82,7 @@ export function buildHsBriefDescription(input: {
 
   if (!hskCode) return koreanName || "-";
 
-  const familyLabel = preferredFamilyLabel(input.hierarchyPath ?? [], hs6);
+  const familyLabel = preferredFamilyLabel(input.hierarchyPath ?? [], hs6, hskCode, input.familyLabels ?? {});
 
   if (isGenericLabel(koreanName)) {
     const genericName = koreanName || "기타";

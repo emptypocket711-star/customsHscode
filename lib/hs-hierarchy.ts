@@ -121,6 +121,7 @@ export function hsAncestorCodes(value: string) {
     normalized.slice(0, 2),
     normalized.slice(0, 4),
     normalized.slice(0, 6),
+    normalized.slice(0, 8),
     normalized
   ].filter((code, index, array) => code.length >= 2 && array.indexOf(code) === index);
 }
