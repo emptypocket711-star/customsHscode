@@ -10,8 +10,8 @@ export default async function StaffReviewPage() {
   return (
     <>
       <PageHeading
-        title="담당자 검토 센터"
-        description="HS 후보, 리포트, 법령 변경 이벤트를 검토합니다. 고객 화면의 예비진단은 담당자 승인과 분리됩니다."
+        title="내부 검토 보관함"
+        description="고객에게 노출하지 않는 내부 운영 화면입니다. HS 후보, 문서 보정, 리포트 초안, 자료 변경 기록을 필요할 때만 확인합니다."
       />
       {!guard.allowed ? <AccessDenied message={guard.message} /> : null}
       {guard.allowed ? <StaffModeBanner message={guard.message} mode={guard.mode} /> : null}

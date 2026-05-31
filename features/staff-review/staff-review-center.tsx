@@ -15,6 +15,24 @@ function riskTone(riskLevel: string): "warning" | "info" | "neutral" {
   return "neutral";
 }
 
+const reviewGuide = [
+  {
+    label: "현재 사용",
+    title: "문서 보정·리포트 초안·자료 변경",
+    detail: "내부 품질 확인이 필요한 항목만 운영자가 직접 봅니다."
+  },
+  {
+    label: "숨김 유지",
+    title: "HS 확정 요청",
+    detail: "관세사무소 협업과 가격 정책이 정해질 때까지 고객 화면에 노출하지 않습니다."
+  },
+  {
+    label: "안전 원칙",
+    title: "확정 표현 금지",
+    detail: "고객 결과는 예비진단이며 법령·세관·관계기관 확인 가능성을 남깁니다."
+  }
+];
+
 export async function StaffReviewCenter() {
   const queue = await getStaffReviewQueue();
   const actionDisabled = queue.dataSource !== "supabase";
@@ -26,13 +44,32 @@ export async function StaffReviewCenter() {
         <CardBody>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-semibold text-slate-950">검토 큐 데이터 소스</p>
+              <p className="text-sm font-semibold text-slate-950">내부 검토 데이터 상태</p>
               <p className="mt-1 text-sm text-slate-600">
-                {queue.dataSource === "supabase" ? "Supabase RLS 정책을 통과한 검토 대기 데이터를 표시합니다." : "Supabase 연결 전이거나 조회 실패로 mock 검토 큐를 표시합니다."}
+                {queue.dataSource === "supabase" ? "권한 정책을 통과한 내부 검토 데이터를 표시합니다." : "Supabase 연결 전이거나 조회 실패로 예시 데이터를 표시합니다."}
               </p>
               {queue.loadError ? <p className="mt-1 text-sm text-amber-800">조회 오류: {queue.loadError}</p> : null}
             </div>
             <Badge tone={queue.dataSource === "supabase" ? "success" : "warning"}>{queue.dataSource}</Badge>
+          </div>
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="운영 기준"
+          description="이 화면은 고객용 기능이 아니라 내부 보관·품질 확인용입니다. 숨김 기능은 기능 자체만 보존합니다."
+          action={<Badge tone="neutral">내부 전용</Badge>}
+        />
+        <CardBody>
+          <div className="grid gap-2 lg:grid-cols-3">
+            {reviewGuide.map((item) => (
+              <div className="rounded-md bg-slate-50 px-3 py-3 text-sm" key={item.label}>
+                <p className="text-xs font-semibold text-slate-500">{item.label}</p>
+                <p className="mt-1 font-semibold text-slate-950">{item.title}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">{item.detail}</p>
+              </div>
+            ))}
           </div>
         </CardBody>
       </Card>
@@ -46,7 +83,7 @@ export async function StaffReviewCenter() {
         </Card>
         <Card>
           <CardBody>
-            <p className="text-sm font-medium text-slate-600">HS 확정 요청</p>
+            <p className="text-sm font-medium text-slate-600">숨김 HS 요청</p>
             <p className="mt-2 text-3xl font-semibold text-slate-950">{queue.summary.hsConfirmationRequestCount}</p>
           </CardBody>
         </Card>
@@ -78,25 +115,25 @@ export async function StaffReviewCenter() {
 
       <Card>
         <CardHeader
-          title="권한 정책"
-          description="클라이언트 사용자는 HS 확정, 리포트 승인, 법령 publish를 수행할 수 없습니다."
-          action={<Badge tone="warning">developer only</Badge>}
+          title="내부 권한 정책"
+          description="고객 계정은 내부 검토 처리, 리포트 승인, 자료 게시 전환을 수행할 수 없습니다."
+          action={<Badge tone="warning">운영자 전용</Badge>}
         />
         <CardBody>
           <div className="grid gap-3 md:grid-cols-3">
             <div className="rounded-md border border-slate-200 p-4">
               <ShieldCheck aria-hidden="true" className="text-blue-700" size={22} />
-              <p className="mt-2 text-sm font-semibold text-slate-950">Client approval</p>
+              <p className="mt-2 text-sm font-semibold text-slate-950">고객 승인 권한</p>
               <p className="mt-1 text-sm text-slate-600">{queue.permissions.clientCanApprove ? "가능" : "불가"}</p>
             </div>
             <div className="rounded-md border border-slate-200 p-4">
               <Gavel aria-hidden="true" className="text-blue-700" size={22} />
-              <p className="mt-2 text-sm font-semibold text-slate-950">Staff approval</p>
+              <p className="mt-2 text-sm font-semibold text-slate-950">운영자 처리 권한</p>
               <p className="mt-1 text-sm text-slate-600">{queue.permissions.staffCanApprove ? "가능" : "불가"}</p>
             </div>
             <div className="rounded-md border border-slate-200 p-4">
               <CheckCircle2 aria-hidden="true" className="text-blue-700" size={22} />
-              <p className="mt-2 text-sm font-semibold text-slate-950">Audit log</p>
+              <p className="mt-2 text-sm font-semibold text-slate-950">처리 이력 기록</p>
               <p className="mt-1 text-sm text-slate-600">{queue.permissions.approvalRequiresAuditLog ? "필수" : "선택"}</p>
             </div>
           </div>
@@ -104,7 +141,7 @@ export async function StaffReviewCenter() {
       </Card>
 
       <Card>
-        <CardHeader title="HS 후보 검토" description="AI 후보는 확정이 아니며 담당자가 선택, 반려, staff_confirmed 처리를 해야 합니다." action={<Badge tone="warning">HSK 확정 후 재조회 필요</Badge>} />
+        <CardHeader title="AI HS 후보 점검" description="AI 후보는 확정 결과가 아닙니다. 내부 품질 확인과 후보 상태 관리 용도로만 사용합니다." action={<Badge tone="warning">확정 표현 금지</Badge>} />
         <CardBody className="grid gap-3">
           {queue.hsCandidates.map((candidate) => (
             <article className="rounded-lg border border-slate-200 p-4" key={candidate.id}>
@@ -133,9 +170,15 @@ export async function StaffReviewCenter() {
         </CardBody>
       </Card>
 
-      <Card>
-        <CardHeader title="HS 확정 요청" description="사용자가 특정 HS CODE로 확정 요청한 건입니다. 보완자료와 코드 적합성을 확인한 뒤 승인 또는 반려합니다." action={<Badge tone="warning">사용자 요청</Badge>} />
-        <CardBody className="grid gap-3">
+      <details className="rounded-lg border border-slate-200 bg-white shadow-sm">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4">
+          <span>
+            <span className="block text-base font-semibold text-slate-950">숨김 기능: HS 요청 보관</span>
+            <span className="mt-1 block text-sm text-slate-500">협업 관세사무소와 가격 정책이 정해질 때까지 고객 화면에는 노출하지 않는 내부 보관 영역입니다.</span>
+          </span>
+          <Badge tone="neutral">{queue.summary.hsConfirmationRequestCount}건</Badge>
+        </summary>
+        <div className="grid gap-3 border-t border-slate-200 bg-slate-50/45 p-4">
           {queue.hsConfirmationRequests.map((request) => (
             <article className="rounded-lg border border-slate-200 p-4" key={request.id}>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -174,8 +217,8 @@ export async function StaffReviewCenter() {
               <StaffReviewActions disabled={actionDisabled} targetId={request.id} targetType="hs_confirmation_request" />
             </article>
           ))}
-        </CardBody>
-      </Card>
+        </div>
+      </details>
 
       <Card>
         <CardHeader title="문서 추출 보정 큐" description="Invoice, Packing List, B/L에서 추출된 라인아이템 후보를 확인하고 HS 추천 전 보정합니다." action={<Badge tone="warning">예비 추출값</Badge>} />
@@ -230,7 +273,7 @@ export async function StaffReviewCenter() {
 
       <div className="grid gap-5 lg:grid-cols-2">
         <Card>
-          <CardHeader title="리포트 승인 대기" description="고객 게시 전 source lock과 담당자 메모를 확인해야 합니다." action={<Badge tone="warning">pending_review</Badge>} />
+          <CardHeader title="리포트 초안 확인" description="고객 게시 전 source lock과 내부 메모를 확인하는 보관 영역입니다." action={<Badge tone="warning">확인 대기</Badge>} />
           <CardBody className="grid gap-3">
             {queue.reports.map((report) => (
               <article className="rounded-md border border-slate-200 p-3" key={report.id}>
@@ -248,7 +291,7 @@ export async function StaffReviewCenter() {
         </Card>
 
         <Card>
-          <CardHeader title="법령 변경 검토" description="medium 이상 변경은 승인 전 publish 차단 상태입니다." action={<Badge tone="warning">publish blocked</Badge>} />
+          <CardHeader title="자료 변경 확인" description="중요 변경은 확인 전 게시 전환을 차단합니다." action={<Badge tone="warning">게시 차단</Badge>} />
           <CardBody className="grid gap-3">
             {queue.legalChanges.map((change) => (
               <article className="rounded-md border border-slate-200 p-3" key={change.id}>
