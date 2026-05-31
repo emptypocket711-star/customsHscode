@@ -16,8 +16,9 @@ export type UsedCarExportDictionary = {
     description: string;
     featureDescription: string;
     featureTitle: string;
+    openTool: string;
     title: string;
-    rows: Array<{ description: string; title: string }>;
+    rows: Array<{ description: string; href: string; title: string }>;
   };
   vehicleSpec: {
     emptyDetails: string;
@@ -86,17 +87,20 @@ const dictionaries = {
       containerCheck: "컨테이너 반입 확인"
     },
     overview: {
-      description: "중고차 수출 실무에서 자주 확인하는 제원, 컨테이너 반입, 터미널 조회 기능을 모아두는 작업 공간입니다.",
-      featureDescription: "필요한 업무를 선택해서 조회를 시작합니다.",
-      featureTitle: "지원 기능",
+      description: "중고차 수출 실무에서 자주 확인하는 차량 제원, 컨테이너 반입, 터미널 조회를 바로 확인하는 업무 도구입니다.",
+      featureDescription: "현재 필요한 실무 작업을 선택해 바로 조회합니다.",
+      featureTitle: "실무 조회 도구",
+      openTool: "조회 시작",
       rows: [
         {
+          href: "/used-car-export/vehicle-spec",
           title: "제원정보 조회",
-          description: "제원관리번호로 자동차 제원 정보를 확인합니다."
+          description: "제원관리번호 기준으로 차량 제원 정보를 확인합니다."
         },
         {
+          href: "/used-car-export/container-check",
           title: "컨테이너 반입 확인",
-          description: "컨테이너 번호로 터미널 반입 정보를 확인합니다."
+          description: "컨테이너 번호로 운송현황과 터미널 반입 정보를 확인합니다."
         }
       ],
       title: "중고차 수출"
@@ -177,16 +181,19 @@ const dictionaries = {
     },
     overview: {
       description: "A workspace for frequently checked used-car export tasks, including vehicle specs, container gate-in, and terminal lookup.",
-      featureDescription: "Select a task to start lookup.",
-      featureTitle: "Available tools",
+      featureDescription: "Select the practical task you need and start lookup.",
+      featureTitle: "Practical lookup tools",
+      openTool: "Start lookup",
       rows: [
         {
+          href: "/used-car-export/vehicle-spec",
           title: "Vehicle specs lookup",
           description: "Check vehicle specification data by specification management number."
         },
         {
+          href: "/used-car-export/container-check",
           title: "Container gate-in check",
-          description: "Check terminal gate-in information by container number."
+          description: "Check transport status and terminal gate-in information by container number."
         }
       ],
       title: "Used-Car Export"
@@ -266,17 +273,20 @@ const dictionaries = {
       containerCheck: "集装箱入场确认"
     },
     overview: {
-      description: "用于二手车出口实务中常用的车辆规格、集装箱入场和码头查询工作区。",
-      featureDescription: "请选择需要的业务并开始查询。",
-      featureTitle: "支持功能",
+      description: "用于二手车出口实务中快速确认车辆规格、集装箱入场和码头查询的业务工具。",
+      featureDescription: "请选择当前需要的实务工作并立即查询。",
+      featureTitle: "实务查询工具",
+      openTool: "开始查询",
       rows: [
         {
+          href: "/used-car-export/vehicle-spec",
           title: "车辆规格查询",
           description: "通过规格管理编号确认车辆规格信息。"
         },
         {
+          href: "/used-car-export/container-check",
           title: "集装箱入场确认",
-          description: "通过集装箱编号确认码头入场信息。"
+          description: "通过集装箱编号确认运输状态和码头入场信息。"
         }
       ],
       title: "二手车出口"

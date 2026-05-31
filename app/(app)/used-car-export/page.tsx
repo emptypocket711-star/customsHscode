@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { PageHeading } from "@/components/page-heading";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { UsedCarExportTabs } from "@/features/used-car-export/used-car-export-tabs";
@@ -19,10 +21,19 @@ export default async function UsedCarExportPage() {
         <CardBody>
           <div className="grid gap-3 md:grid-cols-2">
             {dictionary.overview.rows.map((row) => (
-              <div className="rounded-md border border-slate-200 bg-slate-50 p-4" key={row.title}>
-                <p className="text-sm font-semibold text-slate-950">{row.title}</p>
+              <Link
+                className="focus-ring group rounded-md border border-slate-200 bg-slate-50 p-4 transition hover:border-blue-200 hover:bg-blue-50"
+                data-navigation-progress={row.title}
+                href={row.href}
+                key={row.title}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-sm font-semibold text-slate-950">{row.title}</p>
+                  <ArrowRight aria-hidden="true" className="text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-blue-700" size={17} />
+                </div>
                 <p className="mt-1 text-sm leading-6 text-slate-600">{row.description}</p>
-              </div>
+                <span className="mt-3 inline-flex items-center text-xs font-semibold text-blue-700">{dictionary.overview.openTool}</span>
+              </Link>
             ))}
           </div>
         </CardBody>
