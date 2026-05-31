@@ -55,11 +55,10 @@ export type DashboardDictionary = {
     title: string;
   };
   workflows: {
-    edit: string;
-    editClose: string;
     open: string;
+    description: string;
     title: string;
-    items: Record<"cargo" | "direct" | "duty" | "overseas" | "vehicle-spec", {
+    items: Record<"cargo" | "duty" | "overseas" | "vehicle-spec", {
       description: string;
       title: string;
     }>;
@@ -129,13 +128,11 @@ const dictionaries = {
       title: "공지사항"
     },
     workflows: {
-      edit: "대시보드 편집",
-      editClose: "편집 닫기",
       open: "열기",
-      title: "바로가기",
+      description: "상단 검색 이후 필요한 보조 업무입니다.",
+      title: "다음 업무",
       items: {
         cargo: { description: "HBL 진행 상태와 알림", title: "적하목록 조회" },
-        direct: { description: "코드 또는 품명으로 조회", title: "통합 조회" },
         duty: { description: "입력값 기준 예비 산출", title: "예상 납세액 산출" },
         overseas: { description: "목적국 기준으로 조회", title: "해외 HS CODE조회" },
         "vehicle-spec": { description: "제원·컨테이너 조회", title: "중고차 수출" }
@@ -204,13 +201,11 @@ const dictionaries = {
       title: "Notices"
     },
     workflows: {
-      edit: "Customize dashboard",
-      editClose: "Close editor",
       open: "Open",
-      title: "Shortcuts",
+      description: "Secondary workflows after the main lookup.",
+      title: "Next workflows",
       items: {
         cargo: { description: "HBL progress and alerts", title: "Cargo manifest" },
-        direct: { description: "Search by code or product name", title: "Integrated lookup" },
         duty: { description: "Preliminary estimate from entered values", title: "Estimated duties" },
         overseas: { description: "Check by destination country", title: "Overseas HS lookup" },
         "vehicle-spec": { description: "Vehicle specs and container checks", title: "Used-car export" }
@@ -279,13 +274,11 @@ const dictionaries = {
       title: "公告"
     },
     workflows: {
-      edit: "编辑仪表板",
-      editClose: "关闭编辑",
       open: "打开",
-      title: "快捷入口",
+      description: "主查询后的辅助业务。",
+      title: "后续业务",
       items: {
         cargo: { description: "HBL进度和提醒", title: "舱单查询" },
-        direct: { description: "按编码或品名查询", title: "综合查询" },
         duty: { description: "基于输入值的初步估算", title: "预计税费" },
         overseas: { description: "按目的国标准查询", title: "海外HS查询" },
         "vehicle-spec": { description: "车辆参数和集装箱查询", title: "二手车出口" }
