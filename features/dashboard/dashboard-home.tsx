@@ -154,17 +154,7 @@ export function DashboardHome({
       <section className="grid gap-5 lg:grid-cols-3">
         <DashboardNoticeCard locale={locale} notices={notices} />
         <DashboardListCard
-          emptyText={dictionary.lists.cargo.empty}
-          icon={Bell}
-          items={cargoWatches.map((watch) => ({
-            href: "/cargo",
-            title: watch.houseBlNo || watch.masterBlNo || watch.cargoManagementNo || "-",
-            subtitle: `${cargoWatchStatusDisplay(watch.targetStatus)} ${dictionary.lists.cargo.targetSuffix} · ${dictionary.lists.cargo.statusPrefix} ${watch.lastStatus || dictionary.lists.cargo.unchecked}`,
-            meta: cargoWatchStatusLabel(watch.status, dictionary)
-          }))}
-          title={dictionary.lists.cargo.title}
-        />
-        <DashboardListCard
+          description={dictionary.lists.favorites.description}
           emptyText={dictionary.lists.favorites.empty}
           icon={Star}
           items={favorites.map((favorite) => ({
@@ -176,6 +166,7 @@ export function DashboardHome({
           title={dictionary.lists.favorites.title}
         />
         <DashboardListCard
+          description={dictionary.lists.history.description}
           icon={Clock3}
           emptyText={dictionary.lists.history.empty}
           items={lookupHistory.map((item) => ({
@@ -186,17 +177,31 @@ export function DashboardHome({
           }))}
           title={dictionary.lists.history.title}
         />
+        <DashboardListCard
+          description={dictionary.lists.cargo.description}
+          emptyText={dictionary.lists.cargo.empty}
+          icon={Bell}
+          items={cargoWatches.map((watch) => ({
+            href: "/cargo",
+            title: watch.houseBlNo || watch.masterBlNo || watch.cargoManagementNo || "-",
+            subtitle: `${cargoWatchStatusDisplay(watch.targetStatus)} ${dictionary.lists.cargo.targetSuffix} · ${dictionary.lists.cargo.statusPrefix} ${watch.lastStatus || dictionary.lists.cargo.unchecked}`,
+            meta: cargoWatchStatusLabel(watch.status, dictionary)
+          }))}
+          title={dictionary.lists.cargo.title}
+        />
       </section>
     </div>
   );
 }
 
 function DashboardListCard({
+  description,
   emptyText,
   icon: Icon,
   items,
   title
 }: {
+  description: string;
   emptyText?: string;
   icon: LucideIcon;
   items: { href: string; title: string; subtitle: string; meta: string }[];
@@ -204,11 +209,17 @@ function DashboardListCard({
 }) {
   return (
     <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface)] shadow-[var(--shadow-panel)]">
-      <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-5 py-4">
-        <div className="flex items-center gap-2">
-          <Icon aria-hidden="true" className="text-blue-700" size={18} />
-          <h2 className="text-base font-semibold text-[var(--text-primary)]">{title}</h2>
+      <div className="flex items-start justify-between gap-3 border-b border-[var(--border-subtle)] px-5 py-4">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <Icon aria-hidden="true" className="text-blue-700" size={18} />
+            <h2 className="text-base font-semibold text-[var(--text-primary)]">{title}</h2>
+          </div>
+          <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">{description}</p>
         </div>
+        <span className="shrink-0 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-600">
+          {items.length}
+        </span>
       </div>
       <div className="divide-y divide-[var(--border-subtle)] px-4">
         {items.length ? items.map((item) => (

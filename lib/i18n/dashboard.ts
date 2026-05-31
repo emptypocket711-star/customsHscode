@@ -27,6 +27,7 @@ export type DashboardDictionary = {
   };
   lists: {
     cargo: {
+      description: string;
       empty: string;
       meta: Record<string, string>;
       statusPrefix: string;
@@ -36,10 +37,12 @@ export type DashboardDictionary = {
     };
     favorites: {
       defaultName: string;
+      description: string;
       empty: string;
       title: string;
     };
     history: {
+      description: string;
       empty: string;
       export: string;
       import: string;
@@ -108,6 +111,7 @@ const dictionaries = {
     },
     lists: {
       cargo: {
+        description: "감시 중인 화물과 최근 확인 상태를 봅니다.",
         empty: "작동 중인 적하목록 감시가 없습니다.",
         meta: {
           active: "감시중",
@@ -124,10 +128,12 @@ const dictionaries = {
       },
       favorites: {
         defaultName: "저장한 HS CODE",
+        description: "반복 조회하는 10자리 코드를 다시 엽니다.",
         empty: "아직 즐겨찾기한 HS CODE가 없습니다.",
         title: "즐겨찾기 HS CODE"
       },
       history: {
+        description: "최근에 검색한 품명과 HS CODE를 이어서 봅니다.",
         empty: "아직 저장된 최근 검색이 없습니다.",
         export: "수출",
         import: "수입",
@@ -196,6 +202,7 @@ const dictionaries = {
     },
     lists: {
       cargo: {
+        description: "Review watched cargo and latest status.",
         empty: "No active cargo status watches.",
         meta: {
           active: "Watching",
@@ -212,10 +219,12 @@ const dictionaries = {
       },
       favorites: {
         defaultName: "Saved HS code",
+        description: "Reopen 10-digit codes you use repeatedly.",
         empty: "No favorite HS codes yet.",
         title: "Favorite HS codes"
       },
       history: {
+        description: "Continue from recently searched products and HS codes.",
         empty: "No recent lookups yet.",
         export: "Export",
         import: "Import",
@@ -284,6 +293,7 @@ const dictionaries = {
     },
     lists: {
       cargo: {
+        description: "查看监控中的货物和最新状态。",
         empty: "没有正在运行的舱单状态监控。",
         meta: {
           active: "监控中",
@@ -300,10 +310,12 @@ const dictionaries = {
       },
       favorites: {
         defaultName: "已保存的HS编码",
+        description: "重新打开经常查询的10位编码。",
         empty: "尚未收藏HS编码。",
         title: "收藏HS编码"
       },
       history: {
+        description: "继续查看最近搜索的品名和HS编码。",
         empty: "尚无最近查询记录。",
         export: "出口",
         import: "进口",
