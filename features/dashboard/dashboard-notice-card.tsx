@@ -178,14 +178,17 @@ export function DashboardNoticeCard({
 
   return (
     <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface)] shadow-[var(--shadow-panel)]">
-      <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-5 py-4">
-        <div className="flex items-center gap-2">
-          <Megaphone aria-hidden="true" className="text-blue-700" size={18} />
-          <h2 className="text-base font-semibold text-[var(--text-primary)]">{dictionary.title}</h2>
+      <div className="flex items-start justify-between gap-3 border-b border-[var(--border-subtle)] px-5 py-4">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <Megaphone aria-hidden="true" className="text-blue-700" size={18} />
+            <h2 className="text-base font-semibold text-[var(--text-primary)]">{dictionary.title}</h2>
+          </div>
+          <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">{dictionary.description}</p>
         </div>
-        {notices.length ? (
-          <span className="text-xs font-semibold text-[var(--text-muted)]">{formatDashboardCount(dictionary.recent, notices.length)}</span>
-        ) : null}
+        <span className="shrink-0 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-600">
+          {notices.length ? formatDashboardCount(dictionary.recent, notices.length) : "0"}
+        </span>
       </div>
       <div className="divide-y divide-[var(--border-subtle)] px-4">
         {notices.length ? notices.map((notice) => (

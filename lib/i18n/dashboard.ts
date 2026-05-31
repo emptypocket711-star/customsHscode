@@ -57,6 +57,7 @@ export type DashboardDictionary = {
       release: string;
     };
     close: string;
+    description: string;
     empty: string;
     hideOneDay: string;
     noContent: string;
@@ -148,6 +149,7 @@ const dictionaries = {
         release: "기능 배포"
       },
       close: "닫기",
+      description: "서비스 이용에 영향을 주는 공지와 업데이트를 확인합니다.",
       empty: "등록된 공지사항이 없습니다.",
       hideOneDay: "1일 동안 보지 않기",
       noContent: "내용 없음",
@@ -239,6 +241,7 @@ const dictionaries = {
         release: "Release"
       },
       close: "Close",
+      description: "Check notices and updates that affect service use.",
       empty: "No notices have been posted.",
       hideOneDay: "Do not show for 1 day",
       noContent: "No content",
@@ -330,6 +333,7 @@ const dictionaries = {
         release: "功能发布"
       },
       close: "关闭",
+      description: "查看影响服务使用的公告和更新。",
       empty: "暂无公告。",
       hideOneDay: "1天内不再显示",
       noContent: "无内容",
