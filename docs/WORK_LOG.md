@@ -1843,3 +1843,24 @@
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 - `E2E_BASE_URL=https://hsfinder.co.kr npm run e2e:product-supplement`
 - Playwright 실사이트 확인: 일반 테스트 계정은 `/operations/users`, `/operations/health`에서 접근 차단 유지, 운영 UI 미노출
+
+### Rate limit 초과 이벤트 운영 표시
+
+- 이전 작업은 운영 점검 화면의 노출 밀도를 낮춘 것이고, 이번 작업은 Phase D 운영 안정화 항목인 route별 rate limit 초과 이벤트 관측을 추가한 것이다.
+- `rate_limit_events` 테이블을 추가하고 service role만 insert, developer만 read 하도록 RLS를 설정했다.
+- API route 공통 인증 rate limit과 자동차 제원조회 server action에서 초과 시 route, scope, 제한값, retry-after를 저장한다.
+- IP와 user-agent 원문은 저장하지 않고 rate limit identity hash만 저장한다.
+- `/operations/health` 오늘 할 일과 상세 진단에 `Route rate limit 초과 이력`을 추가해 route별 초과 건수를 볼 수 있게 했다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test -- lib/rate-limit.test.ts server/repositories/rate-limit-event.repository.test.ts server/repositories/lookup-governance.test.ts`
+- `npm run build`
+- Supabase production DB에 `20260531009000_rate_limit_events.sql` migration 적용
+- `vercel env run -e production -- npm run health:db`
+- Vercel production deployment: `customs-hscode-4ru3sxyz5-koo-apps.vercel.app`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
+- `E2E_BASE_URL=https://hsfinder.co.kr npm run e2e:product-supplement`
+- Playwright 실사이트 확인: 일반 테스트 계정은 `/operations/health`에서 접근 차단 유지, 운영 UI 미노출
