@@ -2927,7 +2927,7 @@ function ExportDomesticDiagnosisSection({
           <dl className="grid text-sm sm:grid-cols-[140px_1fr_140px_1fr]">
             <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">HSK</dt>
             <dd className="border-b border-slate-200 px-3 py-2 font-mono font-semibold text-slate-950">{formatHsCode(result.hskCode)}</dd>
-            <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">HS6</dt>
+            <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.product.hs6}</dt>
             <dd className="border-b border-slate-200 px-3 py-2 font-mono text-slate-700">{formatHsCode(result.hs6)}</dd>
             <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.exportDomestic.productName}</dt>
             <dd className="border-b border-slate-200 px-3 py-2 sm:col-span-3">{result.productName}</dd>
