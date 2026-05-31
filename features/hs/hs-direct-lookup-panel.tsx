@@ -62,7 +62,7 @@ import {
   type InternalTaxCodeMatch
 } from "@/server/repositories/customs-statistical-code.repository";
 import { analyzeProductClarification, type ProductClarificationResult } from "@/server/ai/clarification.service";
-import { lookupHsDirect, type HsDirectLookupResult } from "@/server/repositories/hs-master.repository";
+import { lookupHsDirect, lookupHsFamilyLabels, type HsDirectLookupResult } from "@/server/repositories/hs-master.repository";
 import { recommendHsCandidatesForProduct, type HsCandidateRecommendation } from "@/server/rules/hs-candidate.service";
 import { getExportDiagnosis, type ExportDiagnosisResult } from "@/server/rules/export-diagnosis.service";
 
@@ -124,6 +124,16 @@ function cachedHsDirectLookup(hskCode: string, basisDate: string) {
     ttlMs: lookupCacheTtlMs,
     load: () => lookupHsDirect(hskCode, basisDate),
     valueTtlMs: () => normalizedCode.length > 0 && normalizedCode.length <= 6 ? hsPrefixLookupCacheTtlMs : lookupCacheTtlMs
+  });
+}
+
+function cachedHsFamilyLabels(hskCodes: string[], basisDate: string) {
+  const codes = Array.from(new Set(hskCodes.map((code) => normalizeHsInput(code)).filter(Boolean))).sort();
+
+  return cachedLookup({
+    key: lookupCacheKey("hs-family-labels", { hskCodes: codes, basisDate }),
+    ttlMs: hsPrefixLookupCacheTtlMs,
+    load: () => lookupHsFamilyLabels(codes, basisDate)
   });
 }
 
@@ -910,12 +920,17 @@ function inferredProductFamilyLabel(candidate: HsCandidateRecommendation) {
     .find((label) => label && label !== "제품류" && !/(품목분류|분류|종류|서류|오류)$/.test(label)) ?? "";
 }
 
-function productCandidateBriefDescription(candidate: HsCandidateRecommendation, lookup?: HsDirectLookupResult) {
+function productCandidateBriefDescription(
+  candidate: HsCandidateRecommendation,
+  lookup?: HsDirectLookupResult,
+  familyLabels?: Record<string, string | null | undefined>
+) {
   const fallback = buildHsBriefDescription({
     hskCode: candidate.hskCode,
     hs6: candidate.hs6,
     koreanName: candidate.koreanName,
-    hierarchyPath: productCandidateHierarchyNodes(candidate, lookup)
+    hierarchyPath: productCandidateHierarchyNodes(candidate, lookup),
+    familyLabels
   });
   const description = lookup?.briefDescription ?? fallback;
   const familyLabel = inferredProductFamilyLabel(candidate);
@@ -1065,6 +1080,7 @@ function ProductCandidateCard({
   hs6Label,
   isPrimary,
   lookup,
+  familyLabels,
   originCountry,
   showSingleScore
 }: {
@@ -1075,6 +1091,7 @@ function ProductCandidateCard({
   hs6Label: string;
   isPrimary?: boolean;
   lookup?: HsDirectLookupResult;
+  familyLabels?: Record<string, string | null | undefined>;
   originCountry: string;
   showSingleScore?: boolean;
 }) {
@@ -1147,7 +1164,7 @@ function ProductCandidateCard({
 
       <h3 className="mt-3 text-base font-semibold text-slate-950">{candidate.koreanName}</h3>
       <div className="mt-2 grid gap-1 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-700">
-        <div><span className="font-semibold text-slate-500">간략 정보</span> {productCandidateBriefDescription(candidate, lookup)}</div>
+        <div><span className="font-semibold text-slate-500">간략 정보</span> {productCandidateBriefDescription(candidate, lookup, familyLabels)}</div>
       </div>
       <p className="mt-2 text-sm leading-6 text-slate-600">
         <span className="font-semibold text-slate-700">주요 근거</span> {productCandidateEvidenceText(candidate)}
@@ -3491,7 +3508,7 @@ export async function HsDirectLookupPanel({
     candidateCount: productCandidates.length,
     hsResultCount: results.length
   });
-  const [productCandidateLookupResults, aiClarification] = await Promise.all([
+  const [productCandidateLookupResults, aiClarification, productCandidateFamilyLabels] = await Promise.all([
     shouldLookupProduct
       ? Promise.resolve([])
       : productCandidates.length
@@ -3503,7 +3520,10 @@ export async function HsDirectLookupPanel({
           basisDate: resolvedBasisDate,
           officialCandidates: productCandidates
         }).catch(() => null)
-      : Promise.resolve(null)
+      : Promise.resolve(null),
+    shouldLookupProduct && productCandidates.length
+      ? cachedHsFamilyLabels(productCandidates.map((candidate) => candidate.hskCode), resolvedBasisDate).catch(() => ({}))
+      : Promise.resolve({})
   ]);
   logProductTiming("clarification", {
     candidateLookupCount: productCandidateLookupResults.length,
@@ -3735,6 +3755,7 @@ export async function HsDirectLookupPanel({
                   isPrimary={index === 0}
                   key={candidateGroup.representative.hskCode}
                   lookup={productCandidateLookupByHsk.get(candidateGroup.representative.hskCode)}
+                  familyLabels={productCandidateFamilyLabels}
                   originCountry={selectedOriginCountry}
                   showSingleScore={productCandidates.length === 1}
                 />
@@ -3754,6 +3775,7 @@ export async function HsDirectLookupPanel({
                         hs6Label={dictionary.product.hs6}
                         key={candidateGroup.representative.hskCode}
                         lookup={productCandidateLookupByHsk.get(candidateGroup.representative.hskCode)}
+                        familyLabels={productCandidateFamilyLabels}
                         originCountry={selectedOriginCountry}
                       />
                     ))}

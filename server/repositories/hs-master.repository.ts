@@ -1244,6 +1244,22 @@ export async function lookupHsDirect(hskCode: string, basisDate: string) {
   }
 }
 
+export async function lookupHsFamilyLabels(hskCodes: string[], basisDate: string) {
+  const codes = Array.from(new Set(hskCodes.flatMap((code) => hsAncestorCodes(code))));
+  if (!codes.length) return {};
+
+  if (!hasSupabaseEnv()) {
+    return Object.fromEntries(
+      mockHsMasterRecords
+        .filter((record) => codes.includes(record.hsk_code) && isEffective(record, basisDate))
+        .map((record) => [record.hsk_code, record.korean_name])
+    );
+  }
+
+  const supabase = await createSupabaseServerClient();
+  return findHierarchyLabels(supabase, codes, basisDate);
+}
+
 export const hsMasterRepositoryInternals = {
   normalizeHskCode,
   matchesRequestedCode,
@@ -1254,5 +1270,6 @@ export const hsMasterRepositoryInternals = {
   selectBestOriginMarkingMethod,
   selectOriginMarkingMethods,
   buildOriginMarkingInfo,
+  lookupHsFamilyLabels,
   lookupWithMockData
 };
