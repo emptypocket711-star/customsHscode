@@ -126,7 +126,7 @@ export function DashboardHome({
             </div>
 
             <p className="mt-3 text-xs leading-5 text-[var(--text-muted)]">
-              HS CODE를 입력하면 직접 조회하고, 품명을 입력하면 같은 검색창에서 AI가 가장 가까운 HS CODE를 함께 찾아줍니다.
+              {dictionary.lookup.helper}
             </p>
           </form>
 

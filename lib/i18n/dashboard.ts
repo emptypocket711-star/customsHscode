@@ -12,6 +12,7 @@ export type DashboardDictionary = {
     export: string;
     hsDirect: string;
     import: string;
+    helper: string;
     overseasHs: string;
     query: string;
     queryPlaceholder: string;
@@ -88,7 +89,7 @@ const dictionaries = {
   "ko-KR": {
     hero: {
       basisDate: "조회 기준일",
-      description: "자주 쓰는 메뉴, 공지사항, 즐겨찾기와 최근 검색 기록을 한 곳에서 확인합니다.",
+      description: "검색, 후속 업무, 반복 조회 항목을 한 곳에서 확인합니다.",
       title: "대시보드"
     },
     lookup: {
@@ -97,6 +98,7 @@ const dictionaries = {
       export: "수출",
       hsDirect: "HS CODE·품명 통합 검색",
       import: "수입",
+      helper: "HS CODE는 직접 조회하고, 품명은 AI가 가까운 후보를 찾아줍니다.",
       overseasHs: "해외 HS 검색",
       query: "검색어",
       queryPlaceholder: "예: 3304.99-1000, mushroom powder, 레이니 키보드",
@@ -105,7 +107,7 @@ const dictionaries = {
     startGuide: {
       title: "처음이면 이렇게 시작하세요",
       items: [
-        { label: "1", title: "품명 또는 HS CODE 검색", description: "가장 먼저 상단 검색창에서 HS CODE 후보나 10자리 상세를 확인합니다." },
+        { label: "1", title: "품명 또는 HS CODE 검색", description: "상단 검색창에서 후보나 10자리 상세를 확인합니다." },
         { label: "2", title: "필요한 후속 업무 선택", description: "화물 조회, 일괄 조회, 납세액 산출처럼 이어지는 업무만 아래에서 엽니다." },
         { label: "3", title: "자주 보는 항목 재사용", description: "즐겨찾기와 최근 검색에서 반복 품목을 다시 조회합니다." }
       ]
@@ -180,7 +182,7 @@ const dictionaries = {
   "en-US": {
     hero: {
       basisDate: "Basis date",
-      description: "Access frequent workflows, notices, favorites, and recent lookups in one workspace.",
+      description: "Search, follow-up work, and repeated lookup items in one workspace.",
       title: "Dashboard"
     },
     lookup: {
@@ -189,6 +191,7 @@ const dictionaries = {
       export: "Export",
       hsDirect: "HS code / product lookup",
       import: "Import",
+      helper: "HS codes open direct lookup; product names use AI candidate search.",
       overseasHs: "Overseas HS lookup",
       query: "Search term",
       queryPlaceholder: "e.g. 3304.99-1000, mushroom powder, rainy keyboard",
@@ -197,7 +200,7 @@ const dictionaries = {
     startGuide: {
       title: "Start here",
       items: [
-        { label: "1", title: "Search product or HS code", description: "Use the main search first to find HS candidates or 10-digit details." },
+        { label: "1", title: "Search product or HS code", description: "Use the main search for candidates or 10-digit details." },
         { label: "2", title: "Open follow-up work", description: "Continue only with the cargo, batch, or duty tools you need." },
         { label: "3", title: "Reuse frequent items", description: "Return to saved favorites and recent lookups for repeated items." }
       ]
@@ -272,7 +275,7 @@ const dictionaries = {
   "zh-CN": {
     hero: {
       basisDate: "查询基准日",
-      description: "在一个工作区查看常用功能、公告、收藏和最近查询记录。",
+      description: "在一个工作区处理搜索、后续业务和重复查询项目。",
       title: "仪表板"
     },
     lookup: {
@@ -281,6 +284,7 @@ const dictionaries = {
       export: "出口",
       hsDirect: "HS编码/品名综合查询",
       import: "进口",
+      helper: "HS编码直接查询，品名由AI查找相近候选。",
       overseasHs: "海外HS查询",
       query: "搜索词",
       queryPlaceholder: "例：3304.99-1000, mushroom powder, rainy keyboard",
@@ -289,7 +293,7 @@ const dictionaries = {
     startGuide: {
       title: "首次使用建议",
       items: [
-        { label: "1", title: "搜索品名或HS编码", description: "先在上方搜索框确认HS候选或10位详细信息。" },
+        { label: "1", title: "搜索品名或HS编码", description: "在上方搜索框确认候选或10位详细信息。" },
         { label: "2", title: "选择后续业务", description: "只打开需要继续处理的舱单、批量查询或税费工具。" },
         { label: "3", title: "重复使用常用项目", description: "从收藏和最近查询中重新打开常用商品。" }
       ]
