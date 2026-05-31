@@ -152,6 +152,24 @@ const operationsSectionLinks = [
   }
 ];
 
+const occasionalManagementLinks = [
+  {
+    href: "/operations/notices",
+    label: "공지 관리",
+    detail: "대시보드 공지·팝업"
+  },
+  {
+    href: "/operations/users",
+    label: "고객 계정",
+    detail: "가입자·테스트 계정"
+  },
+  {
+    href: "/legal-updates",
+    label: "자료 관리",
+    detail: "법령·뉴스·자료 수집"
+  }
+];
+
 function statusLabel(status: EnvironmentHealthItem["status"]) {
   if (status === "ok") return "정상";
   if (status === "missing") return "필수 누락";
@@ -820,6 +838,30 @@ export default async function OperationsHealthPage({
           </nav>
         </CardBody>
       </Card>
+
+      <details className="rounded-lg border border-slate-200 bg-white shadow-sm">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4">
+          <span>
+            <span className="block text-base font-semibold text-slate-950">가끔 쓰는 관리</span>
+            <span className="mt-1 block text-sm text-slate-500">공지, 계정, 자료 수집은 필요할 때만 펼쳐서 이동합니다.</span>
+          </span>
+          <Badge tone="neutral">{occasionalManagementLinks.length}개</Badge>
+        </summary>
+        <div className="border-t border-slate-200 p-4">
+          <nav className="grid gap-2 sm:grid-cols-3" aria-label="운영 보조 관리">
+            {occasionalManagementLinks.map((item) => (
+              <a
+                className="rounded-md border border-slate-200 bg-slate-50 px-3 py-3 text-sm transition hover:border-blue-200 hover:bg-blue-50"
+                href={item.href}
+                key={item.href}
+              >
+                <span className="font-semibold text-slate-950">{item.label}</span>
+                <span className="mt-1 block text-xs text-slate-500">{item.detail}</span>
+              </a>
+            ))}
+          </nav>
+        </div>
+      </details>
 
       <details id="advanced-operations" className="scroll-mt-6 rounded-lg border border-slate-200 bg-white shadow-sm">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4">

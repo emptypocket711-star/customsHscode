@@ -5,17 +5,14 @@ import {
   Car,
   ChevronLeft,
   ChevronRight,
-  Database,
   FileSpreadsheet,
   Globe2,
   LayoutDashboard,
-  Megaphone,
   Menu,
   Newspaper,
   PackageSearch,
   Search,
   ShieldCheck,
-  Users,
   type LucideIcon
 } from "lucide-react";
 import Link from "next/link";
@@ -42,10 +39,7 @@ const userNavItems: NavItem[] = [
 ];
 
 const operationNavItems: NavItem[] = [
-  { href: "/operations/users", labelKey: "users", icon: Users },
-  { href: "/operations/notices", labelKey: "notices", icon: Megaphone },
-  { href: "/operations/health", labelKey: "health", icon: ShieldCheck },
-  { href: "/legal-updates", labelKey: "legalUpdates", icon: Database }
+  { href: "/operations/health", labelKey: "health", icon: ShieldCheck }
 ];
 
 function isActivePath(pathname: string, href: string) {

@@ -61,7 +61,7 @@ const dictionaries = {
         cargo: "적하목록 조회",
         dashboard: "대시보드",
         dutyEstimator: "납세액 계산",
-        health: "운영 점검",
+        health: "운영 홈",
         hsBatch: "HS 일괄 조회",
         hsDirect: "통합 조회",
         hsOverseas: "해외 HS CODE 조회",
@@ -75,7 +75,7 @@ const dictionaries = {
       menu: "메뉴",
       menuHint: "조회 화면 이동",
       sections: {
-        operations: "운영",
+        operations: "관리",
         workspace: "업무 조회"
       }
     }
@@ -101,7 +101,7 @@ const dictionaries = {
         cargo: "Cargo Manifest",
         dashboard: "Dashboard",
         dutyEstimator: "Duty Calculator",
-        health: "Operations Health",
+        health: "Operations Home",
         hsBatch: "Batch HS Lookup",
         hsDirect: "HS Lookup",
         hsOverseas: "Overseas HS Lookup",
@@ -141,7 +141,7 @@ const dictionaries = {
         cargo: "舱单查询",
         dashboard: "仪表板",
         dutyEstimator: "税费估算",
-        health: "运营检查",
+        health: "运营首页",
         hsBatch: "HS 批量查询",
         hsDirect: "HS 综合查询",
         hsOverseas: "海外 HS 编码查询",

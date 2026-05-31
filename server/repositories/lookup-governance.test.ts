@@ -132,7 +132,10 @@ describe("lookup governance guards", () => {
     expect(overseasPage).toContain("recordHsLookupHistory");
     expect(overseasPage).toContain('direction: "export"');
     expect(sideNav).toContain("showOperations ? <NavGroup");
-    expect(sideNav).toContain("/operations/notices");
+    expect(sideNav).toContain("/operations/health");
+    expect(healthPage).toContain("/operations/notices");
+    expect(healthPage).toContain("/operations/users");
+    expect(healthPage).toContain("/legal-updates");
   });
 
   it("keeps dashboard notices developer-managed and audited", () => {
