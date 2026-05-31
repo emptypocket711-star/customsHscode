@@ -1121,7 +1121,7 @@ function ProductCandidateCard({
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <div className={cn("text-xs font-semibold", isPrimary ? "text-blue-700" : "text-slate-500")}>
-            {isPrimary ? "가장 가까운 HS CODE" : `함께 볼 수 있는 코드 ${candidate.rank}`}
+            {isPrimary ? "가장 가까운 HS CODE" : `비교 후보 ${candidate.rank}순위`}
           </div>
           <Link
             className={cn(
@@ -3603,7 +3603,8 @@ export async function HsDirectLookupPanel({
     representative: group[0],
     related: group.slice(1)
   }));
-  const initiallyVisibleProductCandidateGroups = productCandidateGroups.slice(0, 3);
+  const primaryProductCandidateGroup = productCandidateGroups[0];
+  const initiallyVisibleProductCandidateGroups = productCandidateGroups.slice(1, 3);
   const additionalProductCandidateGroups = productCandidateGroups.slice(3);
   const additionalProductCandidateCount = additionalProductCandidateGroups.reduce((count, group) => count + 1 + group.related.length, 0);
 
@@ -3660,24 +3661,50 @@ export async function HsDirectLookupPanel({
                 />
               ) : null}
             </div>
-            <div className="grid gap-3 bg-slate-50 p-3 lg:grid-cols-2">
-              {initiallyVisibleProductCandidateGroups.map((candidateGroup, index) => (
+            <div className="grid gap-3 bg-slate-50 p-3">
+              {primaryProductCandidateGroup ? (
                 <ProductCandidateCard
-                  candidateGroup={candidateGroup}
+                  candidateGroup={primaryProductCandidateGroup}
                   destinationCountry={selectedDestinationCountry}
                   direction={lookupDirection}
                   displaySearchQuery={displaySearchQuery}
                   hs6Label={dictionary.product.hs6}
-                  isPrimary={index === 0}
-                  key={candidateGroup.representative.hskCode}
-                  lookup={productCandidateLookupByHsk.get(candidateGroup.representative.hskCode)}
+                  isPrimary
+                  key={primaryProductCandidateGroup.representative.hskCode}
+                  lookup={productCandidateLookupByHsk.get(primaryProductCandidateGroup.representative.hskCode)}
                   familyLabels={productCandidateFamilyLabels}
                   originCountry={selectedOriginCountry}
                   showSingleScore={productCandidates.length === 1}
                 />
-              ))}
+              ) : null}
+              {initiallyVisibleProductCandidateGroups.length ? (
+                <section className="rounded-md border border-slate-200 bg-white">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
+                    <div>
+                      <h2 className="text-sm font-semibold text-slate-950">비교 후보</h2>
+                      <p className="mt-1 text-xs text-slate-500">GPT 점수순으로 함께 확인할 코드를 표시합니다.</p>
+                    </div>
+                    <Badge tone="info">{initiallyVisibleProductCandidateGroups.length}개 표시</Badge>
+                  </div>
+                  <div className="grid gap-3 bg-slate-50 p-3 lg:grid-cols-2">
+                    {initiallyVisibleProductCandidateGroups.map((candidateGroup) => (
+                      <ProductCandidateCard
+                        candidateGroup={candidateGroup}
+                        destinationCountry={selectedDestinationCountry}
+                        direction={lookupDirection}
+                        displaySearchQuery={displaySearchQuery}
+                        hs6Label={dictionary.product.hs6}
+                        key={candidateGroup.representative.hskCode}
+                        lookup={productCandidateLookupByHsk.get(candidateGroup.representative.hskCode)}
+                        familyLabels={productCandidateFamilyLabels}
+                        originCountry={selectedOriginCountry}
+                      />
+                    ))}
+                  </div>
+                </section>
+              ) : null}
               {additionalProductCandidateGroups.length ? (
-                <details className="rounded-md border border-slate-200 bg-white lg:col-span-2">
+                <details className="rounded-md border border-slate-200 bg-white">
                   <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-700">
                     함께 볼 수 있는 코드 {additionalProductCandidateCount}개 더 보기
                   </summary>
