@@ -16,6 +16,24 @@ import type { ManagedUser } from "@/server/rules/developer-users.service";
 
 const initialState: DeveloperUserActionState = { status: "idle" };
 
+const userManagementPurposeGuide = [
+  {
+    label: "평소",
+    title: "가입자 상태 확인",
+    detail: "전체 사용자, 가입 완료 여부, 기업회원 여부, 마지막 로그인만 빠르게 확인합니다."
+  },
+  {
+    label: "지원할 때",
+    title: "검색 후 한 명만 펼치기",
+    detail: "고객 문의가 들어온 계정만 검색해 권한, 회사 정보, IP 사용 현황을 확인합니다."
+  },
+  {
+    label: "주의",
+    title: "권한·삭제는 위험 작업",
+    detail: "테스트 로그인, 권한 변경, 삭제는 해당 사용자를 펼친 뒤 필요한 경우에만 실행합니다."
+  }
+];
+
 const dateFormatter = new Intl.DateTimeFormat("ko-KR", {
   dateStyle: "medium",
   timeStyle: "short",
@@ -212,6 +230,15 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
           <StatusMessage state={updateState} />
           <StatusMessage state={deleteState} />
           <StatusMessage state={testLoginState} />
+          <div className="grid gap-2 border-t border-slate-100 pt-4 lg:grid-cols-3">
+            {userManagementPurposeGuide.map((item) => (
+              <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-3 text-sm" key={item.label}>
+                <p className="text-xs font-semibold text-slate-500">{item.label}</p>
+                <p className="mt-1 font-semibold text-slate-950">{item.title}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">{item.detail}</p>
+              </div>
+            ))}
+          </div>
         </CardBody>
       </Card>
 

@@ -20,6 +20,24 @@ const categoryLabels: Record<AppNotice["category"], string> = {
   release: "기능 배포"
 };
 
+const noticePurposeGuide = [
+  {
+    label: "평소",
+    title: "노출 상태만 확인",
+    detail: "대시보드에 보이는 공지, 상단 고정, 접속 팝업 수만 확인합니다."
+  },
+  {
+    label: "필요할 때",
+    title: "공지 작성·수정",
+    detail: "점검, 자료 업데이트, 기능 배포처럼 고객에게 알려야 할 내용만 등록합니다."
+  },
+  {
+    label: "주의",
+    title: "삭제는 최후 작업",
+    detail: "숨김 처리로 충분한 공지는 삭제하지 않고 보관합니다."
+  }
+];
+
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("ko-KR", {
     dateStyle: "medium",
@@ -147,6 +165,15 @@ export function NoticeManagementPanel({ notices }: { notices: AppNotice[] }) {
           </div>
           <StatusMessage state={upsertState} />
           <StatusMessage state={deleteState} />
+          <div className="grid gap-2 border-t border-slate-100 pt-4 lg:grid-cols-3">
+            {noticePurposeGuide.map((item) => (
+              <div className="rounded-md border border-slate-200 bg-white px-3 py-3 text-sm" key={item.label}>
+                <p className="text-xs font-semibold text-slate-500">{item.label}</p>
+                <p className="mt-1 font-semibold text-slate-950">{item.title}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">{item.detail}</p>
+              </div>
+            ))}
+          </div>
         </CardBody>
       </Card>
 
