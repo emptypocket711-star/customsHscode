@@ -27,15 +27,18 @@ type NavItem = {
   labelKey: NavItemKey;
 };
 
-const userNavItems: NavItem[] = [
+const primaryNavItems: NavItem[] = [
   { href: "/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
   { href: "/hs/direct", labelKey: "hsDirect", icon: Search },
-  { href: "/hs/batch", labelKey: "hsBatch", icon: FileSpreadsheet },
   { href: "/hs/overseas", labelKey: "hsOverseas", icon: Globe2 },
-  { href: "/cargo", labelKey: "cargo", icon: PackageSearch },
-  { href: "/trade-news", labelKey: "tradeNews", icon: Newspaper },
+  { href: "/cargo", labelKey: "cargo", icon: PackageSearch }
+];
+
+const secondaryNavItems: NavItem[] = [
+  { href: "/hs/batch", labelKey: "hsBatch", icon: FileSpreadsheet },
+  { href: "/duty-estimator", labelKey: "dutyEstimator", icon: Calculator },
   { href: "/used-car-export", labelKey: "usedCarExport", icon: Car },
-  { href: "/duty-estimator", labelKey: "dutyEstimator", icon: Calculator }
+  { href: "/trade-news", labelKey: "tradeNews", icon: Newspaper }
 ];
 
 const operationNavItems: NavItem[] = [
@@ -102,6 +105,35 @@ function NavGroup({
   );
 }
 
+function hasActiveItem(pathname: string, items: NavItem[]) {
+  return items.some((item) => isActivePath(pathname, item.href));
+}
+
+function NavDetailsGroup({
+  title,
+  items,
+  labels,
+  pathname
+}: {
+  title: string;
+  items: NavItem[];
+  labels: Record<NavItemKey, string>;
+  pathname: string;
+}) {
+  return (
+    <details className="rounded-md border border-slate-200 bg-slate-50" open={hasActiveItem(pathname, items)}>
+      <summary className="cursor-pointer list-none px-3 py-2 text-xs font-semibold text-slate-500">
+        {title}
+      </summary>
+      <div className="grid gap-1 border-t border-slate-200 bg-white p-1">
+        {items.map((item) => (
+          <NavLink href={item.href} icon={item.icon} key={item.href} label={labels[item.labelKey]} pathname={pathname} />
+        ))}
+      </div>
+    </details>
+  );
+}
+
 export function AppSideNav({
   locale = defaultLocale,
   showOperations
@@ -128,7 +160,8 @@ export function AppSideNav({
           <span className="text-xs text-slate-500">{dictionary.nav.menuHint}</span>
         </summary>
         <nav className="mt-2 grid gap-3 rounded-md border border-slate-200 bg-white p-2 shadow-sm">
-          <NavGroup items={userNavItems} labels={dictionary.nav.items} pathname={pathname} title={dictionary.nav.sections.workspace} />
+          <NavGroup items={primaryNavItems} labels={dictionary.nav.items} pathname={pathname} title={dictionary.nav.sections.workspace} />
+          <NavDetailsGroup items={secondaryNavItems} labels={dictionary.nav.items} pathname={pathname} title={dictionary.nav.sections.secondary} />
           {showOperations ? <NavGroup items={operationNavItems} labels={dictionary.nav.items} pathname={pathname} title={dictionary.nav.sections.operations} /> : null}
         </nav>
       </details>
@@ -154,7 +187,14 @@ export function AppSideNav({
               </>
             )}
           </button>
-          <NavGroup collapsed={collapsed} items={userNavItems} labels={dictionary.nav.items} pathname={pathname} title={dictionary.nav.sections.workspace} />
+          <NavGroup collapsed={collapsed} items={primaryNavItems} labels={dictionary.nav.items} pathname={pathname} title={dictionary.nav.sections.workspace} />
+          {collapsed ? (
+            hasActiveItem(pathname, secondaryNavItems) ? (
+              <NavGroup collapsed items={secondaryNavItems.filter((item) => isActivePath(pathname, item.href))} labels={dictionary.nav.items} pathname={pathname} title={dictionary.nav.sections.secondary} />
+            ) : null
+          ) : (
+            <NavDetailsGroup items={secondaryNavItems} labels={dictionary.nav.items} pathname={pathname} title={dictionary.nav.sections.secondary} />
+          )}
           {showOperations ? (
             <NavGroup
               collapsed={collapsed}

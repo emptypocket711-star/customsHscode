@@ -34,6 +34,7 @@ type ChromeDictionary = {
     menuHint: string;
     sections: {
       operations: string;
+      secondary: string;
       workspace: string;
     };
   };
@@ -76,6 +77,7 @@ const dictionaries = {
       menuHint: "조회 화면 이동",
       sections: {
         operations: "관리",
+        secondary: "보조 도구",
         workspace: "업무 조회"
       }
     }
@@ -116,6 +118,7 @@ const dictionaries = {
       menuHint: "Open workflow",
       sections: {
         operations: "Operations",
+        secondary: "Tools",
         workspace: "Workflows"
       }
     }
@@ -156,6 +159,7 @@ const dictionaries = {
       menuHint: "切换页面",
       sections: {
         operations: "运营",
+        secondary: "辅助工具",
         workspace: "业务查询"
       }
     }
