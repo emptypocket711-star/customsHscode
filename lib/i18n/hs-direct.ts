@@ -117,6 +117,7 @@ export type HsDirectDictionary = {
     requirementKind: string;
     statisticCount: string;
     statisticEmpty: string;
+    statisticLoading: string;
     statisticProductName: string;
     statisticRank: string;
     statisticTitle: string;
@@ -250,6 +251,7 @@ const dictionaries = {
       requirementKind: "성격",
       statisticCount: "신고 건수",
       statisticEmpty: "표시할 신고 품명 통계가 없습니다.",
+      statisticLoading: "신고 품명 통계를 불러오는 중입니다.",
       statisticProductName: "신고 품명",
       statisticRank: "순위",
       statisticTitle: "신고 품명 통계",
@@ -381,6 +383,7 @@ const dictionaries = {
       requirementKind: "Kind",
       statisticCount: "Declaration count",
       statisticEmpty: "No declaration-name statistics are available.",
+      statisticLoading: "Loading declaration-name statistics.",
       statisticProductName: "Declaration name",
       statisticRank: "Rank",
       statisticTitle: "Declaration-name statistics",
@@ -512,6 +515,7 @@ const dictionaries = {
       requirementKind: "性质",
       statisticCount: "申报件数",
       statisticEmpty: "暂无可显示的申报品名统计。",
+      statisticLoading: "正在加载申报品名统计。",
       statisticProductName: "申报品名",
       statisticRank: "排名",
       statisticTitle: "申报品名统计",

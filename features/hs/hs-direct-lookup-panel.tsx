@@ -21,6 +21,7 @@ import { DestinationImportRequirementDialog } from "@/features/hs/destination-im
 import { DestinationInternalTaxDialog, destinationInternalTaxText } from "@/features/hs/destination-internal-tax-dialog";
 import { DestinationTradeRemedyDialog } from "@/features/hs/destination-trade-remedy-dialog";
 import { ImportRequirementDetailDialog } from "@/features/hs/import-requirement-detail-dialog";
+import { HsNavigationStatsLazySection } from "@/features/hs/hs-navigation-stats-lazy-section";
 import { OriginMarkingLinks } from "@/features/hs/origin-marking-dialogs";
 import { hsDirectLookupSchema } from "@/features/hs/schemas";
 import {
@@ -64,13 +65,6 @@ import {
 } from "@/server/repositories/customs-statistical-code.repository";
 import { analyzeProductClarification, type ProductClarificationResult } from "@/server/ai/clarification.service";
 import { lookupHsDirect, type HsDirectLookupResult } from "@/server/repositories/hs-master.repository";
-import {
-  buildCustomsHsCodeNavigationQuery,
-  fetchCustomsOpenApiSnapshot,
-  hasCustomsOpenApiEnv,
-  parseCustomsHsCodeNavigationXml,
-  type CustomsHsCodeNavigationItem
-} from "@/server/integrations/customs/customs-api";
 import { recommendHsCandidatesForProduct, type HsCandidateRecommendation } from "@/server/rules/hs-candidate.service";
 import { getExportDiagnosis, type ExportDiagnosisResult } from "@/server/rules/export-diagnosis.service";
 
@@ -2220,56 +2214,6 @@ async function uncachedInternalTaxCodesForResults({
   return rowsByHsk;
 }
 
-async function hsCodeNavigationStatsForResults({
-  results,
-  enabled
-}: {
-  results: Array<{ hskCode: string }>;
-  enabled: boolean;
-}) {
-  return cachedLookup({
-    key: lookupCacheKey("hs-code-navigation-stats", {
-      codes: results.map((result) => normalizeHsInput(result.hskCode)).filter((code) => code.length === 10).sort(),
-      enabled
-    }),
-    ttlMs: lookupCacheTtlMs,
-    load: () => uncachedHsCodeNavigationStatsForResults({ results, enabled })
-  });
-}
-
-async function uncachedHsCodeNavigationStatsForResults({
-  results,
-  enabled
-}: {
-  results: Array<{ hskCode: string }>;
-  enabled: boolean;
-}) {
-  const rowsByHsk = new Map<string, CustomsHsCodeNavigationItem[]>();
-
-  if (!enabled || !hasCustomsOpenApiEnv("hs_code_navigation") || results.length === 0) {
-    return rowsByHsk;
-  }
-
-  const exactHskCodes = Array.from(new Set(results.map((result) => normalizeHsInput(result.hskCode)).filter((code) => code.length === 10)));
-
-  await Promise.all(
-    exactHskCodes.map(async (hskCode) => {
-      try {
-        const snapshot = await fetchCustomsOpenApiSnapshot("hs_code_navigation", buildCustomsHsCodeNavigationQuery({ hskPattern: hskCode }));
-        const rows = parseCustomsHsCodeNavigationXml(snapshot.rawText)
-          .filter((row) => normalizeHsInput(row.hskCodePattern) === hskCode)
-          .sort((a, b) => Number(a.rank || 9999) - Number(b.rank || 9999))
-          .slice(0, 12);
-
-        rowsByHsk.set(hskCode, rows);
-      } catch {
-        rowsByHsk.set(hskCode, []);
-      }
-    })
-  );
-
-  return rowsByHsk;
-}
 function EmptyDestinationTariffState({ dictionary }: { dictionary: HsDirectDictionary }) {
   return (
     <div className="px-3 py-4 text-sm text-slate-500">
@@ -2726,38 +2670,6 @@ function InternalTaxSection({ dictionary, rows }: { dictionary: HsDirectDictiona
           </tbody>
         </table>
       </div>
-    </div>
-  );
-}
-
-function HsNavigationStatsSection({ dictionary, rows }: { dictionary: HsDirectDictionary; rows: CustomsHsCodeNavigationItem[] }) {
-  return (
-    <div className="border-t border-slate-200">
-      <div className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">{dictionary.result.statisticTitle}</div>
-      {rows.length ? (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-left text-sm">
-            <thead className="border-y border-slate-200 text-xs font-semibold text-slate-500">
-              <tr>
-                <th className="px-3 py-2">{dictionary.result.statisticRank}</th>
-                <th className="px-3 py-2">{dictionary.result.statisticProductName}</th>
-                <th className="px-3 py-2">{dictionary.result.statisticCount}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {rows.map((row) => (
-                <tr key={`${row.rank}-${row.productName}-${row.lineCount}`}>
-                  <td className="whitespace-nowrap px-3 py-2 font-mono font-semibold text-slate-700">{row.rank || "-"}</td>
-                  <td className="px-3 py-2 font-medium text-slate-900">{row.productName || "-"}</td>
-                  <td className="whitespace-nowrap px-3 py-2 text-slate-700">{row.lineCount || "-"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <EmptySectionState>{dictionary.result.statisticEmpty}</EmptySectionState>
-      )}
     </div>
   );
 }
@@ -3488,7 +3400,6 @@ export async function HsDirectLookupPanel({
     exportDomesticResults,
     destinationTariffsByHsk,
     internalTaxCodesByHsk,
-    hsNavigationStatsByHsk,
     directDestinationTariffs,
     favoriteCodes
   ] = await Promise.all([
@@ -3515,10 +3426,6 @@ export async function HsDirectLookupPanel({
       results,
       basisDate: resolvedBasisDate
     }) : Promise.resolve(new Map<string, InternalTaxCodeMatch[]>()),
-    hsCodeNavigationStatsForResults({
-      results,
-      enabled: normalizedQuery.length > 6
-    }),
     showDestinationExportResults ? destinationTariffsForDestinationCode({
       queryCode: normalizedQuery,
       direction: showDestinationExportResults ? "export" : "import",
@@ -4432,7 +4339,17 @@ export async function HsDirectLookupPanel({
                     )}
                 </div>
 
-                <HsNavigationStatsSection dictionary={dictionary} rows={hsNavigationStatsByHsk.get(result.hskCode) ?? []} />
+                <HsNavigationStatsLazySection
+                  hskCode={result.hskCode}
+                  labels={{
+                    count: dictionary.result.statisticCount,
+                    empty: dictionary.result.statisticEmpty,
+                    loading: dictionary.result.statisticLoading,
+                    productName: dictionary.result.statisticProductName,
+                    rank: dictionary.result.statisticRank,
+                    title: dictionary.result.statisticTitle
+                  }}
+                />
 
                 <div className="px-3 pb-3">
                   <SourceFooter basisDate={result.basisDate} showVersion={false} sourceName={result.sourceName} sourceVersion={result.sourceVersion} />
