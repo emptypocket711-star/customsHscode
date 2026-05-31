@@ -87,6 +87,24 @@ const updateRunbook = [
   }
 ];
 
+const dataManagementGuide = [
+  {
+    label: "매일",
+    title: "차단·적재 문제만 확인",
+    detail: "게시가 막힌 자료나 적재 오류가 없으면 바로 넘어가도 됩니다."
+  },
+  {
+    label: "자료 갱신 때",
+    title: "갱신·게시 작업 실행",
+    detail: "공식자료를 새로 받은 뒤 API 연결, 집계 갱신, 게시 전환을 순서대로 확인합니다."
+  },
+  {
+    label: "문제 발생 때",
+    title: "상세 데이터 현황 확인",
+    detail: "커버리지, 원천 버전, 누락 항목, 실행 체크리스트는 이상이 있을 때만 펼칩니다."
+  }
+];
+
 export async function LegalUpdateCenter() {
   const dashboard = getLegalUpdateDashboard();
   const basisDate = getSeoulDateString();
@@ -99,14 +117,14 @@ export async function LegalUpdateCenter() {
     <div className="grid gap-5">
       <Card>
         <CardHeader
-          title="자료 관리 요약"
-          description="평소에는 게시 차단, 적재 문제, 커버리지 누락만 먼저 확인합니다."
-          action={<Badge tone={dashboard.summary.blockedCount || inventory.summary.diagnosticCounts.danger ? "warning" : "success"}>핵심 상태</Badge>}
+          title="자료 상태 요약"
+          description="평소에는 게시 차단, 적재 문제, 중요 변경만 먼저 확인합니다. 문제가 없으면 세부 표는 열지 않아도 됩니다."
+          action={<Badge tone={dashboard.summary.blockedCount || inventory.summary.diagnosticCounts.danger ? "warning" : "success"}>오늘 확인</Badge>}
         />
-        <CardBody>
+        <CardBody className="grid gap-4">
           <div className="grid gap-3 md:grid-cols-4">
             <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
-              <p className="text-sm font-medium text-slate-600">검토 대기 변경</p>
+              <p className="text-sm font-medium text-slate-600">확인 대기 변경</p>
               <p className="mt-2 text-3xl font-semibold text-slate-950">{dashboard.summary.pendingCount}</p>
             </div>
             <div className="rounded-md border border-amber-200 bg-amber-50 p-4">
@@ -114,7 +132,7 @@ export async function LegalUpdateCenter() {
               <p className="mt-2 text-3xl font-semibold text-amber-900">{dashboard.summary.blockedCount}</p>
             </div>
             <div className="rounded-md border border-red-200 bg-red-50 p-4">
-              <p className="text-sm font-medium text-red-800">Critical</p>
+              <p className="text-sm font-medium text-red-800">중요 변경</p>
               <p className="mt-2 text-3xl font-semibold text-red-900">{dashboard.summary.criticalCount}</p>
             </div>
             <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
@@ -122,16 +140,25 @@ export async function LegalUpdateCenter() {
               <p className="mt-2 text-3xl font-semibold text-slate-950">{inventory.summary.diagnosticCounts.danger}</p>
             </div>
           </div>
+          <div className="grid gap-2 border-t border-slate-100 pt-4 lg:grid-cols-3">
+            {dataManagementGuide.map((item) => (
+              <div className="rounded-md bg-slate-50 px-3 py-3 text-sm" key={item.label}>
+                <p className="text-xs font-semibold text-slate-500">{item.label}</p>
+                <p className="mt-1 font-semibold text-slate-950">{item.title}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">{item.detail}</p>
+              </div>
+            ))}
+          </div>
         </CardBody>
       </Card>
 
       <details className="rounded-lg border border-slate-200 bg-white shadow-sm">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4">
           <span>
-            <span className="block text-base font-semibold text-slate-950">갱신·게시 작업</span>
-            <span className="mt-1 block text-sm text-slate-500">API 연결, 운영 집계 갱신, source publish는 필요할 때만 펼쳐서 실행합니다.</span>
+            <span className="block text-base font-semibold text-slate-950">자료 갱신·게시 실행</span>
+            <span className="mt-1 block text-sm text-slate-500">공식자료를 새로 받은 뒤에만 펼칩니다. API 연결, 집계 갱신, 게시 전환 작업이 들어 있습니다.</span>
           </span>
-          <Badge tone="warning">실행 작업</Badge>
+          <Badge tone="warning">주의해서 실행</Badge>
         </summary>
         <div className="grid gap-4 border-t border-slate-200 bg-slate-50/45 p-4">
           <CustomsApiConnectorPanel />
@@ -143,8 +170,8 @@ export async function LegalUpdateCenter() {
       <details className="rounded-lg border border-slate-200 bg-white shadow-sm">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4">
           <span>
-            <span className="block text-base font-semibold text-slate-950">상세 데이터 현황</span>
-            <span className="mt-1 block text-sm text-slate-500">목적국 커버리지, source inventory, 업데이트 체크리스트, 최근 수집은 필요할 때 펼쳐 확인합니다.</span>
+            <span className="block text-base font-semibold text-slate-950">상세 데이터 점검</span>
+            <span className="mt-1 block text-sm text-slate-500">목적국 커버리지, 원천 버전, 업데이트 체크리스트, 최근 수집 내역은 문제를 추적할 때만 펼쳐 확인합니다.</span>
           </span>
           <Badge tone={inventory.summary.diagnosticCounts.danger ? "warning" : "success"}>
             적재 문제 {inventory.summary.diagnosticCounts.danger}
@@ -154,8 +181,8 @@ export async function LegalUpdateCenter() {
           <Card>
             <CardHeader
               title="목적국 데이터 커버리지"
-              description="수출 목적국 조회에 사용되는 관세율, 내국세, 수입요건, 추가관세 적재 현황입니다."
-              action={<Badge tone="info">coverage</Badge>}
+              description="수출 목적국 조회에 필요한 관세율, 내국세, 수입요건, 추가관세 자료가 어느 정도 준비되어 있는지 확인합니다."
+              action={<Badge tone="info">커버리지</Badge>}
             />
             <CardBody>
               <DestinationCoverageTable rows={destinationCoverageRows} />
@@ -164,8 +191,8 @@ export async function LegalUpdateCenter() {
 
           <Card>
             <CardHeader
-              title="관세청 source inventory"
-              description="공식 엑셀/API 원천이 테이블과 source_version 단위로 몇 건 적재되었는지 확인합니다."
+              title="국내 원천자료 적재 현황"
+              description="관세청 엑셀/API 등 공식 원천자료가 버전 단위로 몇 건 적재되었는지 확인합니다."
               action={<Badge tone={inventory.dataSource === "supabase" ? "success" : "warning"}>{inventory.dataSource}</Badge>}
             />
             <CardBody>
@@ -173,8 +200,8 @@ export async function LegalUpdateCenter() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold text-blue-950">국내 수입 10자리 조회 스냅샷</p>
-                <p className="mt-1 text-xs text-blue-800">
-                  HSK 10자리 기준으로 품명, 관세율, 수입요건, 통합공고, 내국세 후보를 미리 묶은 읽기 모델입니다.
+              <p className="mt-1 text-xs text-blue-800">
+                  HSK 10자리 기준으로 품명, 관세율, 수입요건, 통합공고, 내국세 후보를 미리 묶은 조회용 자료입니다.
                 </p>
               </div>
               <Badge tone={inventory.domesticLookupCoverage.missingTariffRates === 0 ? "success" : "warning"}>
@@ -210,11 +237,11 @@ export async function LegalUpdateCenter() {
           </div>
           <div className="grid gap-4 md:grid-cols-6">
             <div className="rounded-md border border-slate-200 p-4">
-              <p className="text-sm font-medium text-slate-600">staged source</p>
+              <p className="text-sm font-medium text-slate-600">게시 전 자료</p>
               <p className="mt-2 text-2xl font-semibold text-slate-950">{inventory.summary.stagedCount}</p>
             </div>
             <div className="rounded-md border border-slate-200 p-4">
-              <p className="text-sm font-medium text-slate-600">published source</p>
+              <p className="text-sm font-medium text-slate-600">게시 자료</p>
               <p className="mt-2 text-2xl font-semibold text-slate-950">{inventory.summary.publishedCount}</p>
             </div>
             <div className="rounded-md border border-slate-200 p-4">
@@ -372,7 +399,7 @@ export async function LegalUpdateCenter() {
                 <p className="text-xs font-semibold text-slate-500">{group.label}</p>
                 <p className="mt-1 text-lg font-semibold text-slate-950">{group.totalRows.toLocaleString("ko-KR")}</p>
                 <p className="mt-1 text-xs text-slate-500">
-                  source {group.itemCount}개 / staged {group.stagedCount} / published {group.publishedCount}
+                  원천 {group.itemCount}개 / 게시 전 {group.stagedCount} / 게시 {group.publishedCount}
                 </p>
                 {group.warningCount || group.dangerCount ? (
                   <p className="mt-1 text-xs text-amber-700">
@@ -426,8 +453,8 @@ export async function LegalUpdateCenter() {
           <Card>
             <CardHeader
               title="자료 업데이트 실행 체크리스트"
-              description="연도 변경 또는 공식자료 갱신 시 다시 실행할 수 있도록 원천, 스크립트, 검증 항목을 묶어 표시합니다."
-              action={<Badge tone="info">update runbook</Badge>}
+              description="연도 변경 또는 공식자료 갱신 시 사용할 실행 명령과 확인 항목입니다."
+              action={<Badge tone="info">실행 순서</Badge>}
             />
             <CardBody>
           <div className="overflow-x-auto">
@@ -458,8 +485,8 @@ export async function LegalUpdateCenter() {
           <Card>
             <CardHeader
               title="최근 원천 수집"
-              description="각 원천은 checksum과 source_version으로 추적합니다. 실제 게시 전에는 snapshot diff와 담당자 검토가 필요합니다."
-              action={<Badge tone="info">source snapshot</Badge>}
+              description="각 원천은 checksum과 source_version으로 추적합니다. 실제 게시 전에는 변경 비교와 담당자 검토가 필요합니다."
+              action={<Badge tone="info">원천 스냅샷</Badge>}
             />
             <CardBody>
           <div className="overflow-x-auto">
@@ -496,8 +523,8 @@ export async function LegalUpdateCenter() {
       <details className="rounded-lg border border-slate-200 bg-white shadow-sm">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4">
           <span>
-            <span className="block text-base font-semibold text-slate-950">검토·영향 기록</span>
-            <span className="mt-1 block text-sm text-slate-500">변경 검토 큐, 승인 변경, 영향 리포트, pipeline 상태를 한 번에 확인합니다.</span>
+            <span className="block text-base font-semibold text-slate-950">변경 확인·영향 기록</span>
+            <span className="mt-1 block text-sm text-slate-500">자료 변경이 기존 결과나 보고서에 영향을 줄 수 있는지 확인할 때만 펼칩니다.</span>
           </span>
           <Badge tone={dashboard.summary.pendingCount || dashboard.summary.impactedReportCount ? "warning" : "success"}>
             대기 {dashboard.summary.pendingCount} / 영향 {dashboard.summary.impactedReportCount}
@@ -508,7 +535,7 @@ export async function LegalUpdateCenter() {
             <CardHeader
               title="변경 검토 큐"
               description="medium/high/critical 변경은 담당자 승인 전 published 전환을 차단합니다."
-              action={<Badge tone="warning">staff review required</Badge>}
+              action={<Badge tone="warning">담당자 확인 필요</Badge>}
             />
             <CardBody className="grid gap-3">
           {dashboard.pendingChanges.map((change) => (
@@ -551,7 +578,7 @@ export async function LegalUpdateCenter() {
 
           <div className="grid gap-5 lg:grid-cols-2">
             <Card>
-          <CardHeader title="승인된 변경" description="승인 후 publish job이 source/version을 전환하는 대상입니다." action={<CheckCircle2 aria-hidden="true" className="text-emerald-600" size={20} />} />
+          <CardHeader title="승인된 변경" description="확인 후 게시 작업에서 원천 버전을 전환할 대상입니다." action={<CheckCircle2 aria-hidden="true" className="text-emerald-600" size={20} />} />
           <CardBody className="grid gap-3">
             {dashboard.approvedChanges.map((change) => (
               <div className="rounded-md border border-slate-200 p-3" key={change.id}>
@@ -567,7 +594,7 @@ export async function LegalUpdateCenter() {
             </Card>
 
             <Card>
-          <CardHeader title="영향 리포트" description="게시 후 변경된 원천이 과거 보고서에 영향을 줄 수 있는 큐입니다." action={<FileWarning aria-hidden="true" className="text-amber-600" size={20} />} />
+          <CardHeader title="영향 받을 수 있는 보고서" description="게시 후 변경된 원천자료가 과거 보고서에 영향을 줄 수 있는 항목입니다." action={<FileWarning aria-hidden="true" className="text-amber-600" size={20} />} />
           <CardBody className="grid gap-3">
             {dashboard.impactedReports.map((report) => (
               <div className="rounded-md border border-slate-200 p-3" key={report.id}>
@@ -587,7 +614,7 @@ export async function LegalUpdateCenter() {
           </div>
 
           <Card>
-            <CardHeader title="Pipeline 상태" description="Phase 6의 실제 fetch/parser/publish job은 아직 연결 전입니다." action={<Clock aria-hidden="true" className="text-blue-700" size={20} />} />
+            <CardHeader title="자료 처리 단계" description="수집, 검증, 변경 비교, 검토, 게시, 영향 확인 순서로 자료가 처리됩니다." action={<Clock aria-hidden="true" className="text-blue-700" size={20} />} />
             <CardBody>
           <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {["Fetch", "Checksum", "Parse/Staging", "Diff", "Review", "Publish", "Invalidate", "Report Impact"].map((step, index) => (
