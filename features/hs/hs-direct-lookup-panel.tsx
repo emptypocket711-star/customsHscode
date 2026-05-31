@@ -994,7 +994,7 @@ function ProductClassificationFlowPanel({
       <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm font-semibold text-blue-950">
         <span className="inline-flex items-center gap-2">
           <CheckCircle2 aria-hidden="true" size={17} />
-          AI 분류 흐름
+          AI 분류 요약
           <Badge tone={hasCandidates ? "success" : "warning"}>{hasCandidates ? "완료" : "보완 필요"}</Badge>
         </span>
         <span className="text-xs font-medium text-blue-800">{productName}</span>
@@ -2931,7 +2931,7 @@ function AiClarificationPanel({
           <p className={cn(
             "mt-1 text-xs leading-5",
             presentation.tone === "warning" ? "text-amber-900" : "text-blue-900"
-          )}>필요한 정보만 보완하면 같은 품명으로 다시 분류할 수 있습니다.</p>
+          )}>답변 후 재조회하면 후보를 다시 좁힙니다.</p>
         </div>
         <Badge tone={analysis.confidence === "low" ? "warning" : "info"}>
           {analysis.confidence === "low" ? "검토 필요" : "검토"}
@@ -2942,7 +2942,7 @@ function AiClarificationPanel({
           <p className={cn(
             "text-xs font-semibold",
             presentation.tone === "warning" ? "text-amber-900" : "text-blue-900"
-          )}>보완하면 좋아지는 정보</p>
+          )}>보완 질문</p>
           {presentation.questions.length ? (
             <ol className="mt-2 grid gap-2">
               {retryQuestions.map((question, index) => (
@@ -3535,7 +3535,6 @@ export async function HsDirectLookupPanel({
               {initiallyVisibleProductCandidateGroups.map((candidateGroup, index) => {
                 const candidate = candidateGroup.representative;
                 const lookup = productCandidateLookupByHsk.get(candidate.hskCode);
-                const hierarchyLines = productCandidateHierarchyLines(candidate, lookup);
                 const routeSummary = productCandidateRouteSummary(candidate, lookup);
                 const branchNotes = productCandidateBranchNotes(candidate);
                 const isPrimaryCandidate = index === 0;
@@ -3609,7 +3608,9 @@ export async function HsDirectLookupPanel({
                     <div className="mt-2 grid gap-1 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-700">
                       <div><span className="font-semibold text-slate-500">간략 정보</span> {productCandidateBriefDescription(candidate, lookup)}</div>
                     </div>
-                    <p className="mt-1 text-sm leading-6 text-slate-600">{productCandidateDisplayReason(candidate.reason)}</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                      <span className="font-semibold text-slate-700">주요 근거</span> {productCandidateEvidenceText(candidate)}
+                    </p>
 
                     <Link
                       className="focus-ring mt-4 inline-flex w-full items-center justify-center rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-800"
@@ -3621,7 +3622,7 @@ export async function HsDirectLookupPanel({
 
                     <details className="mt-3 rounded-md border border-slate-200 bg-slate-50">
                       <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-slate-700">
-                        왜 이 코드인지 보기
+                        근거·보완정보 보기
                       </summary>
                       <div className="grid gap-3 border-t border-slate-200 p-3 text-sm lg:grid-cols-2">
                         <div>
@@ -3634,8 +3635,8 @@ export async function HsDirectLookupPanel({
                               </li>
                             ))}
                           </ol>
-                          <div className="mt-3 text-xs font-semibold text-slate-500">{dictionary.product.evidence}</div>
-                          <p className="mt-1 leading-6 text-slate-700">{productCandidateEvidenceText(candidate)}</p>
+                          <div className="mt-3 text-xs font-semibold text-slate-500">상세 근거</div>
+                          <p className="mt-1 leading-6 text-slate-700">{productCandidateDisplayReason(candidate.reason)}</p>
                         </div>
 
                         <div>
@@ -3656,11 +3657,6 @@ export async function HsDirectLookupPanel({
                             <Link className="font-mono font-semibold text-blue-700 underline-offset-2 hover:underline" data-navigation-progress="상세조회" href={hs6Href}>
                               {formatHsCode(candidate.hs6)}
                             </Link>
-                          </div>
-                          <div className="mt-2 grid gap-1 text-xs leading-5 text-slate-600">
-                            {hierarchyLines.map((line) => (
-                              <div key={line}>{line}</div>
-                            ))}
                           </div>
                         </div>
                       </div>
@@ -3703,7 +3699,6 @@ export async function HsDirectLookupPanel({
                     {additionalProductCandidateGroups.map((candidateGroup) => {
                       const candidate = candidateGroup.representative;
                       const lookup = productCandidateLookupByHsk.get(candidate.hskCode);
-                      const hierarchyLines = productCandidateHierarchyLines(candidate, lookup);
                       const routeSummary = productCandidateRouteSummary(candidate, lookup);
                       const branchNotes = productCandidateBranchNotes(candidate);
                       const detailHref = hsLookupHref({
@@ -3756,7 +3751,9 @@ export async function HsDirectLookupPanel({
                           <div className="mt-2 grid gap-1 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-700">
                             <div><span className="font-semibold text-slate-500">간략 정보</span> {productCandidateBriefDescription(candidate, lookup)}</div>
                           </div>
-                          <p className="mt-1 text-sm leading-6 text-slate-600">{productCandidateDisplayReason(candidate.reason)}</p>
+                          <p className="mt-2 text-sm leading-6 text-slate-600">
+                            <span className="font-semibold text-slate-700">주요 근거</span> {productCandidateEvidenceText(candidate)}
+                          </p>
 
                           <Link
                             className="focus-ring mt-4 inline-flex w-full items-center justify-center rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-800"
@@ -3768,7 +3765,7 @@ export async function HsDirectLookupPanel({
 
                           <details className="mt-3 rounded-md border border-slate-200 bg-slate-50">
                             <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-slate-700">
-                              왜 이 코드인지 보기
+                              근거·보완정보 보기
                             </summary>
                             <div className="grid gap-3 border-t border-slate-200 p-3 text-sm lg:grid-cols-2">
                               <div>
@@ -3781,8 +3778,8 @@ export async function HsDirectLookupPanel({
                                     </li>
                                   ))}
                                 </ol>
-                                <div className="mt-3 text-xs font-semibold text-slate-500">{dictionary.product.evidence}</div>
-                                <p className="mt-1 leading-6 text-slate-700">{productCandidateEvidenceText(candidate)}</p>
+                                <div className="mt-3 text-xs font-semibold text-slate-500">상세 근거</div>
+                                <p className="mt-1 leading-6 text-slate-700">{productCandidateDisplayReason(candidate.reason)}</p>
                               </div>
 
                               <div>
@@ -3803,11 +3800,6 @@ export async function HsDirectLookupPanel({
                                   <Link className="font-mono font-semibold text-blue-700 underline-offset-2 hover:underline" data-navigation-progress="상세조회" href={hs6Href}>
                                     {formatHsCode(candidate.hs6)}
                                   </Link>
-                                </div>
-                                <div className="mt-2 grid gap-1 text-xs leading-5 text-slate-600">
-                                  {hierarchyLines.map((line) => (
-                                    <div key={line}>{line}</div>
-                                  ))}
                                 </div>
                               </div>
                               {candidateGroup.related.length ? (
