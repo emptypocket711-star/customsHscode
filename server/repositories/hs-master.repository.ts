@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildHsHierarchyPath, hsAncestorCodes, type HsHierarchyNode } from "@/lib/hs-hierarchy";
 import { buildHsBriefDescription } from "@/lib/hs-summary";
 import { hasSupabaseEnv, createSupabaseServerClient } from "@/lib/supabase/server";
+import { logLookupTelemetry } from "@/server/observability/lookup-telemetry";
 import {
   mockHsMasterRecords,
   mockHsClassificationCases,
@@ -278,6 +279,12 @@ export type HsDirectLookupResult = {
 
 function normalizeHskCode(value: string) {
   return value.replace(/[^0-9]/g, "");
+}
+
+function lookupModeForTelemetry(normalizedCode: string) {
+  if (normalizedCode.length < 6) return "hs4_explorer";
+  if (normalizedCode.length === 6) return "hs6_explorer";
+  return "hsk_detail";
 }
 
 function isEffective(record: { effective_from: string; effective_to: string | null; status: string }, basisDate: string) {
@@ -1169,17 +1176,65 @@ function lookupWithMockData(hskCode: string, basisDate: string): HsDirectLookupR
 }
 
 export async function lookupHsDirect(hskCode: string, basisDate: string) {
+  const startedAt = process.hrtime.bigint();
+  const normalizedCode = normalizeHskCode(hskCode);
+  const lookupMode = lookupModeForTelemetry(normalizedCode);
+  const durationMs = () => Number((process.hrtime.bigint() - startedAt) / BigInt(1_000_000));
+
   if (!hasSupabaseEnv()) {
-    return lookupWithMockData(hskCode, basisDate);
+    const results = lookupWithMockData(hskCode, basisDate);
+    logLookupTelemetry("hs_direct_lookup_resolved", {
+      route: "hs_direct",
+      sourceMode: "mock",
+      status: "success",
+      lookupMode,
+      codeLength: normalizedCode.length,
+      resultCount: results.length,
+      durationMs: durationMs()
+    });
+    return results;
   }
 
   const supabase = await createSupabaseServerClient();
   const snapshotResults = await lookupWithSnapshotRpc(supabase, hskCode, basisDate);
   if (snapshotResults?.length) {
+    logLookupTelemetry("hs_direct_lookup_resolved", {
+      route: "hs_direct",
+      sourceMode: "snapshot_rpc",
+      status: "success",
+      lookupMode,
+      codeLength: normalizedCode.length,
+      resultCount: snapshotResults.length,
+      durationMs: durationMs()
+    });
     return snapshotResults;
   }
 
-  return lookupWithSupabase(supabase, hskCode, basisDate);
+  try {
+    const fallbackResults = await lookupWithSupabase(supabase, hskCode, basisDate);
+    logLookupTelemetry("hs_direct_lookup_resolved", {
+      route: "hs_direct",
+      sourceMode: "source_tables",
+      status: "fallback",
+      lookupMode,
+      codeLength: normalizedCode.length,
+      resultCount: fallbackResults.length,
+      durationMs: durationMs()
+    });
+    return fallbackResults;
+  } catch (error) {
+    logLookupTelemetry("hs_direct_lookup_resolved", {
+      route: "hs_direct",
+      sourceMode: "source_tables",
+      status: "failed",
+      lookupMode,
+      codeLength: normalizedCode.length,
+      resultCount: 0,
+      durationMs: durationMs(),
+      errorType: error instanceof Error ? error.name : "unknown"
+    });
+    throw error;
+  }
 }
 
 export const hsMasterRepositoryInternals = {
