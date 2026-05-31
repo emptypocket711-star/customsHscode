@@ -822,7 +822,7 @@ export default async function OperationsHealthPage({
     containerReceiptFailureSummary.status !== "normal",
     protectedJobEventSummary.status !== "normal"
   ].filter(Boolean).length;
-  const operationalSummary = [
+  const executiveSummary = [
     {
       label: "서비스 준비",
       value: missingRequiredCount > 0 || schemaHealthReport.summary.blockerCount > 0 ? "확인 필요" : "정상",
@@ -831,47 +831,21 @@ export default async function OperationsHealthPage({
     },
     {
       label: "HS 데이터",
-      value: snapshotBasisDate ?? "미확인",
-      detail: domesticLookupSnapshotCoverage
-        ? `HSK ${domesticLookupSnapshotCoverage.totalHsk10.toLocaleString("ko-KR")}건 / 갱신 ${domesticLookupSnapshotCoverage.lastRefreshedAt ? formatDate(domesticLookupSnapshotCoverage.lastRefreshedAt) : "-"}`
-        : "coverage RPC 미확인",
+      value: snapshotIsToday ? "오늘 기준" : "갱신 확인",
+      detail: snapshotBasisDate ? `snapshot ${snapshotBasisDate}` : "snapshot 미확인",
       tone: snapshotIsToday ? "success" : "warning"
     },
     {
-      label: "자동 작업",
-      value: backgroundJobRunSummary.latestStatus ? backgroundJobRunStatusLabel(backgroundJobRunSummary.latestStatus) : "이력 없음",
-      detail: `진행 ${backgroundJobSummary.queued + backgroundJobSummary.running} / 실패 ${backgroundJobSummary.dead + backgroundJobRunSummary.failedJobs}`,
-      tone: backgroundJobSummary.dead > 0 || backgroundJobSummary.failed > 0 || backgroundJobRunSummary.failedJobs > 0 || backgroundJobRunSummary.latestStatus === "failed" ? "warning" : "success"
+      label: "고객 영향",
+      value: operationsIssueSummary.open > 0 || lookupIssueCount > 0 ? "확인 필요" : "정상",
+      detail: `운영 이슈 ${operationsIssueSummary.open}건 / 조회 점검 ${lookupIssueCount}건`,
+      tone: operationsIssueSummary.open > 0 || lookupIssueCount > 0 ? "warning" : "success"
     },
     {
-      label: "조치할 일",
-      value: `${operationsIssueSummary.open}건 미해결`,
-      detail: `이슈 ${operationsIssueSummary.open} / 알림 실패 ${operationsAlertSummary.failed}`,
-      tone: operationsIssueSummary.open > 0 || operationsAlertSummary.failed > 0 ? "warning" : "success"
-    },
-    {
-      label: "조회 품질",
-      value: recurringLookupIssues.length ? `반복 ${recurringLookupIssues.length}개` : `${lookupIssueCount}건 점검`,
-      detail: recurringLookupIssues.length
-        ? `최다 ${recurringLookupIssues[0].label} ${recurringLookupIssues[0].issueCount}건`
-        : `정상 ${lookupSuccessCount}건 / 무결과 ${zeroResultCount}건`,
-      tone: lookupIssueCount > 0 ? "warning" : "success"
-    },
-    {
-      label: "반입계 출력",
-      value: containerReceiptFailureStatusText(containerReceiptFailureSummary.status),
-      detail: containerReceiptFailureSummary.total > 0
-        ? `최근 실패 ${containerReceiptFailureSummary.total}건 / 반복 ${containerReceiptFailureSummary.repeatedBucketCount}개`
-        : "최근 실패 없음",
-      tone: containerReceiptFailureSummary.status === "action_needed" ? "warning" : "success"
-    },
-    {
-      label: "외부 API Job",
-      value: protectedJobStatusText(protectedJobEventSummary.status),
-      detail: protectedJobEventSummary.total > 0
-        ? `최근 실패 ${protectedJobEventSummary.failed}건 / 실행 ${protectedJobEventSummary.total}건`
-        : "최근 실행 이력 없음",
-      tone: protectedJobEventSummary.status === "action_needed" ? "warning" : "success"
+      label: "외부 작업",
+      value: containerReceiptFailureSummary.status === "action_needed" || protectedJobEventSummary.status === "action_needed" ? "조치 필요" : "정상",
+      detail: `반입계 ${containerReceiptFailureStatusText(containerReceiptFailureSummary.status)} / API Job ${protectedJobStatusText(protectedJobEventSummary.status)}`,
+      tone: containerReceiptFailureSummary.status === "action_needed" || protectedJobEventSummary.status === "action_needed" ? "warning" : "success"
     }
   ] satisfies Array<{
     label: string;
@@ -919,7 +893,15 @@ export default async function OperationsHealthPage({
           ? "최근 정기 작업 실패가 있어 추이를 확인합니다."
           : "최근 정기 작업 실패가 없습니다.",
       tone: protectedJobEventSummary.status === "action_needed" ? "warning" : "success"
-    },
+    }
+  ] satisfies Array<{
+    href: string;
+    label: string;
+    value: string;
+    detail: string;
+    tone: "success" | "warning";
+  }>;
+  const developerActionItems = [
     {
       href: "#advanced-operations",
       label: "상세 진단",
@@ -950,18 +932,18 @@ export default async function OperationsHealthPage({
     <div className="grid gap-5">
       <PageHeading
         title="운영 점검"
-        description="배포 환경에서 필요한 연결값과 운영 보호 설정을 확인합니다. 키 원문은 표시하지 않습니다."
+        description="먼저 문제가 있는지만 확인합니다. 세부 원인과 개발자용 표는 접힌 영역에 둡니다."
       />
 
       <Card>
         <CardHeader
           title="핵심 운영 요약"
-          description="매일 볼 판단 항목만 표시합니다. 세부 환경값, 스키마, worker 이력은 상세 진단에 접어 두었습니다."
-          action={<Badge tone={operationalSummary.some((item) => item.tone === "warning") ? "warning" : "success"}>점검 {operationalSummary.filter((item) => item.tone === "warning").length}건</Badge>}
+          description="대표가 먼저 볼 상태만 묶었습니다. 모두 정상이면 아래 상세 영역은 열지 않아도 됩니다."
+          action={<Badge tone={executiveSummary.some((item) => item.tone === "warning") ? "warning" : "success"}>점검 {executiveSummary.filter((item) => item.tone === "warning").length}건</Badge>}
         />
         <CardBody>
-          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-7">
-            {operationalSummary.map((item) => (
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+            {executiveSummary.map((item) => (
               <div key={item.label} className="rounded-md border border-slate-200 bg-white px-3 py-3">
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-xs font-semibold text-slate-500">{item.label}</p>
@@ -978,10 +960,10 @@ export default async function OperationsHealthPage({
       <Card>
         <CardHeader
           title="오늘 할 일"
-          description="1인 운영자가 먼저 판단할 항목입니다. 정상인 항목은 확인만 하고 넘어가면 됩니다."
+          description="고객에게 영향이 있을 수 있는 항목만 먼저 둡니다. 정상인 항목은 확인만 하고 넘어가면 됩니다."
         />
         <CardBody>
-          <nav className="grid gap-2 lg:grid-cols-6" aria-label="운영 오늘 할 일">
+          <nav className="grid gap-2 lg:grid-cols-4" aria-label="운영 오늘 할 일">
             {operatorActionItems.map((item) => (
               <a
                 className={item.tone === "warning"
@@ -1001,6 +983,38 @@ export default async function OperationsHealthPage({
           </nav>
         </CardBody>
       </Card>
+
+      <details className="rounded-lg border border-slate-200 bg-white shadow-sm">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4">
+          <span>
+            <span className="block text-base font-semibold text-slate-950">개발자용 바로가기</span>
+            <span className="mt-1 block text-sm text-slate-500">문제가 있을 때 원인 분석에 쓰는 상세 화면입니다.</span>
+          </span>
+          <Badge tone={developerActionItems.some((item) => item.tone === "warning") ? "warning" : "neutral"}>
+            {developerActionItems.length}개
+          </Badge>
+        </summary>
+        <div className="border-t border-slate-200 p-4">
+          <nav className="grid gap-2 md:grid-cols-2" aria-label="개발자용 운영 바로가기">
+            {developerActionItems.map((item) => (
+              <a
+                className={item.tone === "warning"
+                  ? "rounded-md border border-amber-200 bg-amber-50 px-3 py-3 text-sm transition hover:border-amber-300 hover:bg-amber-100/70"
+                  : "rounded-md border border-slate-200 bg-slate-50 px-3 py-3 text-sm transition hover:border-blue-200 hover:bg-blue-50"}
+                href={item.href}
+                key={item.href}
+              >
+                <span className="flex items-start justify-between gap-2">
+                  <span className="font-semibold text-slate-950">{item.label}</span>
+                  <Badge tone={item.tone}>{item.tone === "warning" ? "확인" : "정상"}</Badge>
+                </span>
+                <span className="mt-2 block text-base font-semibold text-slate-950">{item.value}</span>
+                <span className="mt-1 block text-xs leading-5 text-slate-600">{item.detail}</span>
+              </a>
+            ))}
+          </nav>
+        </div>
+      </details>
 
       <details className="rounded-lg border border-slate-200 bg-white shadow-sm">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4">
