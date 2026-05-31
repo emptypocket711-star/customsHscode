@@ -97,9 +97,48 @@ export async function LegalUpdateCenter() {
 
   return (
     <div className="grid gap-5">
-      <CustomsApiConnectorPanel />
-      <OperationsRefreshPanel basisDate={basisDate} />
-      <SourcePublishPanel />
+      <Card>
+        <CardHeader
+          title="자료 관리 요약"
+          description="평소에는 게시 차단, 적재 문제, 커버리지 누락만 먼저 확인합니다."
+          action={<Badge tone={dashboard.summary.blockedCount || inventory.summary.diagnosticCounts.danger ? "warning" : "success"}>핵심 상태</Badge>}
+        />
+        <CardBody>
+          <div className="grid gap-3 md:grid-cols-4">
+            <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-medium text-slate-600">검토 대기 변경</p>
+              <p className="mt-2 text-3xl font-semibold text-slate-950">{dashboard.summary.pendingCount}</p>
+            </div>
+            <div className="rounded-md border border-amber-200 bg-amber-50 p-4">
+              <p className="text-sm font-medium text-amber-800">게시 차단</p>
+              <p className="mt-2 text-3xl font-semibold text-amber-900">{dashboard.summary.blockedCount}</p>
+            </div>
+            <div className="rounded-md border border-red-200 bg-red-50 p-4">
+              <p className="text-sm font-medium text-red-800">Critical</p>
+              <p className="mt-2 text-3xl font-semibold text-red-900">{dashboard.summary.criticalCount}</p>
+            </div>
+            <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-medium text-slate-600">적재 문제</p>
+              <p className="mt-2 text-3xl font-semibold text-slate-950">{inventory.summary.diagnosticCounts.danger}</p>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+
+      <details className="rounded-lg border border-slate-200 bg-white shadow-sm">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4">
+          <span>
+            <span className="block text-base font-semibold text-slate-950">갱신·게시 작업</span>
+            <span className="mt-1 block text-sm text-slate-500">API 연결, 운영 집계 갱신, source publish는 필요할 때만 펼쳐서 실행합니다.</span>
+          </span>
+          <Badge tone="warning">실행 작업</Badge>
+        </summary>
+        <div className="grid gap-4 border-t border-slate-200 bg-slate-50/45 p-4">
+          <CustomsApiConnectorPanel />
+          <OperationsRefreshPanel basisDate={basisDate} />
+          <SourcePublishPanel />
+        </div>
+      </details>
 
       <Card>
         <CardHeader
@@ -404,33 +443,6 @@ export async function LegalUpdateCenter() {
           </div>
         </CardBody>
       </Card>
-
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardBody>
-            <p className="text-sm font-medium text-slate-600">검토 대기 변경</p>
-            <p className="mt-2 text-3xl font-semibold text-slate-950">{dashboard.summary.pendingCount}</p>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <p className="text-sm font-medium text-slate-600">게시 차단</p>
-            <p className="mt-2 text-3xl font-semibold text-amber-700">{dashboard.summary.blockedCount}</p>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <p className="text-sm font-medium text-slate-600">Critical</p>
-            <p className="mt-2 text-3xl font-semibold text-red-700">{dashboard.summary.criticalCount}</p>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <p className="text-sm font-medium text-slate-600">영향 리포트</p>
-            <p className="mt-2 text-3xl font-semibold text-slate-950">{dashboard.summary.impactedReportCount}</p>
-          </CardBody>
-        </Card>
-      </div>
 
       <Card>
         <CardHeader
