@@ -2079,6 +2079,15 @@ export default async function OperationsHealthPage({
                   ))}
                 </div>
               ) : null}
+              <details className="border-b border-slate-200 bg-white">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
+                  <span>
+                    <span className="block text-sm font-semibold text-slate-950">일자·경로·원시 로그</span>
+                    <span className="mt-1 block text-xs text-slate-500">상세 통계와 전체 telemetry 표는 지연 원인을 추적할 때만 펼칩니다.</span>
+                  </span>
+                  <Badge tone="neutral">로그 {lookupTelemetryEvents.length}건</Badge>
+                </summary>
+                <div className="border-t border-slate-200">
               {lookupDailySummary.length ? (
                 <div className="grid gap-2 border-b border-slate-200 bg-slate-50 p-3 text-sm md:grid-cols-5">
                   {lookupDailySummary.map((summary) => (
@@ -2199,6 +2208,8 @@ export default async function OperationsHealthPage({
                   </tbody>
                 </table>
               </div>
+                </div>
+              </details>
             </>
           ) : (
             <div className="p-5 text-sm text-slate-600">
