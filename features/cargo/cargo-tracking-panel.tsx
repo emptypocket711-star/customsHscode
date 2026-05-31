@@ -145,9 +145,9 @@ function StatusMessage({
 
 function SummaryRow({ label, value }: { label: string; value?: string | null }) {
   return (
-    <div className="grid grid-cols-[7rem_1fr] border-b border-slate-100 last:border-b-0">
+    <div className="grid grid-cols-[7rem_minmax(0,1fr)] border-b border-slate-100 last:border-b-0">
       <dt className="bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-500">{label}</dt>
-      <dd className="px-3 py-2 text-sm font-medium text-slate-900">{value || "-"}</dd>
+      <dd className="min-w-0 break-words px-3 py-2 text-sm font-medium text-slate-900">{value || "-"}</dd>
     </div>
   );
 }
@@ -201,10 +201,10 @@ export function CargoTrackingPanel({
   }
 
   return (
-    <div className="grid gap-5">
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5">
       <ActiveWatchRows dictionary={dictionary} watches={watches} />
 
-      <Card>
+      <Card className="min-w-0">
         <CardHeader
           title={dictionary.form.lookupTitle}
           description={dictionary.form.lookupDescription}
@@ -213,7 +213,7 @@ export function CargoTrackingPanel({
         <CardBody>
           <form
             action={lookupAction}
-            className="grid gap-4"
+            className="grid min-w-0 gap-4"
             onSubmit={(event) => {
               if (hasCargoLookupValue(event.currentTarget)) {
                 setLookupClientError("");
@@ -225,22 +225,22 @@ export function CargoTrackingPanel({
               window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
             }}
           >
-            <div className="grid gap-4 md:grid-cols-4">
-              <label className="grid gap-1 text-sm font-medium text-slate-700">
+            <div className="grid min-w-0 gap-4 md:grid-cols-4">
+              <label className="grid min-w-0 gap-1 text-sm font-medium text-slate-700">
                 {dictionary.form.houseBl}
-                <input autoFocus className="focus-ring rounded-md border border-slate-300 px-3 py-2" disabled={lookupPending} name="houseBlNo" />
+                <input autoFocus className="focus-ring w-full min-w-0 rounded-md border border-slate-300 px-3 py-2" disabled={lookupPending} name="houseBlNo" />
               </label>
-              <label className="grid gap-1 text-sm font-medium text-slate-700">
+              <label className="grid min-w-0 gap-1 text-sm font-medium text-slate-700">
                 {dictionary.form.masterBl}
-                <input className="focus-ring rounded-md border border-slate-300 px-3 py-2" disabled={lookupPending} name="masterBlNo" />
+                <input className="focus-ring w-full min-w-0 rounded-md border border-slate-300 px-3 py-2" disabled={lookupPending} name="masterBlNo" />
               </label>
-              <label className="grid gap-1 text-sm font-medium text-slate-700">
+              <label className="grid min-w-0 gap-1 text-sm font-medium text-slate-700">
                 {dictionary.form.cargoManagementNo}
-                <input className="focus-ring rounded-md border border-slate-300 px-3 py-2" disabled={lookupPending} name="cargoManagementNo" />
+                <input className="focus-ring w-full min-w-0 rounded-md border border-slate-300 px-3 py-2" disabled={lookupPending} name="cargoManagementNo" />
               </label>
-              <label className="grid gap-1 text-sm font-medium text-slate-700">
+              <label className="grid min-w-0 gap-1 text-sm font-medium text-slate-700">
                 {dictionary.form.blYear}
-                <input className="focus-ring rounded-md border border-slate-300 px-3 py-2" defaultValue={currentYear} disabled={lookupPending} inputMode="numeric" maxLength={4} name="blYear" />
+                <input className="focus-ring w-full min-w-0 rounded-md border border-slate-300 px-3 py-2" defaultValue={currentYear} disabled={lookupPending} inputMode="numeric" maxLength={4} name="blYear" />
               </label>
             </div>
             <div className="flex flex-wrap items-center gap-3">
@@ -271,8 +271,8 @@ export function CargoTrackingPanel({
       </Card>
 
       {result ? (
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-          <Card>
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+          <Card className="min-w-0">
             <CardHeader title={dictionary.result.currentStatus} action={<Badge tone="success">{result.summary.progressStatus || dictionary.form.lookup}</Badge>} />
             <CardBody className="p-0">
               <dl>
@@ -290,7 +290,7 @@ export function CargoTrackingPanel({
             </CardBody>
           </Card>
 
-          <Card>
+          <Card className="min-w-0">
             <CardHeader title={dictionary.result.events} description={dictionary.result.eventsDescription} />
             <CardBody className="p-0">
               <div className="overflow-x-auto">
@@ -326,13 +326,13 @@ export function CargoTrackingPanel({
         </div>
       ) : null}
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-        <Card>
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <Card className="min-w-0">
           <CardHeader title={dictionary.watch.title} description={dictionary.watch.description} action={<Badge tone="warning">{dictionary.watch.cadence}</Badge>} />
           <CardBody>
             <form
               action={watchAction}
-              className="grid gap-4"
+              className="grid min-w-0 gap-4"
               onSubmit={(event) => {
                 if (hasCargoLookupValue(event.currentTarget)) {
                   setWatchClientError("");
@@ -344,30 +344,30 @@ export function CargoTrackingPanel({
                 window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
               }}
             >
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="grid gap-1 text-sm font-medium text-slate-700">
+              <div className="grid min-w-0 gap-4 md:grid-cols-2">
+                <label className="grid min-w-0 gap-1 text-sm font-medium text-slate-700">
                   {dictionary.watch.email}
-                  <input className="focus-ring rounded-md border border-slate-300 px-3 py-2" defaultValue={defaultNotifyEmail ?? ""} disabled={watchPending} name="notifyEmail" type="email" />
+                  <input className="focus-ring w-full min-w-0 rounded-md border border-slate-300 px-3 py-2" defaultValue={defaultNotifyEmail ?? ""} disabled={watchPending} name="notifyEmail" type="email" />
                 </label>
-                <label className="grid gap-1 text-sm font-medium text-slate-700">
+                <label className="grid min-w-0 gap-1 text-sm font-medium text-slate-700">
                   {dictionary.form.houseBl}
-                  <input className="focus-ring rounded-md border border-slate-300 px-3 py-2" disabled={watchPending} name="houseBlNo" />
+                  <input className="focus-ring w-full min-w-0 rounded-md border border-slate-300 px-3 py-2" disabled={watchPending} name="houseBlNo" />
                 </label>
-                <label className="grid gap-1 text-sm font-medium text-slate-700">
+                <label className="grid min-w-0 gap-1 text-sm font-medium text-slate-700">
                   {dictionary.form.masterBl}
-                  <input className="focus-ring rounded-md border border-slate-300 px-3 py-2" disabled={watchPending} name="masterBlNo" />
+                  <input className="focus-ring w-full min-w-0 rounded-md border border-slate-300 px-3 py-2" disabled={watchPending} name="masterBlNo" />
                 </label>
-                <label className="grid gap-1 text-sm font-medium text-slate-700">
+                <label className="grid min-w-0 gap-1 text-sm font-medium text-slate-700">
                   {dictionary.form.cargoManagementNo}
-                  <input className="focus-ring rounded-md border border-slate-300 px-3 py-2" disabled={watchPending} name="cargoManagementNo" />
+                  <input className="focus-ring w-full min-w-0 rounded-md border border-slate-300 px-3 py-2" disabled={watchPending} name="cargoManagementNo" />
                 </label>
-                <label className="grid gap-1 text-sm font-medium text-slate-700">
+                <label className="grid min-w-0 gap-1 text-sm font-medium text-slate-700">
                   {dictionary.form.blYear}
-                  <input className="focus-ring rounded-md border border-slate-300 px-3 py-2" defaultValue={currentYear} disabled={watchPending} inputMode="numeric" maxLength={4} name="blYear" />
+                  <input className="focus-ring w-full min-w-0 rounded-md border border-slate-300 px-3 py-2" defaultValue={currentYear} disabled={watchPending} inputMode="numeric" maxLength={4} name="blYear" />
                 </label>
-                <label className="grid gap-1 text-sm font-medium text-slate-700">
+                <label className="grid min-w-0 gap-1 text-sm font-medium text-slate-700">
                   {dictionary.watch.targetStatus}
-                  <select className="focus-ring rounded-md border border-slate-300 bg-white px-3 py-2" disabled={watchPending} name="targetStatus" defaultValue="cy_inbound">
+                  <select className="focus-ring w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2" disabled={watchPending} name="targetStatus" defaultValue="cy_inbound">
                     {statusOptions.map((status) => <option key={status.value} value={status.value}>{cargoTargetStatusLabel(status.value, dictionary)}</option>)}
                   </select>
                 </label>
@@ -385,7 +385,7 @@ export function CargoTrackingPanel({
           </CardBody>
         </Card>
 
-        <Card>
+        <Card className="min-w-0">
           <CardHeader title={dictionary.watch.listTitle} description={dictionary.watch.listDescription} action={<Ship aria-hidden="true" className="text-slate-400" size={20} />} />
           <CardBody className="p-0">
             <div className="overflow-x-auto">
