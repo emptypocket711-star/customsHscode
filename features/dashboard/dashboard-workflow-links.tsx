@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { ArrowRight, Bell, Calculator, Car, FileSpreadsheet, type LucideIcon } from "lucide-react";
+import { ArrowRight, Bell, Calculator, Car, FileSpreadsheet, Newspaper, type LucideIcon } from "lucide-react";
 import { getDashboardDictionary, type AppLocale } from "@/lib/i18n";
 
-type WorkflowId = "batch" | "cargo" | "duty" | "vehicle-spec";
+type WorkflowId = "batch" | "cargo" | "duty" | "trade-news" | "vehicle-spec";
 
 type WorkflowLink = {
-  group: "primary" | "tools";
+  group: "primary" | "resources" | "tools";
   href: string;
   id: WorkflowId;
   tone: "blue" | "emerald" | "slate" | "amber";
@@ -35,6 +35,12 @@ const workflowLinks: WorkflowLink[] = [
     href: "/used-car-export",
     id: "vehicle-spec",
     tone: "blue"
+  },
+  {
+    group: "resources",
+    href: "/trade-news",
+    id: "trade-news",
+    tone: "amber"
   }
 ];
 
@@ -42,6 +48,7 @@ const iconById: Record<WorkflowId, LucideIcon> = {
   batch: FileSpreadsheet,
   cargo: Bell,
   duty: Calculator,
+  "trade-news": Newspaper,
   "vehicle-spec": Car
 };
 
@@ -56,7 +63,8 @@ export function DashboardWorkflowLinks({ locale }: { locale: AppLocale }) {
   const dictionary = getDashboardDictionary(locale).workflows;
   const groupedLinks = [
     { id: "primary" as const, items: workflowLinks.filter((workflow) => workflow.group === "primary") },
-    { id: "tools" as const, items: workflowLinks.filter((workflow) => workflow.group === "tools") }
+    { id: "tools" as const, items: workflowLinks.filter((workflow) => workflow.group === "tools") },
+    { id: "resources" as const, items: workflowLinks.filter((workflow) => workflow.group === "resources") }
   ];
 
   return (
@@ -69,7 +77,7 @@ export function DashboardWorkflowLinks({ locale }: { locale: AppLocale }) {
         <span className="text-xs font-medium text-[var(--text-muted)]">{dictionary.description}</span>
       </div>
 
-      <div className="grid gap-4 p-4 lg:grid-cols-2">
+      <div className="grid gap-4 p-4 lg:grid-cols-3">
         {groupedLinks.map((group) => (
           <div className="grid gap-2" key={group.id}>
             <h3 className="px-1 text-xs font-semibold text-[var(--text-muted)]">{dictionary.groups[group.id]}</h3>

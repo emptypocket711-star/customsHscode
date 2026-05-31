@@ -60,9 +60,10 @@ export type DashboardDictionary = {
     title: string;
     groups: {
       primary: string;
+      resources: string;
       tools: string;
     };
-    items: Record<"batch" | "cargo" | "duty" | "vehicle-spec", {
+    items: Record<"batch" | "cargo" | "duty" | "trade-news" | "vehicle-spec", {
       description: string;
       title: string;
     }>;
@@ -137,12 +138,14 @@ const dictionaries = {
       title: "후속 업무·실무 도구",
       groups: {
         primary: "후속 업무",
+        resources: "정보·동향",
         tools: "실무 도구"
       },
       items: {
         batch: { description: "여러 품목을 한 번에 확인", title: "HS 일괄 조회" },
         cargo: { description: "HBL 진행 상태와 알림", title: "적하목록 조회" },
         duty: { description: "입력값 기준 관세·내국세 예비 산출", title: "예상 납세액 산출" },
+        "trade-news": { description: "무역 뉴스와 실무 참고자료 확인", title: "무역 정보" },
         "vehicle-spec": { description: "제원·컨테이너·터미널 실무 확인", title: "중고차 수출" }
       }
     }
@@ -214,12 +217,14 @@ const dictionaries = {
       title: "Follow-up work and tools",
       groups: {
         primary: "Follow-up work",
+        resources: "Resources",
         tools: "Practical tools"
       },
       items: {
         batch: { description: "Check multiple items at once", title: "Batch HS lookup" },
         cargo: { description: "HBL progress and alerts", title: "Cargo manifest" },
         duty: { description: "Preliminary duty and tax estimate", title: "Estimated duties" },
+        "trade-news": { description: "Trade news and practical references", title: "Trade resources" },
         "vehicle-spec": { description: "Vehicle specs, containers, and terminal checks", title: "Used-car export" }
       }
     }
@@ -291,12 +296,14 @@ const dictionaries = {
       title: "后续业务和实务工具",
       groups: {
         primary: "后续业务",
+        resources: "资讯动态",
         tools: "实务工具"
       },
       items: {
         batch: { description: "一次确认多个品目", title: "HS批量查询" },
         cargo: { description: "HBL进度和提醒", title: "舱单查询" },
         duty: { description: "关税和内税的初步估算", title: "预计税费" },
+        "trade-news": { description: "查看贸易资讯和实务参考", title: "贸易资讯" },
         "vehicle-spec": { description: "车辆参数、集装箱和码头实务确认", title: "二手车出口" }
       }
     }
