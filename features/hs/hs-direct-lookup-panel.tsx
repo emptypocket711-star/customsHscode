@@ -897,13 +897,34 @@ function productCandidateScoreLabel(candidate: HsCandidateRecommendation) {
   return `점수 ${Math.round(candidate.confidenceScore * 100)}점`;
 }
 
+function inferredProductFamilyLabel(candidate: HsCandidateRecommendation) {
+  const text = [
+    candidate.reason,
+    ...candidate.scoreBreakdown,
+    ...candidate.requiredQuestions
+  ].join(" ");
+  const labels = text.match(/[가-힣ㆍ·A-Za-z0-9]+류/g) ?? [];
+
+  return labels
+    .map((label) => label.trim())
+    .find((label) => label && label !== "제품류" && !/(품목분류|분류|종류|서류|오류)$/.test(label)) ?? "";
+}
+
 function productCandidateBriefDescription(candidate: HsCandidateRecommendation, lookup?: HsDirectLookupResult) {
-  return lookup?.briefDescription ?? buildHsBriefDescription({
+  const fallback = buildHsBriefDescription({
     hskCode: candidate.hskCode,
     hs6: candidate.hs6,
     koreanName: candidate.koreanName,
     hierarchyPath: productCandidateHierarchyNodes(candidate, lookup)
   });
+  const description = lookup?.briefDescription ?? fallback;
+  const familyLabel = inferredProductFamilyLabel(candidate);
+
+  if (familyLabel && candidate.koreanName.trim() === "기타" && description.includes("관련 품목 중 기타 품목")) {
+    return `${familyLabel} 중 기타 품목`;
+  }
+
+  return description;
 }
 
 function productCandidateDisplayReason(reason: string) {
