@@ -1864,3 +1864,25 @@
 - `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
 - `E2E_BASE_URL=https://hsfinder.co.kr npm run e2e:product-supplement`
 - Playwright 실사이트 확인: 일반 테스트 계정은 `/operations/health`에서 접근 차단 유지, 운영 UI 미노출
+
+### 반입계 출력 실패 상태 운영 표시
+
+- 이전 작업은 route별 rate limit 초과를 관측한 것이고, 이번 작업은 반입계 출력 실패를 대표/운영자가 이해할 수 있는 `정상`, `주의`, `조치 필요` 상태로 요약한 것이다.
+- `container_receipt_failure_events` 테이블을 추가하고 service role만 insert, developer만 read 하도록 RLS를 설정했다.
+- 반입계 출력 브라우저 실행 실패와 터미널 캡처 실패를 기록한다.
+- 컨테이너 번호 원문은 저장하지 않고 hash만 저장한다.
+- `/operations/health`의 오늘 할 일과 상세 진단에 `반입계 출력 실패 상태`를 추가했다.
+- 반복 실패는 터미널/원인 묶음으로 먼저 보여주고, `terminal_loading_not_settled` 같은 개발자용 실패 코드는 접힌 상세 영역에 남겼다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test -- server/repositories/container-receipt-failure-event.repository.test.ts server/repositories/lookup-governance.test.ts`
+- `npm run build`
+- Supabase production DB에 `20260531010000_container_receipt_failure_events.sql` migration 적용
+- `vercel env run -e production -- npm run health:db`
+- Vercel production deployment: `customs-hscode-iqyfpff4c-koo-apps.vercel.app`
+- `SMOKE_BASE_URL=https://hsfinder.co.kr npm run smoke:production`
+- `E2E_BASE_URL=https://hsfinder.co.kr npm run e2e:product-supplement`
+- Playwright 실사이트 확인: 일반 테스트 계정은 `/operations/health`에서 접근 차단 유지, 운영 UI 미노출
