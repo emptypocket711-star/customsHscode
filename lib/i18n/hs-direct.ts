@@ -178,7 +178,7 @@ const dictionaries = {
       originCountry: "원산지",
       query: "HS CODE 또는 품명",
       queryPlaceholder: "예: 3401.30-0000 또는 입술화장품",
-      submit: "예비 조회"
+      submit: "조회"
     },
     exportDomestic: {
       availablePossibility: "발급 가능성",
@@ -210,12 +210,12 @@ const dictionaries = {
     },
     page: {
       directDescription: "HS CODE 또는 품명을 입력하면 수입 기준 관세율·수입요건 또는 한국 수출 기준 수출요건을 표시합니다.",
-      directTitle: "HS 예비 조회",
+      directTitle: "HS CODE 조회",
       overseasDescription: "한국 HS CODE 또는 품명으로 수출 목적국의 HS CODE, 현지 품명, 관세율, 내국세, 수입요건을 조회합니다.",
       overseasTitle: "해외 HS CODE조회"
     },
     product: {
-      detailLookup: "이 후보로 상세 예비조회",
+      detailLookup: "이 코드로 상세조회",
       evidence: "추천 근거",
       hs6: "HS6",
       missingFacts: "보완 필요 정보",
@@ -310,7 +310,7 @@ const dictionaries = {
       originCountry: "Origin country",
       query: "HS code or product name",
       queryPlaceholder: "e.g. 3401.30-0000 or lip cosmetics",
-      submit: "Run preliminary lookup"
+      submit: "Lookup"
     },
     exportDomestic: {
       availablePossibility: "Issuance possibility",
@@ -342,12 +342,12 @@ const dictionaries = {
     },
     page: {
       directDescription: "Enter an HS code or product name to view import-side tariff and requirement data, or Korea export-side requirement data.",
-      directTitle: "Preliminary HS Lookup",
+      directTitle: "HS Code Lookup",
       overseasDescription: "Search destination-country HS codes, local descriptions, tariff rates, internal taxes, and import requirements from a Korean HS code or product name.",
       overseasTitle: "Overseas HS Lookup"
     },
     product: {
-      detailLookup: "Open preliminary detail for this candidate",
+      detailLookup: "Open detail for this code",
       evidence: "Candidate rationale",
       hs6: "HS6",
       missingFacts: "Information to supplement",
@@ -442,7 +442,7 @@ const dictionaries = {
       originCountry: "原产地",
       query: "HS编码或品名",
       queryPlaceholder: "例：3401.30-0000 或 唇部化妆品",
-      submit: "初步查询"
+      submit: "查询"
     },
     exportDomestic: {
       availablePossibility: "签发可能性",
@@ -474,12 +474,12 @@ const dictionaries = {
     },
     page: {
       directDescription: "输入HS编码或品名后，显示进口侧关税率、进口要求，或韩国出口侧要求数据。",
-      directTitle: "HS初步查询",
+      directTitle: "HS编码查询",
       overseasDescription: "可通过韩国HS编码或品名查询目的国HS编码、当地品名、关税率、内税和进口要求。",
       overseasTitle: "海外HS编码查询"
     },
     product: {
-      detailLookup: "查看该候选项的初步详情",
+      detailLookup: "查看该编码详情",
       evidence: "候选依据",
       hs6: "HS6",
       missingFacts: "需补充的信息",
