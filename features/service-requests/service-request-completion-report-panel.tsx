@@ -261,9 +261,12 @@ export function ServiceRequestCompletionReportPanel({
             })}
           </div>
         ) : (
-          <p className="rounded-md bg-white p-3 text-xs leading-5 text-slate-600">
-            아직 완료 리포트에 연결된 보관 서류가 없습니다.
-          </p>
+          <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
+            <p className="font-semibold">최종 보관 서류 연결이 필요합니다.</p>
+            <p className="mt-1">
+              완료 리포트 초안만으로는 거래 보관 기록이 완성되지 않습니다. 요청 서류를 첨부한 뒤 {copy.documents} 역할로 연결하고 제출 단계로 넘어가세요.
+            </p>
+          </div>
         )}
         {activeReportId ? (
           <details className="rounded-md border border-slate-200 bg-white" open={reportDocuments.length === 0}>
@@ -305,13 +308,13 @@ export function ServiceRequestCompletionReportPanel({
               </form>
             ) : (
               <p className="border-t border-slate-200 p-3 text-xs leading-5 text-slate-600">
-                먼저 요청 서류를 첨부해야 완료 리포트 보관 서류로 연결할 수 있습니다.
+                먼저 요청 상세의 첨부 서류 영역에서 요청 서류를 추가해야 완료 리포트 보관 서류로 연결할 수 있습니다. 서류가 없는 거래는 리포트 제출 전 최종 보관 근거가 부족합니다.
               </p>
             )}
           </details>
         ) : (
           <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
-            완료 리포트 초안을 저장한 뒤 요청 서류를 최종 보관 역할로 연결할 수 있습니다.
+            완료 리포트 초안을 먼저 저장해야 요청 서류를 최종 보관 역할로 연결할 수 있습니다. 초안 저장 후 {copy.documents} 역할을 최소 1건 이상 연결하세요.
           </p>
         )}
         {documentState.message && documentState.requestId === requestId ? (

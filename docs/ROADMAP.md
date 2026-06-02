@@ -288,7 +288,8 @@
 | P71.2 partner transaction status clarity | 완료 | 화주 상세 상태 안내가 아니라 포워더·관세사 입찰 상세에서 선정 이후 다음 행동과 완료 리포트·피드백 위치를 명확히 한다 | partner status UX review | browser, unit, typecheck, lint |
 | P71.3 request list next-action label consistency | 완료 | 상세 상단 바로가기가 아니라 운송·통관 요청 목록 카드의 다음 작업 라벨이 선정·진행·완료 상태를 일관되게 설명하는지 보강한다 | request list label review | browser, typecheck, lint |
 | P71.4 clearance list status browser review | 완료 | 운송 목록 검증이 아니라 통관 요청 목록에서도 선정·진행·완료 다음 작업 라벨이 실제 화면에서 어색하지 않은지 확인한다 | clearance list browser review | browser |
-| P72.1 marketplace completion document gap review | 예정 | 거래 상태 라벨 정리가 아니라 완료 리포트의 최종 보관 서류 누락 안내가 화주와 파트너 양쪽에서 충분히 행동 가능하게 보이는지 점검한다 | completion document gap UX | browser, unit, typecheck, lint |
+| P72.1 marketplace completion document gap review | 완료 | 거래 상태 라벨 정리가 아니라 완료 리포트의 최종 보관 서류 누락 안내가 화주와 파트너 양쪽에서 충분히 행동 가능하게 보이는지 점검한다 | completion document gap UX | browser, typecheck, lint |
+| P72.2 completion draft CTA placement review | 예정 | 보관 서류 누락 문구가 아니라 완료 리포트 초안 작성 CTA가 완료 직후 화면에서 충분히 찾기 쉬운지 점검한다 | completion draft CTA UX | browser, typecheck, lint |
 
 #### P34 다음 코드 작업 후보
 
