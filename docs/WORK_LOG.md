@@ -720,6 +720,24 @@
 - `npm run ops:marketplace-notifications:email-opt-in-local`
 - `npm run ops:marketplace-notifications:rehearse-local`
 
+### marketplace notification fanout decision
+
+- 이전 작업은 P120 email opt-in row가 실제 rehearsal에서 수신자 선택을 제어하는지 확인한 작업이고, 이번 작업은 P121 한 회사의 여러 opt-in 사용자에게 외부 이메일을 모두 보낼지 결정한 정책 작업이다.
+- MVP에서는 외부 이메일 다중 fanout을 열지 않기로 결정했다.
+- `transactional_email` provider는 opt-in 사용자 중 관리자 우선 1명 수신자 구조를 유지한다.
+- 현재 delivery 상태는 회사 단위라 사용자별 email delivery/read 상태를 추적하지 않는다.
+- 여러 사용자가 같은 요청 이메일을 받으면 중복 견적 확인, 중복 질문, 내부 담당 혼선이 생길 수 있다고 판단했다.
+- 공개 unsubscribe, audit, abuse handling이 아직 없으므로 수신자 수를 늘리지 않는다.
+- 팀 전체 공유 표면은 외부 email이 아니라 대시보드 인앱 알림으로 유지한다.
+- `MARKETPLACE_NOTIFICATION_PREFERENCES_PLAN.md`에 fanout 보류 기준과 재검토 조건을 추가했다.
+- 이번 P121은 P120처럼 로컬 rehearsal을 추가한 작업이 아니다. 실제 발송 범위를 1명으로 유지할지 다중 수신자로 넓힐지 결정한 제품/보안 정책 작업이다.
+- 다음 작업은 P122 marketplace production email rehearsal gate다. 이번 P121이 fanout 정책 결정이라면, P122는 실제 Resend provider를 통제된 테스트 수신함으로 리허설할 수 있는 운영/보안 조건을 정하는 작업이다.
+
+검증:
+
+- `rg -n "Fanout Decision|P121.1|P122.1|single-recipient|다중 fanout|관리자 우선 1명" docs/MARKETPLACE_NOTIFICATION_PREFERENCES_PLAN.md docs/ROADMAP.md docs/WORK_LOG.md`
+- `git diff --check`
+
 ## 2026-06-02
 
 ### local login review smoke

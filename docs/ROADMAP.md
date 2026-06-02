@@ -409,7 +409,8 @@
 | P118.1 marketplace email notification preference schema | 완료 | 수신 설정 정책 문서화가 아니라 실제 사용자별 email opt-in 저장 schema와 resolver gate를 추가한다 | email preference schema | migration, RLS, unit |
 | P119.1 marketplace email notification settings UI | 완료 | schema/resolver gate가 아니라 사용자가 로그인 상태에서 marketplace email 수신 설정을 직접 켜고 끄게 한다 | email preference settings UI | server action, UX, browser |
 | P120.1 marketplace email opt-in rehearsal | 완료 | 설정 UI가 아니라 opt-in preference가 실제 notification worker/provider rehearsal에서 수신자 선택을 제어하는지 확인한다 | opt-in send rehearsal | local ops rehearsal, unit |
-| P121.1 marketplace notification fanout decision | 예정 | opt-in rehearsal이 아니라 한 회사의 여러 opt-in 사용자에게 알림을 보낼지, 1명 관리자 우선 구조를 유지할지 결정한다 | fanout policy decision | product/security review |
+| P121.1 marketplace notification fanout decision | 완료 | opt-in rehearsal이 아니라 한 회사의 여러 opt-in 사용자에게 알림을 보낼지, 1명 관리자 우선 구조를 유지할지 결정한다 | single-recipient MVP retained | product/security review |
+| P122.1 marketplace production email rehearsal gate | 예정 | fanout 정책 결정이 아니라 실제 provider를 통제된 테스트 수신함으로 리허설할 수 있는 조건을 정한다 | production email rehearsal gate | ops/security review |
 
 #### P109 다음 병목 선정
 
@@ -603,6 +604,21 @@ P120에서 marketplace email opt-in이 실제 운영 rehearsal에서 수신자 �
 8. 기존 `ops:marketplace-notifications:rehearse-local`도 dry-run, blocked send, claim-only 흐름이 유지되는지 재확인했다.
 
 다음 작업은 P121 marketplace notification fanout decision이다. P120이 opt-in row가 실제 수신자 선택을 제어하는지 확인한 작업이라면, P121은 한 회사에 opt-in 사용자가 여러 명일 때 1명 관리자 우선으로 보낼지 다중 수신자 fanout으로 보낼지 결정하는 작업이다.
+
+#### P121 notification fanout decision
+
+P121에서 MVP 외부 이메일은 다중 fanout을 열지 않고, opt-in 사용자 중 관리자 우선 1명 발송을 유지하기로 결정했다.
+
+결정 이유:
+
+1. 현재 delivery 상태는 회사 단위라 사용자별 email delivery/read 상태를 추적하지 않는다.
+2. 여러 사용자가 같은 요청 이메일을 받으면 중복 견적 확인, 중복 질문, 내부 담당 혼선이 생길 수 있다.
+3. 공개 unsubscribe, audit, abuse handling이 아직 없으므로 수신자 수를 늘리는 것은 이르다.
+4. 팀 전체 공유 표면은 외부 email이 아니라 대시보드 인앱 알림으로 유지한다.
+
+fanout은 per-user delivery row, 회사 내 담당자 배정, 공개 unsubscribe, 알림 피로도 telemetry가 준비된 뒤 다시 검토한다.
+
+다음 작업은 P122 marketplace production email rehearsal gate다. P121이 다중 수신자 fanout을 열지 않기로 한 정책 결정이라면, P122는 실제 Resend provider를 통제된 테스트 수신함으로 리허설할 수 있는 운영/보안 조건을 정하는 작업이다.
 
 #### P34 다음 코드 작업 후보
 

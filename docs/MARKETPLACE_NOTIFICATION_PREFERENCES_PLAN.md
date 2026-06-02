@@ -89,14 +89,28 @@ RLS should not allow:
 
 ## Resolver Direction
 
-The marketplace email recipient resolver should later:
+The marketplace email recipient resolver should:
 
-1. find eligible partner company users as it does now
+1. find eligible partner company users
 2. load their marketplace email preferences
 3. keep only recipients with `enabled = true` for the requested notification kind
 4. still exclude invalid email, developer profiles, other-company profiles, and onboarding-incomplete users
+5. return admin users first, then members, ordered by email
 
-For now, `transactional_email` remains a skeleton and should not be used as production fanout until this gate is implemented.
+The current provider should send to one selected recipient only.
+
+## Fanout Decision
+
+Do not enable multi-recipient external email fanout for MVP.
+
+If several users in the same partner company opt in, the provider should keep the current admin-first single-recipient behavior. This reduces duplicate inbox pressure, avoids several people responding to the same opportunity without a company assignment model, and keeps delivery status company-scoped.
+
+In-app notifications remain the shared operational surface. Team-wide fanout can be revisited after the app has:
+
+- per-user delivery rows or per-user read state for email
+- company-level assignment or owner routing for opportunities
+- unsubscribe and audit support for public email links
+- volume telemetry for duplicate responses and notification fatigue
 
 ## Deferred Items
 
@@ -110,4 +124,4 @@ For now, `transactional_email` remains a skeleton and should not be used as prod
 
 ## Next Implementation Step
 
-P118 should add the preference schema, RLS, repository/helper tests, and a resolver gate so email recipients require explicit user opt-in.
+P122 should review whether production email rehearsal can run with a real provider in a controlled allowlisted test mailbox after sender identity, domain authentication, and recipient safety are verified.
