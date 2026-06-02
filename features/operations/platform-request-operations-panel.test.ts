@@ -104,4 +104,31 @@ describe("platform request operations panel", () => {
     expect(html).toContain("이유 선정 전환 병목");
     expect(html.indexOf("바로 확인할 운영 샘플")).toBeLessThan(html.indexOf("상세 진단 지표와 확인 샘플"));
   });
+
+  it("keeps the copy-ready operations request short enough for implementation handoff", () => {
+    const html = renderToStaticMarkup(
+      createElement(PlatformRequestOperationsPanel, {
+        summary: summaryFixture({
+          actionItems: [],
+          actionRequest: "완료 리포트 없는 요청 1건의 정산·보관 서류 흐름을 점검해줘.",
+          completed: 4,
+          completedWithoutFeedback: 2,
+          completedWithoutReport: 1,
+          completionReportsAcknowledged: 3,
+          completionReportsLocked: 5,
+          completionReportsReadyToLock: 6,
+          completionReportsSubmitted: 7,
+          feedbackCount: 8,
+          inProgress: 9,
+          open: 10,
+          total: 11
+        })
+      })
+    );
+
+    expect(html).toContain("핵심 지표:");
+    expect(html).toContain("완료 리포트 없음: 1건");
+    expect(html).not.toContain("완료 리포트 운영 검토 필요: 3건");
+    expect(html).not.toContain("완료 리포트 잠금 완료: 5건");
+  });
 });

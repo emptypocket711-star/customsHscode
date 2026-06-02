@@ -138,6 +138,23 @@
 - Playwright requester check: `/requests/clearance/00000000-0000-4000-8000-000000000201#request-completion`
 - `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
 
+### operations copy prompt core metrics
+
+- 이전 작업은 P88 완료 후 피드백 CTA 맥락 보강이고, 이번 작업은 P89 운영자가 복사하는 개선 요청 문구의 길이와 명확성 점검이다.
+- 화면의 상세 진단 지표는 유지하되, 복사용 개선 요청문에는 핵심 지표만 포함하게 줄였다.
+- 복사용 문구의 `운영 지표` 섹션을 `핵심 지표`로 바꾸고 전체 요청, 진행 요청, 선정 후 진행, 완료, 완료 리포트 없음, 완료 후 피드백 없음만 남겼다.
+- 완료 리포트 세부 상태, 잠금 완료, 미답변 질문, 견적 없는 공개 같은 상세 지표는 화면의 접힌 진단 영역에서만 확인한다.
+- 운영 통계 집계, 권한/RLS, 민감정보 제외 문구, DB schema는 변경하지 않았다.
+- 다음 작업은 P90 전체 marketplace 거래 화면의 중복 안내와 접힌 영역을 다시 훑어 과하게 반복되는 안내를 줄이는 것이다. 이번 P89가 복사용 운영 요청문 축약이라면, P90은 실제 화면 내 반복 안내 정리다.
+
+검증:
+
+- `npx vitest run features/operations/platform-request-operations-panel.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- Playwright developer check: `/operations/users#platform-request-operations`, 상세 진단 영역 펼침 후 `핵심 지표:` 확인
+- `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
+
 ## 2026-06-02
 
 ### local login review smoke

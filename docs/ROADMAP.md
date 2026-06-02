@@ -360,7 +360,11 @@
 | P88.2 feedback trust metric context | 완료 | 피드백 입력 form 추가가 아니라 제출한 평점이 파트너 신뢰 지표에 쓰인다는 맥락을 명확히 한다 | feedback CTA UX | browser, typecheck, lint |
 | P88.3 feedback CTA route smoke | 완료 | 피드백 문구 보강이 아니라 변경 후 화주·포워더·관세사 주요 route가 계속 정상 렌더링되는지 확인한다 | role route smoke | browser, typecheck, lint |
 | P88.4 feedback CTA work log sync | 완료 | route smoke가 아니라 피드백 신뢰 지표 맥락 보강과 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
-| P89.1 operations prompt quality selection | 예정 | 완료 후 사용자 피드백 CTA가 아니라 운영자가 복사하는 개선 요청 문구의 길이와 명확성을 점검한다 | operations prompt quality rail | UX/code review |
+| P89.1 operations prompt quality selection | 완료 | 완료 후 사용자 피드백 CTA가 아니라 운영자가 복사하는 개선 요청 문구의 길이와 명확성을 점검한다 | copy prompt metric trim selected | UX/code review |
+| P89.2 operations copy prompt core metrics | 완료 | 운영 통계 화면 표시가 아니라 복사되는 개선 요청문에는 핵심 지표만 포함하게 줄인다 | operations prompt UX | unit, browser, typecheck, lint |
+| P89.3 operations prompt route smoke | 완료 | 복사용 문구 축약이 아니라 변경 후 화주·포워더·관세사 주요 route가 계속 정상 렌더링되는지 확인한다 | role route smoke | browser, typecheck, lint |
+| P89.4 operations prompt work log sync | 완료 | route smoke가 아니라 복사용 운영 개선 요청문 축약과 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
+| P90.1 marketplace duplicate guidance selection | 예정 | 복사용 운영 요청문이 아니라 marketplace 거래 화면 안에서 반복 안내가 과한 곳을 다시 점검한다 | duplicate guidance rail | UX/code review |
 
 #### P34 다음 코드 작업 후보
 
