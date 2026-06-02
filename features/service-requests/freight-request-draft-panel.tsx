@@ -239,6 +239,16 @@ function nextActionLabel(input: {
   return "상태 확인 필요";
 }
 
+function missingFreightPublishFieldLabels(request: FreightRequestListItem) {
+  return [
+    { label: "출발 국가", value: request.originCountryCode },
+    { label: "도착 국가", value: request.destinationCountryCode },
+    { label: "운송 방식", value: request.transportMode }
+  ]
+    .filter((item) => !item.value)
+    .map((item) => item.label);
+}
+
 function FreightLifecycleControls({
   completionReport,
   completionReportDocuments = [],
@@ -566,6 +576,7 @@ export function FreightRequestRow({
   const [state, action, pending] = useActionState(publishFreightRequestAction, publishInitialState);
   const [documentState, documentAction, documentPending] = useActionState(uploadFreightRequestDocumentAction, documentUploadInitialState);
   const hasPublishFields = Boolean(request.originCountryCode && request.destinationCountryCode && request.transportMode);
+  const missingPublishFields = missingFreightPublishFieldLabels(request);
   const canPublish = request.status === "draft" && hasPublishFields;
   const hasBids = bids.length > 0;
   const unansweredQuestionCount = questions.filter((question) => !question.answer).length;
@@ -640,9 +651,18 @@ export function FreightRequestRow({
       ) : null}
       <FreightLifecycleControls completionReport={completionReport} completionReportDocuments={completionReportDocuments} documents={documents} existingFeedback={feedbackByRequestId[request.id]} requestId={request.id} status={request.status} viewerRole="requester" />
       {request.status === "draft" && !hasPublishFields ? (
-        <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
-          포워더에게 공개하려면 출발 국가, 도착 국가, 운송 방식을 입력해야 합니다.
-        </p>
+        <div className="grid gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900 sm:grid-cols-[1fr_auto] sm:items-center">
+          <div>
+            <p className="font-semibold">포워더 공개 전 필수값을 보완해야 합니다.</p>
+            <p>누락값: {missingPublishFields.join(", ")}</p>
+          </div>
+          <a
+            className="focus-ring inline-flex h-9 items-center justify-center rounded-md border border-amber-300 bg-white px-3 text-xs font-semibold text-amber-900 hover:bg-amber-100"
+            href="#request-draft-form"
+          >
+            초안 작성으로 이동
+          </a>
+        </div>
       ) : null}
       <div className="grid gap-2 rounded-md bg-slate-50 p-3 text-xs text-slate-600 md:grid-cols-4">
         <span>중량 {request.grossWeight ?? "-"} KG</span>

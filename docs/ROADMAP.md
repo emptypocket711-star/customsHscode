@@ -301,7 +301,9 @@
 | P74.3 partner dashboard metric semantics docs | 완료 | 파트너 대시보드 지표 추가가 아니라 파트너 업무와 입찰 가능 지표의 차이를 E2E 문서 기준에 남긴다 | partner metric semantics docs | docs, diff check |
 | P75.1 marketplace final route smoke after dashboard changes | 완료 | 대시보드 문서 정리가 아니라 화주·포워더·관세사 주요 route가 이번 변경 뒤에도 깨지지 않는지 한 번에 점검한다 | role route smoke | browser, typecheck, lint |
 | P75.2 marketplace dashboard-change final log | 완료 | route smoke가 아니라 이번 대시보드/완료 handoff 변경 묶음의 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
-| P76.1 next marketplace rail selection | 예정 | 작업 로그 정리가 아니라 다음으로 이어갈 marketplace MVP 병목을 다시 고른다 | roadmap review | docs/code review |
+| P76.1 next marketplace rail selection | 완료 | 작업 로그 정리가 아니라 다음으로 이어갈 marketplace MVP 병목을 다시 고른다 | request publish readiness rail selected | roadmap/code review |
+| P76.2 freight request publish readiness review | 완료 | 완료/대시보드 handoff가 아니라 화주가 운송 초안을 공개 요청으로 전환하기 전 누락값과 다음 위치를 바로 이해하는지 보강한다 | freight draft-to-publish UX | browser, typecheck, lint |
+| P76.3 clearance request publish readiness review | 진행 | 운송 공개 전환이 아니라 통관 의뢰 초안에서도 관세사무소 공개 필수값과 다음 행동이 같은 기준으로 보이는지 점검한다 | clearance draft-to-publish UX | browser, typecheck, lint |
 
 #### P34 다음 코드 작업 후보
 
