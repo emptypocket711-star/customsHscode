@@ -222,6 +222,34 @@ function clearanceBidComparisonBadges(bid: ReceivedClearanceBidItem, bids: Recei
   return badges;
 }
 
+function ClearanceCompactBidDecisionSummary({ bids, requestId }: { bids: ReceivedClearanceBidItem[]; requestId: string }) {
+  if (bids.length === 0) return null;
+
+  const pricedBids = bids.filter((bid) => bid.totalAmount !== null);
+  const clearanceDayBids = bids.filter((bid) => bid.expectedClearanceDays !== null);
+  const reviewAvailableCount = bids.filter((bid) => bid.reviewAvailable).length;
+  const lowestAmount = pricedBids.length > 0 ? Math.min(...pricedBids.map((bid) => bid.totalAmount ?? Infinity)) : null;
+  const shortestClearanceDays = clearanceDayBids.length > 0 ? Math.min(...clearanceDayBids.map((bid) => bid.expectedClearanceDays ?? Infinity)) : null;
+  const currency = pricedBids.find((bid) => bid.totalAmount === lowestAmount)?.currency ?? null;
+
+  return (
+    <div className="grid gap-2 rounded-md border border-blue-100 bg-blue-50 p-3 text-xs leading-5 text-blue-950 sm:grid-cols-[1fr_auto] sm:items-center">
+      <div>
+        <p className="font-semibold">견적 {bids.length}건 도착 · 비교 후 관세사무소 선정 필요</p>
+        <p>
+          {lowestAmount !== null ? `최저 총액 ${formatAmount(lowestAmount, currency)}` : "총액 입력 대기"} / {shortestClearanceDays !== null ? `최단 통관 ${shortestClearanceDays}일` : "통관일 확인 필요"} / 예비 검토 가능 {reviewAvailableCount}곳
+        </p>
+      </div>
+      <Link
+        className="focus-ring inline-flex h-9 items-center justify-center rounded-md bg-blue-700 px-3 text-xs font-semibold text-white hover:bg-blue-800"
+        href={`/requests/clearance/${requestId}#request-bids`}
+      >
+        견적 비교로 이동
+      </Link>
+    </div>
+  );
+}
+
 function nextClearanceActionLabel(
   request: ClearanceRequestListItem,
   documents: ClearanceRequestDocumentItem[],
@@ -605,6 +633,7 @@ export function ClearanceRequestRow({
       {request.productSummary ? <p className="text-sm leading-6 text-slate-600">{request.productSummary}</p> : null}
       <ClearanceProgress bids={bids} documents={documents} questions={questions} request={request} />
       <ServiceRequestMatchSummaryPanel kind="clearance" partnerLabel="관세사무소" status={request.status} summary={request.matchSummary} />
+      {compact && request.status === "bids_received" && bids.length > 0 ? <ClearanceCompactBidDecisionSummary bids={bids} requestId={request.id} /> : null}
       {!compact && (request.status === "partner_selected" || request.status === "in_progress" || request.status === "completed") ? (
         <SelectedClearanceBrokerNextSteps documents={documents} selectedBid={selectedBid} />
       ) : null}
@@ -625,7 +654,7 @@ export function ClearanceRequestRow({
       ) : null}
       {compact ? (
         <p className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600">
-          서류 {documents.length}건 / 질문 {questions.length}건 / 견적 {bids.length}건입니다. 첨부, 답변, 견적 비교와 공개 설정은 상세 작업에서 처리합니다.
+          서류 {documents.length}건 / 질문 {questions.length}건 / 견적 {bids.length}건입니다. 첨부, 답변, 공개 설정은 상세 작업에서 처리합니다.
         </p>
       ) : null}
       {compact && (request.status === "partner_selected" || request.status === "in_progress" || request.status === "completed") ? (

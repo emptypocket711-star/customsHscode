@@ -201,6 +201,34 @@ function freightBidComparisonBadges(bid: ReceivedFreightBidItem, bids: ReceivedF
   return badges;
 }
 
+function FreightCompactBidDecisionSummary({ bids, requestId }: { bids: ReceivedFreightBidItem[]; requestId: string }) {
+  if (bids.length === 0) return null;
+
+  const pricedBids = bids.filter((bid) => bid.totalAmount !== null);
+  const leadTimeBids = bids.filter((bid) => bid.leadTimeDays !== null);
+  const reviewedCount = bids.filter((bid) => bid.partnerFeedback && bid.partnerFeedback.feedbackCount > 0).length;
+  const lowestAmount = pricedBids.length > 0 ? Math.min(...pricedBids.map((bid) => bid.totalAmount ?? Infinity)) : null;
+  const shortestLeadTime = leadTimeBids.length > 0 ? Math.min(...leadTimeBids.map((bid) => bid.leadTimeDays ?? Infinity)) : null;
+  const currency = pricedBids.find((bid) => bid.totalAmount === lowestAmount)?.currency ?? null;
+
+  return (
+    <div className="grid gap-2 rounded-md border border-blue-100 bg-blue-50 p-3 text-xs leading-5 text-blue-950 sm:grid-cols-[1fr_auto] sm:items-center">
+      <div>
+        <p className="font-semibold">견적 {bids.length}건 도착 · 비교 후 포워더 선정 필요</p>
+        <p>
+          {lowestAmount !== null ? `최저 총액 ${formatAmount(lowestAmount, currency)}` : "총액 입력 대기"} / {shortestLeadTime !== null ? `최단 리드타임 ${shortestLeadTime}일` : "리드타임 확인 필요"} / 후기 보유 {reviewedCount}곳
+        </p>
+      </div>
+      <Link
+        className="focus-ring inline-flex h-9 items-center justify-center rounded-md bg-blue-700 px-3 text-xs font-semibold text-white hover:bg-blue-800"
+        href={`/requests/freight/${requestId}#request-bids`}
+      >
+        견적 비교로 이동
+      </Link>
+    </div>
+  );
+}
+
 function statusLabel(status: string) {
   if (status === "draft") return "임시저장";
   if (status === "open") return "모집중";
@@ -677,9 +705,10 @@ export function FreightRequestRow({
         <span>마감 {request.deadlineAt ? request.deadlineAt.slice(0, 10) : "-"}</span>
       </div>
       {request.productSummary ? <p className="text-sm leading-6 text-slate-600">{request.productSummary}</p> : null}
+      {compact && request.status === "bids_received" && hasBids ? <FreightCompactBidDecisionSummary bids={bids} requestId={request.id} /> : null}
       {compact ? (
         <p className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600">
-          서류 {documents.length}건 / 질문 {questions.length}건 / 견적 {bids.length}건입니다. 첨부, 답변, 견적 비교와 공개 설정은 상세 작업에서 처리합니다.
+          서류 {documents.length}건 / 질문 {questions.length}건 / 견적 {bids.length}건입니다. 첨부, 답변, 공개 설정은 상세 작업에서 처리합니다.
         </p>
       ) : null}
       {compact && (request.status === "partner_selected" || request.status === "in_progress" || request.status === "completed") ? (

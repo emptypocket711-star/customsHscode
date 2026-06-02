@@ -7570,3 +7570,38 @@
 - `npm run build`
 - 로컬 서버 `http://localhost:3100` 실행
 - 비로그인 상태 `/requests/freight/11111111-1111-4111-8111-111111111111`, `/requests/clearance/opportunities/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### marketplace post-interest-flow 병목 선정
+
+- 이전 작업은 파트너의 viewed/declined 상태 전환이 운영 상세 카운트에 반영되는지 확인한 P136.1이고, 이번 작업은 no-response/interest flow 이후 남은 marketplace MVP 병목을 다시 고른 P137.1이다.
+- 운송·통관 상세에는 이미 견적 비교 기준, 최저 총액/최단 리드타임·통관, 파트너 검증/후기, 선정 전 체크리스트가 존재한다.
+- 따라서 다음 병목은 견적 비교 상세 기능을 새로 만드는 것이 아니라, 화주가 요청 목록에서 견적 도착 후 비교·선정 필요성을 상세 진입 전부터 알 수 있게 하는 것이다.
+- 다음 작업은 P138.1 `requester bid decision list clarity`로 잡았다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 원격 푸시, 배포는 하지 않았다.
+
+검증:
+
+- `rg -n "견적 비교|선정 전 확인|P137|P136" docs features app server`
+- `git diff -- docs/ROADMAP.md docs/WORK_LOG.md`
+
+### requester bid decision list clarity
+
+- 이전 작업은 다음 병목을 고른 P137.1이고, 이번 작업은 그 결론에 따라 화주 목록에서 견적 도착 후 비교·선정 필요성을 먼저 보여준 P138.1이다.
+- 운송 요청 compact row에 견적 도착 요약을 추가했다.
+- 운송 요약은 견적 건수, 최저 총액, 최단 리드타임, 후기 보유 업체 수를 표시하고 상세 견적 영역으로 이동한다.
+- 통관 의뢰 compact row에도 같은 목적의 요약을 추가했다.
+- 통관 요약은 견적 건수, 최저 총액, 최단 통관일, 예비 검토 가능 업체 수를 표시하고 상세 견적 영역으로 이동한다.
+- 기존 상세의 견적 비교 기준, 선정 전 체크리스트, 파트너 검증/후기 표시는 유지했다.
+- 새 DB 조회, migration, RLS 변경은 없다.
+- 로컬 파일만 수정했고 원격 푸시, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- 로컬 DB `service_requests`에서 `bids_received` 운송/통관 fixture 존재 확인
+- Playwright 화주 계정으로 `/requests/freight`, `/requests/clearance` 접속
+- 운송 목록에서 `견적 1건 도착 · 비교 후 포워더 선정 필요`, 최저 총액 문구 확인
+- 통관 목록에서 `견적 1건 도착 · 비교 후 관세사무소 선정 필요`, 예비 검토 가능 문구 확인
+- 새 버튼 href가 각각 `/requests/freight/75000000-0000-4000-8000-000000000001#request-bids`, `/requests/clearance/75000000-0000-4000-8000-000000000002#request-bids`로 연결되는지 확인

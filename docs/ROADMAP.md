@@ -425,7 +425,8 @@
 | P134.1 marketplace declined re-entry review | 완료 | 알림 제외 검증이 아니라 참여 보류 후 다시 참여할 수 있는 복귀 UX가 필요한지 검토하고 최소 구현 범위를 정한다 | declined re-entry review | product/UX review |
 | P135.1 marketplace declined re-entry action | 완료 | 복귀 UX 검토가 아니라 파트너 상세에서 참여 보류 요청을 다시 검토 상태로 되돌리는 액션을 구현한다 | declined re-entry action | unit, typecheck, lint, RLS, browser |
 | P136.1 marketplace interest operations regression | 완료 | 파트너 상세 액션이 아니라 viewed/declined 전환이 운영 상세 관심상태 카운트에 반영되는지 회귀 검증한다 | interest operations regression | browser, ops check |
-| P137.1 marketplace post-interest-flow bottleneck review | 예정 | 관심상태 회귀 검증이 아니라 no-response/interest flow 이후 남은 marketplace MVP 병목을 다시 고른다 | next bottleneck selected | product/code review |
+| P137.1 marketplace post-interest-flow bottleneck review | 완료 | 관심상태 회귀 검증이 아니라 no-response/interest flow 이후 남은 marketplace MVP 병목을 다시 고른다 | requester bid decision clarity selected | product/code review |
+| P138.1 requester bid decision list clarity | 완료 | 다음 병목 선정이 아니라 화주 목록에서 견적 도착 후 비교·선정 필요성을 상세 진입 전부터 분명히 보여준다 | compact bid decision summary | UX self-review, typecheck, lint, browser |
 
 #### P109 다음 병목 선정
 
