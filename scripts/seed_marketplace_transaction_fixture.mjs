@@ -8,6 +8,7 @@ import {
   safeOrigin
 } from "./completion_preview_e2e_env.mjs";
 import {
+  marketplaceNotificationEnvExports,
   marketplaceTransactionEnvExports,
   marketplaceTransactionMutationEnvExports,
   marketplaceTransactionZeroMatchEnvExports,
@@ -310,6 +311,31 @@ async function seedPartnerMatches(client) {
   ], { onConflict: "request_id,partner_company_id" });
 }
 
+async function seedMarketplaceNotificationDeliveries(client) {
+  await upsertOrThrow(client, "marketplace_notification_deliveries", [
+    {
+      channel: "in_app",
+      claimed_at: seededAt,
+      created_at: seededAt,
+      delivery_key: `e2e:notification:${fixture.notification.delivery.id}`,
+      id: fixture.notification.delivery.id,
+      metadata: {
+        requestType: "freight",
+        source: "e2e synthetic fixture"
+      },
+      notification_kind: "initial",
+      partner_company_id: fixture.companies.forwarder.id,
+      read_at: null,
+      read_by: null,
+      reason: "E2E synthetic in-app notification",
+      request_id: fixture.requests.freight.id,
+      sent_at: null,
+      status: "claimed",
+      updated_at: seededAt
+    }
+  ], { onConflict: "id" });
+}
+
 async function seedMutationRequests(client, authUsers) {
   const requesterUserId = authUsers.get("requester").id;
 
@@ -592,6 +618,7 @@ async function main() {
   await cleanupTransactionFixture(client);
   await seedServiceRequests(client, authUsers);
   await seedPartnerMatches(client);
+  await seedMarketplaceNotificationDeliveries(client);
   await seedBids(client, authUsers);
   await seedMutationRequests(client, authUsers);
   await seedZeroMatchRequests(client, authUsers);
@@ -604,6 +631,9 @@ async function main() {
     console.log(line);
   }
   for (const line of marketplaceTransactionZeroMatchEnvExports(fixture)) {
+    console.log(line);
+  }
+  for (const line of marketplaceNotificationEnvExports(fixture)) {
     console.log(line);
   }
 

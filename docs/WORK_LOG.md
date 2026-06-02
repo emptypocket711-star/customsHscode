@@ -7886,3 +7886,24 @@
 - `npm run lint`
 - Playwright forwarder/broker `/dashboard` 파트너 알림 영역 렌더링 확인
 - 현재 local fixture에는 파트너 알림 링크가 없어 실제 링크 클릭 검증은 단위 테스트로 고정
+
+### notification dashboard e2e fixture
+
+- 이전 작업은 대시보드 파트너 알림 링크 로직을 고친 P153.1이고, 이번 작업은 local seed에 실제 in-app notification fixture를 추가해 브라우저 E2E가 알림 클릭·앵커 이동·읽음 처리를 검증하게 한 P154.1이다.
+- transaction fixture에 안정적인 notification delivery ID와 notification E2E env export를 추가했다.
+- transaction seed runner가 forwarder용 in-app initial delivery를 생성하고 반복 seed 시 `read_at/read_by`를 다시 초기화한다.
+- notification dashboard E2E가 알림 클릭 후 opportunity 상세뿐 아니라 `#opportunity-bid` 앵커까지 확인하도록 보강했다.
+- seed 직후 auth user 갱신으로 기존 storage state가 무효화될 수 있어 seed 다음에는 storage state를 재생성해야 함을 실제 검증에서 확인했다.
+- 새 migration, RLS 변경은 없다.
+- 로컬 파일만 수정했고 원격 푸시, 배포는 하지 않았다.
+
+검증:
+
+- `node --check scripts/seed_marketplace_transaction_fixture.mjs`
+- `node --check scripts/e2e_marketplace_notification_dashboard.mjs`
+- `npx vitest run tests/fixtures/marketplace-transaction.fixture.test.ts features/dashboard/marketplace-notification-inbox.test.ts`
+- local env 지정 `npm run e2e:marketplace-transaction:seed`
+- local env 지정 `npm run e2e:marketplace-transaction:auth`
+- local env 지정 `npm run e2e:marketplace-notification`
+- `npm run typecheck`
+- `npm run lint`

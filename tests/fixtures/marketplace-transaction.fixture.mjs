@@ -61,6 +61,16 @@ export const marketplaceTransactionFixture = {
       }
     }
   },
+  notification: {
+    delivery: {
+      id: "75000000-0000-4000-8000-000000000301"
+    },
+    envKeys: {
+      deliveryId: "E2E_MARKETPLACE_NOTIFICATION_DELIVERY_ID",
+      partnerStateFile: "E2E_MARKETPLACE_NOTIFICATION_PARTNER_STATE_FILE",
+      requestId: "E2E_MARKETPLACE_NOTIFICATION_REQUEST_ID"
+    }
+  },
   requests: {
     clearance: {
       hskCode: "3926909000",
@@ -125,5 +135,13 @@ export function marketplaceTransactionMutationEnvExports(fixture = marketplaceTr
 export function marketplaceTransactionZeroMatchEnvExports(fixture = marketplaceTransactionFixture) {
   return [
     `export ${fixture.zeroMatch.envKeys.freightRequestId}=${fixture.zeroMatch.requests.freight.id}`
+  ];
+}
+
+export function marketplaceNotificationEnvExports(fixture = marketplaceTransactionFixture) {
+  return [
+    `export ${fixture.notification.envKeys.requestId}=${fixture.requests.freight.id}`,
+    `export ${fixture.notification.envKeys.deliveryId}=${fixture.notification.delivery.id}`,
+    `export ${fixture.notification.envKeys.partnerStateFile}=${fixture.storageStates.forwarder}`
   ];
 }

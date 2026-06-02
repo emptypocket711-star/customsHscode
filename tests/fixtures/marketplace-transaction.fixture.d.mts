@@ -49,6 +49,16 @@ export const marketplaceTransactionFixture: {
       };
     };
   };
+  notification: {
+    delivery: {
+      id: string;
+    };
+    envKeys: {
+      deliveryId: string;
+      partnerStateFile: string;
+      requestId: string;
+    };
+  };
   requests: {
     clearance: {
       hskCode: string;
@@ -78,6 +88,7 @@ export const marketplaceTransactionFixture: {
   };
 };
 
+export function marketplaceNotificationEnvExports(fixture?: typeof marketplaceTransactionFixture): string[];
 export function marketplaceTransactionEnvExports(fixture?: typeof marketplaceTransactionFixture): string[];
 export function marketplaceTransactionMutationEnvExports(fixture?: typeof marketplaceTransactionFixture): string[];
 export function marketplaceTransactionZeroMatchEnvExports(fixture?: typeof marketplaceTransactionFixture): string[];

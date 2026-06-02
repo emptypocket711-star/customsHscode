@@ -11,6 +11,7 @@ const partnerStateFile = process.env.E2E_MARKETPLACE_NOTIFICATION_PARTNER_STATE_
 const partnerStatePath = path.join(stateDir, partnerStateFile);
 const requestId = process.env.E2E_MARKETPLACE_NOTIFICATION_REQUEST_ID;
 const deliveryId = process.env.E2E_MARKETPLACE_NOTIFICATION_DELIVERY_ID;
+const expectedAnchor = process.env.E2E_MARKETPLACE_NOTIFICATION_EXPECTED_ANCHOR || "#opportunity-bid";
 
 function assert(condition, message, details = {}) {
   if (condition) return;
@@ -61,6 +62,10 @@ async function main() {
 
     const opportunityText = await page.locator("body").innerText({ timeout: timeoutMs });
     assert(page.url().includes(`/opportunities/${requestId}`), "알림 클릭 후 입찰 상세 화면으로 이동하지 않았습니다.", { currentUrl: page.url() });
+    assert(page.url().endsWith(expectedAnchor), "알림 클릭 후 예상 처리 섹션으로 이동하지 않았습니다.", {
+      currentUrl: page.url(),
+      expectedAnchor
+    });
     assert(
       opportunityText.includes("입찰 작업") && opportunityText.includes("다음 작업 바로가기") && opportunityText.includes("견적"),
       "입찰 상세 화면에서 다음 작업과 견적 CTA를 확인할 수 없습니다.",

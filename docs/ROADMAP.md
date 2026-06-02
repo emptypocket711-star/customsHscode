@@ -442,6 +442,7 @@
 | P151.1 dashboard next action section anchors | 완료 | 상세 route smoke가 아니라 대시보드 다음 행동 CTA가 현재 상태의 실제 처리 섹션으로 바로 이동하게 한다 | dashboard next action anchors | unit, typecheck, lint, browser |
 | P152.1 detail top next-focus anchor regression | 완료 | 대시보드 CTA가 아니라 상세 화면 상단 다음 작업 바로가기 버튼이 상태별 처리 섹션으로 계속 이동하는지 확인한다 | detail next-focus smoke | unit, browser, diff check |
 | P153.1 notification opportunity section anchors | 완료 | 상세 상단 바로가기가 아니라 대시보드 파트너 알림 링크가 opportunity의 실제 처리 섹션으로 이동하게 한다 | notification section anchors | unit, typecheck, lint, browser render |
+| P154.1 notification dashboard e2e fixture | 완료 | 알림 링크 로직이 아니라 local seed에 실제 in-app notification fixture를 추가해 브라우저 E2E가 알림 클릭·앵커 이동·읽음 처리를 검증하게 한다 | notification e2e fixture | seed, auth, e2e, typecheck, lint |
 
 #### P109 다음 병목 선정
 

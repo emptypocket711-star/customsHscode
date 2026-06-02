@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  marketplaceNotificationEnvExports,
   marketplaceTransactionEnvExports,
   marketplaceTransactionFixture,
   marketplaceTransactionMutationEnvExports,
@@ -63,6 +64,15 @@ describe("marketplace transaction fixture", () => {
     expect(marketplaceTransactionZeroMatchEnvExports()).toContain(
       `export E2E_MARKETPLACE_ZERO_MATCH_FREIGHT_REQUEST_ID=${marketplaceTransactionFixture.zeroMatch.requests.freight.id}`
     );
+  });
+
+  it("defines a stable in-app notification fixture for dashboard e2e", () => {
+    expect(marketplaceTransactionFixture.notification.delivery.id).not.toBe(marketplaceTransactionFixture.requests.freight.id);
+    expect(marketplaceNotificationEnvExports()).toEqual([
+      `export E2E_MARKETPLACE_NOTIFICATION_REQUEST_ID=${marketplaceTransactionFixture.requests.freight.id}`,
+      `export E2E_MARKETPLACE_NOTIFICATION_DELIVERY_ID=${marketplaceTransactionFixture.notification.delivery.id}`,
+      `export E2E_MARKETPLACE_NOTIFICATION_PARTNER_STATE_FILE=${marketplaceTransactionFixture.storageStates.forwarder}`
+    ]);
   });
 
   it("keeps fixture labels synthetic and non-sensitive", () => {

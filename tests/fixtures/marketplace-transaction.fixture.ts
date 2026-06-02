@@ -1,4 +1,5 @@
 export {
+  marketplaceNotificationEnvExports,
   marketplaceTransactionEnvExports,
   marketplaceTransactionFixture,
   marketplaceTransactionMutationEnvExports,
