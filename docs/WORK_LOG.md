@@ -541,6 +541,24 @@
 - `npm run lint`
 - local-only env override로 `npm run e2e:completion-preview:local`: seed, auth, preview 접근 권한, draft 저장 mutation, preview 반영 모두 `result=ok`
 
+### completion report non-draft edit guard UX
+
+- 이전 작업은 P111 완료 리포트 저장값이 preview에 반영되는지 자동 검증한 작업이고, 이번 작업은 P112 draft가 아닌 완료 리포트의 수정 UI와 실제 RPC 권한을 맞춘 작업이다.
+- 기존 DB/RPC는 `draft`가 아닌 리포트 저장을 막고 있었지만, 화면은 locked/operator reviewed 상태에서도 `완료 리포트 초안 수정` 폼을 열 수 있었다.
+- `currentStatus`가 없거나 `draft`일 때만 완료 리포트 초안 작성/수정 폼을 표시하도록 했다.
+- `submitted`, `requester_acknowledged`, `partner_acknowledged`, `operator_reviewed`, `locked` 상태에서는 `완료 리포트 수정 잠금` 안내를 표시한다.
+- 보관 서류 연결, 상태 전환, preview 링크, 안전 문구는 유지했다.
+- 이번 P112는 P111처럼 저장 mutation을 늘리는 작업이 아니다. 사용자가 저장할 수 없는 상태에서 폼을 보고 실패하는 UX/권한 불일치를 줄이는 작업이다.
+- 다음 작업은 P113 notification provider readiness review다. 이번 P112가 완료 리포트 UX/권한 정리라면, P113은 완료 리포트 축을 잠시 닫고 실제 알림 provider 운영 연결 전 준비 상태를 점검하는 작업이다.
+
+검증:
+
+- `npx vitest run features/service-requests/service-request-completion-report-workflow.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- Playwright requester detail check: locked 운송/운영검토 통관은 수정 잠금 안내 표시, draft 운송은 수정 폼 표시 확인
+- local-only env override로 `npm run e2e:completion-preview:local`: preview 접근 권한, draft 저장 mutation, preview 반영 모두 `result=ok`
+
 ## 2026-06-02
 
 ### local login review smoke

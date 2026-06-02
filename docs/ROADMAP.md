@@ -400,7 +400,8 @@
 | P109.1 marketplace post-E2E next bottleneck review | 완료 | zero-match E2E가 아니라 로컬 거래 E2E 통과 후 남은 MVP 병목을 다시 고른다 | completion report practicalization selected | product/code review |
 | P110.1 completion report practicalization scope review | 완료 | 다음 병목 선정이 아니라 완료 거래에서 실제 신고/운송 결과·정산·보관 서류를 어디까지 받을지 범위를 정한다 | practical completion report fields | unit, typecheck, lint, E2E, browser |
 | P111.1 completion report mutation E2E coverage | 완료 | 실무 입력 필드 노출이 아니라 사용자가 입력한 완료 리포트 값이 저장 후 미리보기에 반영되는지 자동 검증한다 | completion report save-to-preview E2E | local E2E, typecheck, lint |
-| P112.1 completion report non-draft edit guard UX | 예정 | 저장 mutation 검증이 아니라 제출·운영검토·잠금 리포트에서 수정 폼이 열리는 UX/권한 불일치를 정리한다 | non-draft edit guard | UX, browser, typecheck |
+| P112.1 completion report non-draft edit guard UX | 완료 | 저장 mutation 검증이 아니라 제출·운영검토·잠금 리포트에서 수정 폼이 열리는 UX/권한 불일치를 정리한다 | non-draft edit guard | UX, browser, typecheck, lint, E2E |
+| P113.1 notification provider readiness review | 예정 | 완료 리포트 후속 UX가 아니라 실제 알림 provider 운영 연결 전에 env, adapter, dry-run 검증 범위를 다시 점검한다 | notification provider readiness | code/ops review |
 
 #### P109 다음 병목 선정
 
@@ -447,6 +448,21 @@ local completion preview E2E는 이제 아래를 함께 확인한다.
 4. 요청자가 draft 완료 리포트 상세에서 정산 항목과 운송 결과를 입력하고 저장하면 preview에 반영된다.
 
 다음 작업은 P112 completion report non-draft edit guard UX다. P111이 저장값 반영 자동검증이라면, P112는 draft가 아닌 완료 리포트에서 수정 폼이 열려 사용자가 실패할 수 있는 UI/권한 불일치를 정리하는 작업이다.
+
+#### P112 완료 리포트 수정 잠금 UX
+
+P112에서 완료 리포트 상태와 수정 UI를 맞췄다. DB/RPC는 `draft`가 아닌 리포트 수정을 막고 있었지만, 화면은 locked/operator reviewed 리포트에도 `완료 리포트 초안 수정` 폼을 보여줄 수 있었다.
+
+변경 후 상태는 아래와 같다.
+
+1. `draft` 또는 미작성 상태
+   - 완료 리포트 초안 작성/수정 폼을 표시한다.
+   - P111 저장 mutation E2E는 이 흐름으로 계속 통과한다.
+2. `submitted`, `requester_acknowledged`, `partner_acknowledged`, `operator_reviewed`, `locked`
+   - 수정 폼 대신 `완료 리포트 수정 잠금` 안내를 표시한다.
+   - 사용자는 보관 서류, 미리보기, 상태 전환 흐름을 확인한다.
+
+다음 작업은 P113 notification provider readiness review다. P112가 완료 리포트 UX/권한 정리라면, P113은 완료 리포트 축을 잠시 닫고 P109의 후순위였던 실제 알림 provider 운영 연결 전 준비 상태를 점검하는 작업이다.
 
 #### P34 다음 코드 작업 후보
 

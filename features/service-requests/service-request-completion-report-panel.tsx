@@ -124,6 +124,7 @@ export function ServiceRequestCompletionReportPanel({
   const activeReportId = state.status === "success" && state.reportId ? state.reportId : report?.reportId;
   const sourceDocumentsById = new Map(documents.map((document) => [document.documentId, document]));
   const requiredDocumentCount = Math.max(reportDocuments.filter((document) => document.requiredForArchive).length, 1);
+  const canEditDraft = !currentStatus || currentStatus === "draft";
   const primarySettlementItem = firstRecordItem(report?.settlementItems);
   const primaryTaxSummary = firstRecordItem(Array.isArray(report?.clearanceResult.taxSummary) ? report.clearanceResult.taxSummary : undefined);
   const workflowSteps = buildCompletionReportWorkflow({
@@ -360,11 +361,12 @@ export function ServiceRequestCompletionReportPanel({
         ) : null}
       </div>
 
-      <details className="scroll-mt-6 rounded-md border border-slate-200 bg-slate-50" id="completion-report-draft" open={!report}>
-        <summary className="cursor-pointer list-none px-3 py-2 text-sm font-semibold text-slate-800">
-          {report ? "완료 리포트 초안 수정" : "완료 리포트 초안 작성"}
-        </summary>
-        <form action={action} className="grid gap-3 border-t border-slate-200 p-3">
+      {canEditDraft ? (
+        <details className="scroll-mt-6 rounded-md border border-slate-200 bg-slate-50" id="completion-report-draft" open={!report}>
+          <summary className="cursor-pointer list-none px-3 py-2 text-sm font-semibold text-slate-800">
+            {report ? "완료 리포트 초안 수정" : "완료 리포트 초안 작성"}
+          </summary>
+          <form action={action} className="grid gap-3 border-t border-slate-200 p-3">
           <input name="requestId" type="hidden" value={requestId} />
           <input name="requestType" type="hidden" value={kind} />
           <div className="grid gap-3 md:grid-cols-[160px_160px_1fr_auto] md:items-end">
@@ -483,8 +485,16 @@ export function ServiceRequestCompletionReportPanel({
               </div>
             </div>
           )}
-        </form>
-      </details>
+          </form>
+        </details>
+      ) : (
+        <div className="scroll-mt-6 rounded-md border border-slate-200 bg-slate-50 p-3" id="completion-report-draft">
+          <p className="text-sm font-semibold text-slate-800">완료 리포트 수정 잠금</p>
+          <p className="mt-1 text-xs leading-5 text-slate-600">
+            {reportStatusLabel(currentStatus)} 상태의 완료 리포트는 이 화면에서 수정할 수 없습니다. 보관 서류와 미리보기를 확인하고, 필요한 경우 운영 검토 절차에 따라 별도 보정 작업으로 처리하세요.
+          </p>
+        </div>
+      )}
       {state.message && state.requestId === requestId ? (
         <p className={state.status === "success" ? "rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800" : "rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800"}>
           {state.message}
