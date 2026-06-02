@@ -431,14 +431,20 @@ function ClearanceLifecycleControls({
 
   if (status === "in_progress") {
     return (
-      <form action={completeAction} className="grid scroll-mt-6 gap-2 md:grid-cols-[1fr_auto]" id="request-lifecycle">
+      <form action={completeAction} className="grid scroll-mt-6 gap-3 rounded-md border border-slate-200 bg-slate-50 p-3" id="request-lifecycle">
         <input name="requestId" type="hidden" value={requestId} />
-        <input className="focus-ring h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" disabled={completePending} name="completionNote" placeholder="완료 메모(선택, 민감정보 제외)" />
-        <button className="focus-ring inline-flex h-10 items-center justify-center rounded-md bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-500" disabled={completePending} type="submit">
-          {completePending ? "완료 처리 중" : "통관 완료 처리"}
-        </button>
+        <div className="grid gap-1 text-sm leading-6 text-slate-700">
+          <p className="font-semibold text-slate-950">완료 처리 전 확인</p>
+          <p>신고 완료 여부, 최종 보관 서류, HS/FTA/요건 검토 결과를 민감정보 없이 요약할 준비가 되었는지 확인한 뒤 완료 처리합니다.</p>
+        </div>
+        <div className="grid gap-2 md:grid-cols-[1fr_auto]">
+          <input className="focus-ring h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" disabled={completePending} name="completionNote" placeholder="완료 메모(선택, 민감정보 제외)" />
+          <button className="focus-ring inline-flex h-10 items-center justify-center rounded-md bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-500" disabled={completePending} type="submit">
+            {completePending ? "완료 처리 중" : "통관 완료 처리"}
+          </button>
+        </div>
         {completeState.message && completeState.requestId === requestId ? (
-          <p className={completeState.status === "success" ? "text-sm font-medium text-emerald-800 md:col-span-2" : "text-sm font-medium text-red-700 md:col-span-2"}>
+          <p className={completeState.status === "success" ? "text-sm font-medium text-emerald-800" : "text-sm font-medium text-red-700"}>
             {completeState.message}
           </p>
         ) : null}

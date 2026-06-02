@@ -846,6 +846,23 @@
 - Playwright 포워더 계정으로 운송 opportunity의 선정 후 확인 문구 확인
 - Playwright 관세사무소 계정으로 통관 opportunity의 선정 후 확인 문구 확인
 - 검증 후 두 fixture 상태를 원래 `open`으로 원복 확인
+
+### in-progress completion CTA clarity
+
+- 이전 작업은 업체 선정 후 진행 시작 CTA를 보강한 P147.1이고, 이번 작업은 진행 중 요청을 완료 처리하기 전 확인 문구를 보강한 P148.1이다.
+- 운송 `in_progress` 상태의 완료 처리 form에 운송 완료 여부, 최종 보관 서류, 정산 요약에 남길 민감정보 제외 메모를 확인하라는 문구를 추가했다.
+- 통관 `in_progress` 상태의 완료 처리 form에는 신고 완료 여부, 최종 보관 서류, HS/FTA/요건 검토 결과를 민감정보 없이 요약할 준비가 되었는지 확인하라는 문구를 추가했다.
+- 완료 처리 RPC와 상태 전이는 변경하지 않았다.
+- 새 migration, RLS 변경은 없다.
+- 로컬 파일만 수정했고 원격 푸시, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- 로컬 fixture `75000000-0000-4000-8000-000000000101`, `75000000-0000-4000-8000-000000000102`를 임시로 `in_progress`로 변경
+- Playwright 화주 계정으로 운송·통관 상세의 `완료 처리 전 확인` 문구 확인
+- 검증 후 두 fixture 상태를 원래 `open`으로 원복 확인
 - Playwright developer check: `/operations/requests/75000000-0000-4000-8000-000000000201`, 임시 sent match 기반 `알림 후 파트너 무응답 개선` 렌더 확인
 
 ### marketplace partner opportunity response clue
