@@ -414,7 +414,8 @@
 | P123.1 marketplace email provider final readiness review | 완료 | production rehearsal gate가 아니라 알림 email provider 전체의 남은 위험과 다음 병목을 최종 정리한다 | email readiness final review | docs, rg, tests |
 | P124.1 marketplace no-response notification operations selection | 완료 | email provider 준비가 아니라 알림 후에도 응답 없는 파트너를 운영자가 어떻게 발견하고 조치할지 다음 병목을 정한다 | no-response ops metric | unit, typecheck, lint, browser |
 | P125.1 marketplace no-response operations detail handoff | 완료 | 운영 요약 지표가 아니라 알림 후 무응답 샘플 상세에서 운영자가 어떤 확인 위치와 개선 요청문을 보게 할지 연결한다 | no-response detail handoff | unit, typecheck, lint, browser |
-| P126.1 marketplace partner opportunity response clue | 예정 | 운영자 상세 프롬프트가 아니라 파트너 opportunity 화면에서 알림을 받은 파트너가 왜 응답하지 않는지 판단할 수 있는 상태 단서를 보강한다 | partner response clue | unit, UX, browser |
+| P126.1 marketplace partner opportunity response clue | 완료 | 운영자 상세 프롬프트가 아니라 파트너 opportunity 화면에서 알림을 받은 파트너가 왜 응답하지 않는지 판단할 수 있는 상태 단서를 보강한다 | partner response clue | unit, typecheck, lint, browser |
+| P127.1 marketplace no-response cause segmentation | 예정 | 파트너 화면 단서가 아니라 운영 요약에서 알림 후 무응답 원인을 질문/서류/관심상태 기준으로 더 세분화한다 | no-response cause segmentation | unit, UX, browser |
 
 #### P109 다음 병목 선정
 
@@ -695,6 +696,23 @@ P124는 운영 요약 패널에서 `알림 후 무응답` 요청 수와 샘플 �
 5. 단위 테스트, typecheck, lint, 브라우저 검증으로 상세 프롬프트 렌더를 확인했다.
 
 다음 작업은 P126 marketplace partner opportunity response clue다. P125가 운영자 상세 화면의 개선 프롬프트 연결이라면, P126은 파트너가 실제 opportunity 화면에서 응답하기 전에 어떤 정보가 부족하거나 어떤 다음 행동을 해야 하는지 더 쉽게 판단하게 만드는 작업이다.
+
+#### P126 partner opportunity response clue
+
+P126에서 파트너 opportunity 상세 상단에 `응답 판단 단서` 패널을 추가했다.
+
+P125는 운영자 상세 화면에서 무응답 샘플을 개선 프롬프트로 넘기는 작업이었다. 이번 P126은 파트너가 실제 운송/통관 opportunity 상세에 들어왔을 때, 견적 제출 전에 무엇을 확인해야 하는지 관심 상태, 질문 상태, 공개 서류 수로 바로 판단하게 하는 작업이다.
+
+구현 기준:
+
+1. `buildPartnerOpportunityResponseClues` 헬퍼를 추가했다.
+2. open/bids_received 상태에서는 검토 상태, 질문 상태, 공개 서류 수를 표시한다.
+3. selected/in_progress/completed 상태에서는 일반 견적 단서 대신 선정 후속 또는 완료 단서만 표시한다.
+4. 운송 opportunity 상세와 통관 opportunity 상세에 같은 `PartnerOpportunityResponseClues` 컴포넌트를 연결했다.
+5. 새 DB 조회나 schema 변경 없이 이미 조회한 `interestStatus`, 서류 수, 질문 수, 요청 상태만 사용한다.
+6. 포워더/관세사 테스트 계정으로 실제 상세 화면 렌더를 확인했다.
+
+다음 작업은 P127 marketplace no-response cause segmentation이다. P126이 파트너 상세 화면에서 응답 판단 단서를 보여주는 작업이라면, P127은 운영 요약에서 알림 후 무응답 원인을 질문/서류/관심상태 기준으로 나눠 운영자가 더 빨리 병목을 고르게 하는 작업이다.
 
 #### P34 다음 코드 작업 후보
 

@@ -811,6 +811,24 @@
 - `npm run lint`
 - Playwright developer check: `/operations/requests/75000000-0000-4000-8000-000000000201`, 임시 sent match 기반 `알림 후 파트너 무응답 개선` 렌더 확인
 
+### marketplace partner opportunity response clue
+
+- 이전 작업은 P125 운영자 상세 화면에서 무응답 샘플을 개선 프롬프트로 연결한 작업이고, 이번 작업은 P126 파트너 opportunity 상세에서 응답 전 판단 단서를 보여주는 작업이다.
+- `buildPartnerOpportunityResponseClues` 헬퍼를 추가했다.
+- open/bids_received 상태에서는 검토 상태, 질문 상태, 공개 서류 수를 파트너에게 보여준다.
+- `interestStatus`가 `viewed`, `interested`, `declined`, `none`일 때 표시 문구와 배지 tone을 분리했다.
+- selected/in_progress/completed 상태에서는 일반 견적 단서 대신 선정 후속 또는 완료 단서만 표시한다.
+- `PartnerOpportunityResponseClues` 컴포넌트를 추가하고 운송/통관 opportunity 상세에 연결했다.
+- 새 DB 조회나 migration 없이 이미 조회한 opportunity row, 서류 수, 질문 수만 사용했다.
+- 다음 작업은 P127 marketplace no-response cause segmentation이다. 이번 P126이 파트너 화면의 응답 판단 단서라면, P127은 운영 요약에서 무응답 원인을 질문/서류/관심상태 기준으로 더 세분화하는 작업이다.
+
+검증:
+
+- `npx vitest run server/repositories/service-request-list-view.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- Playwright developer check: 포워더 계정 `/requests/freight/opportunities/75000000-0000-4000-8000-000000000101`, 관세사 계정 `/requests/clearance/opportunities/75000000-0000-4000-8000-000000000102`에서 `응답 판단 단서` 렌더 확인
+
 ## 2026-06-02
 
 ### local login review smoke

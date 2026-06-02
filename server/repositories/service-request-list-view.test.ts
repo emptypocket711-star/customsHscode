@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildPartnerOpportunityNextFocus,
+  buildPartnerOpportunityResponseClues,
   buildRequesterServiceRequestNextFocus
 } from "@/server/repositories/service-request-list-view";
 
@@ -131,5 +132,61 @@ describe("service request list view", () => {
       tone: "success",
       value: "완료"
     });
+  });
+
+  it("summarizes partner opportunity response clues before bid submission", () => {
+    const clues = buildPartnerOpportunityResponseClues({
+      bidAnchor: "#opportunity-bid",
+      documentAnchor: "#opportunity-documents",
+      documentCount: 0,
+      interestStatus: "viewed",
+      questionAnchor: "#opportunity-questions",
+      requestStatus: "open",
+      unansweredQuestionCount: 2
+    });
+
+    expect(clues).toEqual([
+      {
+        detail: "요청을 열람한 상태입니다. 질문 또는 견적 제출 중 다음 행동을 선택합니다.",
+        href: "#opportunity-bid",
+        label: "검토 상태",
+        tone: "info",
+        value: "검토중"
+      },
+      {
+        detail: "화주가 답해야 할 질문이 남아 있으면 견적 판단이 늦어질 수 있습니다.",
+        href: "#opportunity-questions",
+        label: "질문 확인",
+        tone: "warning",
+        value: "2건"
+      },
+      {
+        detail: "공개 서류가 없으면 견적 조건을 확정하기 어려울 수 있습니다.",
+        href: "#opportunity-documents",
+        label: "공개 서류",
+        tone: "warning",
+        value: "0건"
+      }
+    ]);
+  });
+
+  it("shows selected partner lifecycle clues instead of generic bid clues", () => {
+    expect(buildPartnerOpportunityResponseClues({
+      bidAnchor: "#opportunity-bid",
+      documentAnchor: "#opportunity-documents",
+      documentCount: 3,
+      interestStatus: "interested",
+      questionAnchor: "#opportunity-questions",
+      requestStatus: "partner_selected",
+      unansweredQuestionCount: 1
+    })).toEqual([
+      {
+        detail: "선정된 요청입니다. 진행 시작 조건과 선정 후 공개 서류를 확인합니다.",
+        href: "#request-lifecycle",
+        label: "선정 후속",
+        tone: "success",
+        value: "선정"
+      }
+    ]);
   });
 });

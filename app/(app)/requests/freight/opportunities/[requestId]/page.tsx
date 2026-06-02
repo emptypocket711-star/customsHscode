@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { PageHeading } from "@/components/page-heading";
 import { Badge } from "@/components/ui/badge";
 import { FreightOpportunityRow } from "@/features/service-requests/freight-request-draft-panel";
+import { PartnerOpportunityResponseClues } from "@/features/service-requests/partner-opportunity-response-clues";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   getMatchedFreightOpportunity,
@@ -16,7 +17,10 @@ import {
   serviceRequestCompletionReportListToRecord
 } from "@/server/repositories/service-request-completion-report.repository";
 import { listOwnServiceRequestFeedbackRecordForRequest } from "@/server/repositories/service-request-feedback.repository";
-import { buildPartnerOpportunityNextFocus } from "@/server/repositories/service-request-list-view";
+import {
+  buildPartnerOpportunityNextFocus,
+  buildPartnerOpportunityResponseClues
+} from "@/server/repositories/service-request-list-view";
 
 export default async function FreightOpportunityDetailPage({
   params
@@ -59,6 +63,15 @@ export default async function FreightOpportunityDetailPage({
     requestStatus: opportunity.item.status,
     unansweredQuestionCount
   });
+  const responseClues = buildPartnerOpportunityResponseClues({
+    bidAnchor: "#opportunity-bid",
+    documentAnchor: "#opportunity-documents",
+    documentCount: requestDocuments.items.length,
+    interestStatus: opportunity.item.interestStatus,
+    questionAnchor: "#opportunity-questions",
+    requestStatus: opportunity.item.status,
+    unansweredQuestionCount
+  });
 
   return (
     <div className="grid gap-5">
@@ -89,6 +102,7 @@ export default async function FreightOpportunityDetailPage({
           <a className="focus-ring inline-flex h-9 items-center rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50" href="#opportunity-bid">견적</a>
         </div>
       </div>
+      <PartnerOpportunityResponseClues clues={responseClues} />
       <FreightOpportunityRow
         anchorPrefix="opportunity"
         completionReport={completionReport}
