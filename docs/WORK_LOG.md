@@ -288,6 +288,22 @@
 - Playwright role list check: 화주/포워더/관세사무소 목록 route 렌더링 확인
 - `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
 
+### service request status count helper
+
+- 이전 작업은 P97 선정 이후 상태 판단 helper 공통화이고, 이번 작업은 P98 운송·통관 상단 summary count 계산 중복 점검이다.
+- 운송/통관 `requestStatusCounts` 함수는 요청 status별 count와 opportunity count를 계산하는 구조가 완전히 동일했다.
+- `countServiceRequestStatuses`를 `service-request-status.ts`에 추가하고 운송/통관 패널이 같은 helper를 사용하게 했다.
+- 화면에 표시되는 `초안`, `공개중`, `견적 도착`, `선정 완료`, `진행중`, `입찰 가능` 라벨과 순서는 유지했다.
+- repository query, 권한/RLS, DB schema는 변경하지 않았다.
+- 다음 작업은 P99 label helper 공통화 가능성 점검이다. 이번 P98이 숫자 계산 helper라면, P99는 status/visibility/bid label 함수가 역할별 문구 차이를 보존하면서 공통화 가능한지 보는 작업이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- Playwright requester list check: 운송/통관 summary count 라벨 유지 확인
+- `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
+
 ## 2026-06-02
 
 ### local login review smoke

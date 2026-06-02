@@ -381,7 +381,9 @@
 | P96.2 request progress selected-or-later state | 완료 | 상태 문구 점검이 아니라 진행중/완료 요청도 이미 선정 단계가 끝난 것으로 progress를 표시하게 맞춘다 | progress state consistency | browser, typecheck, lint |
 | P97.1 request progress helper consolidation review | 완료 | progress 상태 보정이 아니라 운송·통관 progress 단계 계산을 공통 helper로 합칠 가치가 있는지 점검한다 | selected-or-later helper selected | code review |
 | P97.2 selected-or-later status helper | 완료 | progress 렌더링 공통화가 아니라 선정 이후 상태 판단만 공통 helper로 분리한다 | service request status helper | browser, typecheck, lint |
-| P98.1 marketplace status counts consolidation review | 예정 | 선정 이후 상태 helper가 아니라 운송·통관 요청 상태 count 계산 중복을 공통화할 가치가 있는지 점검한다 | status count helper audit | code review |
+| P98.1 marketplace status counts consolidation review | 완료 | 선정 이후 상태 helper가 아니라 운송·통관 요청 상태 count 계산 중복을 공통화할 가치가 있는지 점검한다 | identical status count helper selected | code review |
+| P98.2 service request status count helper | 완료 | count 중복 점검이 아니라 동일한 요청 상태 count 계산을 공통 helper로 분리한다 | service request count helper | browser, typecheck, lint |
+| P99.1 marketplace label helper consolidation review | 예정 | 상태 count helper가 아니라 status/visibility/bid label 함수 중 공통화 가능한 것과 역할별 문구 차이가 있는 것을 구분한다 | label helper audit | code review |
 
 #### P34 다음 코드 작업 후보
 

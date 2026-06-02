@@ -22,7 +22,10 @@ import {
   ServiceRequestDocumentVisibilityGuide
 } from "@/features/service-requests/service-request-document-visibility-guide";
 import { ServiceRequestFeedbackForm } from "@/features/service-requests/service-request-feedback-form";
-import { isSelectedOrLaterStatus } from "@/features/service-requests/service-request-status";
+import {
+  countServiceRequestStatuses,
+  isSelectedOrLaterStatus
+} from "@/features/service-requests/service-request-status";
 import {
   answerClearanceRequestQuestionAction,
   askClearanceRequestQuestionAction,
@@ -393,17 +396,6 @@ function ClearanceProgress({
       <p className="text-xs font-medium text-slate-700">다음 작업: {nextClearanceActionLabel(request, documents, questions, bids)}</p>
     </div>
   );
-}
-
-function requestStatusCounts(requests: ClearanceRequestListItem[], opportunities: ClearanceOpportunityItem[]) {
-  return {
-    bidsReceived: requests.filter((request) => request.status === "bids_received").length,
-    drafts: requests.filter((request) => request.status === "draft").length,
-    inProgress: requests.filter((request) => request.status === "in_progress").length,
-    open: requests.filter((request) => request.status === "open").length,
-    opportunities: opportunities.length,
-    selected: requests.filter((request) => request.status === "partner_selected").length
-  };
 }
 
 function ReceivedClearanceBidRow({
@@ -1043,7 +1035,7 @@ export function ClearanceRequestDraftPanel({
   const prefill = marketplaceRequestPrefillFromSearchParams(searchParams);
   const prefilledProductSummary = marketplacePrefilledProductSummary(prefill);
   const prefilledTitle = marketplacePrefilledTitle(prefill, "clearance");
-  const counts = requestStatusCounts(requests, opportunities);
+  const counts = countServiceRequestStatuses(requests, opportunities);
   const unansweredQuestionCount = Object.values(questionsByRequestId)
     .flat()
     .filter((question) => !question.answer).length;
