@@ -36,17 +36,19 @@ npm run review:local-status
 npm run review:local-routes
 ```
 
+`tmp/e2e-auth/marketplace-transaction-*.json` storage state가 있으면 로컬 marketplace positive path 기준으로 실행한다. 이 상태에서는 비밀번호 로그인을 반복하지 않고 화주, 포워더, 관세사무소 세션을 직접 사용한다. storage state가 없으면 `tmp/test-accounts.json`의 비밀번호 로그인 계정으로 fallback 확인을 실행한다.
+
 확인 route:
 
-- 화주: `/dashboard`, `/requests/freight`, `/requests/clearance`, `/settings/members`, `/hs/direct`
-- 포워더: `/dashboard`, `/settings/members`의 `가입 선택: 포워더`
-- 관세사무소: `/dashboard`, `/settings/members`의 `가입 선택: 관세사`
+- 화주: `/dashboard`, `/requests/freight?workspace=requester`, `/requests/clearance?workspace=requester`, `/settings/members`, `/hs/direct`
+- 포워더: `/requests/freight?workspace=forwarder`, `/settings/members`
+- 관세사무소: `/requests/clearance?workspace=broker`, `/settings/members`
 
-대시보드 역할별 시작 카드도 함께 확인한다.
+역할별 화면도 함께 확인한다.
 
-- 화주 대시보드에는 포워더/관세사 입찰 카드가 섞이지 않아야 한다.
-- 포워더 대시보드에는 관세사 입찰 카드가 섞이지 않아야 한다.
-- 관세사무소 대시보드에는 포워더 입찰 카드가 섞이지 않아야 한다.
+- 포워더 워크스페이스에는 화주용 운송 견적 시작 흐름이 기본 노출되지 않아야 한다.
+- 관세사무소 워크스페이스에는 화주용 통관 의뢰 시작 흐름이 기본 노출되지 않아야 한다.
+- settings 화면에는 각 회사의 플랫폼 역할이 표시되어야 한다.
 
 ## Test Accounts
 

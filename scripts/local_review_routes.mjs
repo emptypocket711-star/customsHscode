@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 
-import { readFile } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
+import path from "node:path";
 import { chromium } from "playwright";
 
 const baseUrl = process.env.LOCAL_REVIEW_BASE_URL || "http://127.0.0.1:3100";
 const accountsFile = process.env.LOCAL_LOGIN_SMOKE_ACCOUNTS_FILE || "tmp/test-accounts.json";
+const stateDir = process.env.LOCAL_REVIEW_STORAGE_STATE_DIR || "tmp/e2e-auth";
 const timeoutMs = Number(process.env.LOCAL_REVIEW_ROUTE_TIMEOUT_MS || 30000);
 
-const routes = [
+const passwordLoginRoutes = [
   {
     accountRole: "shipper",
     expectedText: "플랫폼 업무 시작",
@@ -58,11 +60,77 @@ const routes = [
   }
 ];
 
+const storageStateRoutes = [
+  {
+    accountRole: "shipper",
+    expectedText: "대시보드",
+    forbiddenText: ["관세사 입찰 확인"],
+    path: "/dashboard"
+  },
+  {
+    accountRole: "shipper",
+    expectedText: "내 요청 관리",
+    path: "/requests/freight?workspace=requester"
+  },
+  {
+    accountRole: "shipper",
+    expectedText: "내 요청 관리",
+    path: "/requests/clearance?workspace=requester"
+  },
+  {
+    accountRole: "shipper",
+    expectedText: "국내 수출입 화주",
+    path: "/settings/members"
+  },
+  {
+    accountRole: "shipper",
+    expectedText: "HS CODE 조회",
+    path: "/hs/direct"
+  },
+  {
+    accountRole: "forwarder",
+    expectedText: "입찰 가능 요청",
+    forbiddenText: ["운송 견적 시작 흐름", "관세사 입찰"],
+    path: "/requests/freight?workspace=forwarder"
+  },
+  {
+    accountRole: "forwarder",
+    expectedText: "포워더",
+    path: "/settings/members"
+  },
+  {
+    accountRole: "customs_broker",
+    expectedText: "관세사 입찰",
+    forbiddenText: ["통관 의뢰 시작 흐름", "포워더 입찰"],
+    path: "/requests/clearance?workspace=broker"
+  },
+  {
+    accountRole: "customs_broker",
+    expectedText: "관세사",
+    path: "/settings/members"
+  }
+];
+
+const storageStateFiles = {
+  customs_broker: "marketplace-transaction-broker.json",
+  forwarder: "marketplace-transaction-forwarder.json",
+  shipper: "marketplace-transaction-requester.json"
+};
+
 function safeOrigin(value) {
   try {
     return new URL(value).origin;
   } catch {
     return "invalid-url";
+  }
+}
+
+async function exists(filePath) {
+  try {
+    await access(filePath);
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -75,7 +143,7 @@ async function loadAccounts() {
     role: String(account.role ?? "")
   }));
 
-  for (const role of new Set(routes.map((route) => route.accountRole))) {
+  for (const role of new Set(passwordLoginRoutes.map((route) => route.accountRole))) {
     const account = normalized.find((item) => item.role === role || item.email.includes(role));
     if (!account?.email || !account?.password) {
       throw new Error(`${role} 테스트 계정을 찾을 수 없습니다. file=${accountsFile}`);
@@ -83,6 +151,19 @@ async function loadAccounts() {
   }
 
   return normalized;
+}
+
+async function loadStorageStates() {
+  const states = Object.fromEntries(
+    Object.entries(storageStateFiles).map(([role, fileName]) => [role, path.join(stateDir, fileName)])
+  );
+
+  const missing = [];
+  for (const [role, statePath] of Object.entries(states)) {
+    if (!(await exists(statePath))) missing.push(`${role}:${statePath}`);
+  }
+
+  return missing.length ? null : states;
 }
 
 async function login(page, account) {
@@ -96,27 +177,35 @@ async function login(page, account) {
 }
 
 async function main() {
+  const storageStates = await loadStorageStates();
+  const routes = storageStates ? storageStateRoutes : passwordLoginRoutes;
+
   console.log("Local review route bundle");
   console.log(`baseUrlOrigin=${safeOrigin(baseUrl)}`);
+  console.log(`accountMode=${storageStates ? "storage-state" : "password-login"}`);
   console.log("secretValues=not-printed");
 
-  const accounts = await loadAccounts();
+  const accounts = storageStates ? [] : await loadAccounts();
   const browser = await chromium.launch({ headless: true });
   const results = [];
 
   try {
     for (const role of new Set(routes.map((route) => route.accountRole))) {
       const account = accounts.find((item) => item.role === role || item.email.includes(role));
-      const page = await browser.newPage({ viewport: { width: 1366, height: 900 } });
+      const context = storageStates
+        ? await browser.newContext({ storageState: storageStates[role], viewport: { width: 1366, height: 900 } })
+        : await browser.newContext({ viewport: { width: 1366, height: 900 } });
+      const page = await context.newPage();
 
       try {
-        await login(page, account);
+        if (!storageStates) await login(page, account);
 
         for (const route of routes.filter((item) => item.accountRole === role)) {
-          await page.goto(new URL(route.path, baseUrl).toString(), { waitUntil: "networkidle", timeout: timeoutMs });
+          await page.goto(new URL(route.path, baseUrl).toString(), { waitUntil: "domcontentloaded", timeout: timeoutMs });
+          await page.waitForTimeout(500);
           const text = await page.locator("body").innerText({ timeout: timeoutMs });
           const ok =
-            page.url().includes(route.path) &&
+            new URL(page.url()).pathname === new URL(route.path, baseUrl).pathname &&
             text.includes(route.expectedText) &&
             !(route.forbiddenText ?? []).some((forbiddenText) => text.includes(forbiddenText)) &&
             !text.includes("Supabase 환경 변수가 없어 로그인할 수 없습니다.") &&
@@ -130,7 +219,7 @@ async function main() {
           });
         }
       } finally {
-        await page.close();
+        await context.close();
       }
     }
   } finally {
