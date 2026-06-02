@@ -602,7 +602,7 @@ export function ClearanceRequestRow({
       </div>
       {request.productSummary ? <p className="text-sm leading-6 text-slate-600">{request.productSummary}</p> : null}
       <ClearanceProgress bids={bids} documents={documents} questions={questions} request={request} />
-      <ServiceRequestMatchSummaryPanel partnerLabel="관세사무소" status={request.status} summary={request.matchSummary} />
+      <ServiceRequestMatchSummaryPanel kind="clearance" partnerLabel="관세사무소" status={request.status} summary={request.matchSummary} />
       {!compact && (request.status === "partner_selected" || request.status === "in_progress" || request.status === "completed") ? (
         <SelectedClearanceBrokerNextSteps documents={documents} selectedBid={selectedBid} />
       ) : null}

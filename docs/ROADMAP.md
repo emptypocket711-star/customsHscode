@@ -389,7 +389,8 @@
 | P101.1 marketplace next feature selection | 완료 | 리팩터링 경계 점검이 아니라 플랫폼 MVP에서 다음 기능 작업 후보를 다시 고른다 | requester post-publish visibility selected | product/UX review |
 | P101.2 requester match notification summary | 완료 | 기능 후보 선정이 아니라 화주가 공개 후 파트너 노출 수와 알림 상태를 요청 row에서 상시 확인하게 한다 | requester match summary | browser, typecheck, lint |
 | P102.1 requester match summary test coverage | 완료 | UI 표시가 아니라 match summary read model과 panel의 회귀 테스트를 보강한다 | match summary tests | unit, typecheck, lint |
-| P103.1 requester match summary UX follow-up review | 예정 | 테스트 보강이 아니라 노출 0건일 때 화주가 다음 행동을 바로 찾는지 점검한다 | zero-match UX review | UX/browser review |
+| P103.1 requester match summary UX follow-up review | 완료 | 테스트 보강이 아니라 노출 0건일 때 화주가 다음 행동을 바로 찾는지 점검한다 | zero-match UX review | unit, typecheck, lint, route 확인 |
+| P104.1 zero-match operations handoff review | 예정 | 화주 0건 안내가 아니라 운영자가 노출 0건 요청을 발견하고 매칭 조건을 점검할 수 있는 흐름을 확인한다 | operations zero-match queue review | code/UX review |
 
 #### P34 다음 코드 작업 후보
 

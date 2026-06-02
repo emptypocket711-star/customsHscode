@@ -369,6 +369,23 @@
 - `npm run lint`
 - `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
 
+### requester match summary zero-match guidance
+
+- 이전 작업은 P102 match summary read model과 panel의 회귀 테스트 보강이고, 이번 작업은 P103 노출 0건 상태의 요청자 UX 보강이다.
+- `ServiceRequestMatchSummaryPanel`에 요청 종류(`freight`, `clearance`)를 전달해 노출 0건 안내를 운송/통관 맥락에 맞게 나눴다.
+- 노출 0건이면 amber 경고 패널과 `운영 점검 필요` badge를 표시한다.
+- 운송 요청은 출발·도착 국가, 운송 방식, 위험물·온도관리·중고차 조건을 점검 포인트로 안내한다.
+- 통관 의뢰는 목적국, HS/FTA/요건 확인 범위, 긴급 여부를 점검 포인트로 안내한다.
+- DB schema, RLS, 알림 worker, 실제 매칭 계산 로직은 변경하지 않았다.
+- 다음 작업은 P104 zero-match operations handoff review다. 이번 P103이 화주에게 0건 상태를 설명하는 작업이라면, P104는 운영자가 그런 요청을 찾아 매칭 조건을 점검할 수 있는 흐름을 보는 작업이다.
+
+검증:
+
+- `npx vitest run features/service-requests/service-request-match-summary-panel.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
+
 ## 2026-06-02
 
 ### local login review smoke

@@ -6,6 +6,7 @@ import { ServiceRequestMatchSummaryPanel } from "@/features/service-requests/ser
 describe("ServiceRequestMatchSummaryPanel", () => {
   it("hides match summary while the request is still a draft", () => {
     const html = renderToStaticMarkup(createElement(ServiceRequestMatchSummaryPanel, {
+      kind: "freight",
       partnerLabel: "포워더",
       status: "draft",
       summary: {
@@ -22,6 +23,7 @@ describe("ServiceRequestMatchSummaryPanel", () => {
 
   it("renders requester-visible match and notification counts after publish", () => {
     const html = renderToStaticMarkup(createElement(ServiceRequestMatchSummaryPanel, {
+      kind: "clearance",
       partnerLabel: "관세사무소",
       status: "open",
       summary: {
@@ -39,5 +41,24 @@ describe("ServiceRequestMatchSummaryPanel", () => {
     expect(html).toContain("발송 1건");
     expect(html).toContain("스킵 1건");
     expect(html).toContain("실패 1건");
+  });
+
+  it("shows a specific operation review hint when no partner is matched", () => {
+    const html = renderToStaticMarkup(createElement(ServiceRequestMatchSummaryPanel, {
+      kind: "freight",
+      partnerLabel: "포워더",
+      status: "open",
+      summary: {
+        failedNotificationCount: 0,
+        matchedPartnerCount: 0,
+        pendingNotificationCount: 0,
+        sentNotificationCount: 0,
+        skippedNotificationCount: 0
+      }
+    }));
+
+    expect(html).toContain("조건에 맞는 포워더 0곳");
+    expect(html).toContain("위험물·온도관리·중고차 조건");
+    expect(html).toContain("운영 점검 필요");
   });
 });

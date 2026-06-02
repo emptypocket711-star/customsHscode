@@ -649,7 +649,7 @@ export function FreightRequestRow({
         questions={questions}
         status={request.status}
       />
-      <ServiceRequestMatchSummaryPanel partnerLabel="포워더" status={request.status} summary={request.matchSummary} />
+      <ServiceRequestMatchSummaryPanel kind="freight" partnerLabel="포워더" status={request.status} summary={request.matchSummary} />
       {!compact && (request.status === "partner_selected" || request.status === "in_progress" || request.status === "completed") ? (
         <SelectedFreightPartnerNextSteps documents={documents} selectedBid={selectedBid} />
       ) : null}
