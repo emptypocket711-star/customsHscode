@@ -335,6 +335,24 @@
 - `rg "function .*Label|function .*Tone|function .*Progress|function .*LifecycleControls|function .*Question|function .*Bid|function .*NextSteps|function missing.*FieldLabels|function readFormValues" features/service-requests/freight-request-draft-panel.tsx features/service-requests/clearance-request-draft-panel.tsx -n`
 - 코드 변경 없음: 경계 판단과 문서 기록만 수행
 
+### requester match notification summary
+
+- 이전 작업은 P100 marketplace 리팩터링 경계 판단이고, 이번 작업은 P101 플랫폼 MVP 다음 기능 후보 선정과 구현이다.
+- 다음 기능 후보는 새 DB 없이 바로 효과가 나는 `화주 공개 후 가시성`으로 잡았다.
+- `service_request_partner_matches`를 request별로 집계하는 `listServiceRequestMatchSummaries` read helper를 추가했다.
+- 운송/통관 화주 요청 row에 `파트너 노출·알림 상태` 요약을 추가해 노출된 파트너 수, 알림 대기/발송/스킵/실패 수를 상시 표시한다.
+- 공개 성공 직후 일회성 메시지에만 있던 matched count를 목록/상세 row에서도 계속 볼 수 있게 했다.
+- 파트너 opportunity UI에는 표시하지 않고, 타입 상속을 위해 empty summary만 넣었다.
+- DB schema, RLS, 알림 worker, 실제 발송 정책은 변경하지 않았다.
+- 다음 작업은 P102 match summary 테스트 보강이다. 이번 P101이 화면과 read model 추가라면, P102는 집계 helper와 panel의 회귀 테스트를 추가하는 작업이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- Playwright requester check: 운송/통관 화주 목록과 상세 route에서 `파트너 노출·알림 상태` 또는 상세 route 렌더링 확인
+- `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
+
 ## 2026-06-02
 
 ### local login review smoke

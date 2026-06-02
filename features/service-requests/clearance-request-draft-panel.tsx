@@ -17,6 +17,7 @@ import { PartnerOpportunityFlowPanel } from "@/features/service-requests/partner
 import { RequestDraftReadinessPanel } from "@/features/service-requests/request-draft-readiness-panel";
 import { SelectedPartnerDocumentHandoff } from "@/features/service-requests/selected-partner-document-handoff";
 import { ServiceRequestCompletionReportPanel } from "@/features/service-requests/service-request-completion-report-panel";
+import { ServiceRequestMatchSummaryPanel } from "@/features/service-requests/service-request-match-summary-panel";
 import {
   PartnerVisibleDocumentNotice,
   ServiceRequestDocumentVisibilityGuide
@@ -601,6 +602,7 @@ export function ClearanceRequestRow({
       </div>
       {request.productSummary ? <p className="text-sm leading-6 text-slate-600">{request.productSummary}</p> : null}
       <ClearanceProgress bids={bids} documents={documents} questions={questions} request={request} />
+      <ServiceRequestMatchSummaryPanel partnerLabel="관세사무소" status={request.status} summary={request.matchSummary} />
       {!compact && (request.status === "partner_selected" || request.status === "in_progress" || request.status === "completed") ? (
         <SelectedClearanceBrokerNextSteps documents={documents} selectedBid={selectedBid} />
       ) : null}

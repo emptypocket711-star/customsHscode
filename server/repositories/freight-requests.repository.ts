@@ -24,6 +24,11 @@ import {
   type PartnerFeedbackSummary,
   type PartnerTrustSummary
 } from "@/server/repositories/service-request-feedback.repository";
+import {
+  emptyServiceRequestMatchSummary,
+  listServiceRequestMatchSummaries,
+  type ServiceRequestMatchSummary
+} from "@/server/repositories/service-request-match-summary.repository";
 
 export const serviceRequestDocumentsBucket = "service-request-documents";
 export const serviceRequestListLimit = 20;
@@ -41,6 +46,7 @@ export type FreightRequestListItem = {
   originCountryCode: string | null;
   originPort: string | null;
   productSummary: string | null;
+  matchSummary: ServiceRequestMatchSummary;
   status: string;
   title: string;
   transportMode: string | null;
@@ -336,6 +342,7 @@ export async function listOwnFreightRequests(supabase: SupabaseClient): Promise<
   const rows = (requests ?? []) as ServiceRequestRow[];
   const requestIds = rows.map((request) => request.id);
   const detailByRequestId = new Map<string, FreightDetailRow>();
+  const matchSummaryByRequestId = await listServiceRequestMatchSummaries(supabase, requestIds);
 
   if (requestIds.length > 0) {
     const { data: details, error: detailsError } = await supabase
@@ -366,6 +373,7 @@ export async function listOwnFreightRequests(supabase: SupabaseClient): Promise<
         originCountryCode: request.origin_country_code,
         originPort: detail?.origin_port ?? null,
         productSummary: request.product_summary,
+        matchSummary: matchSummaryByRequestId.get(request.id) ?? emptyServiceRequestMatchSummary,
         status: request.status,
         title: request.title,
         transportMode: detail?.transport_mode ?? null
@@ -415,6 +423,7 @@ export async function getOwnFreightRequest(
   if (detailError) throw new Error(detailError.message);
 
   const detailRow = detail as FreightDetailRow | null;
+  const matchSummaryByRequestId = await listServiceRequestMatchSummaries(supabase, [row.id]);
 
   return {
     item: {
@@ -429,6 +438,7 @@ export async function getOwnFreightRequest(
       originCountryCode: row.origin_country_code,
       originPort: detailRow?.origin_port ?? null,
       productSummary: row.product_summary,
+      matchSummary: matchSummaryByRequestId.get(row.id) ?? emptyServiceRequestMatchSummary,
       status: row.status,
       title: row.title,
       transportMode: detailRow?.transport_mode ?? null
@@ -509,6 +519,7 @@ export async function listMatchedFreightOpportunities(supabase: SupabaseClient):
           grossWeight: detail?.gross_weight ?? null,
           id: request.id,
           interestStatus: match.interest_status,
+          matchSummary: emptyServiceRequestMatchSummary,
           matchId: match.id,
           originCountryCode: request.origin_country_code,
           originPort: detail?.origin_port ?? null,
@@ -591,6 +602,7 @@ export async function getMatchedFreightOpportunity(
       grossWeight: detailRow?.gross_weight ?? null,
       id: row.id,
       interestStatus: matchRow.interest_status,
+      matchSummary: emptyServiceRequestMatchSummary,
       matchId: matchRow.id,
       originCountryCode: row.origin_country_code,
       originPort: detailRow?.origin_port ?? null,

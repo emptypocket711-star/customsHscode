@@ -17,6 +17,7 @@ import { PartnerOpportunityFlowPanel } from "@/features/service-requests/partner
 import { RequestDraftReadinessPanel } from "@/features/service-requests/request-draft-readiness-panel";
 import { SelectedPartnerDocumentHandoff } from "@/features/service-requests/selected-partner-document-handoff";
 import { ServiceRequestCompletionReportPanel } from "@/features/service-requests/service-request-completion-report-panel";
+import { ServiceRequestMatchSummaryPanel } from "@/features/service-requests/service-request-match-summary-panel";
 import {
   PartnerVisibleDocumentNotice,
   ServiceRequestDocumentVisibilityGuide
@@ -648,6 +649,7 @@ export function FreightRequestRow({
         questions={questions}
         status={request.status}
       />
+      <ServiceRequestMatchSummaryPanel partnerLabel="포워더" status={request.status} summary={request.matchSummary} />
       {!compact && (request.status === "partner_selected" || request.status === "in_progress" || request.status === "completed") ? (
         <SelectedFreightPartnerNextSteps documents={documents} selectedBid={selectedBid} />
       ) : null}

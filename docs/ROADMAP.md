@@ -386,7 +386,9 @@
 | P99.1 marketplace label helper consolidation review | 완료 | 상태 count helper가 아니라 status/visibility/bid label 함수 중 공통화 가능한 것과 역할별 문구 차이가 있는 것을 구분한다 | shared document and bid labels selected | code review |
 | P99.2 shared service request document and bid labels | 완료 | label helper 검토가 아니라 동일한 문서 유형·입찰 상태 label/tone만 공통화하고 역할별 공개 범위 문구는 유지한다 | shared label helpers | browser, typecheck, lint |
 | P100.1 marketplace refactor boundary review | 완료 | label helper 공통화가 아니라 marketplace 패널 리팩터링을 더 진행할지, 다음 기능 작업으로 전환할지 경계 점검한다 | stop broad refactor, switch to feature work | code/UX review |
-| P101.1 marketplace next feature selection | 예정 | 리팩터링 경계 점검이 아니라 플랫폼 MVP에서 다음 기능 작업 후보를 다시 고른다 | next feature selection | product/UX review |
+| P101.1 marketplace next feature selection | 완료 | 리팩터링 경계 점검이 아니라 플랫폼 MVP에서 다음 기능 작업 후보를 다시 고른다 | requester post-publish visibility selected | product/UX review |
+| P101.2 requester match notification summary | 완료 | 기능 후보 선정이 아니라 화주가 공개 후 파트너 노출 수와 알림 상태를 요청 row에서 상시 확인하게 한다 | requester match summary | browser, typecheck, lint |
+| P102.1 requester match summary test coverage | 예정 | UI 표시가 아니라 match summary read model과 panel의 회귀 테스트를 보강한다 | match summary tests | unit, typecheck, lint |
 
 #### P34 다음 코드 작업 후보
 

@@ -26,6 +26,11 @@ import {
   type PartnerFeedbackSummary,
   type PartnerTrustSummary
 } from "@/server/repositories/service-request-feedback.repository";
+import {
+  emptyServiceRequestMatchSummary,
+  listServiceRequestMatchSummaries,
+  type ServiceRequestMatchSummary
+} from "@/server/repositories/service-request-match-summary.repository";
 
 export const clearanceServiceRequestListLimit = 20;
 export const clearanceServiceRequestOpportunityScanLimit = 60;
@@ -39,6 +44,7 @@ export type ClearanceRequestListItem = {
   hsCodeKnown: boolean;
   hskCode: string | null;
   id: string;
+  matchSummary: ServiceRequestMatchSummary;
   productSummary: string | null;
   requirementsCheckNeeded: boolean;
   status: string;
@@ -282,6 +288,7 @@ export async function listOwnClearanceRequests(supabase: SupabaseClient): Promis
   const rows = (requests ?? []) as ServiceRequestRow[];
   const requestIds = rows.map((request) => request.id);
   const detailByRequestId = new Map<string, ClearanceDetailRow>();
+  const matchSummaryByRequestId = await listServiceRequestMatchSummaries(supabase, requestIds);
 
   if (requestIds.length > 0) {
     const { data: details, error: detailsError } = await supabase
@@ -309,6 +316,7 @@ export async function listOwnClearanceRequests(supabase: SupabaseClient): Promis
         hsCodeKnown: detail?.hs_code_known ?? false,
         hskCode: request.hsk_code,
         id: request.id,
+        matchSummary: matchSummaryByRequestId.get(request.id) ?? emptyServiceRequestMatchSummary,
         productSummary: request.product_summary,
         requirementsCheckNeeded: detail?.requirements_check_needed ?? false,
         status: request.status,
@@ -360,6 +368,7 @@ export async function getOwnClearanceRequest(
   if (detailError) throw new Error(detailError.message);
 
   const detailRow = detail as ClearanceDetailRow | null;
+  const matchSummaryByRequestId = await listServiceRequestMatchSummaries(supabase, [row.id]);
 
   return {
     item: {
@@ -371,6 +380,7 @@ export async function getOwnClearanceRequest(
       hsCodeKnown: detailRow?.hs_code_known ?? false,
       hskCode: row.hsk_code,
       id: row.id,
+      matchSummary: matchSummaryByRequestId.get(row.id) ?? emptyServiceRequestMatchSummary,
       productSummary: row.product_summary,
       requirementsCheckNeeded: detailRow?.requirements_check_needed ?? false,
       status: row.status,
@@ -558,6 +568,7 @@ export async function listMatchedClearanceOpportunities(supabase: SupabaseClient
           hskCode: request.hsk_code,
           id: request.id,
           interestStatus: match.interest_status,
+          matchSummary: emptyServiceRequestMatchSummary,
           matchId: match.id,
           productSummary: request.product_summary,
           requirementsCheckNeeded: detail?.requirements_check_needed ?? false,
@@ -639,6 +650,7 @@ export async function getMatchedClearanceOpportunity(
       hskCode: row.hsk_code,
       id: row.id,
       interestStatus: matchRow.interest_status,
+      matchSummary: emptyServiceRequestMatchSummary,
       matchId: matchRow.id,
       productSummary: row.product_summary,
       requirementsCheckNeeded: detailRow?.requirements_check_needed ?? false,
