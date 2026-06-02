@@ -135,7 +135,7 @@ create table if not exists public.company_party_types (
   is_primary boolean not null default false,
   created_by uuid references auth.users(id),
   created_at timestamptz not null default now(),
-  unique(company_id, party_type)
+  constraint company_party_types_company_id_party_type_key unique(company_id, party_type)
 );
 
 create table if not exists public.company_party_type_requests (
@@ -3626,31 +3626,31 @@ begin
     else coalesce(v_before.trust_score, 0)
   end;
 
-  update public.companies
+  update public.companies company
     set
       verification_status = p_status,
       trust_score = v_patch_trust_score,
       verified_at = case
         when p_status in ('operator_approved', 'recommended_partner') then now()
         when p_status in ('suspended', 'blocked', 'unverified') then null
-        else verified_at
+        else company.verified_at
       end,
       verified_by = case
         when p_status in ('operator_approved', 'recommended_partner') then p_actor_id
         when p_status in ('suspended', 'blocked', 'unverified') then null
-        else verified_by
+        else company.verified_by
       end,
       suspended_at = case
         when p_status = 'suspended' then now()
         when p_status in ('operator_approved', 'recommended_partner', 'blocked', 'unverified') then null
-        else suspended_at
+        else company.suspended_at
       end,
       blocked_at = case
         when p_status = 'blocked' then now()
         when p_status in ('operator_approved', 'recommended_partner', 'suspended', 'unverified') then null
-        else blocked_at
+        else company.blocked_at
       end
-    where id = p_company_id
+    where company.id = p_company_id
     returning * into v_after;
 
   insert into public.audit_logs (
@@ -3787,7 +3787,7 @@ begin
       requested_party_type,
       p_actor_id
     from unnest(v_request.requested_party_types) as requested_party_type
-    on conflict (company_id, party_type) do nothing;
+    on conflict on constraint company_party_types_company_id_party_type_key do nothing;
   end if;
 
   update public.company_party_type_requests

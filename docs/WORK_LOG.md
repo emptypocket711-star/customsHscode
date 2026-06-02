@@ -427,6 +427,21 @@
 - `npx vitest run server/repositories/platform-marketplace-governance.test.ts`
 - `npx supabase db lint --local`: 현재 local DB에 이미 적용된 예전 `publish_freight_request` warning과 기존 `update_company_marketplace_status`, `review_company_party_type_request` 모호 컬럼 오류가 남아 있어 P106으로 분리
 
+### operations RPC lint blocker review
+
+- 이전 작업은 P105 매칭 0건 공개 허용이고, 이번 작업은 P106 Supabase local lint에서 드러난 운영 RPC 품질 문제를 정리한 작업이다.
+- `update_company_marketplace_status`에서 `RETURNS TABLE` 출력 컬럼과 `companies` 컬럼이 겹쳐 `verified_at`, `verified_by`, `suspended_at`, `blocked_at` 참조가 모호했다.
+- `companies` update에 alias를 주고 `else company.verified_at`처럼 기존 컬럼 참조를 명확히 했다.
+- `review_company_party_type_request`의 `on conflict (company_id, party_type)`가 PL/pgSQL에서 모호하게 잡혀, `company_party_types_company_id_party_type_key` constraint를 명시하고 `on conflict on constraint`를 사용하도록 바꿨다.
+- P105에서 수정한 `publish_freight_request`의 `v_cargo_tags` 초기화도 local DB에 재적용했다.
+- destructive reset 없이 수정한 함수 3개만 local Postgres에 재적용했다.
+- 다음 작업은 P107 partner preference match diagnostics review다. 이번 P106이 DB 함수 lint 품질 정리라면, P107은 파트너 관심 조건 UI가 매칭 0건을 줄일 만큼 충분히 안내하는지 보는 작업이다.
+
+검증:
+
+- `npx vitest run server/repositories/platform-marketplace-governance.test.ts`
+- `npx supabase db lint --local`: `No schema errors found`
+
 ## 2026-06-02
 
 ### local login review smoke
