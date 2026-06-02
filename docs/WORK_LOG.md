@@ -23,6 +23,23 @@
 - Playwright partner check: `/requests/freight/opportunities/75000000-0000-4000-8000-000000000001#request-documents`, `/requests/clearance/opportunities/75000000-0000-4000-8000-000000000002#request-documents`
 - `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
 
+### completion report primary next action
+
+- 이전 작업은 P81 서류 공개 범위 handoff이고, 이번 작업은 P82 완료 리포트 패널에서 사용자가 현재 해야 할 일을 먼저 보게 하는 UX 보강이다.
+- P82.1에서 완료 리포트 모델을 새로 시작할 필요가 있는지 확인했고, 기존 migration/RPC/RLS/repository/UI/preview가 이미 구현된 상태라 중복 모델링 대신 화면 과밀도 개선으로 방향을 바꿨다.
+- `selectCurrentCompletionReportWorkflowStep`를 추가해 완료 리포트 5단계 중 현재 대표 행동을 하나만 선택한다.
+- 완료 리포트 패널 상단의 `완료 후 다음 행동` 안내가 일반 설명 대신 `현재 할 일: ...`과 필요한 차단 사유를 먼저 표시하게 했다.
+- 기존 단계별 CTA, 제출·확인·운영 검토·잠금 버튼, source/safety 문구, 권한/RLS, DB schema는 변경하지 않았다.
+- 다음 작업은 P83 운영 화면 카드 밀도 재점검이다. 이번 P82가 완료 리포트 상세의 다음 행동 요약이라면, P83은 대표/운영자 화면에서 우선순위 카드가 과하게 많은지 줄이는 작업이다.
+
+검증:
+
+- `npx vitest run features/service-requests/service-request-completion-report-workflow.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- Playwright requester check: `/requests/freight/00000000-0000-4000-8000-000000000101#completion-report-summary`, `/requests/clearance/00000000-0000-4000-8000-000000000201#completion-report-summary`
+- `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
+
 ## 2026-06-02
 
 ### local login review smoke

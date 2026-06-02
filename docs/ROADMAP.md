@@ -332,7 +332,11 @@
 | P81.3 partner visible document notice | 완료 | 화주 업로드 기준 안내가 아니라 포워더·관세사무소가 현재 보이는 서류가 공개 허용된 서류만이라는 점을 이해하게 한다 | partner document UX | unit, browser, typecheck, lint |
 | P81.4 document visibility route smoke | 완료 | 파트너 안내 보강이 아니라 변경 후 화주·포워더·관세사 주요 route가 계속 정상 렌더링되는지 확인한다 | role route smoke | browser, typecheck, lint |
 | P81.5 document visibility work log sync | 완료 | route smoke가 아니라 서류 공개 범위 handoff 보강과 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
-| P82.1 completion report model selection | 예정 | 서류 공개 범위 안내가 아니라 거래 완료 후 결과 메타데이터와 최종 보관 서류 모델을 시작할지 검토한다 | completion report model rail | schema/doc review |
+| P82.1 completion report model selection | 완료 | 서류 공개 범위 안내가 아니라 거래 완료 후 결과 메타데이터와 최종 보관 서류 모델을 시작할지 검토한다 | existing completion report model confirmed | schema/doc review |
+| P82.2 completion report primary next action | 완료 | 완료 리포트 모델 검토가 아니라 과밀한 완료 리포트 패널에서 현재 대표 행동을 먼저 보여준다 | completion report UX | unit, browser, typecheck, lint |
+| P82.3 completion report route smoke | 완료 | 대표 행동 요약 보강이 아니라 변경 후 marketplace 주요 route가 계속 정상 렌더링되는지 확인한다 | role route smoke | browser, typecheck, lint |
+| P82.4 completion report work log sync | 완료 | route smoke가 아니라 완료 리포트 대표 행동 요약 보강과 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
+| P83.1 operations density selection | 예정 | 완료 리포트 상세가 아니라 대표/운영자 화면의 우선순위 카드 밀도와 다음 행동 이해도를 다시 점검한다 | operations density rail | UX/code review |
 
 #### P34 다음 코드 작업 후보
 

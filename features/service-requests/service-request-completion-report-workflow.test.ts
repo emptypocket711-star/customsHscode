@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { buildCompletionReportWorkflow } from "@/features/service-requests/service-request-completion-report-workflow";
+import {
+  buildCompletionReportWorkflow,
+  selectCurrentCompletionReportWorkflowStep
+} from "@/features/service-requests/service-request-completion-report-workflow";
 
 describe("completion report workflow", () => {
   it("blocks submit until a report draft exists", () => {
@@ -61,5 +64,26 @@ describe("completion report workflow", () => {
       ["운영 검토", "done"],
       ["보관 잠금", "current"]
     ]);
+  });
+
+  it("selects one primary next workflow action for dense panels", () => {
+    const draftSteps = buildCompletionReportWorkflow({
+      hasReport: true,
+      linkedDocumentCount: 0,
+      requiredDocumentCount: 1,
+      status: "draft",
+      viewerRole: "requester"
+    });
+    const lockedSteps = buildCompletionReportWorkflow({
+      hasReport: true,
+      linkedDocumentCount: 1,
+      requiredDocumentCount: 1,
+      status: "locked",
+      viewerRole: "requester"
+    });
+
+    expect(selectCurrentCompletionReportWorkflowStep(draftSteps)?.label).toBe("리포트 제출");
+    expect(selectCurrentCompletionReportWorkflowStep(draftSteps)?.disabledReason).toBe("필수 보관 서류 연결 후 제출할 수 있습니다");
+    expect(selectCurrentCompletionReportWorkflowStep(lockedSteps)?.label).toBe("보관 잠금");
   });
 });

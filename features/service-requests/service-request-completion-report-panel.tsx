@@ -11,6 +11,7 @@ import {
 } from "@/server/actions/service-request-completion-report.actions";
 import {
   buildCompletionReportWorkflow,
+  selectCurrentCompletionReportWorkflowStep,
   type CompletionReportViewerRole
 } from "@/features/service-requests/service-request-completion-report-workflow";
 import {
@@ -108,6 +109,8 @@ export function ServiceRequestCompletionReportPanel({
     status: currentStatus,
     viewerRole
   });
+  const currentWorkflowStep = selectCurrentCompletionReportWorkflowStep(workflowSteps);
+  const workflowLeadLabel = currentWorkflowStep?.state === "done" ? "마감 상태" : "현재 할 일";
 
   useEffect(() => {
     if (state.status !== "idle" || documentState.status !== "idle" || transitionState.status !== "idle") {
@@ -150,7 +153,9 @@ export function ServiceRequestCompletionReportPanel({
         <div>
           <p className="font-semibold">완료 후 다음 행동</p>
           <p className="mt-1">
-            먼저 완료 리포트 초안을 저장하고, 요청 서류를 최종 보관 역할로 연결한 뒤 제출·확인·운영 검토·잠금 순서로 마감합니다.
+            {workflowLeadLabel}: {currentWorkflowStep?.label ?? "상태 확인"}.
+            {" "}
+            {currentWorkflowStep?.disabledReason ?? currentWorkflowStep?.description ?? "완료 리포트 상태를 확인합니다."}
           </p>
         </div>
         {!activeReportId ? (

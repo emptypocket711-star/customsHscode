@@ -57,3 +57,10 @@ export function buildCompletionReportWorkflow(input: CompletionReportWorkflowInp
     }
   ];
 }
+
+export function selectCurrentCompletionReportWorkflowStep(steps: CompletionReportWorkflowStep[]) {
+  return steps.find((step) => step.state === "current")
+    ?? steps.find((step) => step.state === "blocked")
+    ?? steps.find((step) => step.state === "pending")
+    ?? steps.at(-1);
+}
