@@ -4,6 +4,7 @@ import { AccessDenied } from "@/components/access-denied";
 import { PageHeading } from "@/components/page-heading";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { CopyOperationsRequestButton } from "@/features/operations/copy-operations-request-button";
 import { completionReportDocumentRoleLabel } from "@/features/service-requests/service-request-completion-report-labels";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireDeveloperRole } from "@/server/auth/role-guard";
@@ -44,6 +45,41 @@ function completionReportTone(status: string): "neutral" | "warning" | "info" | 
   return "neutral";
 }
 
+function improvementPromptTarget(category: string) {
+  if (category === "question_response") {
+    return {
+      href: "#request-questions",
+      label: "질문·답변 상태 확인"
+    };
+  }
+
+  if (category === "bid_conversion" || category === "deadline_followup") {
+    return {
+      href: "#request-bids",
+      label: "견적 상태 확인"
+    };
+  }
+
+  if (category === "document_guidance") {
+    return {
+      href: "#request-documents",
+      label: "서류 메타데이터 확인"
+    };
+  }
+
+  if (category === "lifecycle_followup") {
+    return {
+      href: "#completion-report-summary",
+      label: "완료 리포트 확인"
+    };
+  }
+
+  return {
+    href: "#operations-safe-summary",
+    label: "운영 요약 확인"
+  };
+}
+
 export default async function OperationsRequestDetailPage({
   params
 }: {
@@ -74,6 +110,7 @@ export default async function OperationsRequestDetailPage({
 
   const request = detail.request;
   const improvementPrompt = buildPlatformRequestImprovementPrompt(detail);
+  const improvementTarget = improvementPrompt ? improvementPromptTarget(improvementPrompt.category) : null;
 
   return (
     <div className="grid gap-5">
@@ -90,7 +127,7 @@ export default async function OperationsRequestDetailPage({
         </Link>
       </div>
 
-      <Card>
+      <Card id="operations-safe-summary">
         <CardHeader
           action={<Badge tone={statusTone(request.status)}>{request.status}</Badge>}
           description={`${requestTypeLabel(request.requestType)} / ${directionLabel(request.direction)} / 생성 ${request.createdAt.slice(0, 10)}`}
@@ -136,6 +173,20 @@ export default async function OperationsRequestDetailPage({
             title={improvementPrompt.label}
           />
           <CardBody className="grid gap-3">
+            <div className="grid gap-3 rounded-md border border-blue-100 bg-blue-50 p-3 text-sm leading-6 text-blue-950 md:grid-cols-[1fr_auto_auto] md:items-center">
+              <p>
+                이 요청은 복사해서 개발 작업으로 넘기고, 먼저 <span className="font-semibold">{improvementTarget?.label}</span>에서 상태와 건수를 확인합니다.
+              </p>
+              {improvementTarget ? (
+                <a
+                  className="focus-ring inline-flex h-10 items-center justify-center rounded-md border border-blue-200 bg-white px-3 text-xs font-semibold text-blue-800 hover:bg-blue-100"
+                  href={improvementTarget.href}
+                >
+                  {improvementTarget.label}
+                </a>
+              ) : null}
+              <CopyOperationsRequestButton text={improvementPrompt.prompt} />
+            </div>
             <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-md border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
               {improvementPrompt.prompt}
             </pre>
@@ -146,7 +197,7 @@ export default async function OperationsRequestDetailPage({
         </Card>
       ) : null}
 
-      <Card>
+      <Card id="completion-report-summary">
         <CardHeader
           action={
             <div className="flex flex-wrap items-center justify-end gap-2">
