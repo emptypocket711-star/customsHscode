@@ -64,5 +64,5 @@ Verified:
 
 ## Remaining Risk
 
-- Full authenticated preview body screenshots are not stored as a named visual artifact yet.
+- Authenticated mobile preview body screenshots are stored under `tmp/screenshots/completion-preview-mobile-*.png` for local review, but they are intentionally not committed.
 - Stale `tmp/e2e-auth/completion-preview-*.json` files are not automatically cleaned up after E2E.

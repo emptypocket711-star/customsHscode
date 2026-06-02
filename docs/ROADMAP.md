@@ -198,7 +198,7 @@
 | P46.1 completion report preview print/source UX review | 완료 | 인증 브라우저 unblock 문서가 아니라 현재 구현된 preview 문서 화면의 인쇄/source/safety UI를 코드 기준으로 다시 점검한다 | source URL retained in print preview | unit, typecheck, lint, build |
 | P46.2 completion report preview unsafe source URL regression | 완료 | 인쇄 source URL 보강이 아니라 unsafe source URL이 preview 링크/텍스트로 노출되지 않는 규칙을 테스트로 고정한다 | source URL safety helper | unit, typecheck, lint, build |
 | P47.1 completion report preview mobile unauth review | 완료 | source URL 안전성 테스트가 아니라 모바일 폭에서도 비로그인 preview 접근이 본문을 노출하지 않는지 확인한다 | mobile unauth browser review | Playwright screenshot |
-| P47.2 completion report preview authenticated mobile body review | 예정 | 모바일 비로그인 redirect가 아니라 storage state 준비 후 실제 완료 리포트 본문 모바일 레이아웃을 확인한다 | authenticated mobile body review | local auth required |
+| P47.2 completion report preview authenticated mobile body review | 완료 | 모바일 비로그인 redirect가 아니라 storage state 준비 후 실제 완료 리포트 본문 모바일 레이아웃을 확인한다 | authenticated mobile body review | Playwright mobile screenshots, overflow check |
 | P48.1 completion report preview route kind guard | 완료 | 모바일 브라우저 확인이 아니라 route kind와 report request type이 어긋난 preview 접근을 차단한다 | route/report type guard | unit, typecheck, lint, build |
 | P48.2 completion report preview route guard e2e assertion | 완료 | route guard helper가 아니라 잘못된 kind URL이 본문을 노출하지 않는지 e2e assertion에 추가한다 | mismatched kind e2e check | guarded e2e, typecheck, lint, build |
 | P49.1 completion report preview repository ordering review | 완료 | route guard e2e assertion이 아니라 request별 여러 report가 있을 때 최신 non-voided report 선택 기준을 점검한다 | keep first ordered report per request | repository unit, typecheck, lint, build |
