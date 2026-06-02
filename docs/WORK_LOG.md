@@ -304,6 +304,23 @@
 - Playwright requester list check: 운송/통관 summary count 라벨 유지 확인
 - `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
 
+### shared service request document and bid labels
+
+- 이전 작업은 P98 요청 상태 count 계산 helper 공통화이고, 이번 작업은 P99 marketplace label helper 공통화 가능성 점검이다.
+- 운송/통관의 문서 유형 label과 입찰 상태 label/tone은 완전히 동일해 `service-request-status.ts`로 공통화했다.
+- 포워더/관세사무소 명칭이 들어가는 공개 범위 label과 요청 status label은 사용자 문구 차이를 보존하기 위해 각 패널에 유지했다.
+- 운송 상세 fixture에는 첨부 서류가 없어 문서명 자체는 확인하지 못했지만, 공개 범위 문구와 상세 route 렌더링은 확인했다.
+- 통관 상세에서는 `Commercial Invoice`와 `매칭된 관세사무소에게 공개` 문구 유지를 확인했다.
+- 권한/RLS, DB schema, 화면 표시 순서는 변경하지 않았다.
+- 다음 작업은 P100 marketplace 리팩터링 경계 점검이다. 이번 P99가 label helper 공통화라면, P100은 리팩터링을 더 이어갈지 기능 작업으로 전환할지 판단하는 작업이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- Playwright requester detail check: 운송/통관 상세 route 렌더링과 역할별 공개 범위 문구 유지 확인
+- `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
+
 ## 2026-06-02
 
 ### local login review smoke

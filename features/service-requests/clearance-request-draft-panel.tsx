@@ -24,7 +24,10 @@ import {
 import { ServiceRequestFeedbackForm } from "@/features/service-requests/service-request-feedback-form";
 import {
   countServiceRequestStatuses,
-  isSelectedOrLaterStatus
+  isSelectedOrLaterStatus,
+  serviceRequestBidStatusLabel,
+  serviceRequestBidStatusTone,
+  serviceRequestDocumentTypeLabel
 } from "@/features/service-requests/service-request-status";
 import {
   answerClearanceRequestQuestionAction,
@@ -121,17 +124,6 @@ function statusLabel(status: string) {
   return status;
 }
 
-function documentTypeLabel(type: string) {
-  if (type === "commercial_invoice") return "Commercial Invoice";
-  if (type === "packing_list") return "Packing List";
-  if (type === "bill_of_lading") return "B/L";
-  if (type === "air_waybill") return "AWB";
-  if (type === "certificate_of_origin") return "C/O";
-  if (type === "catalog") return "카탈로그";
-  if (type === "spec_sheet") return "사양서";
-  return type;
-}
-
 function visibilityLabel(visibility: string) {
   if (visibility === "requester_only") return "나와 운영자만";
   if (visibility === "matched_partner_after_interest") return "매칭된 관세사무소에게 공개";
@@ -145,23 +137,6 @@ function statusTone(status: string): "neutral" | "warning" | "info" | "success" 
   if (status === "open") return "info";
   if (status === "bids_received") return "warning";
   if (status === "partner_selected" || status === "in_progress" || status === "completed") return "success";
-  return "neutral";
-}
-
-function bidStatusLabel(status: string) {
-  if (status === "submitted") return "제출";
-  if (status === "shortlisted") return "검토중";
-  if (status === "selected") return "선정";
-  if (status === "rejected") return "미선정";
-  if (status === "withdrawn") return "철회";
-  if (status === "expired") return "만료";
-  return status;
-}
-
-function bidStatusTone(status: string): "neutral" | "warning" | "info" | "success" {
-  if (status === "selected") return "success";
-  if (status === "submitted") return "info";
-  if (status === "shortlisted") return "warning";
   return "neutral";
 }
 
@@ -427,7 +402,7 @@ function ReceivedClearanceBidRow({
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-sm font-semibold text-slate-950">{formatAmount(bid.totalAmount, bid.currency)}</p>
-            <Badge tone={bidStatusTone(bid.status)}>{bidStatusLabel(bid.status)}</Badge>
+            <Badge tone={serviceRequestBidStatusTone(bid.status)}>{serviceRequestBidStatusLabel(bid.status)}</Badge>
             <Badge tone="neutral">업체 {bid.bidderCompanyId.slice(0, 8)}</Badge>
             <Badge tone={bid.partnerTrust?.verificationStatus === "recommended_partner" ? "success" : bid.partnerTrust ? "info" : "neutral"}>{partnerTrustLabel(bid.partnerTrust)}</Badge>
             <Badge tone={bid.partnerFeedback ? "info" : "neutral"}>{partnerFeedbackLabel(bid.partnerFeedback)}</Badge>
@@ -669,7 +644,7 @@ export function ClearanceRequestRow({
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-slate-900">{document.fileName}</p>
                   <p>
-                    {documentTypeLabel(document.documentType)} / {visibilityLabel(document.visibility)} / {(document.fileSize ?? 0).toLocaleString("ko-KR")} bytes
+                    {serviceRequestDocumentTypeLabel(document.documentType)} / {visibilityLabel(document.visibility)} / {(document.fileSize ?? 0).toLocaleString("ko-KR")} bytes
                   </p>
                 </div>
                 <span className="text-slate-500">{document.createdAt.slice(0, 10)}</span>
@@ -894,7 +869,7 @@ export function ClearanceOpportunityRow({
           <div className="grid gap-2">
             {documents.map((document) => (
               <p className="rounded-md bg-white p-2 text-xs leading-5 text-slate-600" key={document.documentId}>
-                <span className="font-semibold text-slate-900">{documentTypeLabel(document.documentType)}</span> · {document.fileName} · {visibilityLabel(document.visibility)}
+                <span className="font-semibold text-slate-900">{serviceRequestDocumentTypeLabel(document.documentType)}</span> · {document.fileName} · {visibilityLabel(document.visibility)}
               </p>
             ))}
           </div>
