@@ -3,9 +3,15 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const marketplaceMigrationPath = "supabase/migrations/20260531012000_platform_marketplace_schema.sql";
+const marketplaceNotificationPreferencesMigrationPath =
+  "supabase/migrations/20260603001000_marketplace_notification_preferences.sql";
 
 function readMarketplaceMigration() {
   return readFileSync(join(process.cwd(), marketplaceMigrationPath), "utf8");
+}
+
+function readMarketplaceNotificationPreferencesMigration() {
+  return readFileSync(join(process.cwd(), marketplaceNotificationPreferencesMigrationPath), "utf8");
 }
 
 function policyBlock(sql: string, policyName: string) {
@@ -305,6 +311,35 @@ describe("platform marketplace migration governance", () => {
     expect(staffReadPolicy).toContain("public.is_staff_or_admin()");
 
     const serviceRolePolicy = policyBlock(sql, "service role manages marketplace notification deliveries");
+    expect(serviceRolePolicy).toContain("auth.role() = 'service_role'");
+  });
+
+  it("requires explicit user-level email opt-in for marketplace notification preferences", () => {
+    const sql = readMarketplaceNotificationPreferencesMigration();
+
+    expect(sql).toContain("create table if not exists public.marketplace_notification_preferences");
+    expect(sql).toContain("profile_id uuid not null references public.profiles(id) on delete cascade");
+    expect(sql).toContain("channel text not null check (channel in ('email'))");
+    expect(sql).toContain("notification_kind text not null check (notification_kind in ('initial', 'deadline_reminder'))");
+    expect(sql).toContain("enabled boolean not null default false");
+    expect(sql).toContain("unique(profile_id, channel, notification_kind)");
+    expect(sql).toContain("alter table public.marketplace_notification_preferences enable row level security");
+    expect(sql).toContain("grant select, insert, update, delete on public.marketplace_notification_preferences to authenticated");
+    expect(sql).toContain("grant select, insert, update, delete on public.marketplace_notification_preferences to service_role");
+
+    expect(sql).toContain('drop policy if exists "users read own marketplace notification preferences or staff re"');
+
+    const readPolicy = policyBlock(sql, "users read own marketplace notification prefs or staff reads");
+    expect(readPolicy).toContain("profile_id = auth.uid()");
+    expect(readPolicy).toContain("public.is_staff_or_admin()");
+
+    const insertPolicy = policyBlock(sql, "users insert own marketplace notification preferences");
+    expect(insertPolicy).toContain("profile_id = auth.uid()");
+
+    const updatePolicy = policyBlock(sql, "users update own marketplace notification preferences");
+    expect(updatePolicy).toContain("profile_id = auth.uid()");
+
+    const serviceRolePolicy = policyBlock(sql, "service role manages marketplace notification preferences");
     expect(serviceRolePolicy).toContain("auth.role() = 'service_role'");
   });
 

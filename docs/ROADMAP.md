@@ -406,7 +406,8 @@
 | P115.1 marketplace transactional email provider skeleton | 완료 | 수신자 후보 조회가 아니라 resolver를 사용해 외부 transactional email provider skeleton을 worker sender로 연결한다 | email provider skeleton | unit, typecheck, lint, rehearsal |
 | P116.1 marketplace transactional email provider self-review | 완료 | email provider skeleton 구현이 아니라 민감정보, recipient missing, readiness, 운영 runbook 차단 조건을 자체 리뷰한다 | email provider safety review | tests, docs, route rehearsal |
 | P117.1 marketplace notification preference and unsubscribe planning | 완료 | email provider 안전 리뷰가 아니라 파트너 사용자별 알림 수신 설정과 거부 기준을 어떻게 둘지 정한다 | notification preference policy selected | product/security review |
-| P118.1 marketplace email notification preference schema | 예정 | 수신 설정 정책 문서화가 아니라 실제 사용자별 email opt-in 저장 schema와 resolver gate를 추가한다 | email preference schema | migration, RLS, unit |
+| P118.1 marketplace email notification preference schema | 완료 | 수신 설정 정책 문서화가 아니라 실제 사용자별 email opt-in 저장 schema와 resolver gate를 추가한다 | email preference schema | migration, RLS, unit |
+| P119.1 marketplace email notification settings UI | 예정 | schema/resolver gate가 아니라 사용자가 로그인 상태에서 marketplace email 수신 설정을 직접 켜고 끄게 한다 | email preference settings UI | server action, UX, browser |
 
 #### P109 다음 병목 선정
 
@@ -552,6 +553,22 @@ P117에서 marketplace opportunity email은 사용자별 opt-in으로 운영하�
 세부 정책은 [MARKETPLACE_NOTIFICATION_PREFERENCES_PLAN.md](./MARKETPLACE_NOTIFICATION_PREFERENCES_PLAN.md)에 정리했다.
 
 다음 작업은 P118 marketplace email notification preference schema다. P117이 수신 설정 정책을 고정한 문서 작업이라면, P118은 실제 migration/RLS/repository/resolver gate를 추가해 `transactional_email` 수신자가 명시적 opt-in 사용자로 제한되게 만드는 작업이다.
+
+#### P118 email notification preference schema
+
+P118에서 marketplace email notification preference를 실제 schema와 resolver gate로 추가했다.
+
+구현 기준:
+
+1. `marketplace_notification_preferences` table을 추가했다.
+2. channel은 `email`, notification kind는 `initial`, `deadline_reminder`로 제한했다.
+3. `enabled` 기본값은 `false`이며 preference row가 없으면 email 미동의로 처리한다.
+4. RLS는 사용자가 자기 preference row만 읽고 쓰게 하고, staff read와 service-role job access를 분리했다.
+5. `partner_preferences.notification_enabled`는 그대로 회사 단위 매칭/노출 preference로 유지했다.
+6. `transactional_email` provider는 recipient resolver 호출 시 notification kind별 email opt-in을 요구한다.
+7. resolver는 opt-in 필터 전 후보를 넉넉히 조회한 뒤 최종 limit을 적용한다.
+
+다음 작업은 P119 marketplace email notification settings UI다. P118이 DB/RLS/resolver gate라면, P119는 사용자가 로그인 상태에서 실제로 `initial`, `deadline_reminder` email 수신 설정을 켜고 끄는 서버 액션과 설정 화면을 붙이는 작업이다.
 
 #### P34 다음 코드 작업 후보
 

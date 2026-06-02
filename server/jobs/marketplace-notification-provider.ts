@@ -50,7 +50,10 @@ export function createMarketplaceNotificationProvider(
       const recipients = await listMarketplaceNotificationRecipientsForPartner(
         options.supabase as SupabaseClient,
         input.target.partnerCompanyId,
-        { limit: 1 }
+        {
+          limit: 1,
+          requireEmailOptInForKind: input.target.notificationKind
+        }
       );
       const recipient = recipients[0];
       if (!recipient) throw new Error("recipient_missing");

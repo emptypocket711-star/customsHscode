@@ -74,7 +74,10 @@ describe("marketplace notification provider", () => {
       providerId: "resend-1"
     });
 
-    expect(listMarketplaceNotificationRecipientsForPartner).toHaveBeenCalledWith({}, "partner-1", { limit: 1 });
+    expect(listMarketplaceNotificationRecipientsForPartner).toHaveBeenCalledWith({}, "partner-1", {
+      limit: 1,
+      requireEmailOptInForKind: "initial"
+    });
     expect(sendTransactionalEmail).toHaveBeenCalledWith(expect.objectContaining({
       subject: "[HS FINDER] 운송 견적 알림: 신규 요청",
       to: "partner-admin@example.test"

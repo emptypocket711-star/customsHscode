@@ -657,6 +657,28 @@
 - `rg -n "P117.1|P118.1|email opt-in|notification preference|수신 설정|수신 거부|unsubscribe|partner_preferences.notification_enabled|MARKETPLACE_NOTIFICATION_PREFERENCES_PLAN" docs/ROADMAP.md docs/WORK_LOG.md docs/MARKETPLACE_NOTIFICATION_PREFERENCES_PLAN.md`
 - `git diff --check`
 
+### marketplace email notification preference schema
+
+- 이전 작업은 P117 사용자별 수신 설정과 거부 기준을 정한 문서 작업이고, 이번 작업은 P118 실제 schema/RLS/resolver gate를 추가한 코드 작업이다.
+- `marketplace_notification_preferences` migration을 추가했다.
+- channel은 `email`, notification kind는 `initial`, `deadline_reminder`로 제한했다.
+- `enabled` 기본값은 `false`로 두어 preference row가 없으면 email 미동의로 처리한다.
+- RLS는 사용자가 자기 preference row만 읽고 쓰게 하고, staff read와 service-role job access를 분리했다.
+- `partner_preferences.notification_enabled`는 회사 단위 매칭/노출 preference로 유지하고, 사용자 email 동의와 섞지 않았다.
+- `transactional_email` provider가 notification kind별 email opt-in을 요구하도록 recipient resolver 호출을 바꿨다.
+- resolver는 profiles 후보를 먼저 넉넉히 조회한 뒤 preference enabled row로 필터링하고 최종 limit을 적용한다.
+- PostgreSQL policy 이름 63바이트 truncation notice를 발견해 짧은 policy 이름과 drop guard로 정리했다.
+- 이번 P118은 P117처럼 정책 문서화가 아니다. 실제 production email skeleton에서 수신자가 명시적 opt-in 사용자로 제한되도록 강제한 작업이다.
+- 다음 작업은 P119 marketplace email notification settings UI다. 이번 P118이 DB/RLS/resolver gate라면, P119는 사용자가 로그인 상태에서 실제로 `initial`, `deadline_reminder` email 수신 설정을 켜고 끄는 서버 액션과 설정 화면을 붙이는 작업이다.
+
+검증:
+
+- `npx vitest run server/jobs/marketplace-notification-recipients.test.ts server/jobs/marketplace-notification-provider.test.ts server/repositories/platform-marketplace-governance.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `psql postgresql://postgres:postgres@127.0.0.1:54322/postgres -v ON_ERROR_STOP=1 -f supabase/migrations/20260603001000_marketplace_notification_preferences.sql`
+- `supabase db lint --local`
+
 ## 2026-06-02
 
 ### local login review smoke
