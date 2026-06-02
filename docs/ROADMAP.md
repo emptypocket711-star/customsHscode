@@ -405,7 +405,8 @@
 | P114.1 marketplace notification recipient resolver | 완료 | provider 준비상태 점검이 아니라 파트너 회사의 알림 수신 대상 사용자를 안전하게 고르는 read helper를 만든다 | partner notification recipients | unit, typecheck, lint |
 | P115.1 marketplace transactional email provider skeleton | 완료 | 수신자 후보 조회가 아니라 resolver를 사용해 외부 transactional email provider skeleton을 worker sender로 연결한다 | email provider skeleton | unit, typecheck, lint, rehearsal |
 | P116.1 marketplace transactional email provider self-review | 완료 | email provider skeleton 구현이 아니라 민감정보, recipient missing, readiness, 운영 runbook 차단 조건을 자체 리뷰한다 | email provider safety review | tests, docs, route rehearsal |
-| P117.1 marketplace notification preference and unsubscribe planning | 예정 | email provider 안전 리뷰가 아니라 파트너 사용자별 알림 수신 설정과 거부 기준을 어떻게 둘지 정한다 | notification preference plan | product/security review |
+| P117.1 marketplace notification preference and unsubscribe planning | 완료 | email provider 안전 리뷰가 아니라 파트너 사용자별 알림 수신 설정과 거부 기준을 어떻게 둘지 정한다 | notification preference policy selected | product/security review |
+| P118.1 marketplace email notification preference schema | 예정 | 수신 설정 정책 문서화가 아니라 실제 사용자별 email opt-in 저장 schema와 resolver gate를 추가한다 | email preference schema | migration, RLS, unit |
 
 #### P109 다음 병목 선정
 
@@ -534,6 +535,23 @@ P116에서 `transactional_email` provider skeleton을 자체 리뷰했다.
 남은 위험은 production email rehearsal 미실행, 다중 수신자 fanout 미구현, 사용자별 수신 설정/거부 정책 미구현, branded email template 미구현이다.
 
 다음 작업은 P117 marketplace notification preference and unsubscribe planning이다. P116이 provider 안전 리뷰라면, P117은 실제 운영 전 파트너 사용자별 알림 수신 설정과 거부 기준을 어떻게 둘지 정하는 작업이다.
+
+#### P117 알림 수신 설정과 거부 기준
+
+P117에서 marketplace opportunity email은 사용자별 opt-in으로 운영하기로 결정했다.
+
+핵심 기준:
+
+1. 파트너 회사 매칭 알림은 인앱 inbox가 기본 운영 표면이다.
+2. 외부 email은 사용자별 명시적 수신 동의가 있을 때만 보낸다.
+3. preference row가 없으면 email 수신 거부로 본다.
+4. `partner_preferences.notification_enabled`는 회사 단위 매칭/노출 preference이며 사용자 email 동의로 쓰지 않는다.
+5. MVP에서는 공개 unsubscribe 링크를 만들지 않고, 로그인한 설정 화면에서 수신 설정을 바꾸게 한다.
+6. 공개 unsubscribe token, 감사 로그, abuse handling은 별도 설계 후 추가한다.
+
+세부 정책은 [MARKETPLACE_NOTIFICATION_PREFERENCES_PLAN.md](./MARKETPLACE_NOTIFICATION_PREFERENCES_PLAN.md)에 정리했다.
+
+다음 작업은 P118 marketplace email notification preference schema다. P117이 수신 설정 정책을 고정한 문서 작업이라면, P118은 실제 migration/RLS/repository/resolver gate를 추가해 `transactional_email` 수신자가 명시적 opt-in 사용자로 제한되게 만드는 작업이다.
 
 #### P34 다음 코드 작업 후보
 

@@ -639,6 +639,24 @@
 - `rg -n "transactional_email|provider_recipient_missing|RESEND_API_KEY|NOTIFICATION_FROM_EMAIL|recipient_missing|claimedWithoutSenderCount|sendReadiness" server/jobs server/repositories docs/MARKETPLACE_NOTIFICATION_RUNBOOK.md app/api/jobs/marketplace-notifications/route.ts`
 - `git diff --check`
 
+### marketplace notification preference and unsubscribe planning
+
+- 이전 작업은 P116 marketplace `transactional_email` provider 안전 리뷰이고, 이번 작업은 P117 실제 운영 전 파트너 사용자별 알림 수신 설정과 거부 기준을 정한 작업이다.
+- `MARKETPLACE_NOTIFICATION_PREFERENCES_PLAN.md`를 추가했다.
+- marketplace opportunity email은 사용자별 opt-in으로 운영하기로 결정했다.
+- 인앱 알림은 파트너 회사 매칭의 기본 운영 표면으로 유지하고, 외부 email은 명시적으로 동의한 사용자에게만 보낸다.
+- preference row가 없으면 email 수신 거부로 본다.
+- `partner_preferences.notification_enabled`는 회사 단위 매칭/노출 preference이며 사용자 email 동의로 쓰지 않는 기준을 문서화했다.
+- MVP에서는 공개 unsubscribe 링크를 만들지 않고, 로그인한 설정 화면에서 수신 설정을 바꾸게 한다.
+- 공개 unsubscribe token, audit event, abuse handling, 다중 수신자 fanout, digest, branded template은 후속 작업으로 미뤘다.
+- 이번 P117은 P116처럼 provider 코드와 readiness를 점검한 작업이 아니다. 실제 email 운영 전에 “누구에게 보내도 되는가”를 정한 제품/보안 정책 작업이다.
+- 다음 작업은 P118 marketplace email notification preference schema다. 이번 P117이 수신 설정 정책을 고정한 문서 작업이라면, P118은 실제 migration/RLS/repository/resolver gate를 추가해 `transactional_email` 수신자가 명시적 opt-in 사용자로 제한되게 만드는 작업이다.
+
+검증:
+
+- `rg -n "P117.1|P118.1|email opt-in|notification preference|수신 설정|수신 거부|unsubscribe|partner_preferences.notification_enabled|MARKETPLACE_NOTIFICATION_PREFERENCES_PLAN" docs/ROADMAP.md docs/WORK_LOG.md docs/MARKETPLACE_NOTIFICATION_PREFERENCES_PLAN.md`
+- `git diff --check`
+
 ## 2026-06-02
 
 ### local login review smoke
