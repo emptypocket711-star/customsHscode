@@ -232,7 +232,7 @@ export function ServiceRequestCompletionReportPanel({
                 </form>
               ) : (
                 <button className="focus-ring inline-flex h-8 items-center justify-center rounded-md border border-slate-300 bg-slate-50 px-2 text-xs font-semibold text-slate-500 disabled:cursor-not-allowed" disabled type="button">
-                  {step.disabledReason ?? "상태 확인 완료"}
+                  {step.disabledReason ? `대기: ${step.disabledReason}` : "상태 확인 완료"}
                 </button>
               )}
             </div>

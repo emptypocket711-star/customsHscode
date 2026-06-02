@@ -290,7 +290,8 @@
 | P71.4 clearance list status browser review | 완료 | 운송 목록 검증이 아니라 통관 요청 목록에서도 선정·진행·완료 다음 작업 라벨이 실제 화면에서 어색하지 않은지 확인한다 | clearance list browser review | browser |
 | P72.1 marketplace completion document gap review | 완료 | 거래 상태 라벨 정리가 아니라 완료 리포트의 최종 보관 서류 누락 안내가 화주와 파트너 양쪽에서 충분히 행동 가능하게 보이는지 점검한다 | completion document gap UX | browser, typecheck, lint |
 | P72.2 completion draft CTA placement review | 완료 | 보관 서류 누락 문구가 아니라 완료 리포트 초안 작성 CTA가 완료 직후 화면에서 충분히 찾기 쉬운지 점검한다 | completion draft CTA UX | browser, typecheck, lint |
-| P72.3 completion workflow disabled guidance | 예정 | 초안 CTA 배치가 아니라 제출·확인 단계 카드의 비활성 버튼 문구가 왜 대기인지 충분히 설명하는지 보강한다 | completion workflow disabled copy | unit, browser, typecheck, lint |
+| P72.3 completion workflow disabled guidance | 완료 | 초안 CTA 배치가 아니라 제출·확인 단계 카드의 비활성 버튼 문구가 왜 대기인지 충분히 설명하는지 보강한다 | completion workflow disabled copy | unit, browser, typecheck, lint |
+| P72.4 feedback submitted state clarity | 예정 | 완료 리포트 단계 문구가 아니라 완료 후 피드백이 이미 제출된 상태에서 사용자가 다음 행동을 혼동하지 않는지 점검한다 | feedback submitted UX | browser, typecheck, lint |
 
 #### P34 다음 코드 작업 후보
 

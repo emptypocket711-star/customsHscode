@@ -9,11 +9,25 @@ describe("completion report workflow", () => {
       requiredDocumentCount: 0,
       viewerRole: "requester"
     }).map((step) => [step.label, step.state, step.disabledReason])).toEqual([
-      ["초안 저장", "current", "완료 리포트 초안 저장 필요"],
-      ["리포트 제출", "blocked", "완료 리포트 초안 저장 필요"],
-      ["화주 확인", "pending", "리포트 제출 후 확인 가능"],
-      ["운영 검토", "pending", "양측 확인 후 운영 검토 가능"],
-      ["보관 잠금", "pending", "운영 검토 후 잠금 가능"]
+      ["초안 저장", "current", "아래 초안 저장을 먼저 완료하세요"],
+      ["리포트 제출", "blocked", "초안 저장 후 제출할 수 있습니다"],
+      ["화주 확인", "pending", "리포트 제출 후 확인할 수 있습니다"],
+      ["운영 검토", "pending", "화주 또는 파트너 확인 후 운영 검토가 가능합니다"],
+      ["보관 잠금", "pending", "운영 검토 완료 후 잠금할 수 있습니다"]
+    ]);
+  });
+
+  it("explains that draft reports need archive documents before submit", () => {
+    expect(buildCompletionReportWorkflow({
+      hasReport: true,
+      linkedDocumentCount: 0,
+      requiredDocumentCount: 1,
+      status: "draft",
+      viewerRole: "requester"
+    }).map((step) => [step.label, step.state, step.disabledReason])).toContainEqual([
+      "리포트 제출",
+      "blocked",
+      "필수 보관 서류 연결 후 제출할 수 있습니다"
     ]);
   });
 
