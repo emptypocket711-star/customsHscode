@@ -95,6 +95,7 @@ function sanitizeDeliveryMetadata(metadata: Record<string, unknown> | undefined,
 function sanitizeProviderError(message: string) {
   const normalized = message.trim().slice(0, 160).toLowerCase();
   if (!normalized) return "unknown";
+  if (normalized.includes("recipient")) return "provider_recipient_missing";
   if (normalized.includes("timeout")) return "provider_timeout";
   if (normalized.includes("rate")) return "provider_rate_limited";
   if (normalized.includes("auth") || normalized.includes("key")) return "provider_auth_error";

@@ -598,6 +598,28 @@
 - `npm run typecheck`
 - `npm run lint`
 
+### marketplace transactional email provider skeleton
+
+- 이전 작업은 P114 파트너 회사 알림 수신자 resolver이고, 이번 작업은 P115 그 resolver를 사용해 marketplace notification `transactional_email` provider skeleton을 연결한 작업이다.
+- provider allowlist에 `transactional_email`을 추가했다.
+- `transactional_email` provider는 Supabase client가 주입된 경우에만 sender를 만든다.
+- sender는 P114 recipient resolver로 partner company의 onboarding 완료 client profile 중 관리자 우선 수신자 1명을 찾는다.
+- 수신자가 없으면 `recipient_missing` 오류를 던지고, delivery 실패 정규화는 `provider_recipient_missing`으로 저장되게 했다.
+- `sendTransactionalEmail`을 사용해 Resend 기반 transactional email을 보낸다.
+- 메일 본문은 요청 유형, 알림 유형, 알림 사유, 대시보드 확인 안내만 담고 요청 ID, 서류명, 질문/답변 원문, 견적 금액, 개인정보는 넣지 않는다.
+- `transactional_email` readiness는 `RESEND_API_KEY`, `NOTIFICATION_FROM_EMAIL`까지 요구한다.
+- worker route는 service-role Supabase client를 provider와 worker에 함께 전달한다.
+- `MARKETPLACE_NOTIFICATION_RUNBOOK.md`의 지원 provider와 env 설명을 `transactional_email` 기준으로 갱신했다.
+- 이번 P115는 P114처럼 받을 사람을 고르는 read helper가 아니다. 실제 sender provider skeleton을 route/worker 경계에 연결하는 작업이다.
+- 다음 작업은 P116 marketplace transactional email provider self-review다. 이번 P115가 provider skeleton 구현이라면, P116은 실제 운영 전 민감정보, recipient missing, readiness, runbook 차단 조건을 다시 검증하는 작업이다.
+
+검증:
+
+- `npx vitest run server/jobs/marketplace-notification-provider.test.ts server/jobs/marketplace-notification-send-readiness.test.ts server/jobs/marketplace-notification-recipients.test.ts server/jobs/marketplace-notification-worker.service.test.ts server/repositories/marketplace-notification-deliveries.repository.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- local-only env override로 `npm run ops:marketplace-notifications:rehearse-local`: dry-run, send 차단, claim-only `result=ok`
+
 ## 2026-06-02
 
 ### local login review smoke

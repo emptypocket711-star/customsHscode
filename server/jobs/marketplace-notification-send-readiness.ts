@@ -15,7 +15,13 @@ function isSupportedProvider(value: string | undefined) {
 }
 
 export function getMarketplaceNotificationSendReadiness(
-  env: Partial<Record<"MARKETPLACE_NOTIFICATIONS_SEND_ENABLED" | "MARKETPLACE_NOTIFICATIONS_PROVIDER", string | undefined>>
+  env: Partial<Record<
+    "MARKETPLACE_NOTIFICATIONS_SEND_ENABLED" |
+    "MARKETPLACE_NOTIFICATIONS_PROVIDER" |
+    "NOTIFICATION_FROM_EMAIL" |
+    "RESEND_API_KEY",
+    string | undefined
+  >>
 ): MarketplaceNotificationSendReadiness {
   const enabled = isEnabled(env.MARKETPLACE_NOTIFICATIONS_SEND_ENABLED);
   const reasons: string[] = [];
@@ -28,6 +34,13 @@ export function getMarketplaceNotificationSendReadiness(
     reasons.push("MARKETPLACE_NOTIFICATIONS_PROVIDER is not configured.");
   } else if (!isSupportedProvider(env.MARKETPLACE_NOTIFICATIONS_PROVIDER)) {
     reasons.push("MARKETPLACE_NOTIFICATIONS_PROVIDER is not supported.");
+  } else if (env.MARKETPLACE_NOTIFICATIONS_PROVIDER === "transactional_email") {
+    if (!env.RESEND_API_KEY) {
+      reasons.push("RESEND_API_KEY is not configured.");
+    }
+    if (!env.NOTIFICATION_FROM_EMAIL) {
+      reasons.push("NOTIFICATION_FROM_EMAIL is not configured.");
+    }
   }
 
   return {

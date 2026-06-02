@@ -403,7 +403,8 @@
 | P112.1 completion report non-draft edit guard UX | 완료 | 저장 mutation 검증이 아니라 제출·운영검토·잠금 리포트에서 수정 폼이 열리는 UX/권한 불일치를 정리한다 | non-draft edit guard | UX, browser, typecheck, lint, E2E |
 | P113.1 notification provider readiness review | 완료 | 완료 리포트 후속 UX가 아니라 실제 알림 provider 운영 연결 전에 env, adapter, dry-run 검증 범위를 다시 점검한다 | recipient resolver selected | code/ops review |
 | P114.1 marketplace notification recipient resolver | 완료 | provider 준비상태 점검이 아니라 파트너 회사의 알림 수신 대상 사용자를 안전하게 고르는 read helper를 만든다 | partner notification recipients | unit, typecheck, lint |
-| P115.1 marketplace transactional email provider skeleton | 예정 | 수신자 후보 조회가 아니라 resolver를 사용해 외부 transactional email provider skeleton을 worker sender로 연결한다 | email provider skeleton | unit, typecheck, lint |
+| P115.1 marketplace transactional email provider skeleton | 완료 | 수신자 후보 조회가 아니라 resolver를 사용해 외부 transactional email provider skeleton을 worker sender로 연결한다 | email provider skeleton | unit, typecheck, lint, rehearsal |
+| P116.1 marketplace transactional email provider self-review | 예정 | email provider skeleton 구현이 아니라 민감정보, recipient missing, readiness, 운영 runbook 차단 조건을 자체 리뷰한다 | email provider safety review | tests, docs, route rehearsal |
 
 #### P109 다음 병목 선정
 
@@ -499,6 +500,22 @@ P114에서 marketplace 알림 발송 전 단계인 recipient resolver를 추가�
 5. helper는 이메일을 반환하지만 delivery metadata 저장은 하지 않는다.
 
 다음 작업은 P115 marketplace transactional email provider skeleton이다. P114가 받을 사람을 고르는 read helper라면, P115는 이 helper를 사용해 Resend 기반 transactional email sender skeleton을 marketplace notification worker에 안전하게 연결하는 작업이다.
+
+#### P115 transactional email provider skeleton
+
+P115에서 marketplace notification provider에 `transactional_email` skeleton을 추가했다.
+
+구현 기준:
+
+1. provider allowlist는 `internal_dry_run`, `transactional_email`만 허용한다.
+2. `transactional_email`은 service-role Supabase client가 있을 때만 sender를 만든다.
+3. P114 recipient resolver로 partner company의 onboarding 완료 client recipient를 1명 찾는다.
+4. 수신자가 없으면 메일을 보내지 않고 `recipient_missing`으로 실패한다.
+5. 메일 본문에는 요청 ID, 서류명, 질문/답변 원문, 견적 금액, 개인정보를 넣지 않는다.
+6. `transactional_email` readiness는 `RESEND_API_KEY`, `NOTIFICATION_FROM_EMAIL`까지 요구한다.
+7. worker route는 같은 Supabase client를 provider와 worker에 넘겨 route-level 연결을 유지한다.
+
+다음 작업은 P116 marketplace transactional email provider self-review다. P115가 provider skeleton 구현이라면, P116은 실제 운영 전 민감정보, recipient missing, readiness, runbook 차단 조건을 다시 검증하는 작업이다.
 
 #### P34 다음 코드 작업 후보
 

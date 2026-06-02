@@ -34,6 +34,31 @@ describe("marketplace notification send readiness", () => {
     });
   });
 
+  it("requires email environment for the transactional email provider", () => {
+    expect(getMarketplaceNotificationSendReadiness({
+      MARKETPLACE_NOTIFICATIONS_PROVIDER: "transactional_email",
+      MARKETPLACE_NOTIFICATIONS_SEND_ENABLED: "true"
+    })).toEqual({
+      enabled: true,
+      ready: false,
+      reasons: [
+        "RESEND_API_KEY is not configured.",
+        "NOTIFICATION_FROM_EMAIL is not configured."
+      ]
+    });
+
+    expect(getMarketplaceNotificationSendReadiness({
+      MARKETPLACE_NOTIFICATIONS_PROVIDER: "transactional_email",
+      MARKETPLACE_NOTIFICATIONS_SEND_ENABLED: "true",
+      NOTIFICATION_FROM_EMAIL: "HS Finder <noreply@example.test>",
+      RESEND_API_KEY: "resend-key"
+    })).toEqual({
+      enabled: true,
+      ready: true,
+      reasons: []
+    });
+  });
+
   it("rejects unsupported providers even when sending is enabled", () => {
     expect(getMarketplaceNotificationSendReadiness({
       MARKETPLACE_NOTIFICATIONS_PROVIDER: "email",

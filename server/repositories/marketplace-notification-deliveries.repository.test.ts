@@ -245,9 +245,14 @@ describe("marketplace notification delivery repository", () => {
       deliveryId: "delivery-2",
       errorMessage: "timeout while sending invoice payload"
     });
+    await markMarketplaceNotificationDeliveryFailed(supabase as never, {
+      deliveryId: "delivery-3",
+      errorMessage: "recipient_missing"
+    });
 
     expect(updates[0]).toMatchObject({ provider_id: "provider-1", status: "sent" });
     expect(updates[1]).toMatchObject({ error_message: "provider_timeout", status: "retryable_failed" });
+    expect(updates[2]).toMatchObject({ error_message: "provider_recipient_missing", status: "retryable_failed" });
     expect(eqCalls).toContainEqual(["status", "claimed"]);
   });
 

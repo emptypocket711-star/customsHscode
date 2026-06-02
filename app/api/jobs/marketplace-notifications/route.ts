@@ -46,12 +46,11 @@ async function handleMarketplaceNotifications(request: NextRequest) {
   try {
     const sendReadiness = getMarketplaceNotificationSendReadiness({
       MARKETPLACE_NOTIFICATIONS_PROVIDER: process.env.MARKETPLACE_NOTIFICATIONS_PROVIDER,
-      MARKETPLACE_NOTIFICATIONS_SEND_ENABLED: process.env.MARKETPLACE_NOTIFICATIONS_SEND_ENABLED
+      MARKETPLACE_NOTIFICATIONS_SEND_ENABLED: process.env.MARKETPLACE_NOTIFICATIONS_SEND_ENABLED,
+      NOTIFICATION_FROM_EMAIL: process.env.NOTIFICATION_FROM_EMAIL,
+      RESEND_API_KEY: process.env.RESEND_API_KEY
     });
     const sendRequested = isSendRequested(request);
-    const sender = sendRequested
-      ? createMarketplaceNotificationProvider(process.env.MARKETPLACE_NOTIFICATIONS_PROVIDER)
-      : null;
 
     if (sendRequested) {
       if (!sendReadiness.ready) {
@@ -61,12 +60,6 @@ async function handleMarketplaceNotifications(request: NextRequest) {
         );
       }
 
-      if (!sender) {
-        return NextResponse.json(
-          { error: "Marketplace notification provider is not supported.", sendReadiness },
-          { status: 400 }
-        );
-      }
     }
 
     if (!hasSupabaseServiceRoleEnv()) {
@@ -76,7 +69,19 @@ async function handleMarketplaceNotifications(request: NextRequest) {
       );
     }
 
-    const result = await runMarketplaceNotificationWorker(createSupabaseServiceRoleClient(), {
+    const supabase = createSupabaseServiceRoleClient();
+    const sender = sendRequested
+      ? createMarketplaceNotificationProvider(process.env.MARKETPLACE_NOTIFICATIONS_PROVIDER, { supabase })
+      : null;
+
+    if (sendRequested && !sender) {
+      return NextResponse.json(
+        { error: "Marketplace notification provider is not supported.", sendReadiness },
+        { status: 400 }
+      );
+    }
+
+    const result = await runMarketplaceNotificationWorker(supabase, {
       dryRun: parseBoolean(request.nextUrl.searchParams.get("dryRun")),
       limit: parsePositiveInteger(request, "limit"),
       reminderWindowHours: parsePositiveInteger(request, "reminderWindowHours"),
