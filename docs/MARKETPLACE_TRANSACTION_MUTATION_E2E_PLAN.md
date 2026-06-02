@@ -68,6 +68,15 @@ Before each mutation run:
 - partner dashboard `입찰 가능` means matched open or bids-received requests where the partner can still submit or review a bid opportunity.
 - partner dashboard `파트너 업무` is broader: it includes bid opportunities plus selected or in-progress requests where the selected partner must continue the transaction lifecycle.
 
+### Requester Publish Readiness
+
+- requester freight drafts must show missing publish fields before the publish action is usable.
+- freight publish required fields are origin country, destination country, and transport mode.
+- freight drafts missing those fields should show `포워더 공개 전 필수값을 보완해야 합니다.`, `누락값: 출발 국가, 도착 국가, 운송 방식`, and a direct `초안 작성으로 이동` shortcut.
+- requester clearance drafts must not expose the broker publish settings until destination country is present.
+- clearance drafts missing destination country should show `관세사무소 공개 전 필수값을 보완해야 합니다.`, `누락값: 목적국`, and a direct `초안 작성으로 이동` shortcut.
+- publish readiness assertions are separate from post-completion handoff assertions: they guard draft-to-open conversion before partner bidding starts.
+
 ### Freight Partner Submit
 
 - forwarder opens `/requests/freight/opportunities/{mutationFreightRequestId}`
