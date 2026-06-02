@@ -7645,3 +7645,23 @@
 - 운송 상세에서 `견적 제출 전 확인`, 참여 상태, `포워더 운송 견적 제출` 확인
 - Playwright 관세사무소 계정으로 `/requests/clearance/opportunities/75000000-0000-4000-8000-000000000102#opportunity-bid` 접속
 - 통관 상세에서 `견적 제출 전 확인`, `HS/FTA/요건은 담당자 검토 필요`, `관세사무소 예비 견적 제출` 확인
+
+### marketplace bid readiness route regression
+
+- 이전 작업은 파트너 견적 제출 전 확인 요약을 추가한 P140.1이고, 이번 작업은 연속 UI 변경 후 역할별 주요 route가 계속 정상 렌더링되는지 확인한 P141.1이다.
+- 화주 계정으로 대시보드, 운송 목록, 운송 상세 견적 영역, 통관 목록, 통관 상세 견적 영역을 확인했다.
+- 포워더 계정으로 대시보드, 운송 요청 목록, 운송 opportunity 상세 견적 영역을 확인했다.
+- 관세사무소 계정으로 대시보드, 통관 의뢰 목록, 통관 opportunity 상세 견적 영역을 확인했다.
+- 첫 smoke에서는 dashboard 숨김 내비게이션 텍스트와 실제 탭 문구 차이 때문에 assertion을 조정했다.
+- 조정 후 실제 화면 문구 기준으로 role route smoke가 통과했다.
+- 새 코드 변경은 없고, 문서 상태만 완료로 갱신했다.
+- 로컬 파일만 수정했고 원격 푸시, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- Playwright route smoke:
+  - requester `/dashboard`, `/requests/freight`, `/requests/freight/75000000-0000-4000-8000-000000000001#request-bids`, `/requests/clearance`, `/requests/clearance/75000000-0000-4000-8000-000000000002#request-bids`
+  - forwarder `/dashboard`, `/requests/freight`, `/requests/freight/opportunities/75000000-0000-4000-8000-000000000101#opportunity-bid`
+  - broker `/dashboard`, `/requests/clearance`, `/requests/clearance/opportunities/75000000-0000-4000-8000-000000000102#opportunity-bid`
