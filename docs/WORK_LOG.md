@@ -442,6 +442,27 @@
 - `npx vitest run server/repositories/platform-marketplace-governance.test.ts`
 - `npx supabase db lint --local`: `No schema errors found`
 
+### partner preference match diagnostics review
+
+- 이전 작업은 P106 운영 RPC lint blocker 정리이고, 이번 작업은 P107 파트너 관심 조건 UI와 저장값 정규화가 매칭 0건을 줄일 수 있는지 보강한 작업이다.
+- 파트너 관심 조건 schema에서 국가 코드는 ISO 2자리 대문자로 정규화하고, 잘못된 국가 필터는 저장 전에 막는다.
+- 항구·공항·지역 값은 대문자로 정규화한다.
+- 화물 태그는 소문자로 정규화한다.
+- 파트너 관심 조건 화면에 `매칭 범위 진단 기준` 안내를 추가했다.
+- 운송 조건은 국가, 운송 방식, 항구, 화물 태그가 모두 매칭 조건에 사용됨을 안내한다.
+- 화물 태그 예시는 실제 요청 태그로 생성되는 `used_car`, `hazardous`, `temperature_controlled`만 노출하도록 바꿨다.
+- 통관 조건은 긴급 건 대응 가능 여부가 긴급 통관 의뢰 매칭에 영향을 준다는 점을 안내한다.
+- 다음 작업은 P108 marketplace zero-match end-to-end review다. 이번 P107이 파트너 관심 조건 저장 전 안내라면, P108은 화주 공개 후 0건 상태가 요청자·운영자 화면까지 이어지는지 E2E 관점으로 확인하는 작업이다.
+
+검증:
+
+- `npx vitest run features/partner-preferences/schemas.test.ts features/partner-preferences/partner-preferences-panel.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
+- Playwright forwarder check: `/settings/members`에서 운송 매칭 진단 문구 확인
+- Playwright broker check: `/settings/members`에서 통관 긴급 매칭 진단 문구 확인
+
 ## 2026-06-02
 
 ### local login review smoke

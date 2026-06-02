@@ -43,6 +43,19 @@ const notificationRules = [
   "알림을 꺼도 파트너 워크스페이스의 입찰 가능 요청은 계속 확인할 수 있습니다."
 ];
 
+const matchDiagnostics: Record<PartnerServiceType, string[]> = {
+  clearance: [
+    "국가 조건을 좁히면 해당 목적국 의뢰만 노출됩니다.",
+    "긴급 건 대응 가능을 끄면 긴급 통관 의뢰는 매칭되지 않습니다.",
+    "처음에는 국가 조건을 넓게 두고 실제 문의가 쌓인 뒤 좁히는 편이 안전합니다."
+  ],
+  freight: [
+    "국가, 운송 방식, 항구, 화물 태그는 모두 매칭 조건에 사용됩니다.",
+    "화물 태그는 used_car, hazardous, temperature_controlled 요청에만 매칭됩니다.",
+    "처음에는 항구와 태그를 비워두고 실제 문의가 쌓인 뒤 좁히는 편이 안전합니다."
+  ]
+};
+
 function joinCsv(values: string[]) {
   return values.join(", ");
 }
@@ -81,6 +94,13 @@ function PreferenceForm({
           <p className="mt-1 text-xs leading-5 text-slate-500">{service.description}</p>
         </div>
         <Badge tone={preference.id ? "success" : "neutral"}>{preference.id ? "저장됨" : "미설정"}</Badge>
+      </div>
+
+      <div className="grid gap-1 rounded-md border border-blue-100 bg-blue-50 p-3 text-xs leading-5 text-blue-950">
+        <p className="font-semibold">매칭 범위 진단 기준</p>
+        {matchDiagnostics[preference.serviceType].map((rule) => (
+          <p key={rule}>{rule}</p>
+        ))}
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
@@ -212,9 +232,9 @@ function PreferenceForm({
             defaultValue={joinCsv(preference.cargoTags)}
             disabled={disabled}
             name="cargoTags"
-            placeholder="used_car, food, cosmetics"
+            placeholder="used_car, hazardous, temperature_controlled"
           />
-          <span className="text-xs font-normal leading-5 text-slate-500">쉼표로 여러 태그를 입력합니다. 예: used_car, cosmetics</span>
+          <span className="text-xs font-normal leading-5 text-slate-500">지원 태그만 매칭됩니다. 예: used_car, hazardous, temperature_controlled</span>
         </label>
       </div>
 

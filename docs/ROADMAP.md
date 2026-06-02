@@ -393,7 +393,8 @@
 | P104.1 zero-match operations handoff review | 완료 | 화주 0건 안내가 아니라 운영자가 노출 0건 요청을 발견하고 매칭 조건을 점검할 수 있는 흐름을 확인한다 | operations zero-match queue review | unit, browser, typecheck, lint, route 확인 |
 | P105.1 marketplace match condition next review | 완료 | 운영자 0건 발견 큐가 아니라 실제 매칭 조건 계산과 파트너 관심 조건 저장값이 충분한지 점검한다 | match condition quality review | governance, unit, typecheck, lint, route 확인 |
 | P106.1 operations RPC lint blocker review | 완료 | 매칭 0건 공개 허용이 아니라 Supabase local lint에서 드러난 운영 RPC 모호 컬럼 오류와 local DB 함수 갱신 상태를 정리한다 | operations rpc lint blockers | Supabase lint, governance |
-| P107.1 partner preference match diagnostics review | 예정 | RPC lint 정리가 아니라 파트너 관심 조건 UI가 매칭 0건 원인을 줄일 만큼 충분히 안내하는지 점검한다 | partner preference diagnostics | UX/code review |
+| P107.1 partner preference match diagnostics review | 완료 | RPC lint 정리가 아니라 파트너 관심 조건 UI가 매칭 0건 원인을 줄일 만큼 충분히 안내하는지 점검한다 | partner preference diagnostics | unit, browser, typecheck, lint |
+| P108.1 marketplace zero-match end-to-end review | 예정 | 파트너 관심 조건 안내가 아니라 화주 공개 후 0건 상태가 요청자·운영자 화면까지 이어지는 흐름을 E2E 관점에서 점검한다 | zero-match E2E readiness | route/browser review |
 
 #### P34 다음 코드 작업 후보
 
