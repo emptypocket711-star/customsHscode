@@ -948,6 +948,21 @@
 - `npm run lint`
 - `SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_SERVICE_ROLE_KEY=... npm run ops:marketplace-notifications:rehearse-local`
 
+### marketplace declined re-entry review
+
+- 이전 작업은 P133 참여 보류 상태가 알림 리마인드에서 제외되는지 검증한 작업이고, 이번 작업은 P134 보류 후 다시 참여할 수 있는 복귀 UX 범위를 정한 작업이다.
+- 보류된 opportunity는 목록에 계속 남긴다.
+- 상세에서는 현재 상태를 `참여 보류`로 표시한다.
+- 파트너가 `다시 검토`를 누르면 `declined -> viewed`로 복귀한다.
+- 바로 `interested`로 바꾸지 않고, 질문 또는 견적 제출은 이후 행동으로 둔다.
+- 즉시 email 리마인드 재발송, decline reason 수집, 화주에게 보류 파트너 표시 등은 MVP에서 제외한다.
+- 결정 문서는 `MARKETPLACE_DECLINED_REENTRY_REVIEW.md`에 정리했다.
+- 다음 작업은 P135 marketplace declined re-entry action이다. 이번 P134가 복귀 UX 범위 결정이라면, P135는 `다시 검토` 액션을 실제로 구현하는 작업이다.
+
+검증:
+
+- Product/UX review only. Code execution 없음.
+
 ## 2026-06-02
 
 ### local login review smoke

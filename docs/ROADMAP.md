@@ -422,7 +422,8 @@
 | P131.1 marketplace opportunity decline action | 완료 | 자동 열람 기록이 아니라 파트너가 참여 보류를 명시해 리마인드와 운영 지표에서 구분되게 한다 | opportunity decline action | unit, typecheck, lint, RLS, browser |
 | P132.1 marketplace declined opportunity list clarity | 완료 | 상세 보류 액션이 아니라 opportunity 목록과 요약에서 참여 보류 상태를 더 명확히 구분한다 | declined opportunity list clarity | unit, typecheck, lint, browser |
 | P133.1 marketplace declined reminder regression | 완료 | 목록 표시가 아니라 참여 보류 상태가 알림 리마인드 정책과 worker rehearsal에서 제외되는지 회귀 검증을 보강한다 | declined reminder regression | unit, typecheck, lint, ops rehearsal |
-| P134.1 marketplace declined re-entry review | 예정 | 알림 제외 검증이 아니라 참여 보류 후 다시 참여할 수 있는 복귀 UX가 필요한지 검토하고 최소 구현 범위를 정한다 | declined re-entry review | product/UX review |
+| P134.1 marketplace declined re-entry review | 완료 | 알림 제외 검증이 아니라 참여 보류 후 다시 참여할 수 있는 복귀 UX가 필요한지 검토하고 최소 구현 범위를 정한다 | declined re-entry review | product/UX review |
+| P135.1 marketplace declined re-entry action | 예정 | 복귀 UX 검토가 아니라 파트너 상세에서 참여 보류 요청을 다시 검토 상태로 되돌리는 액션을 구현한다 | declined re-entry action | unit, RLS, browser |
 
 #### P109 다음 병목 선정
 
@@ -832,6 +833,24 @@ P132는 목록에서 보류 상태를 명확히 보여주는 화면 작업이었
 5. 로컬 notification rehearsal은 원격 Supabase URL 안전장치로 1차 차단됐고, 로컬 URL/키를 명시해 재실행 후 통과했다.
 
 다음 작업은 P134 marketplace declined re-entry review다. P133이 보류 상태의 알림 제외 검증이라면, P134는 파트너가 보류 후 다시 참여하고 싶을 때 어떤 복귀 UX가 필요한지 검토하는 작업이다.
+
+#### P134 declined re-entry review
+
+P134에서 참여 보류 후 복귀 UX 범위를 결정했다.
+
+P133은 참여 보류 상태가 알림 리마인드에서 제외되는지 검증한 작업이었다. 이번 P134는 보류 후 파트너가 다시 참여하고 싶을 때 어떤 상태로 복귀해야 하는지 정한 제품/UX 결정 작업이다.
+
+결정:
+
+1. 보류된 opportunity는 목록에 계속 남긴다.
+2. 상세에서는 현재 상태를 `참여 보류`로 표시한다.
+3. 파트너가 `다시 검토`를 누르면 `declined -> viewed`로 되돌린다.
+4. 바로 `interested`로 바꾸지 않는다. 관심 표시나 견적 제출은 이후 행동으로 남긴다.
+5. 즉시 email 리마인드 재발송, decline reason 수집, 화주에게 보류 파트너 표시 등은 MVP에서 제외한다.
+
+상세 결정은 [MARKETPLACE_DECLINED_REENTRY_REVIEW.md](./MARKETPLACE_DECLINED_REENTRY_REVIEW.md)에 정리했다.
+
+다음 작업은 P135 marketplace declined re-entry action이다. P134가 복귀 UX 범위를 결정한 작업이라면, P135는 파트너 상세에서 `다시 검토` 액션을 실제로 구현하는 작업이다.
 
 #### P34 다음 코드 작업 후보
 
