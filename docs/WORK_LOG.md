@@ -7722,3 +7722,18 @@
 - `npm run lint`
 - Playwright 개발자 계정으로 `/operations/requests/75000000-0000-4000-8000-000000000001#request-bids` 접속
 - 운영 상세에서 `수정·철회 직접 처리 미제공`, 정책 문구, `견적 금액과 메시지 원문은 표시하지 않습니다.` 안내 확인
+
+### operations bid conversion prompt policy
+
+- 이전 작업은 운영 요청 상세 화면에 수정·철회 정책을 표시한 P144.1이고, 이번 작업은 운영자가 복사하는 개선 프롬프트에도 같은 MVP 정책 기준을 포함한 P145.1이다.
+- `bid_conversion` 개선 프롬프트에 현재 MVP에서는 파트너 직접 견적 수정·철회 기능을 열지 않고, 조건 변경은 운영 확인 후 별도 처리 안내로 둔다는 문장을 추가했다.
+- 프롬프트 테스트를 추가해 정책 문구가 포함되는지 확인했다.
+- 같은 테스트에서 견적 메시지, 금액, 품목 설명, 요청 제목 같은 민감 원문이 프롬프트에 섞이지 않는지도 고정했다.
+- 새 migration, RLS 변경은 없다.
+- 로컬 파일만 수정했고 원격 푸시, 배포는 하지 않았다.
+
+검증:
+
+- `npx vitest run server/repositories/platform-operations.repository.test.ts`
+- `npm run typecheck`
+- `npm run lint`

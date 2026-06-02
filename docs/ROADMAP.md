@@ -433,6 +433,7 @@
 | P142.1 partner submitted bid duplicate UX guard | 완료 | route 검증이 아니라 이미 견적을 제출한 파트너에게 중복 제출 form 대신 제출 상태를 보여준다 | own submitted bid summary | UX self-review, typecheck, lint, browser |
 | P143.1 bid revision policy visibility | 완료 | 중복 제출 form 숨김이 아니라 제출 후 수정·철회 직접 처리 불가 정책을 화주·파트너 견적 화면에 일관되게 표시한다 | bid revision policy notice | UX self-review, typecheck, lint, browser |
 | P144.1 operations bid revision policy visibility | 완료 | 사용자 화면 정책 문구가 아니라 운영 요청 상세에서 견적 상태와 수정·철회 정책을 민감정보 없이 확인하게 한다 | operations bid policy summary | typecheck, lint, browser |
+| P145.1 operations bid conversion prompt policy | 완료 | 운영 화면 표시가 아니라 복사용 개선 프롬프트가 견적 수정·철회 MVP 정책을 오해 없이 포함하게 한다 | bid prompt policy guard | unit, typecheck, lint |
 
 #### P109 다음 병목 선정
 

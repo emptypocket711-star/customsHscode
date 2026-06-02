@@ -504,6 +504,49 @@ describe("platform request operations summary", () => {
     expect(prompt?.prompt).not.toContain("민감한 요청 제목");
   });
 
+  it("keeps bid conversion prompts aligned with the no-direct-revision MVP policy", () => {
+    const detail: PlatformRequestOperationsDetail = {
+      bids: [{ bidId: "bid-1", bidderCompanyId: "company-1", currency: "KRW", leadTimeDays: 2, message: "민감한 견적 메시지", selectedAt: null, status: "submitted", submittedAt: "2026-06-01T00:00:00.000Z", totalAmount: 100000 }],
+      clearanceDetail: null,
+      completionReport: null,
+      documents: [],
+      feedbackSummary: { averageRating: null, count: 0, lowScoreCount: 0 },
+      freightDetail: null,
+      matchSummary: {
+        failedNotificationCount: 0,
+        matchedPartnerCount: 1,
+        pendingNotificationCount: 0,
+        sentNotificationCount: 1,
+        skippedNotificationCount: 0
+      },
+      questions: [],
+      request: {
+        createdAt: "2026-06-01T00:00:00.000Z",
+        deadlineAt: null,
+        destinationCountryCode: "KR",
+        direction: "import",
+        hskCode: null,
+        id: "req-1",
+        originCountryCode: "CN",
+        productSummary: "민감한 품목 설명",
+        requestType: "freight",
+        status: "bids_received",
+        title: "민감한 요청 제목"
+      },
+      schemaReady: true
+    };
+
+    const prompt = buildPlatformRequestImprovementPrompt(detail);
+
+    expect(prompt?.category).toBe("bid_conversion");
+    expect(prompt?.prompt).toContain("직접 견적 수정·철회 기능을 열지 않고");
+    expect(prompt?.prompt).toContain("조건 변경은 운영 확인 후 별도 처리");
+    expect(prompt?.prompt).not.toContain("민감한 견적 메시지");
+    expect(prompt?.prompt).not.toContain("100000");
+    expect(prompt?.prompt).not.toContain("민감한 품목 설명");
+    expect(prompt?.prompt).not.toContain("민감한 요청 제목");
+  });
+
   it("builds match-condition prompts when an open request has no matched partners", () => {
     const detail: PlatformRequestOperationsDetail = {
       bids: [],
