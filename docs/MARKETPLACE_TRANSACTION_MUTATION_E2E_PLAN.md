@@ -97,8 +97,10 @@ Before each mutation run:
 
 - requester opens freight request detail
 - page shows `받은 견적`, submitted amount, partner selection CTA
+- freight bid cards expose comparison badges for `최저 총액`, `최단 리드타임`, and `후기 보유` when those values apply
 - selecting the bid changes request state to selected/partner selected
 - requester opens clearance request detail and repeats the same checks
+- clearance bid cards expose comparison badges for `최저 총액`, `최단 통관`, and `예비 검토 가능` when those values apply
 
 ### Selected Partner Visibility
 
