@@ -277,6 +277,28 @@ function ClearanceCompactBidDecisionSummary({ bids, requestId }: { bids: Receive
   );
 }
 
+function ClearancePartnerBidSubmissionReadiness({
+  documents,
+  interestStatus,
+  questions
+}: {
+  documents: ClearanceRequestDocumentItem[];
+  interestStatus: string;
+  questions: ClearanceRequestQuestionItem[];
+}) {
+  const unansweredQuestionCount = questions.filter((question) => !question.answer).length;
+
+  return (
+    <div className="grid gap-2 rounded-md border border-blue-100 bg-blue-50 p-3 text-xs leading-5 text-blue-950 md:grid-cols-4">
+      <p className="font-semibold md:col-span-4">견적 제출 전 확인</p>
+      <p className="rounded-md bg-white p-2">참여 상태: {serviceRequestPartnerInterestStatusLabel(interestStatus)}</p>
+      <p className="rounded-md bg-white p-2">공개 서류 {documents.length}건</p>
+      <p className="rounded-md bg-white p-2">{unansweredQuestionCount > 0 ? `답변 대기 질문 ${unansweredQuestionCount}건` : "질문 답변 확인"}</p>
+      <p className="rounded-md bg-white p-2">HS/FTA/요건은 담당자 검토 필요</p>
+    </div>
+  );
+}
+
 function nextClearanceActionLabel(
   request: ClearanceRequestListItem,
   documents: ClearanceRequestDocumentItem[],
@@ -978,6 +1000,8 @@ export function ClearanceOpportunityRow({
         </form>
       </div>
       {opportunity.status === "partner_selected" || opportunity.status === "in_progress" || opportunity.status === "completed" ? null : (
+      <>
+      <ClearancePartnerBidSubmissionReadiness documents={documents} interestStatus={opportunity.interestStatus} questions={questions} />
       <form id={anchorPrefix ? `${anchorPrefix}-bid` : undefined} action={action} className="scroll-mt-6 grid gap-3 rounded-md bg-slate-50 p-3 md:grid-cols-2 xl:grid-cols-4">
         <input name="requestId" type="hidden" value={opportunity.id} />
         <div className="grid gap-1 md:col-span-2 xl:col-span-4">
@@ -1040,6 +1064,7 @@ export function ClearanceOpportunityRow({
           </p>
         ) : null}
       </form>
+      </>
       )}
         </>
       )}

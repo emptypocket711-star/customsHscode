@@ -255,6 +255,28 @@ function FreightCompactBidDecisionSummary({ bids, requestId }: { bids: ReceivedF
   );
 }
 
+function FreightPartnerBidSubmissionReadiness({
+  documents,
+  interestStatus,
+  questions
+}: {
+  documents: FreightRequestDocumentItem[];
+  interestStatus: string;
+  questions: FreightRequestQuestionItem[];
+}) {
+  const unansweredQuestionCount = questions.filter((question) => !question.answer).length;
+
+  return (
+    <div className="grid gap-2 rounded-md border border-blue-100 bg-blue-50 p-3 text-xs leading-5 text-blue-950 md:grid-cols-4">
+      <p className="font-semibold md:col-span-4">견적 제출 전 확인</p>
+      <p className="rounded-md bg-white p-2">참여 상태: {serviceRequestPartnerInterestStatusLabel(interestStatus)}</p>
+      <p className="rounded-md bg-white p-2">공개 서류 {documents.length}건</p>
+      <p className="rounded-md bg-white p-2">{unansweredQuestionCount > 0 ? `답변 대기 질문 ${unansweredQuestionCount}건` : "질문 답변 확인"}</p>
+      <p className="rounded-md bg-white p-2">총액·유효기한·리드타임 입력</p>
+    </div>
+  );
+}
+
 function statusLabel(status: string) {
   if (status === "draft") return "임시저장";
   if (status === "open") return "모집중";
@@ -1013,6 +1035,8 @@ export function FreightOpportunityRow({
       </div>
 
       {opportunity.status === "partner_selected" || opportunity.status === "in_progress" || opportunity.status === "completed" ? null : (
+      <>
+      <FreightPartnerBidSubmissionReadiness documents={documents} interestStatus={opportunity.interestStatus} questions={questions} />
       <form id={anchorPrefix ? `${anchorPrefix}-bid` : undefined} action={action} className="scroll-mt-6 grid gap-3 rounded-md bg-slate-50 p-3">
         <input name="requestId" type="hidden" value={opportunity.id} />
         <div className="grid gap-1">
@@ -1084,6 +1108,7 @@ export function FreightOpportunityRow({
           </p>
         ) : null}
       </form>
+      </>
       )}
       <form action={questionAction} className="grid gap-2 rounded-md border border-slate-200 bg-white p-3 md:grid-cols-[1fr_auto]">
         <input name="requestId" type="hidden" value={opportunity.id} />

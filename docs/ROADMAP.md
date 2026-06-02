@@ -428,6 +428,7 @@
 | P137.1 marketplace post-interest-flow bottleneck review | 완료 | 관심상태 회귀 검증이 아니라 no-response/interest flow 이후 남은 marketplace MVP 병목을 다시 고른다 | requester bid decision clarity selected | product/code review |
 | P138.1 requester bid decision list clarity | 완료 | 다음 병목 선정이 아니라 화주 목록에서 견적 도착 후 비교·선정 필요성을 상세 진입 전부터 분명히 보여준다 | compact bid decision summary | UX self-review, typecheck, lint, browser |
 | P139.1 requester bid selection readiness detail | 완료 | 목록의 비교 유도 표시가 아니라 상세 견적 영역에서 선정 전 질문·서류·가격·후기 준비도를 한눈에 보여준다 | bid readiness detail summary | UX self-review, typecheck, lint, browser |
+| P140.1 partner bid submission readiness detail | 완료 | 화주 선정 준비도가 아니라 파트너가 견적 제출 전 공개 서류·질문·참여 상태를 점검하게 한다 | partner bid readiness summary | UX self-review, typecheck, lint, browser |
 
 #### P109 다음 병목 선정
 
