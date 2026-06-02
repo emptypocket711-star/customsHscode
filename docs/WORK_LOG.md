@@ -864,6 +864,20 @@
 - `npm run lint`
 - Playwright developer check: `/operations/requests/75000000-0000-4000-8000-000000000201`, 임시 sent match 기반 no-response 상세 프롬프트 원인 단서 렌더 확인
 
+### marketplace operations match interest detail
+
+- 이전 작업은 P128 개별 요청 상세의 복사 프롬프트에 무응답 원인 단서를 넣은 작업이고, 이번 작업은 P129 운영 상세 카드 자체에 파트너 관심 상태 카운트를 표시한 작업이다.
+- `파트너 노출·알림 운영 요약` 카드에 `열람`, `관심`, `보류`, `미확인` 카운트를 추가했다.
+- 파트너 회사명, 연락처, 견적 원문은 계속 표시하지 않는다.
+- 브라우저 검증에서는 공개/무입찰 샘플에 `interest_status=interested` 매칭 row를 임시로 추가해 `관심 1건` 렌더를 확인한 뒤 삭제했다.
+- 다음 작업은 P130 marketplace opportunity viewed tracking이다. 이번 P129가 운영 상세 화면의 관심 상태 표시라면, P130은 파트너가 opportunity 상세을 열었을 때 미확인 매칭을 열람 상태로 자동 기록하는 작업이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- Playwright developer check: `/operations/requests/75000000-0000-4000-8000-000000000201`, 임시 interested match 기반 `열람/관심/보류/미확인` 렌더 확인
+
 ## 2026-06-02
 
 ### local login review smoke

@@ -193,6 +193,12 @@ export default async function OperationsRequestDetailPage({
                 <span>스킵 {detail.matchSummary.skippedNotificationCount}건</span>
                 <span>실패 {detail.matchSummary.failedNotificationCount}건</span>
               </div>
+              <div className="grid gap-2 rounded-md border border-slate-200 bg-white p-3 text-sm text-slate-600 md:grid-cols-4">
+                <span>열람 {detail.matchSummary.viewedInterestCount ?? 0}건</span>
+                <span>관심 {detail.matchSummary.interestedInterestCount ?? 0}건</span>
+                <span>보류 {detail.matchSummary.declinedInterestCount ?? 0}건</span>
+                <span>미확인 {detail.matchSummary.noneInterestCount ?? 0}건</span>
+              </div>
             </>
           ) : (
             <p className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-slate-600">

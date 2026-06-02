@@ -417,7 +417,8 @@
 | P126.1 marketplace partner opportunity response clue | 완료 | 운영자 상세 프롬프트가 아니라 파트너 opportunity 화면에서 알림을 받은 파트너가 왜 응답하지 않는지 판단할 수 있는 상태 단서를 보강한다 | partner response clue | unit, typecheck, lint, browser |
 | P127.1 marketplace no-response cause segmentation | 완료 | 파트너 화면 단서가 아니라 운영 요약에서 알림 후 무응답 원인을 질문/서류/관심상태 기준으로 더 세분화한다 | no-response cause segmentation | unit, typecheck, lint, browser |
 | P128.1 marketplace no-response detail cause prompt | 완료 | 운영 요약 원인 지표가 아니라 개별 요청 상세의 개선 프롬프트에도 무응답 원인 단서를 포함한다 | no-response detail cause prompt | unit, typecheck, lint, browser |
-| P129.1 marketplace operations match interest detail | 예정 | 개선 프롬프트 문구가 아니라 요청 상세의 파트너 노출·알림 요약 카드에 열람/관심/보류/미확인 카운트를 표시한다 | match interest detail | unit, UX, browser |
+| P129.1 marketplace operations match interest detail | 완료 | 개선 프롬프트 문구가 아니라 요청 상세의 파트너 노출·알림 요약 카드에 열람/관심/보류/미확인 카운트를 표시한다 | match interest detail | typecheck, lint, browser |
+| P130.1 marketplace opportunity viewed tracking | 예정 | 운영 상세 표시가 아니라 파트너가 opportunity 상세을 열었을 때 미확인 매칭을 열람 상태로 기록한다 | opportunity viewed tracking | unit, RLS, browser |
 
 #### P109 다음 병목 선정
 
@@ -748,6 +749,20 @@ P127은 운영 요약 패널에서 무응답 원인 지표를 세분화한 작�
 5. 브라우저 검증에서는 공개/무입찰 샘플에 sent 매칭 row를 임시로 추가해 상세 프롬프트 렌더를 확인한 뒤 삭제했다.
 
 다음 작업은 P129 marketplace operations match interest detail이다. P128이 복사 프롬프트의 원인 단서라면, P129는 요청 상세의 파트너 노출·알림 요약 카드 자체에 열람/관심/보류/미확인 카운트를 보여주는 작업이다.
+
+#### P129 operations match interest detail
+
+P129에서 운영 요청 상세의 `파트너 노출·알림 운영 요약` 카드에 관심 상태 카운트를 표시했다.
+
+P128은 복사 프롬프트에 원인 단서를 포함한 작업이었다. 이번 P129는 운영자가 프롬프트를 복사하기 전 화면에서 바로 파트너 열람, 관심, 보류, 미확인 상태를 확인하게 하는 표시 작업이다.
+
+구현 기준:
+
+1. 상세 카드에 `열람`, `관심`, `보류`, `미확인` 카운트를 추가했다.
+2. 회사명, 연락처, 견적 원문은 계속 표시하지 않는다.
+3. 브라우저 검증에서는 공개/무입찰 샘플에 `interest_status=interested` 매칭 row를 임시로 추가해 `관심 1건` 렌더를 확인한 뒤 삭제했다.
+
+다음 작업은 P130 marketplace opportunity viewed tracking이다. P129가 운영 상세 화면에 관심 상태를 표시한 작업이라면, P130은 파트너가 opportunity 상세을 실제로 열었을 때 미확인 상태를 열람 상태로 기록해 이 지표가 자동으로 쌓이게 하는 작업이다.
 
 #### P34 다음 코드 작업 후보
 
