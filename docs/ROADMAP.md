@@ -318,7 +318,9 @@
 | P78.3 overseas role request clarity | 완료 | 회원가입 안내가 아니라 회사 설정 역할 신청 화면에서 해외 파트너 검증 기준과 보류 가능성을 더 분명히 안내한다 | overseas role request UX | browser, typecheck, lint |
 | P78.4 overseas onboarding route smoke | 완료 | 역할 신청 안내 보강이 아니라 온보딩/설정 변경 후 화주·포워더·관세사 주요 route가 계속 정상 렌더링되는지 확인한다 | role route smoke | browser, typecheck, lint |
 | P78.5 overseas onboarding work log sync | 완료 | route smoke가 아니라 해외 파트너 온보딩 안내 보강과 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
-| P79.1 next marketplace rail selection | 예정 | 해외 파트너 온보딩 작업 로그가 아니라 다음으로 이어갈 marketplace MVP 병목을 다시 고른다 | roadmap/code review | docs/code review |
+| P79.1 next marketplace rail selection | 완료 | 해외 파트너 온보딩 작업 로그가 아니라 다음으로 이어갈 marketplace MVP 병목을 다시 고른다 | partner preference notification rail selected | roadmap/code review |
+| P79.2 partner preference notification clarity | 완료 | 해외 파트너 온보딩이 아니라 포워더·관세사무소가 어떤 조건과 알림 기준으로 요청을 받을지 설정 화면에서 바로 이해하게 한다 | partner preference UX | browser, typecheck, lint |
+| P79.3 partner preference route smoke | 진행 | 관심 조건 안내 보강이 아니라 변경 후 화주·포워더·관세사 주요 route가 계속 정상 렌더링되는지 확인한다 | role route smoke | browser, typecheck, lint |
 
 #### P34 다음 코드 작업 후보
 

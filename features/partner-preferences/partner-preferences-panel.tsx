@@ -37,6 +37,12 @@ const transportModeOptions = [
   { label: "철도", value: "rail" }
 ];
 
+const notificationRules = [
+  "조건 일치 요청은 공개 직후 1회 알림 대상입니다.",
+  "마감 임박 또는 묶음 알림은 중복 발송을 줄이기 위한 기준입니다.",
+  "알림을 꺼도 파트너 워크스페이스의 입찰 가능 요청은 계속 확인할 수 있습니다."
+];
+
 function joinCsv(values: string[]) {
   return values.join(", ");
 }
@@ -136,6 +142,11 @@ function PreferenceForm({
             />
             긴급 건 대응 가능
           </label>
+          <div className="grid gap-1 rounded-md bg-slate-50 p-2 text-xs leading-5 text-slate-600">
+            {notificationRules.map((rule) => (
+              <p key={rule}>{rule}</p>
+            ))}
+          </div>
         </fieldset>
       </div>
 
@@ -170,6 +181,7 @@ function PreferenceForm({
             name="originCountryCodes"
             placeholder="KR, CN, US"
           />
+          <span className="text-xs font-normal leading-5 text-slate-500">비워두면 출발·수출 국가로 제한하지 않습니다.</span>
         </label>
         <label className="grid gap-1 text-sm font-medium text-slate-700">
           도착/수입 국가 코드
@@ -180,6 +192,7 @@ function PreferenceForm({
             name="destinationCountryCodes"
             placeholder="US, EU, JP"
           />
+          <span className="text-xs font-normal leading-5 text-slate-500">비워두면 도착·수입 국가로 제한하지 않습니다.</span>
         </label>
         <label className="grid gap-1 text-sm font-medium text-slate-700">
           항구·공항·지역
@@ -190,6 +203,7 @@ function PreferenceForm({
             name="ports"
             placeholder="BUSAN, INCHEON, LAX"
           />
+          <span className="text-xs font-normal leading-5 text-slate-500">비워두면 항구·공항·지역으로 제한하지 않습니다.</span>
         </label>
         <label className="grid gap-1 text-sm font-medium text-slate-700">
           화물 태그
@@ -200,6 +214,7 @@ function PreferenceForm({
             name="cargoTags"
             placeholder="used_car, food, cosmetics"
           />
+          <span className="text-xs font-normal leading-5 text-slate-500">쉼표로 여러 태그를 입력합니다. 예: used_car, cosmetics</span>
         </label>
       </div>
 
