@@ -39,26 +39,19 @@ seed script는 service role key를 사용한다. production 오작동 위험을 
 
 ### Covered
 
-- 비로그인 preview 접근은 login redirect를 확인한다.
-- requester와 selected partner는 freight preview 본문을 확인한다.
-- developer는 clearance preview 본문을 확인한다.
-- unmatched partner는 preview 본문이 보이지 않는지 확인한다.
+- 비로그인 preview 접근은 freight/clearance 양쪽 login redirect를 확인한다.
+- requester는 freight/clearance preview 본문을 확인한다.
+- selected partner는 freight/clearance preview 본문을 확인한다.
+- developer는 freight/clearance preview 본문을 확인한다.
+- unmatched partner는 freight/clearance preview 본문이 보이지 않는지 확인한다.
+- route kind와 request type이 어긋나는 URL은 본문을 노출하지 않는지 확인한다.
 - source snapshot version, request status, published_at, archive document label, safety notice를 확인한다.
 - 파일명, 질문·답변 원문, 견적 메시지 원문, 다운로드 링크가 표시되지 않는지 확인한다.
 
 ### Remaining Gap
 
-- requester가 clearance preview를 볼 수 있는지 확인하는 assertion은 아직 없다.
-- selected partner가 clearance preview를 볼 수 있는지 확인하는 assertion은 아직 없다.
-- developer가 freight preview를 볼 수 있는지 확인하는 assertion은 아직 없다.
 - storage state 생성 이후 stale session cleanup은 없다. `tmp/`가 gitignore이므로 보안상 저장소에는 남지 않지만 로컬 파일은 필요 시 삭제해야 한다.
 
 ## Next Recommendation
 
-P42.10에서 e2e assertion matrix를 넓힌다.
-
-- requester: freight + clearance preview visible
-- selected partner: freight + clearance preview visible
-- developer: freight + clearance preview visible
-- unmatched partner: freight + clearance preview hidden
-- unauthenticated: freight + clearance redirect
+authenticated E2E matrix는 통과했다. 다음 보강은 stale storage state 정리 helper 또는 preview 모바일 본문 캡처 검증이다.

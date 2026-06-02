@@ -42,12 +42,16 @@ Fix:
 - Added user-safe fallback UI.
 - Extracted fallback copy and tested that internal DB/schema terms are not exposed.
 
-### Accepted: authenticated browser body review is blocked locally
+### Fixed: authenticated browser body review was blocked locally
 
-Current `.env.local` points to a remote Supabase origin, and `E2E_TEST_PASSWORD` plus role storage states are not available. The local seed/auth/e2e scripts correctly refuse to use non-local Supabase and do not print secret values.
+The earlier blocker was missing local Supabase fixture state and role storage states. The local seed/auth/e2e scripts now run against `http://127.0.0.1:54321` and `http://127.0.0.1:3100`.
 
-Follow-up:
-- Run the authenticated browser review only after local Supabase and role storage states are prepared.
+Verified:
+- local seed succeeds with the current completion report schema.
+- role storage states are created for requester, selected partner, unmatched partner, and developer.
+- authenticated E2E confirms requester/selected partner/developer can view freight and clearance previews.
+- unmatched partner and mismatched route kind do not expose preview body.
+- forbidden raw terms, file names, bid messages, and `download`/`다운로드` tokens are not visible.
 
 ## Safety Checks
 
@@ -60,6 +64,5 @@ Follow-up:
 
 ## Remaining Risk
 
-- Full authenticated preview body screenshots were not captured because local auth fixture state is not ready.
-- RLS behavior for the seeded preview users has script coverage prepared, but not fully executed in this environment.
-- The current working tree contains broad local-only platform changes and untracked files; no commit, push, migration apply, or deployment was performed.
+- Full authenticated preview body screenshots are not stored as a named visual artifact yet.
+- Stale `tmp/e2e-auth/completion-preview-*.json` files are not automatically cleaned up after E2E.
