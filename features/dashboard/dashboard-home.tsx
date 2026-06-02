@@ -625,7 +625,7 @@ function DashboardMarketplaceEntry({
           </div>
         </div>
       </div>
-      <div className="grid gap-2 border-t border-[var(--border-subtle)] bg-slate-50 px-4 py-3 text-xs text-slate-600 md:grid-cols-4 xl:grid-cols-7">
+      <div className="grid gap-2 border-t border-[var(--border-subtle)] bg-slate-50 px-4 py-3 text-xs text-slate-600 md:grid-cols-4 xl:grid-cols-8">
         <span className="rounded-md bg-white px-3 py-2">임시저장 요청 {activity?.draftRequests ?? 0}</span>
         <span className="rounded-md bg-white px-3 py-2">진행중 요청 {activity?.openRequests ?? 0}</span>
         <span className="rounded-md bg-white px-3 py-2">견적 도착 {activity?.bidsReceived ?? 0}</span>
@@ -633,6 +633,7 @@ function DashboardMarketplaceEntry({
         <span className="rounded-md bg-white px-3 py-2">완료 {activity?.completedRequests ?? 0}</span>
         <span className="rounded-md bg-white px-3 py-2">리포트 대기 {activity?.completionReportPending ?? 0}</span>
         <span className="rounded-md bg-white px-3 py-2">피드백 대기 {activity?.feedbackPending ?? 0}</span>
+        <span className="rounded-md bg-white px-3 py-2">파트너 업무 {(activity?.freightPartnerActions ?? 0) + (activity?.clearancePartnerActions ?? 0)}</span>
         <span className="rounded-md bg-white px-3 py-2">입찰 가능 {activity?.partnerOpportunities ?? 0}</span>
       </div>
       <div className="flex flex-wrap gap-2 border-t border-[var(--border-subtle)] bg-white px-4 py-3">
