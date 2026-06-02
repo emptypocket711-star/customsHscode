@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { PageHeading } from "@/components/page-heading";
 import { Badge } from "@/components/ui/badge";
 import { FreightRequestRow } from "@/features/service-requests/freight-request-draft-panel";
-import { RequesterDetailFlowPanel } from "@/features/service-requests/requester-detail-flow-panel";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   getOwnFreightRequest,
@@ -97,7 +96,6 @@ export default async function FreightRequestDetailPage({
           ) : null}
         </div>
       </div>
-      <RequesterDetailFlowPanel kind="freight" />
       <FreightRequestRow
         anchorPrefix="request"
         bids={receivedBids.items}

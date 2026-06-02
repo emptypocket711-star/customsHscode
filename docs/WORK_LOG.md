@@ -155,6 +155,23 @@
 - Playwright developer check: `/operations/users#platform-request-operations`, 상세 진단 영역 펼침 후 `핵심 지표:` 확인
 - `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
 
+### marketplace detail duplicate guidance trim
+
+- 이전 작업은 P89 운영자가 복사하는 개선 요청문 축약이고, 이번 작업은 P90 실제 marketplace 거래 상세 화면의 반복 안내 정리다.
+- 화주 운송/통관 상세와 포워더/관세사무소 opportunity 상세에는 이미 `다음 작업 바로가기`가 있어 서류, 질문, 견적, 공개 위치로 바로 이동할 수 있다.
+- 해당 상단 바로가기와 같은 일을 다시 설명하던 상세 작업 흐름 패널을 상세 화면 4곳에서 제거했다.
+- 요청 시작/목록 영역에서 아직 필요한 파트너 작업 흐름 패널은 유지했다.
+- 더 이상 쓰이지 않는 화주 상세 전용 `RequesterDetailFlowPanel` 파일을 제거했다.
+- 권한/RLS, 견적 제출, 질문 답변, 공개 action, DB schema는 변경하지 않았다.
+- 다음 작업은 P91 요청 시작·목록 화면의 안내 패널 범위 점검이다. 이번 P90이 상세 화면 반복 안내 제거라면, P91은 시작/목록 화면에 남은 안내가 실제 시작 흐름에 필요한지 확인하는 작업이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- Playwright detail check: 화주 운송/통관 상세와 포워더/관세사무소 opportunity 상세에서 `다음 작업 바로가기` 유지, 상세 흐름 패널 제목 미노출 확인
+- `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
+
 ## 2026-06-02
 
 ### local login review smoke

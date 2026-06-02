@@ -364,7 +364,10 @@
 | P89.2 operations copy prompt core metrics | 완료 | 운영 통계 화면 표시가 아니라 복사되는 개선 요청문에는 핵심 지표만 포함하게 줄인다 | operations prompt UX | unit, browser, typecheck, lint |
 | P89.3 operations prompt route smoke | 완료 | 복사용 문구 축약이 아니라 변경 후 화주·포워더·관세사 주요 route가 계속 정상 렌더링되는지 확인한다 | role route smoke | browser, typecheck, lint |
 | P89.4 operations prompt work log sync | 완료 | route smoke가 아니라 복사용 운영 개선 요청문 축약과 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
-| P90.1 marketplace duplicate guidance selection | 예정 | 복사용 운영 요청문이 아니라 marketplace 거래 화면 안에서 반복 안내가 과한 곳을 다시 점검한다 | duplicate guidance rail | UX/code review |
+| P90.1 marketplace duplicate guidance selection | 완료 | 복사용 운영 요청문이 아니라 marketplace 거래 화면 안에서 반복 안내가 과한 곳을 다시 점검한다 | detail flow panel duplicate selected | UX/code review |
+| P90.2 request detail duplicate flow panels | 완료 | 중복 안내 선택이 아니라 화주·파트너 상세에서 상단 다음 작업 바로가기와 반복되는 상세 흐름 패널을 걷어낸다 | detail density trim | browser, typecheck, lint |
+| P90.3 requester detail flow dead code cleanup | 완료 | 화면 패널 제거가 아니라 더 이상 쓰이지 않는 화주 상세 전용 흐름 컴포넌트를 정리한다 | unused component cleanup | typecheck, lint |
+| P91.1 marketplace start guidance scope review | 예정 | 상세 화면 중복 제거가 아니라 요청 시작·목록 화면의 안내 패널이 실제 시작 흐름에만 남아 있는지 점검한다 | start/list guidance audit | UX/code review |
 
 #### P34 다음 코드 작업 후보
 

@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { PageHeading } from "@/components/page-heading";
 import { Badge } from "@/components/ui/badge";
 import { ClearanceRequestRow } from "@/features/service-requests/clearance-request-draft-panel";
-import { RequesterDetailFlowPanel } from "@/features/service-requests/requester-detail-flow-panel";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   getOwnClearanceRequest,
@@ -97,7 +96,6 @@ export default async function ClearanceRequestDetailPage({
           ) : null}
         </div>
       </div>
-      <RequesterDetailFlowPanel kind="clearance" />
       <ClearanceRequestRow
         anchorPrefix="request"
         bids={receivedBids.items}

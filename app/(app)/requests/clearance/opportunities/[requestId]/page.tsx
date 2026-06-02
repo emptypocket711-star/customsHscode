@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { PageHeading } from "@/components/page-heading";
 import { Badge } from "@/components/ui/badge";
 import { ClearanceOpportunityRow } from "@/features/service-requests/clearance-request-draft-panel";
-import { PartnerOpportunityFlowPanel } from "@/features/service-requests/partner-opportunity-flow-panel";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   getMatchedClearanceOpportunity,
@@ -90,7 +89,6 @@ export default async function ClearanceOpportunityDetailPage({
           <a className="focus-ring inline-flex h-9 items-center rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50" href="#opportunity-bid">견적</a>
         </div>
       </div>
-      <PartnerOpportunityFlowPanel kind="clearance" />
       <ClearanceOpportunityRow
         anchorPrefix="opportunity"
         completionReport={completionReport}
