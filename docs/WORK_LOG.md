@@ -7831,3 +7831,21 @@
   - requester `/requests/freight/00000000-0000-4000-8000-000000000101#request-completion`
   - requester `/requests/clearance/00000000-0000-4000-8000-000000000201#request-completion`
   - developer `/operations/requests/75000000-0000-4000-8000-000000000001#request-bids`
+
+### dashboard next action section anchors
+
+- 이전 작업은 상세/운영 route가 깨지지 않는지 확인한 P150.1이고, 이번 작업은 대시보드 다음 행동 CTA가 현재 상태의 실제 처리 섹션으로 바로 이동하게 한 P151.1이다.
+- 대시보드 activity summary에 첫 처리 대상 요청의 상태를 함께 전달한다.
+- 화주 다음 행동은 상태에 따라 견적 비교, 진행 시작/완료 처리, 완료 후 확인, 초안 form 섹션으로 이동한다.
+- 파트너 다음 행동은 공개·견적 수신 상태에서는 견적 제출/제출 요약 섹션으로, 선정·진행 상태에서는 lifecycle 섹션으로 이동한다.
+- 새 migration, RLS 변경은 없다.
+- 로컬 파일만 수정했고 원격 푸시, 배포는 하지 않았다.
+
+검증:
+
+- `npx vitest run features/dashboard/dashboard-home.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- Playwright requester `/dashboard`에서 다음 행동 링크가 `/requests/freight/75000000-0000-4000-8000-000000000001#request-bids`와 `/requests/clearance/75000000-0000-4000-8000-000000000002#request-bids`로 이동하는지 확인
+- Playwright forwarder `/dashboard`에서 다음 행동 링크가 `/requests/freight/opportunities/75000000-0000-4000-8000-000000000101#opportunity-bid`로 이동하는지 확인
+- Playwright broker `/dashboard`에서 다음 행동 링크가 `/requests/clearance/opportunities/75000000-0000-4000-8000-000000000102#opportunity-bid`로 이동하는지 확인

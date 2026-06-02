@@ -32,16 +32,20 @@ export type DashboardMarketplaceSummary = {
 export type DashboardMarketplaceActivitySummary = {
   bidsReceived: number;
   clearancePartnerActionRequestId?: string | null;
+  clearancePartnerActionStatus?: string | null;
   clearancePartnerActions: number;
   clearanceRequesterActionRequestId?: string | null;
+  clearanceRequesterActionStatus?: string | null;
   clearanceRequesterActions: number;
   completionReportPending: number;
   completedRequests: number;
   draftRequests: number;
   feedbackPending: number;
   freightPartnerActionRequestId?: string | null;
+  freightPartnerActionStatus?: string | null;
   freightPartnerActions: number;
   freightRequesterActionRequestId?: string | null;
+  freightRequesterActionStatus?: string | null;
   freightRequesterActions: number;
   inProgressRequests: number;
   openRequests: number;
@@ -288,6 +292,23 @@ function hasMarketplaceWork(activity: DashboardMarketplaceActivitySummary | null
   );
 }
 
+function requesterActionHref(requestType: "clearance" | "freight", requestId?: string | null, status?: string | null) {
+  const basePath = `/requests/${requestType}`;
+  if (!requestId) return `${basePath}?workspace=requester`;
+  if (status === "completed") return `${basePath}/${requestId}#request-completion`;
+  if (status === "partner_selected" || status === "in_progress") return `${basePath}/${requestId}#request-lifecycle`;
+  if (status === "draft") return `${basePath}/${requestId}#request-draft-form`;
+  return `${basePath}/${requestId}#request-bids`;
+}
+
+function partnerActionHref(requestType: "clearance" | "freight", requestId?: string | null, status?: string | null) {
+  const workspace = requestType === "freight" ? "forwarder" : "broker";
+  const basePath = `/requests/${requestType}`;
+  if (!requestId) return `${basePath}?workspace=${workspace}`;
+  if (status === "partner_selected" || status === "in_progress") return `${basePath}/opportunities/${requestId}#request-lifecycle`;
+  return `${basePath}/opportunities/${requestId}#opportunity-bid`;
+}
+
 export function buildMarketplaceNextActions(
   activity: DashboardMarketplaceActivitySummary | null,
   summary: DashboardMarketplaceSummary | null
@@ -306,9 +327,7 @@ export function buildMarketplaceNextActions(
     {
       count: activity?.freightRequesterActions ?? 0,
       description: "운송 요청의 견적 비교, 업체 선정, 진행 상태, 완료 리포트와 피드백을 처리합니다.",
-      href: activity?.freightRequesterActionRequestId
-        ? `/requests/freight/${activity.freightRequesterActionRequestId}`
-        : "/requests/freight?workspace=requester",
+      href: requesterActionHref("freight", activity?.freightRequesterActionRequestId, activity?.freightRequesterActionStatus),
       label: "화주 업무",
       priority: 10,
       title: "내 운송 요청 처리"
@@ -316,9 +335,7 @@ export function buildMarketplaceNextActions(
     {
       count: activity?.clearanceRequesterActions ?? 0,
       description: "통관 의뢰의 견적 비교, 업체 선정, 진행 상태, 완료 리포트와 피드백을 처리합니다.",
-      href: activity?.clearanceRequesterActionRequestId
-        ? `/requests/clearance/${activity.clearanceRequesterActionRequestId}`
-        : "/requests/clearance?workspace=requester",
+      href: requesterActionHref("clearance", activity?.clearanceRequesterActionRequestId, activity?.clearanceRequesterActionStatus),
       label: "화주 업무",
       priority: 9,
       title: "내 통관 의뢰 처리"
@@ -326,9 +343,7 @@ export function buildMarketplaceNextActions(
     {
       count: activity?.freightPartnerActions ?? 0,
       description: "매칭된 운송 요청의 견적 제출, 선정 후 진행, 완료 전환 업무를 처리합니다.",
-      href: activity?.freightPartnerActionRequestId
-        ? `/requests/freight/opportunities/${activity.freightPartnerActionRequestId}`
-        : "/requests/freight?workspace=forwarder",
+      href: partnerActionHref("freight", activity?.freightPartnerActionRequestId, activity?.freightPartnerActionStatus),
       label: "파트너 업무",
       priority: 8,
       title: "운송 파트너 업무 확인"
@@ -336,9 +351,7 @@ export function buildMarketplaceNextActions(
     {
       count: activity?.clearancePartnerActions ?? 0,
       description: "매칭된 통관 요청의 견적 제출, 선정 후 진행, 완료 전환 업무를 처리합니다.",
-      href: activity?.clearancePartnerActionRequestId
-        ? `/requests/clearance/opportunities/${activity.clearancePartnerActionRequestId}`
-        : "/requests/clearance?workspace=broker",
+      href: partnerActionHref("clearance", activity?.clearancePartnerActionRequestId, activity?.clearancePartnerActionStatus),
       label: "파트너 업무",
       priority: 7,
       title: "통관 파트너 업무 확인"

@@ -439,6 +439,7 @@
 | P148.1 in-progress completion CTA clarity | 완료 | 선정 후 진행 시작이 아니라 진행 중 요청을 완료 처리하기 전 완료 여부·보관 서류·민감정보 제외 메모를 확인하게 한다 | completion CTA clarity | typecheck, lint, browser |
 | P149.1 completed transaction follow-up order | 완료 | 완료 처리 전 확인이 아니라 완료 상태에서 리포트·보관 서류·피드백 확인 순서를 상단에 명확히 표시한다 | completed follow-up order | typecheck, lint, browser |
 | P150.1 transaction state route regression | 완료 | 완료 상태 후속 안내 추가가 아니라 최근 견적·선정·진행·완료 상태 UI 변경 후 역할별 route가 계속 정상 렌더링되는지 확인한다 | transaction state route smoke | browser, diff check |
+| P151.1 dashboard next action section anchors | 완료 | 상세 route smoke가 아니라 대시보드 다음 행동 CTA가 현재 상태의 실제 처리 섹션으로 바로 이동하게 한다 | dashboard next action anchors | unit, typecheck, lint, browser |
 
 #### P109 다음 병목 선정
 

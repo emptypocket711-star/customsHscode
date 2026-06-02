@@ -110,16 +110,20 @@ async function getDashboardMarketplaceActivitySummary(
   const emptySummary = {
     bidsReceived: 0,
     clearancePartnerActionRequestId: null,
+    clearancePartnerActionStatus: null,
     clearancePartnerActions: 0,
     clearanceRequesterActionRequestId: null,
+    clearanceRequesterActionStatus: null,
     clearanceRequesterActions: 0,
     completionReportPending: 0,
     completedRequests: 0,
     draftRequests: 0,
     feedbackPending: 0,
     freightPartnerActionRequestId: null,
+    freightPartnerActionStatus: null,
     freightPartnerActions: 0,
     freightRequesterActionRequestId: null,
+    freightRequesterActionStatus: null,
     freightRequesterActions: 0,
     inProgressRequests: 0,
     openRequests: 0,
@@ -206,30 +210,44 @@ async function getDashboardMarketplaceActivitySummary(
     if (request.status === "draft") return 40;
     return 0;
   };
-  const firstRequesterActionId = (requestType: "clearance" | "freight") => {
+  const firstRequesterAction = (requestType: "clearance" | "freight") => {
     const request = requesterActionRequests
       .filter((item) => item.request_type === requestType)
       .sort((a, b) => requesterActionPriority(b) - requesterActionPriority(a))[0];
-    return request?.id ? String(request.id) : null;
+    return {
+      id: request?.id ? String(request.id) : null,
+      status: request?.status ? String(request.status) : null
+    };
   };
-  const firstPartnerActionId = (requestType: "clearance" | "freight") => {
+  const firstPartnerAction = (requestType: "clearance" | "freight") => {
     const request = partnerActionRequests.find((item) => item?.request_type === requestType);
-    return request?.id ? String(request.id) : null;
+    return {
+      id: request?.id ? String(request.id) : null,
+      status: request?.status ? String(request.status) : null
+    };
   };
+  const freightRequesterAction = firstRequesterAction("freight");
+  const clearanceRequesterAction = firstRequesterAction("clearance");
+  const freightPartnerAction = firstPartnerAction("freight");
+  const clearancePartnerAction = firstPartnerAction("clearance");
 
   return {
     bidsReceived: requests.filter((request) => request.status === "bids_received").length,
-    clearancePartnerActionRequestId: firstPartnerActionId("clearance"),
+    clearancePartnerActionRequestId: clearancePartnerAction.id,
+    clearancePartnerActionStatus: clearancePartnerAction.status,
     clearancePartnerActions: partnerActionRequests.filter((request) => request?.request_type === "clearance").length,
-    clearanceRequesterActionRequestId: firstRequesterActionId("clearance"),
+    clearanceRequesterActionRequestId: clearanceRequesterAction.id,
+    clearanceRequesterActionStatus: clearanceRequesterAction.status,
     clearanceRequesterActions: requests.filter((request) => request.request_type === "clearance" && needsRequesterAction(request)).length,
     completionReportPending: completedRequestIds.filter((requestId) => !completionReportRequestIds.has(requestId)).length,
     completedRequests: completedRequestIds.length,
     draftRequests: requests.filter((request) => request.status === "draft").length,
     feedbackPending: completedRequestIds.filter((requestId) => !ownFeedbacks.has(requestId)).length,
-    freightPartnerActionRequestId: firstPartnerActionId("freight"),
+    freightPartnerActionRequestId: freightPartnerAction.id,
+    freightPartnerActionStatus: freightPartnerAction.status,
     freightPartnerActions: partnerActionRequests.filter((request) => request?.request_type === "freight").length,
-    freightRequesterActionRequestId: firstRequesterActionId("freight"),
+    freightRequesterActionRequestId: freightRequesterAction.id,
+    freightRequesterActionStatus: freightRequesterAction.status,
     freightRequesterActions: requests.filter((request) => request.request_type === "freight" && needsRequesterAction(request)).length,
     inProgressRequests: requests.filter((request) => request.status === "in_progress").length,
     openRequests: requests.filter((request) => request.status === "open").length,
