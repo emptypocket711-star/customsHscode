@@ -398,7 +398,8 @@
 | P107.1 partner preference match diagnostics review | 완료 | RPC lint 정리가 아니라 파트너 관심 조건 UI가 매칭 0건 원인을 줄일 만큼 충분히 안내하는지 점검한다 | partner preference diagnostics | unit, browser, typecheck, lint |
 | P108.1 marketplace zero-match end-to-end review | 완료 | 파트너 관심 조건 안내가 아니라 화주 공개 후 0건 상태가 요청자·운영자 화면까지 이어지는 흐름을 E2E 관점에서 점검한다 | zero-match E2E readiness | local E2E, typecheck, lint, route 확인 |
 | P109.1 marketplace post-E2E next bottleneck review | 완료 | zero-match E2E가 아니라 로컬 거래 E2E 통과 후 남은 MVP 병목을 다시 고른다 | completion report practicalization selected | product/code review |
-| P110.1 completion report practicalization scope review | 예정 | 다음 병목 선정이 아니라 완료 거래에서 실제 신고/운송 결과·정산·보관 서류를 어디까지 받을지 범위를 정한다 | completion report scope | code/data review |
+| P110.1 completion report practicalization scope review | 완료 | 다음 병목 선정이 아니라 완료 거래에서 실제 신고/운송 결과·정산·보관 서류를 어디까지 받을지 범위를 정한다 | practical completion report fields | unit, typecheck, lint, E2E, browser |
+| P111.1 completion report mutation E2E coverage | 예정 | 실무 입력 필드 노출이 아니라 사용자가 입력한 완료 리포트 값이 저장 후 미리보기에 반영되는지 자동 검증한다 | completion report save-to-preview E2E | local E2E |
 
 #### P109 다음 병목 선정
 
@@ -416,14 +417,31 @@ P109 기준 다음 큰 병목은 `완료 리포트 실무화`다. 요청 생성,
 4. 운영 화면 최종 단순화
    - 대표가 지표를 보고 나에게 바로 고쳐달라고 할 수 있는 구조는 생겼지만, 실제 데이터가 쌓인 후 카드 수와 우선순위는 다시 줄일 수 있다.
 
+#### P110 완료 리포트 실무 입력 범위
+
+P110에서 완료 리포트는 새 모델을 다시 만들 필요가 없다고 판단했다. 기존 DB/RPC/RLS/repository/UI/preview는 이미 운송 결과, 통관 결과, 정산 항목, 최종 보관 서류, 출처 snapshot을 받을 수 있다.
+
+이번 보강은 실제 사용자가 입력할 수 없던 실무 필드를 화면에 여는 작업으로 정리했다.
+
+1. 공통 정산 항목
+   - 대표 정산 항목명, 금액, 통화를 입력해 `settlement_items`로 저장한다.
+2. 운송 결과
+   - 선사/운송사, B/L 또는 AWB, 출발일, 도착일, 출발항, 도착항, 특이사항을 `freight_result`로 저장한다.
+3. 통관 결과
+   - 신고번호, 신고 결과 HSK, 원산지, FTA, 신고일, 수리일, 세액 요약, 주의사항을 `clearance_result`로 저장한다.
+4. 보관 서류
+   - 기존 최종 보관 서류 연결과 잠금 전 확인 흐름은 유지한다.
+
+다음 작업은 P111 completion report mutation E2E coverage다. P110이 입력 범위와 화면 노출 보강이라면, P111은 실제 입력값 저장과 preview 반영까지 자동 검증하는 작업이다.
+
 #### P34 다음 코드 작업 후보
 
 1. 해외 파트너 온보딩 보강
    - 해외 업체는 한국 사업자번호 없이 가입할 수 있으므로 검증, 서류, 국가 역할, 언어 기대치를 더 분명히 안내해야 한다.
    - 이미 요청 시작 prefill은 있으므로 새 schema보다 화면 안내와 빈 상태 보강이 우선이다.
 2. 거래 완료 리포트 실제 모델 초안
-   - placeholder는 들어갔지만 실제 신고/운송 결과 메타데이터와 최종 보관 서류 묶음 모델은 아직 없다.
-   - DB/RLS 작업이므로 별도 migration 계획과 security review가 필요하다.
+   - 이후 P35~P36과 P82, P110에서 DB/RLS, transition, preview, 실무 입력 화면까지 1차 보강했다.
+   - 남은 작업은 새 모델 초안이 아니라 저장 mutation E2E와 실제 운영 데이터 기준의 필드 보정이다.
 3. 알림 internal dry-run 운영 리허설
    - route와 provider skeleton은 준비됐다.
    - 실제 production env 설정 전 로컬/service role 기반 리허설 스크립트를 만들 수 있다.

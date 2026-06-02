@@ -21,6 +21,88 @@ function stringValue(formData: FormData, key: string) {
   return typeof value === "string" && value.trim().length > 0 ? value : undefined;
 }
 
+function getAllStrings(formData: FormData, key: string) {
+  return formData
+    .getAll(key)
+    .filter((value): value is string => typeof value === "string")
+    .map((value) => value.trim());
+}
+
+function numericValue(value: string | undefined) {
+  if (!value) return undefined;
+  const parsed = Number(value.replace(/,/g, ""));
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function jsonStringFromRecord(record: Record<string, unknown>) {
+  const compact = Object.fromEntries(
+    Object.entries(record).filter(([, value]) => {
+      if (Array.isArray(value)) return value.length > 0;
+      return value !== undefined && value !== null && value !== "";
+    })
+  );
+
+  return Object.keys(compact).length > 0 ? JSON.stringify(compact) : undefined;
+}
+
+function settlementItemsJson(formData: FormData) {
+  const labels = getAllStrings(formData, "settlementItemLabel");
+  const amounts = getAllStrings(formData, "settlementItemAmount");
+  const currencies = getAllStrings(formData, "settlementItemCurrency");
+  const maxLength = Math.max(labels.length, amounts.length, currencies.length);
+  const items = Array.from({ length: maxLength }, (_, index) => {
+    const label = labels[index];
+    const amount = numericValue(amounts[index]);
+    const currency = currencies[index]?.toUpperCase();
+
+    if (!label && amount === undefined && !currency) return null;
+
+    return {
+      ...(label ? { label } : {}),
+      ...(amount !== undefined ? { amount } : {}),
+      ...(currency ? { currency } : {})
+    };
+  }).filter((item): item is Record<string, unknown> => Boolean(item && Object.keys(item).length > 0));
+
+  return items.length > 0 ? JSON.stringify(items) : undefined;
+}
+
+function freightResultJson(formData: FormData) {
+  return jsonStringFromRecord({
+    arrivalDate: stringValue(formData, "freightArrivalDate"),
+    blOrAwbNo: stringValue(formData, "freightBlOrAwbNo"),
+    carrier: stringValue(formData, "freightCarrier"),
+    departureDate: stringValue(formData, "freightDepartureDate"),
+    destinationPort: stringValue(formData, "freightDestinationPort"),
+    exceptions: getAllStrings(formData, "freightException").filter(Boolean),
+    originPort: stringValue(formData, "freightOriginPort")
+  });
+}
+
+function clearanceResultJson(formData: FormData) {
+  const taxLabel = stringValue(formData, "clearanceTaxLabel");
+  const taxAmount = numericValue(stringValue(formData, "clearanceTaxAmount"));
+  const taxCurrency = stringValue(formData, "clearanceTaxCurrency")?.toUpperCase();
+  const taxSummary = taxLabel || taxAmount !== undefined || taxCurrency
+    ? [{
+      ...(taxLabel ? { label: taxLabel } : {}),
+      ...(taxAmount !== undefined ? { amount: taxAmount } : {}),
+      ...(taxCurrency ? { currency: taxCurrency } : {})
+    }]
+    : [];
+
+  return jsonStringFromRecord({
+    acceptedAt: stringValue(formData, "clearanceAcceptedAt"),
+    cautions: getAllStrings(formData, "clearanceCaution").filter(Boolean),
+    declarationNo: stringValue(formData, "clearanceDeclarationNo"),
+    declaredHskCode: stringValue(formData, "clearanceDeclaredHskCode"),
+    ftaAgreementName: stringValue(formData, "clearanceFtaAgreementName"),
+    originCountryCode: stringValue(formData, "clearanceOriginCountryCode")?.toUpperCase(),
+    releasedAt: stringValue(formData, "clearanceReleasedAt"),
+    taxSummary
+  });
+}
+
 export async function saveServiceRequestCompletionReportAction(
   _previousState: ServiceRequestCompletionReportActionState,
   formData: FormData
@@ -33,13 +115,13 @@ export async function saveServiceRequestCompletionReportAction(
   }
 
   const parsed = serviceRequestCompletionReportSchema.safeParse({
-    clearanceResult: stringValue(formData, "clearanceResult"),
+    clearanceResult: stringValue(formData, "clearanceResult") ?? clearanceResultJson(formData),
     currency: stringValue(formData, "currency"),
     finalAmount: stringValue(formData, "finalAmount"),
-    freightResult: stringValue(formData, "freightResult"),
+    freightResult: stringValue(formData, "freightResult") ?? freightResultJson(formData),
     requestId: stringValue(formData, "requestId"),
     requestType: stringValue(formData, "requestType"),
-    settlementItems: stringValue(formData, "settlementItems"),
+    settlementItems: stringValue(formData, "settlementItems") ?? settlementItemsJson(formData),
     sourceSnapshot: stringValue(formData, "sourceSnapshot"),
     summary: stringValue(formData, "summary"),
     timelineEvents: stringValue(formData, "timelineEvents")

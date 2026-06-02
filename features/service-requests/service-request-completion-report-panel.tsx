@@ -79,6 +79,28 @@ function visibilityLabel(visibility: string) {
   return visibility;
 }
 
+function textRecordValue(record: Record<string, unknown> | undefined, key: string) {
+  const value = record?.[key];
+  return typeof value === "string" ? value : "";
+}
+
+function firstTextArrayValue(record: Record<string, unknown> | undefined, key: string) {
+  const value = record?.[key];
+  if (!Array.isArray(value)) return "";
+  return value.find((item): item is string => typeof item === "string") ?? "";
+}
+
+function firstRecordItem(items: unknown[] | undefined) {
+  const first = items?.find((item) => item && typeof item === "object" && !Array.isArray(item));
+  return first as Record<string, unknown> | undefined;
+}
+
+function textItemValue(record: Record<string, unknown> | undefined, key: string) {
+  const value = record?.[key];
+  if (typeof value === "number") return String(value);
+  return typeof value === "string" ? value : "";
+}
+
 export function ServiceRequestCompletionReportPanel({
   documents = [],
   kind,
@@ -102,6 +124,8 @@ export function ServiceRequestCompletionReportPanel({
   const activeReportId = state.status === "success" && state.reportId ? state.reportId : report?.reportId;
   const sourceDocumentsById = new Map(documents.map((document) => [document.documentId, document]));
   const requiredDocumentCount = Math.max(reportDocuments.filter((document) => document.requiredForArchive).length, 1);
+  const primarySettlementItem = firstRecordItem(report?.settlementItems);
+  const primaryTaxSummary = firstRecordItem(Array.isArray(report?.clearanceResult.taxSummary) ? report.clearanceResult.taxSummary : undefined);
   const workflowSteps = buildCompletionReportWorkflow({
     hasReport: Boolean(activeReportId),
     linkedDocumentCount: reportDocuments.length,
@@ -340,24 +364,125 @@ export function ServiceRequestCompletionReportPanel({
         <summary className="cursor-pointer list-none px-3 py-2 text-sm font-semibold text-slate-800">
           {report ? "완료 리포트 초안 수정" : "완료 리포트 초안 작성"}
         </summary>
-        <form action={action} className="grid gap-3 border-t border-slate-200 p-3 md:grid-cols-[160px_160px_1fr_auto] md:items-end">
+        <form action={action} className="grid gap-3 border-t border-slate-200 p-3">
           <input name="requestId" type="hidden" value={requestId} />
           <input name="requestType" type="hidden" value={kind} />
-          <label className="grid gap-1 text-xs font-semibold text-slate-600">
-            통화
-            <input className="focus-ring h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" defaultValue={report?.currency ?? ""} disabled={pending} name="currency" placeholder="KRW" />
-          </label>
-          <label className="grid gap-1 text-xs font-semibold text-slate-600">
-            최종 금액
-            <input className="focus-ring h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" defaultValue={report?.finalAmount ?? ""} disabled={pending} inputMode="numeric" name="finalAmount" placeholder="0" />
-          </label>
-          <label className="grid gap-1 text-xs font-semibold text-slate-600">
-            완료 요약
-            <input className="focus-ring h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" defaultValue={report?.summary ?? ""} disabled={pending} name="summary" placeholder="민감 원문 없이 완료 결과를 요약" />
-          </label>
-          <button className="focus-ring inline-flex h-10 items-center justify-center rounded-md bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-500" disabled={pending} type="submit">
-            {pending ? "저장 중" : "초안 저장"}
-          </button>
+          <div className="grid gap-3 md:grid-cols-[160px_160px_1fr_auto] md:items-end">
+            <label className="grid gap-1 text-xs font-semibold text-slate-600">
+              통화
+              <input className="focus-ring h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" defaultValue={report?.currency ?? ""} disabled={pending} name="currency" placeholder="KRW" />
+            </label>
+            <label className="grid gap-1 text-xs font-semibold text-slate-600">
+              최종 금액
+              <input className="focus-ring h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" defaultValue={report?.finalAmount ?? ""} disabled={pending} inputMode="numeric" name="finalAmount" placeholder="0" />
+            </label>
+            <label className="grid gap-1 text-xs font-semibold text-slate-600">
+              완료 요약
+              <input className="focus-ring h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" defaultValue={report?.summary ?? ""} disabled={pending} name="summary" placeholder="민감 원문 없이 완료 결과를 요약" />
+            </label>
+            <button className="focus-ring inline-flex h-10 items-center justify-center rounded-md bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-500" disabled={pending} type="submit">
+              {pending ? "저장 중" : "초안 저장"}
+            </button>
+          </div>
+          <div className="grid gap-2 rounded-md border border-slate-200 bg-white p-3">
+            <p className="text-xs font-semibold text-slate-700">정산 항목</p>
+            <div className="grid gap-2 md:grid-cols-[1fr_160px_120px]">
+              <label className="grid gap-1 text-xs font-semibold text-slate-600">
+                항목명
+                <input className="focus-ring h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" defaultValue={textItemValue(primarySettlementItem, "label")} disabled={pending} name="settlementItemLabel" placeholder={kind === "freight" ? "운임" : "통관 수수료"} />
+              </label>
+              <label className="grid gap-1 text-xs font-semibold text-slate-600">
+                금액
+                <input className="focus-ring h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" defaultValue={textItemValue(primarySettlementItem, "amount")} disabled={pending} inputMode="numeric" name="settlementItemAmount" placeholder="0" />
+              </label>
+              <label className="grid gap-1 text-xs font-semibold text-slate-600">
+                통화
+                <input className="focus-ring h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" defaultValue={textItemValue(primarySettlementItem, "currency") || report?.currency || ""} disabled={pending} name="settlementItemCurrency" placeholder="KRW" />
+              </label>
+            </div>
+            <p className="text-xs leading-5 text-slate-500">세부 원문이나 청구서 전문은 입력하지 말고, 보관 리포트에 필요한 대표 정산 항목만 요약합니다.</p>
+          </div>
+          {kind === "freight" ? (
+            <div className="grid gap-2 rounded-md border border-slate-200 bg-white p-3">
+              <p className="text-xs font-semibold text-slate-700">운송 결과</p>
+              <div className="grid gap-2 md:grid-cols-3">
+                <label className="grid gap-1 text-xs font-semibold text-slate-600">
+                  선사/운송사
+                  <input className="focus-ring h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" defaultValue={textRecordValue(report?.freightResult, "carrier")} disabled={pending} name="freightCarrier" />
+                </label>
+                <label className="grid gap-1 text-xs font-semibold text-slate-600">
+                  B/L 또는 AWB
+                  <input className="focus-ring h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" defaultValue={textRecordValue(report?.freightResult, "blOrAwbNo")} disabled={pending} name="freightBlOrAwbNo" />
+                </label>
+                <label className="grid gap-1 text-xs font-semibold text-slate-600">
+                  특이사항
+                  <input className="focus-ring h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" defaultValue={firstTextArrayValue(report?.freightResult, "exceptions")} disabled={pending} name="freightException" placeholder="지연, 파손, 추가비용 등" />
+                </label>
+                <label className="grid gap-1 text-xs font-semibold text-slate-600">
+                  출발일
+                  <input className="focus-ring h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" defaultValue={textRecordValue(report?.freightResult, "departureDate")} disabled={pending} name="freightDepartureDate" type="date" />
+                </label>
+                <label className="grid gap-1 text-xs font-semibold text-slate-600">
+                  도착일
+                  <input className="focus-ring h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" defaultValue={textRecordValue(report?.freightResult, "arrivalDate")} disabled={pending} name="freightArrivalDate" type="date" />
+                </label>
+                <label className="grid gap-1 text-xs font-semibold text-slate-600">
+                  출발항/도착항
+                  <span className="grid grid-cols-2 gap-2">
+                    <input className="focus-ring h-10 min-w-0 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" defaultValue={textRecordValue(report?.freightResult, "originPort")} disabled={pending} name="freightOriginPort" placeholder="BUSAN" />
+                    <input className="focus-ring h-10 min-w-0 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" defaultValue={textRecordValue(report?.freightResult, "destinationPort")} disabled={pending} name="freightDestinationPort" placeholder="LAX" />
+                  </span>
+                </label>
+              </div>
+            </div>
+          ) : (
+            <div className="grid gap-2 rounded-md border border-slate-200 bg-white p-3">
+              <p className="text-xs font-semibold text-slate-700">통관 결과</p>
+              <div className="grid gap-2 md:grid-cols-3">
+                <label className="grid gap-1 text-xs font-semibold text-slate-600">
+                  신고번호
+                  <input className="focus-ring h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" defaultValue={textRecordValue(report?.clearanceResult, "declarationNo")} disabled={pending} name="clearanceDeclarationNo" />
+                </label>
+                <label className="grid gap-1 text-xs font-semibold text-slate-600">
+                  신고 결과 HSK
+                  <input className="focus-ring h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" defaultValue={textRecordValue(report?.clearanceResult, "declaredHskCode")} disabled={pending} inputMode="numeric" name="clearanceDeclaredHskCode" />
+                </label>
+                <label className="grid gap-1 text-xs font-semibold text-slate-600">
+                  원산지/FTA
+                  <span className="grid grid-cols-2 gap-2">
+                    <input className="focus-ring h-10 min-w-0 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" defaultValue={textRecordValue(report?.clearanceResult, "originCountryCode")} disabled={pending} name="clearanceOriginCountryCode" placeholder="KR" />
+                    <input className="focus-ring h-10 min-w-0 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" defaultValue={textRecordValue(report?.clearanceResult, "ftaAgreementName")} disabled={pending} name="clearanceFtaAgreementName" placeholder="한-미 FTA" />
+                  </span>
+                </label>
+                <label className="grid gap-1 text-xs font-semibold text-slate-600">
+                  신고일
+                  <input className="focus-ring h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" defaultValue={textRecordValue(report?.clearanceResult, "acceptedAt")} disabled={pending} name="clearanceAcceptedAt" type="date" />
+                </label>
+                <label className="grid gap-1 text-xs font-semibold text-slate-600">
+                  수리일
+                  <input className="focus-ring h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" defaultValue={textRecordValue(report?.clearanceResult, "releasedAt")} disabled={pending} name="clearanceReleasedAt" type="date" />
+                </label>
+                <label className="grid gap-1 text-xs font-semibold text-slate-600">
+                  주의사항
+                  <input className="focus-ring h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" defaultValue={firstTextArrayValue(report?.clearanceResult, "cautions")} disabled={pending} name="clearanceCaution" placeholder="추가 확인 필요 사항" />
+                </label>
+              </div>
+              <div className="grid gap-2 md:grid-cols-[1fr_160px_120px]">
+                <label className="grid gap-1 text-xs font-semibold text-slate-600">
+                  세액 항목
+                  <input className="focus-ring h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" defaultValue={textItemValue(primaryTaxSummary, "label")} disabled={pending} name="clearanceTaxLabel" placeholder="관세" />
+                </label>
+                <label className="grid gap-1 text-xs font-semibold text-slate-600">
+                  금액
+                  <input className="focus-ring h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" defaultValue={textItemValue(primaryTaxSummary, "amount")} disabled={pending} inputMode="numeric" name="clearanceTaxAmount" placeholder="0" />
+                </label>
+                <label className="grid gap-1 text-xs font-semibold text-slate-600">
+                  통화
+                  <input className="focus-ring h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" defaultValue={textItemValue(primaryTaxSummary, "currency") || report?.currency || ""} disabled={pending} name="clearanceTaxCurrency" placeholder="KRW" />
+                </label>
+              </div>
+            </div>
+          )}
         </form>
       </details>
       {state.message && state.requestId === requestId ? (

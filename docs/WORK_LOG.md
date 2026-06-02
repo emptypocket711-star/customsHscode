@@ -500,6 +500,28 @@
 - `rg -n "Platform Phase 0|P109.1|P110.1|완료 리포트 실무화|completion report practicalization" docs/ROADMAP.md docs/WORK_LOG.md`
 - `git diff --check`
 
+### completion report practicalization scope review
+
+- 이전 작업은 P109 로컬 거래 E2E 통과 후 다음 병목을 완료 리포트 실무화로 정한 작업이고, 이번 작업은 P110 완료 리포트의 실제 입력 범위와 코드 적용 지점을 점검하고 보강한 작업이다.
+- 완료 리포트는 새로 만들 대상이 아니라 기존 DB/RPC/RLS/repository/UI/preview가 이미 운송 결과, 통관 결과, 정산 항목, 보관 서류, 출처 snapshot을 받을 수 있는 상태였다.
+- 실제 공백은 저장 모델이 아니라 초안 작성 화면이었다. 기존 화면은 통화, 최종 금액, 완료 요약만 입력할 수 있어 `settlement_items`, `freight_result`, `clearance_result`가 실무적으로 비어 있었다.
+- `saveServiceRequestCompletionReportAction`이 flat form field를 받아 `settlementItems`, `freightResult`, `clearanceResult` JSON payload로 조립하게 했다.
+- 완료 리포트 패널에 공통 정산 항목 입력을 추가했다.
+- 운송 완료 리포트에는 선사/운송사, B/L 또는 AWB, 출발일, 도착일, 출발항, 도착항, 특이사항 입력을 추가했다.
+- 통관 완료 리포트에는 신고번호, 신고 결과 HSK, 원산지, FTA, 신고일, 수리일, 세액 요약, 주의사항 입력을 추가했다.
+- 기존 보관 서류 연결, 제출, 확인, 운영 검토, 잠금 흐름은 유지했다.
+- 이번 P110은 P109처럼 다음 병목을 고르는 문서 작업이 아니다. 실제 완료 리포트 화면에서 실무 필드를 입력할 수 있게 한 UI/action 보강이다.
+- 다음 작업은 P111 completion report mutation E2E coverage다. 이번 P110이 실무 입력 필드 노출이라면, P111은 입력값 저장 후 preview 반영까지 자동 검증하는 작업이다.
+
+검증:
+
+- `npx vitest run features/service-requests/service-request-completion-report-schemas.test.ts features/service-requests/service-request-completion-report-preview.test.ts features/service-requests/service-request-completion-report-workflow.test.ts server/repositories/service-request-completion-report.repository.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
+- local-only env override로 `npm run e2e:completion-preview:local`: seed, auth, preview E2E `result=ok`
+- Playwright requester detail check: 운송/통관 완료 리포트 수정 폼에서 정산 항목, 운송 결과, 통관 결과 입력 영역 표시 확인
+
 ## 2026-06-02
 
 ### local login review smoke
