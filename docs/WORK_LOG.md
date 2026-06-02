@@ -321,6 +321,20 @@
 - Playwright requester detail check: 운송/통관 상세 route 렌더링과 역할별 공개 범위 문구 유지 확인
 - `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
 
+### marketplace refactor boundary review
+
+- 이전 작업은 P99 동일한 문서 유형·입찰 상태 label helper 공통화이고, 이번 작업은 P100 marketplace 패널 리팩터링 경계 점검이다.
+- 운송/통관 패널은 여전히 각각 1,300줄대라 크지만, 남은 중복 함수는 역할별 문구, 입력 필드, 견적 비교 기준, 서류 공개 문구 차이가 크다.
+- `visibilityLabel`, `statusLabel`, `nextActionLabel`, pre-select checklist, bid comparison guide는 공통화하면 포워더/관세사무소 문구 차이나 법적 안전 문구가 흐려질 위험이 있다.
+- 현재 단계에서는 broad refactor를 멈추고 다음 기능 작업으로 전환하는 것이 더 안전하다.
+- 다음 작업은 P101 marketplace 다음 기능 후보 선정이다. 이번 P100이 리팩터링 경계 판단이라면, P101은 플랫폼 MVP에서 다음으로 실제 기능을 보강할 영역을 고르는 작업이다.
+
+검증:
+
+- `wc -l features/service-requests/freight-request-draft-panel.tsx features/service-requests/clearance-request-draft-panel.tsx features/service-requests/service-request-status.ts`
+- `rg "function .*Label|function .*Tone|function .*Progress|function .*LifecycleControls|function .*Question|function .*Bid|function .*NextSteps|function missing.*FieldLabels|function readFormValues" features/service-requests/freight-request-draft-panel.tsx features/service-requests/clearance-request-draft-panel.tsx -n`
+- 코드 변경 없음: 경계 판단과 문서 기록만 수행
+
 ## 2026-06-02
 
 ### local login review smoke

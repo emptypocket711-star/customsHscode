@@ -385,7 +385,8 @@
 | P98.2 service request status count helper | 완료 | count 중복 점검이 아니라 동일한 요청 상태 count 계산을 공통 helper로 분리한다 | service request count helper | browser, typecheck, lint |
 | P99.1 marketplace label helper consolidation review | 완료 | 상태 count helper가 아니라 status/visibility/bid label 함수 중 공통화 가능한 것과 역할별 문구 차이가 있는 것을 구분한다 | shared document and bid labels selected | code review |
 | P99.2 shared service request document and bid labels | 완료 | label helper 검토가 아니라 동일한 문서 유형·입찰 상태 label/tone만 공통화하고 역할별 공개 범위 문구는 유지한다 | shared label helpers | browser, typecheck, lint |
-| P100.1 marketplace refactor boundary review | 예정 | label helper 공통화가 아니라 marketplace 패널 리팩터링을 더 진행할지, 다음 기능 작업으로 전환할지 경계 점검한다 | refactor boundary review | code/UX review |
+| P100.1 marketplace refactor boundary review | 완료 | label helper 공통화가 아니라 marketplace 패널 리팩터링을 더 진행할지, 다음 기능 작업으로 전환할지 경계 점검한다 | stop broad refactor, switch to feature work | code/UX review |
+| P101.1 marketplace next feature selection | 예정 | 리팩터링 경계 점검이 아니라 플랫폼 MVP에서 다음 기능 작업 후보를 다시 고른다 | next feature selection | product/UX review |
 
 #### P34 다음 코드 작업 후보
 
