@@ -7809,3 +7809,25 @@
 - `npx vitest run server/repositories/platform-operations.repository.test.ts`
 - `npm run typecheck`
 - `npm run lint`
+
+### transaction state route regression
+
+- 이전 작업은 완료 상태에서 리포트·보관 서류·피드백 확인 순서를 표시한 P149.1이고, 이번 작업은 최근 견적·선정·진행·완료 상태 UI 변경 후 역할별 route가 계속 정상 렌더링되는지 확인한 P150.1이다.
+- 화주 계정으로 운송·통관 상세의 받은 견적 영역을 확인했다.
+- 포워더 계정으로 운송 opportunity 상세의 제출한 견적 영역을 확인했다.
+- 관세사무소 계정으로 통관 opportunity 상세의 제출한 견적 영역을 확인했다.
+- 완료 preview 화주 계정으로 운송·통관 완료 상태 후속 안내 영역을 확인했다.
+- 개발자 계정으로 운영 요청 상세의 견적 수정·철회 정책 영역을 확인했다.
+- 새 코드 변경은 없고, 문서 상태만 완료로 갱신했다.
+- 로컬 파일만 수정했고 원격 푸시, 배포는 하지 않았다.
+
+검증:
+
+- Playwright route smoke:
+  - requester `/requests/freight/75000000-0000-4000-8000-000000000001#request-bids`
+  - requester `/requests/clearance/75000000-0000-4000-8000-000000000002#request-bids`
+  - forwarder `/requests/freight/opportunities/75000000-0000-4000-8000-000000000001#opportunity-bid`
+  - broker `/requests/clearance/opportunities/75000000-0000-4000-8000-000000000002#opportunity-bid`
+  - requester `/requests/freight/00000000-0000-4000-8000-000000000101#request-completion`
+  - requester `/requests/clearance/00000000-0000-4000-8000-000000000201#request-completion`
+  - developer `/operations/requests/75000000-0000-4000-8000-000000000001#request-bids`
