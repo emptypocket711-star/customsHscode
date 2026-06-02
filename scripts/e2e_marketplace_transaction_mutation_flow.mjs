@@ -110,6 +110,27 @@ async function selectRequesterBid(browser, kind, requestId, amountText, selectBu
   }
 }
 
+async function completeRequesterLifecycle(browser, kind, requestId, labels) {
+  const { context, page } = await pageFor(browser, "requester");
+  try {
+    await page.goto(transactionUrl(kind, "requester", requestId), { waitUntil: "networkidle", timeout: timeoutMs });
+    await clickAndSettle(page, page.getByRole("button", { name: labels.startButton }));
+    await page.goto(transactionUrl(kind, "requester", requestId), { waitUntil: "networkidle", timeout: timeoutMs });
+    await waitForBodyText(page, labels.afterStartText, `${kind} requester detail에 진행중 상태와 완료 처리 CTA가 보이지 않습니다.`);
+
+    await page.locator('input[name="completionNote"]').fill(`${kind} E2E completion note`, { timeout: timeoutMs });
+    await clickAndSettle(page, page.getByRole("button", { name: labels.completeButton }));
+    await page.goto(transactionUrl(kind, "requester", requestId), { waitUntil: "networkidle", timeout: timeoutMs });
+    await waitForBodyText(page, labels.afterCompleteText, `${kind} requester detail에 완료 상태와 피드백 폼이 보이지 않습니다.`);
+    await waitForBodyText(page, "완료 요청 피드백", `${kind} requester detail에 완료 후 피드백 폼이 보이지 않습니다.`);
+    await clickAndSettle(page, page.getByRole("button", { name: "피드백 제출" }));
+    await page.goto(transactionUrl(kind, "requester", requestId), { waitUntil: "networkidle", timeout: timeoutMs });
+    await waitForBodyText(page, "완료 요청 피드백 제출됨", `${kind} requester detail에 제출된 피드백 상태가 보이지 않습니다.`);
+  } finally {
+    await context.close();
+  }
+}
+
 async function assertSelectedPartnerView(browser, kind, role, requestId, selectedText) {
   const { context, page } = await pageFor(browser, role);
   try {
@@ -138,6 +159,12 @@ async function main() {
       "포워더 선정 후 다음 업무"
     );
     await assertSelectedPartnerView(browser, "freight", "forwarder", fixture.mutation.requests.freight.id, "선정된 운송 요청");
+    await completeRequesterLifecycle(browser, "freight", fixture.mutation.requests.freight.id, {
+      afterCompleteText: "운송 요청이 완료 처리되었습니다.",
+      afterStartText: "운송 완료 처리",
+      completeButton: "운송 완료 처리",
+      startButton: "운송 진행 시작"
+    });
 
     await submitClearanceBid(browser);
     await selectRequesterBid(
@@ -149,6 +176,12 @@ async function main() {
       "관세사무소 선정 후 다음 업무"
     );
     await assertSelectedPartnerView(browser, "clearance", "broker", fixture.mutation.requests.clearance.id, "선정된 통관 의뢰");
+    await completeRequesterLifecycle(browser, "clearance", fixture.mutation.requests.clearance.id, {
+      afterCompleteText: "통관 의뢰가 완료 처리되었습니다.",
+      afterStartText: "통관 완료 처리",
+      completeButton: "통관 완료 처리",
+      startButton: "통관 진행 시작"
+    });
 
     console.log("Marketplace transaction mutation E2E");
     console.log(`baseUrl=${baseUrl}`);
