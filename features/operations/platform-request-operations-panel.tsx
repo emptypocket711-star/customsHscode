@@ -213,6 +213,40 @@ function buildTrustMetricGuidance(summary: PlatformRequestOperationsSummary) {
   };
 }
 
+type OperationsMetricCard = {
+  detail: string;
+  label: string;
+  tone: "neutral" | "warning" | "info" | "success";
+  value: string;
+};
+
+export function buildPlatformRequestOperationsMetricGroups(summary: PlatformRequestOperationsSummary): {
+  diagnosticMetrics: OperationsMetricCard[];
+  primaryMetrics: OperationsMetricCard[];
+} {
+  return {
+    diagnosticMetrics: [
+      { detail: "완료 후 정산·보관 서류 리포트가 비어있는 거래", label: "리포트 없음", tone: tone(summary.completedWithoutReport), value: `${summary.completedWithoutReport}건` },
+      { detail: "제출 후 화주 또는 파트너 확인이 필요한 리포트", label: "리포트 확인 대기", tone: tone(summary.completionReportsSubmitted), value: `${summary.completionReportsSubmitted}건` },
+      { detail: "상대방 확인 후 운영자가 검토해야 하는 리포트", label: "운영 검토 필요", tone: tone(summary.completionReportsAcknowledged), value: `${summary.completionReportsAcknowledged}건` },
+      { detail: "운영 검토 후 최종 보관 잠금이 필요한 리포트", label: "잠금 대기", tone: tone(summary.completionReportsReadyToLock), value: `${summary.completionReportsReadyToLock}건` },
+      { detail: "수정 불가한 최종 보관 리포트", label: "잠금 완료", tone: summary.completionReportsLocked > 0 ? "success" as const : "neutral" as const, value: `${summary.completionReportsLocked}건` },
+      { detail: "완료 후 신뢰 데이터가 비어있는 거래", label: "후기 미제출", tone: tone(summary.completedWithoutFeedback), value: `${summary.completedWithoutFeedback}건` },
+      { detail: "화주 답변이 필요한 질문", label: "미답변 질문", tone: tone(summary.unansweredQuestions), value: `${summary.unansweredQuestions}건` },
+      { detail: "매칭·알림 점검 대상", label: "견적 없는 공개", tone: tone(summary.openWithoutBids), value: `${summary.openWithoutBids}건` },
+      { detail: "저장 후 다음 행동 안내 대상", label: "오래된 초안", tone: tone(summary.staleDrafts), value: `${summary.staleDrafts}건` },
+      { detail: "완료 처리·후속 안내 점검 대상", label: "오래 진행중", tone: tone(summary.staleInProgress), value: `${summary.staleInProgress}건` },
+      { detail: "만료 처리 점검 대상", label: "마감 지난 공개", tone: tone(summary.staleOpen), value: `${summary.staleOpen}건` }
+    ],
+    primaryMetrics: [
+      { detail: `운송 ${summary.freight} / 통관 ${summary.clearance}`, label: "전체 요청", tone: "info" as const, value: `${summary.total}건` },
+      { detail: `공개중 ${summary.open} / 견적도착 ${summary.bidsReceived}`, label: "진행 요청", tone: summary.open + summary.bidsReceived > 0 ? "warning" as const : "neutral" as const, value: `${summary.open + summary.bidsReceived}건` },
+      { detail: `선정 ${summary.partnerSelected} / 완료 ${summary.completed}`, label: "선정 후 진행", tone: summary.inProgress + summary.partnerSelected > 0 ? "info" as const : "neutral" as const, value: `${summary.inProgress}건` },
+      { detail: `평균 ${summary.averageFeedbackRating ?? "-"}점 / 낮은 후기 ${summary.lowFeedbacks}건`, label: "거래 후기", tone: summary.lowFeedbacks > 0 ? "warning" as const : "success" as const, value: `${summary.feedbackCount}건` }
+    ]
+  };
+}
+
 export function PlatformRequestOperationsPanel({
   summary
 }: {
@@ -221,23 +255,7 @@ export function PlatformRequestOperationsPanel({
   const ownerActionQueue = buildOwnerActionQueue(summary);
   const copyReadyRequest = buildCopyReadyOperationsRequest(summary, ownerActionQueue);
   const trustMetricGuidance = buildTrustMetricGuidance(summary);
-  const metrics = [
-    { detail: `운송 ${summary.freight} / 통관 ${summary.clearance}`, label: "전체 요청", tone: "info" as const, value: `${summary.total}건` },
-    { detail: `공개중 ${summary.open} / 견적도착 ${summary.bidsReceived}`, label: "진행 요청", tone: summary.open + summary.bidsReceived > 0 ? "warning" as const : "neutral" as const, value: `${summary.open + summary.bidsReceived}건` },
-    { detail: `선정 ${summary.partnerSelected} / 완료 ${summary.completed}`, label: "선정 후 진행", tone: summary.inProgress + summary.partnerSelected > 0 ? "info" as const : "neutral" as const, value: `${summary.inProgress}건` },
-    { detail: `평균 ${summary.averageFeedbackRating ?? "-"}점 / 낮은 후기 ${summary.lowFeedbacks}건`, label: "거래 후기", tone: summary.lowFeedbacks > 0 ? "warning" as const : "success" as const, value: `${summary.feedbackCount}건` },
-    { detail: "완료 후 정산·보관 서류 리포트가 비어있는 거래", label: "리포트 없음", tone: tone(summary.completedWithoutReport), value: `${summary.completedWithoutReport}건` },
-    { detail: "제출 후 화주 또는 파트너 확인이 필요한 리포트", label: "리포트 확인 대기", tone: tone(summary.completionReportsSubmitted), value: `${summary.completionReportsSubmitted}건` },
-    { detail: "상대방 확인 후 운영자가 검토해야 하는 리포트", label: "운영 검토 필요", tone: tone(summary.completionReportsAcknowledged), value: `${summary.completionReportsAcknowledged}건` },
-    { detail: "운영 검토 후 최종 보관 잠금이 필요한 리포트", label: "잠금 대기", tone: tone(summary.completionReportsReadyToLock), value: `${summary.completionReportsReadyToLock}건` },
-    { detail: "수정 불가한 최종 보관 리포트", label: "잠금 완료", tone: summary.completionReportsLocked > 0 ? "success" as const : "neutral" as const, value: `${summary.completionReportsLocked}건` },
-    { detail: "완료 후 신뢰 데이터가 비어있는 거래", label: "후기 미제출", tone: tone(summary.completedWithoutFeedback), value: `${summary.completedWithoutFeedback}건` },
-    { detail: "화주 답변이 필요한 질문", label: "미답변 질문", tone: tone(summary.unansweredQuestions), value: `${summary.unansweredQuestions}건` },
-    { detail: "매칭·알림 점검 대상", label: "견적 없는 공개", tone: tone(summary.openWithoutBids), value: `${summary.openWithoutBids}건` },
-    { detail: "저장 후 다음 행동 안내 대상", label: "오래된 초안", tone: tone(summary.staleDrafts), value: `${summary.staleDrafts}건` },
-    { detail: "완료 처리·후속 안내 점검 대상", label: "오래 진행중", tone: tone(summary.staleInProgress), value: `${summary.staleInProgress}건` },
-    { detail: "만료 처리 점검 대상", label: "마감 지난 공개", tone: tone(summary.staleOpen), value: `${summary.staleOpen}건` }
-  ];
+  const { diagnosticMetrics, primaryMetrics } = buildPlatformRequestOperationsMetricGroups(summary);
 
   return (
     <div id="platform-request-operations" className="scroll-mt-6">
@@ -309,17 +327,28 @@ export function PlatformRequestOperationsPanel({
               <CopyOperationsRequestButton text={copyReadyRequest} />
             </div>
           </div>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {primaryMetrics.map((metric) => (
+              <div className="rounded-md border border-slate-200 bg-slate-50 p-3" key={metric.label}>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-slate-950">{metric.label}</p>
+                  <Badge tone={metric.tone}>{metric.value}</Badge>
+                </div>
+                <p className="mt-1 text-xs leading-5 text-slate-600">{metric.detail}</p>
+              </div>
+            ))}
+          </div>
           <details className="rounded-md border border-slate-200 bg-white">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
               <span>
-                <span className="block text-sm font-semibold text-slate-950">상세 운영 지표와 확인 샘플</span>
-                <span className="mt-1 block text-xs leading-5 text-slate-600">필요할 때만 펼쳐서 건수, 샘플 요청, 복사용 원문을 확인합니다.</span>
+                <span className="block text-sm font-semibold text-slate-950">상세 진단 지표와 확인 샘플</span>
+                <span className="mt-1 block text-xs leading-5 text-slate-600">리포트, 후기, 질문, 마감 등 세부 병목은 필요할 때만 펼쳐서 확인합니다.</span>
               </span>
-              <Badge tone="neutral">상세</Badge>
+              <Badge tone="neutral">{diagnosticMetrics.length}개 지표</Badge>
             </summary>
             <div className="grid gap-4 border-t border-slate-200 p-4">
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {metrics.map((metric) => (
+                {diagnosticMetrics.map((metric) => (
                   <div className="rounded-md border border-slate-200 bg-slate-50 p-3" key={metric.label}>
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-sm font-semibold text-slate-950">{metric.label}</p>

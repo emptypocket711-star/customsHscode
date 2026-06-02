@@ -271,7 +271,8 @@
 | P67.4 dashboard role-aware action final verification | 완료 | route smoke assertion이 아니라 대시보드 역할별 카드 변경 전체를 최종 검증한다 | final verification | unit, smoke, typecheck, lint, build |
 | P68.1 next non-DB platform work selection | 완료 | 대시보드 역할별 카드 최종 검증이 아니라 DB 적용 없이 이어갈 다음 제품 작업을 고른다 | marketplace notification local rehearsal selected | roadmap review |
 | P68.2 marketplace notification local rehearsal | 완료 | 인박스 읽음 처리가 아니라 운영자가 worker route의 target 계산, send 차단, claim-only 동작을 로컬에서 확인한다 | notification rehearsal script | node check, rehearsal, unit, typecheck, lint |
-| P68.3 operator visibility simplification | 예정 | 알림 worker 리허설이 아니라 대표/운영자가 다음 조치만 빠르게 보도록 운영 화면 노이즈를 줄인다 | admin operations surface review | browser, typecheck, lint |
+| P68.3 operator visibility simplification | 완료 | 알림 worker 리허설이 아니라 대표/운영자가 다음 조치만 빠르게 보도록 운영 화면 노이즈를 줄인다 | primary metrics, collapsed diagnostics | unit, browser, typecheck, lint |
+| P68.4 partner action conversion review | 예정 | 운영자 관리 화면 단순화가 아니라 파트너가 알림을 본 뒤 입찰 상세로 이동하고 행동할 수 있는지 점검한다 | partner dashboard-to-opportunity review | browser, e2e, typecheck, lint |
 
 #### P34 다음 코드 작업 후보
 
