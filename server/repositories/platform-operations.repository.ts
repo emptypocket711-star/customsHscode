@@ -83,6 +83,11 @@ export type PlatformRequestOperationsDetail = {
     summaryPresent: boolean;
     updatedAt: string;
   } | null;
+  feedbackSummary: {
+    averageRating: number | null;
+    count: number;
+    lowScoreCount: number;
+  };
   documents: Array<{
     createdAt: string;
     documentId: string;
@@ -171,6 +176,7 @@ export const platformRequestOperationsDetailSelects = {
   documents: "id,document_type,file_size,visibility,created_at",
   completionReport: "id,status,summary,currency,final_amount,clearance_result,freight_result,submitted_at,locked_at,updated_at",
   completionReportDocuments: "id,document_role,required_for_archive",
+  feedbacks: "id,rating,response_speed_score,communication_score,document_quality_score",
   questions: "id,bidder_company_id,answered_at,created_at",
   request: "id,request_type,direction,status,hsk_code,origin_country_code,destination_country_code,deadline_at,created_at"
 } as const;
@@ -622,6 +628,7 @@ export async function getPlatformRequestOperationsDetail(
         clearanceDetail: null,
         completionReport: null,
         documents: [],
+        feedbackSummary: { averageRating: null, count: 0, lowScoreCount: 0 },
         freightDetail: null,
         questions: [],
         request: null,
@@ -638,6 +645,7 @@ export async function getPlatformRequestOperationsDetail(
       clearanceDetail: null,
       completionReport: null,
       documents: [],
+      feedbackSummary: { averageRating: null, count: 0, lowScoreCount: 0 },
       freightDetail: null,
       questions: [],
       request: null,
@@ -657,7 +665,7 @@ export async function getPlatformRequestOperationsDetail(
     status: PlatformRequestStatus;
   };
 
-  const [documentsResult, questionsResult, bidsResult, freightDetailResult, clearanceDetailResult, completionReportResult] = await Promise.all([
+  const [documentsResult, questionsResult, bidsResult, feedbacksResult, freightDetailResult, clearanceDetailResult, completionReportResult] = await Promise.all([
     supabase
       .from("service_request_documents")
       .select(platformRequestOperationsDetailSelects.documents)
@@ -674,6 +682,11 @@ export async function getPlatformRequestOperationsDetail(
       .eq("request_id", requestId)
       .neq("status", "hidden")
       .order("created_at", { ascending: true }),
+    supabase
+      .from("service_request_feedbacks")
+      .select(platformRequestOperationsDetailSelects.feedbacks)
+      .eq("request_id", requestId)
+      .order("created_at", { ascending: false }),
     requestRow.request_type === "freight"
       ? supabase
         .from("freight_request_details")
@@ -702,6 +715,7 @@ export async function getPlatformRequestOperationsDetail(
     documentsResult.error,
     questionsResult.error,
     bidsResult.error,
+    feedbacksResult.error,
     freightDetailResult.error,
     clearanceDetailResult.error,
     completionReportResult.error && !isMissingMarketplaceSchemaError(completionReportResult.error) ? completionReportResult.error : null
@@ -735,6 +749,19 @@ export async function getPlatformRequestOperationsDetail(
     summary: string | null;
     updated_at: string;
   } | null;
+  const feedbackRows = (feedbacksResult.data ?? []) as Array<{
+    communication_score: number | null;
+    document_quality_score: number | null;
+    id: string;
+    rating: number;
+    response_speed_score: number | null;
+  }>;
+  const lowScoreCount = feedbackRows.filter((feedback) =>
+    feedback.rating <= 3 ||
+    (feedback.response_speed_score !== null && feedback.response_speed_score <= 3) ||
+    (feedback.communication_score !== null && feedback.communication_score <= 3) ||
+    (feedback.document_quality_score !== null && feedback.document_quality_score <= 3)
+  ).length;
   const completionReportDocumentsResult = completionReport
     ? await supabase
       .from("service_request_completion_report_documents")
@@ -795,6 +822,13 @@ export async function getPlatformRequestOperationsDetail(
       summaryPresent: Boolean(completionReport.summary),
       updatedAt: completionReport.updated_at
     } : null,
+    feedbackSummary: {
+      averageRating: feedbackRows.length
+        ? Math.round((feedbackRows.reduce((total, feedback) => total + feedback.rating, 0) / feedbackRows.length) * 10) / 10
+        : null,
+      count: feedbackRows.length,
+      lowScoreCount
+    },
     documents: ((documentsResult.data ?? []) as Array<{
       created_at: string;
       document_type: string;

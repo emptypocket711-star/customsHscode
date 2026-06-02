@@ -279,7 +279,10 @@
 | P69.3 post-selection completion flow review | 완료 | 상세 견적 앵커 검증이 아니라 업체 선정 후 진행중·완료·피드백 전환이 실제 사용 흐름에서 막히지 않는지 점검한다 | mutation E2E lifecycle extension | local runner, node check |
 | P69.4 post-completion report handoff review | 완료 | 완료/피드백 전환 검증이 아니라 완료 이후 리포트·정산·보관 서류 안내가 실제 다음 행동으로 충분한지 점검한다 | completion report handoff UX | local runner, typecheck, lint |
 | P69.5 transaction flow final self-review | 완료 | 완료 리포트 안내 보강이 아니라 P69 대시보드→상세→선정→완료→피드백→리포트 흐름 전체를 자체 리뷰한다 | mutation plan docs sync | docs, local runner |
-| P70.1 next platform rail selection | 예정 | 거래 흐름 자체 리뷰가 아니라 다음으로 이어갈 플랫폼 MVP 병목을 다시 고른다 | roadmap/code review | docs review |
+| P70.1 next platform rail selection | 완료 | 거래 흐름 자체 리뷰가 아니라 다음으로 이어갈 플랫폼 MVP 병목을 다시 고른다 | operations completion-report visibility selected | roadmap/code review |
+| P70.2 operations completion handoff visibility | 완료 | 사용자 거래 완료 흐름이 아니라 운영자가 완료 리포트·피드백 누락 병목을 바로 확인하고 상세로 들어갈 수 있는지 점검한다 | operations completion handoff review | browser, typecheck, lint |
+| P70.3 operations sensitive-field regression guard | 완료 | 운영 상세 표시 보강이 아니라 완료/피드백 조회가 코멘트·금액·원문 같은 민감 필드를 다시 가져오지 못하게 테스트로 고정한다 | repository select guard | unit, typecheck, lint |
+| P70.4 operations bottleneck action rail | 예정 | 운영 상세의 단건 확인이 아니라 운영 통계 화면에서 완료 리포트·피드백·오래 진행중 병목을 바로 다음 행동으로 고르는 흐름을 정리한다 | operations dashboard action review | browser, unit, typecheck, lint |
 
 #### P34 다음 코드 작업 후보
 

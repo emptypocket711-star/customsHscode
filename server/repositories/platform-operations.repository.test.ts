@@ -17,6 +17,8 @@ describe("platform request operations summary", () => {
     expect(selectedColumns).not.toContain("question");
     expect(selectedColumns).not.toContain("answer");
     expect(selectedColumns).not.toContain("message");
+    expect(selectedColumns).not.toContain("comment");
+    expect(selectedColumns).not.toContain("comments");
     expect(selectedColumns).not.toContain("total_amount");
   });
 
@@ -246,6 +248,7 @@ describe("platform request operations summary", () => {
         fileSize: 1234,
         visibility: "requester_only"
       }],
+      feedbackSummary: { averageRating: null, count: 0, lowScoreCount: 0 },
       freightDetail: null,
       questions: [{
         answer: null,
@@ -287,6 +290,7 @@ describe("platform request operations summary", () => {
       clearanceDetail: null,
       completionReport: null,
       documents: [],
+      feedbackSummary: { averageRating: null, count: 0, lowScoreCount: 0 },
       freightDetail: null,
       questions: [],
       request: {

@@ -210,6 +210,27 @@ export default async function OperationsRequestDetailPage({
         </CardBody>
       </Card>
 
+      <Card>
+        <CardHeader
+          action={<Badge tone={detail.feedbackSummary.lowScoreCount > 0 ? "warning" : detail.feedbackSummary.count > 0 ? "success" : "neutral"}>{detail.feedbackSummary.count}건</Badge>}
+          description="피드백 코멘트 원문은 표시하지 않고 점수 집계만 확인합니다."
+          title="완료 후 피드백 운영 요약"
+        />
+        <CardBody className="grid gap-3">
+          {detail.feedbackSummary.count > 0 ? (
+            <div className="grid gap-2 rounded-md bg-slate-50 p-3 text-sm text-slate-600 md:grid-cols-3">
+              <span>피드백 수 {detail.feedbackSummary.count}건</span>
+              <span>평균 평점 {detail.feedbackSummary.averageRating ?? "-"}점</span>
+              <span>낮은 점수 {detail.feedbackSummary.lowScoreCount}건</span>
+            </div>
+          ) : (
+            <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
+              완료된 거래라면 피드백 제출 CTA가 사용자 상세에 표시되는지 확인해야 합니다. 피드백이 없으면 파트너 신뢰 지표와 추천 품질 데이터가 쌓이지 않습니다.
+            </p>
+          )}
+        </CardBody>
+      </Card>
+
       <div className="grid gap-4 lg:grid-cols-3">
         <div id="request-documents" className="scroll-mt-6">
         <Card>
