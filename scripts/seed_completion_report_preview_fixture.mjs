@@ -120,23 +120,28 @@ async function main() {
 
   await deleteByIds(client, "service_request_completion_report_documents", [
     "00000000-0000-4000-8000-000000000141",
-    "00000000-0000-4000-8000-000000000241"
+    "00000000-0000-4000-8000-000000000241",
+    "00000000-0000-4000-8000-000000000341"
   ]);
   await deleteByIds(client, "service_request_completion_reports", [
     "00000000-0000-4000-8000-000000000121",
-    "00000000-0000-4000-8000-000000000221"
+    "00000000-0000-4000-8000-000000000221",
+    "00000000-0000-4000-8000-000000000321"
   ]);
   await deleteByIds(client, "service_bids", [
     "00000000-0000-4000-8000-000000000111",
-    "00000000-0000-4000-8000-000000000211"
+    "00000000-0000-4000-8000-000000000211",
+    "00000000-0000-4000-8000-000000000311"
   ]);
   await deleteByIds(client, "service_request_documents", [
     "00000000-0000-4000-8000-000000000131",
-    "00000000-0000-4000-8000-000000000231"
+    "00000000-0000-4000-8000-000000000231",
+    "00000000-0000-4000-8000-000000000331"
   ]);
   await deleteByIds(client, "service_requests", [
     fixture.freightRequestId,
-    fixture.clearanceRequestId
+    fixture.clearanceRequestId,
+    fixture.draftFreightRequestId
   ]);
 
   const requesterUserId = authUsers.get(fixture.requesterUserEmail).id;
@@ -170,6 +175,20 @@ async function main() {
       status: "completed",
       title: "완료 리포트 테스트 통관 요청",
       visibility: "matched_partners"
+    },
+    {
+      created_by: requesterUserId,
+      destination_country_code: "US",
+      direction: "export",
+      id: fixture.draftFreightRequestId,
+      origin_country_code: "KR",
+      product_summary: "테스트 수정 가능 운송 완료 리포트 품목",
+      requester_company_id: companies[0].id,
+      request_type: "freight",
+      source_lookup_snapshot: {},
+      status: "completed",
+      title: "완료 리포트 mutation 테스트 운송 요청",
+      visibility: "matched_partners"
     }
   ], { onConflict: "id" });
 
@@ -197,6 +216,18 @@ async function main() {
       status: "selected",
       submitted_at: "2026-06-01T00:00:00.000Z",
       total_amount: 110000
+    },
+    {
+      bid_type: "freight",
+      bidder_company_id: companies[1].id,
+      created_by: selectedPartnerUserId,
+      currency: "KRW",
+      id: "00000000-0000-4000-8000-000000000311",
+      request_id: fixture.draftFreightRequestId,
+      selected_at: "2026-06-01T00:00:00.000Z",
+      status: "selected",
+      submitted_at: "2026-06-01T00:00:00.000Z",
+      total_amount: 330000
     }
   ], { onConflict: "id" });
 
@@ -224,6 +255,19 @@ async function main() {
       requester_company_id: companies[0].id,
       storage_bucket: "service-request-documents",
       storage_path: `${companies[0].id}/completion-preview/clearance.pdf`,
+      uploaded_by: requesterUserId,
+      visibility: "selected_partner"
+    },
+    {
+      checksum: "completion-preview-document-checksum-draft-freight",
+      document_type: "bill_of_lading",
+      file_name: "TEST-DRAFT-FREIGHT-FILE-NOT-DISPLAYED.pdf",
+      id: "00000000-0000-4000-8000-000000000331",
+      mime_type: "application/pdf",
+      request_id: fixture.draftFreightRequestId,
+      requester_company_id: companies[0].id,
+      storage_bucket: "service-request-documents",
+      storage_path: `${companies[0].id}/completion-preview/draft-freight.pdf`,
       uploaded_by: requesterUserId,
       visibility: "selected_partner"
     }
@@ -286,6 +330,30 @@ async function main() {
       status: "operator_reviewed",
       submitted_at: "2026-06-01T00:00:00.000Z",
       summary: "테스트 통관 완료 리포트 요약"
+    },
+    {
+      clearance_result: {},
+      created_by: requesterUserId,
+      currency: "KRW",
+      final_amount: 330000,
+      freight_result: {
+        blOrAwbNo: "TEST-DRAFT-BL-BEFORE",
+        carrier: "TEST DRAFT CARRIER BEFORE"
+      },
+      id: "00000000-0000-4000-8000-000000000321",
+      request_id: fixture.draftFreightRequestId,
+      request_type: "freight",
+      requester_company_id: companies[0].id,
+      selected_partner_company_id: companies[1].id,
+      settlement_items: [{ amount: 330000, currency: "KRW", label: "테스트 수정 전 운임" }],
+      source_snapshot: buildCompletionReportPreviewSourceSnapshot({
+        bidType: "freight",
+        direction: "export",
+        selectedBidId: "00000000-0000-4000-8000-000000000311"
+      }),
+      status: "draft",
+      submitted_at: null,
+      summary: "테스트 수정 전 운송 완료 리포트 요약"
     }
   ], { onConflict: "id" });
 
@@ -304,6 +372,14 @@ async function main() {
       document_role: "import_declaration_certificate",
       id: "00000000-0000-4000-8000-000000000241",
       request_document_id: "00000000-0000-4000-8000-000000000231",
+      required_for_archive: true
+    },
+    {
+      added_by: requesterUserId,
+      completion_report_id: "00000000-0000-4000-8000-000000000321",
+      document_role: "final_bl_or_awb",
+      id: "00000000-0000-4000-8000-000000000341",
+      request_document_id: "00000000-0000-4000-8000-000000000331",
       required_for_archive: true
     }
   ], { onConflict: "id" });

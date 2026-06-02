@@ -522,6 +522,25 @@
 - local-only env override로 `npm run e2e:completion-preview:local`: seed, auth, preview E2E `result=ok`
 - Playwright requester detail check: 운송/통관 완료 리포트 수정 폼에서 정산 항목, 운송 결과, 통관 결과 입력 영역 표시 확인
 
+### completion report mutation E2E coverage
+
+- 이전 작업은 P110 완료 리포트 실무 입력 필드 노출이고, 이번 작업은 P111 입력한 완료 리포트 값이 저장 후 preview에 반영되는지 자동 검증하는 작업이다.
+- completion preview fixture에 별도 draft 운송 완료 리포트 요청, 선정 견적, 요청 서류, 완료 리포트, 보관 서류 매핑을 추가했다.
+- 기존 locked 운송 preview와 operator reviewed 통관 preview fixture는 유지했다.
+- completion preview E2E가 요청자 계정으로 draft 운송 완료 리포트 상세에 진입해 정산 항목, 운송사, B/L 또는 AWB, 출발일, 도착일, 출발항, 도착항, 특이사항을 입력한다.
+- 저장 성공 메시지를 확인한 뒤 preview 페이지로 이동해 입력값이 실제 보관 리포트 미리보기에 반영되는지 확인한다.
+- 비로그인 redirect, 요청자/선정 파트너/운영자 preview 접근, 미선정 파트너 차단, route/request type mismatch 차단 검증은 유지했다.
+- 이번 P111은 P110처럼 입력 필드를 만드는 작업이 아니다. 실제 저장 mutation과 preview 반영을 local E2E로 고정한 작업이다.
+- 다음 작업은 P112 completion report non-draft edit guard UX다. 이번 P111이 저장값 반영 자동검증이라면, P112는 제출·운영검토·잠금 리포트에서 수정 폼이 열려 저장 실패로 이어지는 UX/권한 불일치를 정리하는 작업이다.
+
+검증:
+
+- `node --check scripts/seed_completion_report_preview_fixture.mjs && node --check scripts/e2e_completion_report_preview_flow.mjs && node --check tests/fixtures/completion-report-preview.fixture.mjs`
+- `npx vitest run tests/fixtures/completion-report-preview.fixture.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- local-only env override로 `npm run e2e:completion-preview:local`: seed, auth, preview 접근 권한, draft 저장 mutation, preview 반영 모두 `result=ok`
+
 ## 2026-06-02
 
 ### local login review smoke

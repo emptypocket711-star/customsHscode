@@ -14,6 +14,7 @@ const stateDir = process.env.E2E_STORAGE_STATE_DIR || "tmp/e2e-auth";
 
 const freightRequestId = fixture.freightRequestId;
 const clearanceRequestId = fixture.clearanceRequestId;
+const draftFreightRequestId = fixture.draftFreightRequestId;
 
 const stateFiles = {
   developer: path.join(stateDir, "completion-preview-developer.json"),
@@ -38,6 +39,10 @@ function assertLocalBaseUrl(value) {
 
 function previewUrl(kind, requestId) {
   return new URL(`/requests/${kind}/${requestId}/completion-report/preview`, baseUrl).toString();
+}
+
+function detailUrl(kind, requestId) {
+  return new URL(`/requests/${kind}/${requestId}#completion-report-draft`, baseUrl).toString();
 }
 
 async function assertStorageStatesExist() {
@@ -100,6 +105,53 @@ async function assertMismatchedKindHidden(browser, role) {
   );
 }
 
+async function assertDraftFreightMutationPersists(browser) {
+  const context = await browser.newContext({ storageState: stateFiles.requester });
+  const page = await context.newPage();
+
+  try {
+    await page.goto(detailUrl("freight", draftFreightRequestId), { waitUntil: "networkidle", timeout: timeoutMs });
+    await page.getByText("완료 리포트 초안 수정", { exact: true }).click({ timeout: timeoutMs });
+
+    const draft = page.locator("#completion-report-draft");
+    await draft.locator('input[name="currency"]').fill("KRW");
+    await draft.locator('input[name="finalAmount"]').fill("440000");
+    await draft.locator('input[name="summary"]').fill("P111 저장 검증 운송 완료 요약");
+    await draft.locator('input[name="settlementItemLabel"]').fill("P111 검증 운임");
+    await draft.locator('input[name="settlementItemAmount"]').fill("440000");
+    await draft.locator('input[name="settlementItemCurrency"]').fill("KRW");
+    await draft.locator('input[name="freightCarrier"]').fill("P111 TEST CARRIER");
+    await draft.locator('input[name="freightBlOrAwbNo"]').fill("P111-BL-440000");
+    await draft.locator('input[name="freightDepartureDate"]').fill("2026-06-03");
+    await draft.locator('input[name="freightArrivalDate"]').fill("2026-06-09");
+    await draft.locator('input[name="freightOriginPort"]').fill("BUSAN");
+    await draft.locator('input[name="freightDestinationPort"]').fill("LAX");
+    await draft.locator('input[name="freightException"]').fill("P111 특이사항 없음");
+    await draft.locator('button[type="submit"]').click();
+
+    await page.getByText("완료 리포트를 저장했습니다.", { exact: true }).waitFor({ timeout: timeoutMs });
+    await page.goto(previewUrl("freight", draftFreightRequestId), { waitUntil: "networkidle", timeout: timeoutMs });
+    const text = await page.locator("body").innerText({ timeout: timeoutMs });
+
+    for (const expected of [
+      "P111 저장 검증 운송 완료 요약",
+      "P111 검증 운임",
+      "440,000",
+      "P111 TEST CARRIER",
+      "P111-BL-440000",
+      "2026-06-03",
+      "2026-06-09",
+      "BUSAN",
+      "LAX",
+      "P111 특이사항 없음"
+    ]) {
+      assert(text.includes(expected), `저장한 완료 리포트 값이 preview에 반영되지 않았습니다: ${expected}`);
+    }
+  } finally {
+    await context.close();
+  }
+}
+
 async function assertUnauthenticatedRedirect(browser, kind, requestId) {
   const page = await browser.newPage();
   try {
@@ -152,6 +204,7 @@ async function main() {
     }
 
     await assertMismatchedKindHidden(browser, "developer");
+    await assertDraftFreightMutationPersists(browser);
 
     console.log("Completion report preview E2E");
     console.log(`baseUrl=${baseUrl}`);

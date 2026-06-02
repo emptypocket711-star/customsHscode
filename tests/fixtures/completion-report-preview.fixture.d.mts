@@ -7,6 +7,7 @@ export type CompletionReportPreviewFixtureRole =
 export type CompletionReportPreviewFixture = {
   clearanceRequestId: string;
   developerUserEmail: string;
+  draftFreightRequestId: string;
   freightRequestId: string;
   requesterUserEmail: string;
   selectedPartnerUserEmail: string;
@@ -83,7 +84,7 @@ export type CompletionReportPreviewSeedReport = {
   requesterCompanyId: string;
   selectedPartnerCompanyId: string;
   sourceSnapshot: CompletionReportPreviewSourceSnapshot;
-  status: "locked" | "operator_reviewed" | "submitted";
+  status: "draft" | "locked" | "operator_reviewed" | "submitted";
   summary: string;
 };
 

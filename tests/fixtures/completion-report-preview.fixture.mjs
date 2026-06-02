@@ -1,6 +1,7 @@
 export const completionReportPreviewFixture = {
   clearanceRequestId: "00000000-0000-4000-8000-000000000201",
   developerUserEmail: "completion-preview-developer@example.test",
+  draftFreightRequestId: "00000000-0000-4000-8000-000000000301",
   freightRequestId: "00000000-0000-4000-8000-000000000101",
   requesterUserEmail: "completion-preview-requester@example.test",
   selectedPartnerUserEmail: "completion-preview-selected-partner@example.test",
@@ -126,6 +127,14 @@ export const completionReportPreviewSeedRequests = [
     requestType: "clearance",
     selectedBidId: "00000000-0000-4000-8000-000000000211",
     status: "completed"
+  },
+  {
+    direction: "export",
+    id: completionReportPreviewFixture.draftFreightRequestId,
+    requesterCompanyId: completionReportPreviewSeedCompanies[0].id,
+    requestType: "freight",
+    selectedBidId: "00000000-0000-4000-8000-000000000311",
+    status: "completed"
   }
 ];
 
@@ -163,6 +172,23 @@ export const completionReportPreviewSeedReports = [
     }),
     status: "operator_reviewed",
     summary: "테스트 통관 완료 리포트 요약"
+  },
+  {
+    archiveDocumentRole: "final_bl_or_awb",
+    currency: "KRW",
+    finalAmount: 330000,
+    id: "00000000-0000-4000-8000-000000000321",
+    requestId: completionReportPreviewFixture.draftFreightRequestId,
+    requesterCompanyId: completionReportPreviewSeedCompanies[0].id,
+    requestType: "freight",
+    selectedPartnerCompanyId: completionReportPreviewSeedCompanies[1].id,
+    sourceSnapshot: buildCompletionReportPreviewSourceSnapshot({
+      bidType: "freight",
+      direction: "export",
+      selectedBidId: "00000000-0000-4000-8000-000000000311"
+    }),
+    status: "draft",
+    summary: "테스트 수정 전 운송 완료 리포트 요약"
   }
 ];
 

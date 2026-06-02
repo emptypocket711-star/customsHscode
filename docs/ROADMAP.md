@@ -399,7 +399,8 @@
 | P108.1 marketplace zero-match end-to-end review | 완료 | 파트너 관심 조건 안내가 아니라 화주 공개 후 0건 상태가 요청자·운영자 화면까지 이어지는 흐름을 E2E 관점에서 점검한다 | zero-match E2E readiness | local E2E, typecheck, lint, route 확인 |
 | P109.1 marketplace post-E2E next bottleneck review | 완료 | zero-match E2E가 아니라 로컬 거래 E2E 통과 후 남은 MVP 병목을 다시 고른다 | completion report practicalization selected | product/code review |
 | P110.1 completion report practicalization scope review | 완료 | 다음 병목 선정이 아니라 완료 거래에서 실제 신고/운송 결과·정산·보관 서류를 어디까지 받을지 범위를 정한다 | practical completion report fields | unit, typecheck, lint, E2E, browser |
-| P111.1 completion report mutation E2E coverage | 예정 | 실무 입력 필드 노출이 아니라 사용자가 입력한 완료 리포트 값이 저장 후 미리보기에 반영되는지 자동 검증한다 | completion report save-to-preview E2E | local E2E |
+| P111.1 completion report mutation E2E coverage | 완료 | 실무 입력 필드 노출이 아니라 사용자가 입력한 완료 리포트 값이 저장 후 미리보기에 반영되는지 자동 검증한다 | completion report save-to-preview E2E | local E2E, typecheck, lint |
+| P112.1 completion report non-draft edit guard UX | 예정 | 저장 mutation 검증이 아니라 제출·운영검토·잠금 리포트에서 수정 폼이 열리는 UX/권한 불일치를 정리한다 | non-draft edit guard | UX, browser, typecheck |
 
 #### P109 다음 병목 선정
 
@@ -433,6 +434,19 @@ P110에서 완료 리포트는 새 모델을 다시 만들 필요가 없다고 �
    - 기존 최종 보관 서류 연결과 잠금 전 확인 흐름은 유지한다.
 
 다음 작업은 P111 completion report mutation E2E coverage다. P110이 입력 범위와 화면 노출 보강이라면, P111은 실제 입력값 저장과 preview 반영까지 자동 검증하는 작업이다.
+
+#### P111 완료 리포트 저장 E2E
+
+P111에서 completion preview fixture에 별도 draft 운송 완료 리포트를 추가했다. 기존 locked/operator reviewed preview fixture는 그대로 두고, mutation 검증은 draft fixture만 사용한다.
+
+local completion preview E2E는 이제 아래를 함께 확인한다.
+
+1. 비로그인 접근은 로그인으로 이동한다.
+2. 요청자, 선정 파트너, 운영자는 preview를 볼 수 있다.
+3. 미선정 파트너와 route/request type mismatch는 preview 본문을 볼 수 없다.
+4. 요청자가 draft 완료 리포트 상세에서 정산 항목과 운송 결과를 입력하고 저장하면 preview에 반영된다.
+
+다음 작업은 P112 completion report non-draft edit guard UX다. P111이 저장값 반영 자동검증이라면, P112는 draft가 아닌 완료 리포트에서 수정 폼이 열려 사용자가 실패할 수 있는 UI/권한 불일치를 정리하는 작업이다.
 
 #### P34 다음 코드 작업 후보
 
