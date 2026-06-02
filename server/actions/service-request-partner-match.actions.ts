@@ -53,3 +53,47 @@ export async function declineServiceRequestPartnerMatchAction(
     };
   }
 }
+
+export async function reviewAgainServiceRequestPartnerMatchAction(
+  _prevState: PartnerMatchInterestActionState,
+  formData: FormData
+): Promise<PartnerMatchInterestActionState> {
+  const matchId = readFormString(formData, "matchId");
+  const requestId = readFormString(formData, "requestId");
+  const requestType = readFormString(formData, "requestType");
+
+  if (!matchId || !requestId || (requestType !== "freight" && requestType !== "clearance")) {
+    return {
+      message: "요청 정보를 확인할 수 없습니다.",
+      status: "error"
+    };
+  }
+
+  const supabase = await createSupabaseServerClient();
+
+  try {
+    const result = await setServiceRequestPartnerMatchInterest(supabase, {
+      interestStatus: "viewed",
+      matchId
+    });
+
+    if (!result.schemaReady) {
+      return {
+        message: "플랫폼 매칭 데이터가 준비되지 않았습니다.",
+        status: "error"
+      };
+    }
+
+    revalidatePath(`/requests/${requestType}/opportunities/${requestId}`);
+
+    return {
+      message: "다시 검토 상태로 저장했습니다.",
+      status: "success"
+    };
+  } catch (error) {
+    return {
+      message: error instanceof Error ? error.message : "다시 검토 상태를 저장하지 못했습니다.",
+      status: "error"
+    };
+  }
+}

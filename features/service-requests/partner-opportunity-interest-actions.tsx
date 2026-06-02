@@ -4,7 +4,10 @@ import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { partnerMatchInterestInitialState } from "@/features/service-requests/partner-opportunity-interest-action-state";
-import { declineServiceRequestPartnerMatchAction } from "@/server/actions/service-request-partner-match.actions";
+import {
+  declineServiceRequestPartnerMatchAction,
+  reviewAgainServiceRequestPartnerMatchAction
+} from "@/server/actions/service-request-partner-match.actions";
 
 function canDeclineOpportunity(status: string) {
   return status === "open" || status === "bids_received";
@@ -24,11 +27,18 @@ export function PartnerOpportunityInterestActions({
   requestType: "clearance" | "freight";
 }) {
   const router = useRouter();
-  const [state, action, pending] = useActionState(
+  const [declineState, declineAction, declinePending] = useActionState(
     declineServiceRequestPartnerMatchAction,
     partnerMatchInterestInitialState
   );
+  const [reviewState, reviewAction, reviewPending] = useActionState(
+    reviewAgainServiceRequestPartnerMatchAction,
+    partnerMatchInterestInitialState
+  );
   const declineAvailable = canDeclineOpportunity(requestStatus) && interestStatus !== "declined";
+  const reviewAgainAvailable = canDeclineOpportunity(requestStatus) && interestStatus === "declined";
+  const state = reviewState.status !== "idle" ? reviewState : declineState;
+  const pending = declinePending || reviewPending;
 
   useEffect(() => {
     if (state.status === "success") {
@@ -49,7 +59,7 @@ export function PartnerOpportunityInterestActions({
           {interestStatus === "declined" ? "참여 보류" : interestStatus === "interested" ? "관심 표시" : interestStatus === "viewed" ? "검토중" : "미확인"}
         </Badge>
         {declineAvailable ? (
-          <form action={action}>
+          <form action={declineAction}>
             <input name="matchId" type="hidden" value={matchId} />
             <input name="requestId" type="hidden" value={requestId} />
             <input name="requestType" type="hidden" value={requestType} />
@@ -59,6 +69,20 @@ export function PartnerOpportunityInterestActions({
               type="submit"
             >
               {pending ? "저장 중" : "참여 보류"}
+            </button>
+          </form>
+        ) : null}
+        {reviewAgainAvailable ? (
+          <form action={reviewAction}>
+            <input name="matchId" type="hidden" value={matchId} />
+            <input name="requestId" type="hidden" value={requestId} />
+            <input name="requestType" type="hidden" value={requestType} />
+            <button
+              className="focus-ring inline-flex h-9 items-center justify-center rounded-md bg-slate-950 px-3 text-xs font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={pending}
+              type="submit"
+            >
+              {pending ? "저장 중" : "다시 검토"}
             </button>
           </form>
         ) : null}

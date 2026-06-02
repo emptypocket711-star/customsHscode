@@ -963,6 +963,22 @@
 
 - Product/UX review only. Code execution 없음.
 
+### marketplace declined re-entry action
+
+- 이전 작업은 P134 보류 후 복귀 UX 범위를 결정한 작업이고, 이번 작업은 P135 파트너 상세에서 `다시 검토` 액션을 구현한 작업이다.
+- `reviewAgainServiceRequestPartnerMatchAction` 서버 액션을 추가했다.
+- `다시 검토`는 기존 `set_service_request_partner_interest` RPC로 `declined -> viewed`를 저장한다.
+- `PartnerOpportunityInterestActions`는 보류 상태에서는 `다시 검토`, 그 외 공개/견적도착 상태에서는 `참여 보류`를 보여준다.
+- 브라우저/RLS 검증에서는 포워더 테스트 계정으로 `다시 검토`를 클릭한 뒤 service role 조회로 match 상태가 `viewed`로 변경됐는지 확인하고 임시 row를 삭제했다.
+- 다음 작업은 P136 marketplace interest operations regression이다. 이번 P135가 파트너 상세 액션 구현이라면, P136은 viewed/declined 전환이 운영 상세 관심상태 카운트에 반영되는지 회귀 검증하는 작업이다.
+
+검증:
+
+- `npx vitest run server/repositories/service-request-partner-match.repository.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- Playwright/RLS check: 포워더 계정 `/requests/freight/opportunities/75000000-0000-4000-8000-000000000201`, `다시 검토` 클릭 후 임시 match가 `viewed`로 변경되는지 DB 확인
+
 ## 2026-06-02
 
 ### local login review smoke
