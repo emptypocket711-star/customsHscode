@@ -120,7 +120,7 @@ async function seedUsersAndProfiles(client, testPassword) {
     full_name: `marketplace transaction ${role}`,
     id: authUsers.get(role).id,
     onboarding_completed_at: seededAt,
-    preferred_locale: "ko",
+    preferred_locale: "ko-KR",
     role: "client"
   })), { onConflict: "id" });
 

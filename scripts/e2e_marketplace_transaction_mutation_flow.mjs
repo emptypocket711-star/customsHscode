@@ -55,6 +55,13 @@ async function clickAndSettle(page, locator) {
   await page.waitForLoadState("networkidle", { timeout: timeoutMs }).catch(() => undefined);
 }
 
+async function waitForBodyText(page, text, message) {
+  await page.getByText(text).first().waitFor({ state: "visible", timeout: timeoutMs }).catch(async () => {
+    const body = await page.locator("body").innerText({ timeout: timeoutMs });
+    assert(body.includes(text), message);
+  });
+}
+
 async function submitFreightBid(browser) {
   const { context, page } = await pageFor(browser, "forwarder");
   try {
@@ -95,8 +102,7 @@ async function selectRequesterBid(browser, kind, requestId, amountText, selectBu
     const bodyBefore = await page.locator("body").innerText({ timeout: timeoutMs });
     assert(bodyBefore.includes(amountText), `${kind} requester detail에 제출 견적 금액이 보이지 않습니다.`);
     await clickAndSettle(page, page.getByRole("button", { name: selectButtonText }));
-    const bodyAfter = await page.locator("body").innerText({ timeout: timeoutMs });
-    assert(bodyAfter.includes(selectedText), `${kind} requester detail에 선정 후속 안내가 보이지 않습니다.`);
+    await waitForBodyText(page, selectedText, `${kind} requester detail에 선정 후속 안내가 보이지 않습니다.`);
   } finally {
     await context.close();
   }

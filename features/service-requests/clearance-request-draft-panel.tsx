@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, FileCheck2, FileUp, Save } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import {
@@ -373,6 +373,7 @@ function ReceivedClearanceBidRow({
   bid: ReceivedClearanceBidItem;
   requestStatus: string;
 }) {
+  const router = useRouter();
   const [state, action, pending] = useActionState(selectClearanceBidAction, selectBidInitialState);
   const canSelect = requestStatus !== "partner_selected" && (bid.status === "submitted" || bid.status === "shortlisted");
 
@@ -380,7 +381,10 @@ function ReceivedClearanceBidRow({
     if (state.status !== "idle") {
       window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
     }
-  }, [state.status]);
+    if (state.status === "success") {
+      router.refresh();
+    }
+  }, [router, state.status]);
 
   return (
     <div className="grid gap-3 rounded-md border border-slate-200 bg-slate-50 p-3">
@@ -663,7 +667,7 @@ export function ClearanceRequestRow({
       </div>
       <div id={anchorPrefix ? `${anchorPrefix}-bids` : undefined} className="scroll-mt-6 grid gap-3 rounded-md border border-slate-200 bg-white p-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm font-semibold text-slate-950">도착한 통관 견적</p>
+          <p className="text-sm font-semibold text-slate-950">받은 견적</p>
           <Badge tone={bids.length > 0 ? "warning" : "neutral"}>{bids.length}건</Badge>
         </div>
         {bids.length > 0 ? (

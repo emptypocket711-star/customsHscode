@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { CheckCircle2, FileUp, PackagePlus, RadioTower, Save } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import {
@@ -365,6 +365,7 @@ function ReceivedFreightBidRow({
   bid: ReceivedFreightBidItem;
   requestStatus: string;
 }) {
+  const router = useRouter();
   const [state, action, pending] = useActionState(selectFreightBidAction, selectBidInitialState);
   const canSelect = requestStatus !== "partner_selected" && (bid.status === "submitted" || bid.status === "shortlisted");
 
@@ -372,7 +373,10 @@ function ReceivedFreightBidRow({
     if (state.status !== "idle") {
       window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
     }
-  }, [state.status]);
+    if (state.status === "success") {
+      router.refresh();
+    }
+  }, [router, state.status]);
 
   return (
     <div className="grid gap-3 rounded-md border border-slate-200 bg-white p-3">

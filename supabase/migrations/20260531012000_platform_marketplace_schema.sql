@@ -548,7 +548,7 @@ insert into public.company_party_types (company_id, party_type, created_by)
 select distinct
   company_type.company_id,
   company_type.party_type::public.marketplace_party_type,
-  null
+  null::uuid
 from (
   select
     company.id as company_id,

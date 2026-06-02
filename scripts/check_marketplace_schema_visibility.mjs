@@ -16,7 +16,7 @@ const requiredChecks = [
   },
   {
     name: "partner preferences",
-    select: "company_id,service_type,status",
+    select: "company_id,service_type,notification_enabled,digest_enabled",
     table: "partner_service_preferences"
   },
   {
