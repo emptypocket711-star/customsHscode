@@ -878,6 +878,23 @@
 - `npm run lint`
 - Playwright developer check: `/operations/requests/75000000-0000-4000-8000-000000000201`, 임시 interested match 기반 `열람/관심/보류/미확인` 렌더 확인
 
+### marketplace opportunity viewed tracking
+
+- 이전 작업은 P129 운영 상세 화면에 열람/관심/보류/미확인 카운트를 표시한 작업이고, 이번 작업은 P130 파트너 opportunity 상세 진입 시 미확인 매칭을 열람 상태로 기록하는 작업이다.
+- `markServiceRequestPartnerMatchViewed` helper를 추가했다.
+- 기존 `set_service_request_partner_interest` RPC를 사용하고, 현재 상태가 `none`일 때만 `viewed`로 전환한다.
+- 이미 `viewed`, `interested`, `declined` 상태이면 RPC를 호출하지 않아 상태를 낮추지 않는다.
+- 운송 opportunity 상세과 통관 opportunity 상세 모두 viewed tracking을 적용했다.
+- 브라우저/RLS 검증에서는 포워더 테스트 계정으로 실제 opportunity 상세에 진입한 뒤 service role 조회로 match 상태가 `viewed`로 변경됐는지 확인하고 임시 row를 삭제했다.
+- 다음 작업은 P131 marketplace opportunity decline action이다. 이번 P130이 자동 열람 기록이라면, P131은 파트너가 참여 보류를 명시해서 리마인드 대상과 운영 지표에서 구분되게 하는 작업이다.
+
+검증:
+
+- `npx vitest run server/repositories/service-request-partner-match.repository.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- Playwright/RLS check: 포워더 계정 `/requests/freight/opportunities/75000000-0000-4000-8000-000000000201`, 임시 `none` match가 `viewed`로 변경되는지 DB 확인
+
 ## 2026-06-02
 
 ### local login review smoke

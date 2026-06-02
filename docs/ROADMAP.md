@@ -418,7 +418,8 @@
 | P127.1 marketplace no-response cause segmentation | 완료 | 파트너 화면 단서가 아니라 운영 요약에서 알림 후 무응답 원인을 질문/서류/관심상태 기준으로 더 세분화한다 | no-response cause segmentation | unit, typecheck, lint, browser |
 | P128.1 marketplace no-response detail cause prompt | 완료 | 운영 요약 원인 지표가 아니라 개별 요청 상세의 개선 프롬프트에도 무응답 원인 단서를 포함한다 | no-response detail cause prompt | unit, typecheck, lint, browser |
 | P129.1 marketplace operations match interest detail | 완료 | 개선 프롬프트 문구가 아니라 요청 상세의 파트너 노출·알림 요약 카드에 열람/관심/보류/미확인 카운트를 표시한다 | match interest detail | typecheck, lint, browser |
-| P130.1 marketplace opportunity viewed tracking | 예정 | 운영 상세 표시가 아니라 파트너가 opportunity 상세을 열었을 때 미확인 매칭을 열람 상태로 기록한다 | opportunity viewed tracking | unit, RLS, browser |
+| P130.1 marketplace opportunity viewed tracking | 완료 | 운영 상세 표시가 아니라 파트너가 opportunity 상세을 열었을 때 미확인 매칭을 열람 상태로 기록한다 | opportunity viewed tracking | unit, typecheck, lint, RLS, browser |
+| P131.1 marketplace opportunity decline action | 예정 | 자동 열람 기록이 아니라 파트너가 참여 보류를 명시해 리마인드와 운영 지표에서 구분되게 한다 | opportunity decline action | unit, RLS, browser |
 
 #### P109 다음 병목 선정
 
@@ -763,6 +764,22 @@ P128은 복사 프롬프트에 원인 단서를 포함한 작업이었다. 이�
 3. 브라우저 검증에서는 공개/무입찰 샘플에 `interest_status=interested` 매칭 row를 임시로 추가해 `관심 1건` 렌더를 확인한 뒤 삭제했다.
 
 다음 작업은 P130 marketplace opportunity viewed tracking이다. P129가 운영 상세 화면에 관심 상태를 표시한 작업이라면, P130은 파트너가 opportunity 상세을 실제로 열었을 때 미확인 상태를 열람 상태로 기록해 이 지표가 자동으로 쌓이게 하는 작업이다.
+
+#### P130 opportunity viewed tracking
+
+P130에서 파트너가 opportunity 상세을 열면 미확인 매칭을 `viewed` 상태로 기록하게 했다.
+
+P129는 운영 상세 화면에 열람/관심/보류/미확인 카운트를 표시한 작업이었다. 이번 P130은 그 지표가 실제 사용자 행동으로 쌓이도록 파트너 상세 진입 시 `none -> viewed` 전환을 기록하는 작업이다.
+
+구현 기준:
+
+1. 기존 `set_service_request_partner_interest` RPC를 재사용했다.
+2. `markServiceRequestPartnerMatchViewed` helper를 추가해 `interestStatus === "none"`일 때만 RPC를 호출한다.
+3. 이미 `viewed`, `interested`, `declined` 상태이면 downgrade하지 않고 호출하지 않는다.
+4. 운송 opportunity 상세과 통관 opportunity 상세 모두 진입 시 viewed tracking을 적용한다.
+5. 검증에서는 포워더 테스트 계정으로 실제 상세 페이지에 진입한 뒤 DB의 match 상태가 `viewed`로 바뀌는지 확인했다.
+
+다음 작업은 P131 marketplace opportunity decline action이다. P130이 자동 열람 기록이라면, P131은 파트너가 참여 보류를 명시해서 리마인드 대상과 운영 지표에서 구분되게 하는 작업이다.
 
 #### P34 다음 코드 작업 후보
 

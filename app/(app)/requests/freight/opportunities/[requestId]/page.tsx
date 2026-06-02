@@ -21,6 +21,7 @@ import {
   buildPartnerOpportunityNextFocus,
   buildPartnerOpportunityResponseClues
 } from "@/server/repositories/service-request-list-view";
+import { markServiceRequestPartnerMatchViewed } from "@/server/repositories/service-request-partner-match.repository";
 
 export default async function FreightOpportunityDetailPage({
   params
@@ -44,14 +45,22 @@ export default async function FreightOpportunityDetailPage({
 
   if (!opportunity.item) notFound();
 
+  const viewedResult = await markServiceRequestPartnerMatchViewed(supabase, {
+    currentInterestStatus: opportunity.item.interestStatus,
+    matchId: opportunity.item.matchId
+  });
+  const opportunityItem = viewedResult.marked
+    ? { ...opportunity.item, interestStatus: "viewed" }
+    : opportunity.item;
+
   const [requestDocuments, requestQuestions, feedbackByRequestId, completionReports] = await Promise.all([
-    listFreightRequestDocuments(supabase, [opportunity.item.id]),
-    listFreightRequestQuestions(supabase, [opportunity.item.id]),
-    listOwnServiceRequestFeedbackRecordForRequest(supabase, opportunity.item),
-    listOwnCompletionReportsForRequests(supabase, [opportunity.item.id])
+    listFreightRequestDocuments(supabase, [opportunityItem.id]),
+    listFreightRequestQuestions(supabase, [opportunityItem.id]),
+    listOwnServiceRequestFeedbackRecordForRequest(supabase, opportunityItem),
+    listOwnCompletionReportsForRequests(supabase, [opportunityItem.id])
   ]);
   const completionReportsByRequestId = serviceRequestCompletionReportListToRecord(completionReports.items);
-  const completionReport = completionReportsByRequestId[opportunity.item.id];
+  const completionReport = completionReportsByRequestId[opportunityItem.id];
   const completionReportDocuments = completionReport
     ? await listCompletionReportDocumentsForReports(supabase, [completionReport.reportId])
     : { items: [], schemaReady: true };
@@ -60,16 +69,16 @@ export default async function FreightOpportunityDetailPage({
   const nextFocus = buildPartnerOpportunityNextFocus({
     bidAnchor: "#opportunity-bid",
     questionAnchor: "#opportunity-questions",
-    requestStatus: opportunity.item.status,
+    requestStatus: opportunityItem.status,
     unansweredQuestionCount
   });
   const responseClues = buildPartnerOpportunityResponseClues({
     bidAnchor: "#opportunity-bid",
     documentAnchor: "#opportunity-documents",
     documentCount: requestDocuments.items.length,
-    interestStatus: opportunity.item.interestStatus,
+    interestStatus: opportunityItem.interestStatus,
     questionAnchor: "#opportunity-questions",
-    requestStatus: opportunity.item.status,
+    requestStatus: opportunityItem.status,
     unansweredQuestionCount
   });
 
@@ -109,7 +118,7 @@ export default async function FreightOpportunityDetailPage({
         completionReportDocuments={completionReport ? completionReportDocumentsByReportId[completionReport.reportId] ?? [] : []}
         documents={requestDocuments.items}
         feedbackByRequestId={feedbackByRequestId}
-        opportunity={opportunity.item}
+        opportunity={opportunityItem}
         questions={requestQuestions.items}
       />
     </div>
