@@ -17,6 +17,10 @@ import { PartnerOpportunityFlowPanel } from "@/features/service-requests/partner
 import { RequestDraftReadinessPanel } from "@/features/service-requests/request-draft-readiness-panel";
 import { SelectedPartnerDocumentHandoff } from "@/features/service-requests/selected-partner-document-handoff";
 import { ServiceRequestCompletionReportPanel } from "@/features/service-requests/service-request-completion-report-panel";
+import {
+  PartnerVisibleDocumentNotice,
+  ServiceRequestDocumentVisibilityGuide
+} from "@/features/service-requests/service-request-document-visibility-guide";
 import { ServiceRequestFeedbackForm } from "@/features/service-requests/service-request-feedback-form";
 import {
   answerFreightRequestQuestionAction,
@@ -706,6 +710,7 @@ export function FreightRequestRow({
         <p className="text-xs leading-5 text-slate-600">
           민감 단가가 포함된 서류는 공개 범위를 확인하세요.
         </p>
+        <ServiceRequestDocumentVisibilityGuide kind="freight" />
         {documents.length > 0 ? (
           <div className="grid gap-2">
             {documents.map((document) => (
@@ -929,6 +934,7 @@ export function FreightOpportunityRow({
           <p className="text-xs font-semibold text-slate-800">공개된 요청 서류</p>
           <Badge tone={documents.length > 0 ? "info" : "neutral"}>{documents.length}건</Badge>
         </div>
+        <PartnerVisibleDocumentNotice kind="freight" />
         {documents.length > 0 ? (
           <div className="grid gap-2">
             {documents.map((document) => (

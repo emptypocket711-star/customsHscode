@@ -2,6 +2,27 @@
 
 이 문서는 HS FINDER 개발 중 실제로 수행한 작업, 검증 결과, 커밋을 날짜별로 남긴다.
 
+## 2026-06-03
+
+### marketplace document visibility handoff
+
+- 이전 작업은 P80 대표 운영 큐와 상세 개선 요청 안내이고, 이번 작업은 P81 화주·파트너 서류 공개 범위 handoff 보강이다.
+- `ServiceRequestDocumentVisibilityGuide`를 추가해 화주가 운송/통관 요청 서류를 첨부할 때 `나와 운영자만`, `매칭된 파트너에게 공개`, `선정된 파트너에게만 공개`, `운영자만`의 선택 기준을 바로 볼 수 있게 했다.
+- 운송 요청 상세에는 포워더 기준 공개 문구를, 통관 의뢰 상세에는 관세사무소 기준 공개 문구를 적용했다.
+- `PartnerVisibleDocumentNotice`를 추가해 포워더·관세사무소 opportunity 상세의 `공개된 요청 서류` 목록이 현재 파트너에게 공개 허용된 서류만 표시한다는 점을 명확히 했다.
+- 민감 서류 보호 안내만 추가했고, 서류 조회 권한, storage bucket, RLS, DB schema는 변경하지 않았다.
+- 로컬 파일만 수정했고 원격 푸시, 배포, DB migration 적용은 하지 않았다.
+- 다음 작업은 P82 거래 완료 리포트/보관 서류 모델 초안 검토다. 이번 P81이 요청 진행 중 서류 공개 범위 안내라면, P82는 거래 완료 후 결과 메타데이터와 최종 보관 서류 묶음의 데이터 구조를 정리하는 작업이다.
+
+검증:
+
+- `npx vitest run features/service-requests/service-request-document-visibility-guide.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- Playwright requester check: `/requests/freight/75000000-0000-4000-8000-000000000001#request-documents`, `/requests/clearance/75000000-0000-4000-8000-000000000002#request-documents`
+- Playwright partner check: `/requests/freight/opportunities/75000000-0000-4000-8000-000000000001#request-documents`, `/requests/clearance/opportunities/75000000-0000-4000-8000-000000000002#request-documents`
+- `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
+
 ## 2026-06-02
 
 ### local login review smoke

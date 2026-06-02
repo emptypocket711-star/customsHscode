@@ -327,7 +327,12 @@
 | P80.3 operations sample detail action cues | 완료 | 운영 통계 큐가 아니라 운영 샘플 상세 화면에서 개선 요청 문구와 다음 확인 위치가 충분히 명확한지 점검한다 | operations detail UX | browser, typecheck, lint |
 | P80.4 operations route smoke | 완료 | 운영 상세 안내 보강이 아니라 변경 후 화주·파트너·운영 주요 route가 계속 정상 렌더링되는지 확인한다 | role route smoke | browser, typecheck, lint |
 | P80.5 owner operations work log sync | 완료 | route smoke가 아니라 대표 운영 큐/상세 안내 보강과 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
-| P81.1 next marketplace rail selection | 예정 | 대표 운영 큐 작업 로그가 아니라 다음으로 이어갈 marketplace MVP 병목을 다시 고른다 | roadmap/code review | docs/code review |
+| P81.1 next marketplace rail selection | 완료 | 대표 운영 큐 작업 로그가 아니라 다음으로 이어갈 marketplace MVP 병목을 다시 고른다 | document visibility handoff rail selected | roadmap/code review |
+| P81.2 requester document visibility guidance | 완료 | 운영 큐가 아니라 화주가 운송/통관 서류 공개 범위를 선택할 때 파트너 노출 기준과 민감서류 보관 기준을 바로 이해하게 한다 | document visibility UX | unit, browser, typecheck, lint |
+| P81.3 partner visible document notice | 완료 | 화주 업로드 기준 안내가 아니라 포워더·관세사무소가 현재 보이는 서류가 공개 허용된 서류만이라는 점을 이해하게 한다 | partner document UX | unit, browser, typecheck, lint |
+| P81.4 document visibility route smoke | 완료 | 파트너 안내 보강이 아니라 변경 후 화주·포워더·관세사 주요 route가 계속 정상 렌더링되는지 확인한다 | role route smoke | browser, typecheck, lint |
+| P81.5 document visibility work log sync | 완료 | route smoke가 아니라 서류 공개 범위 handoff 보강과 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
+| P82.1 completion report model selection | 예정 | 서류 공개 범위 안내가 아니라 거래 완료 후 결과 메타데이터와 최종 보관 서류 모델을 시작할지 검토한다 | completion report model rail | schema/doc review |
 
 #### P34 다음 코드 작업 후보
 

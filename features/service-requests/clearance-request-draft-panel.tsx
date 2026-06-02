@@ -17,6 +17,10 @@ import { PartnerOpportunityFlowPanel } from "@/features/service-requests/partner
 import { RequestDraftReadinessPanel } from "@/features/service-requests/request-draft-readiness-panel";
 import { SelectedPartnerDocumentHandoff } from "@/features/service-requests/selected-partner-document-handoff";
 import { ServiceRequestCompletionReportPanel } from "@/features/service-requests/service-request-completion-report-panel";
+import {
+  PartnerVisibleDocumentNotice,
+  ServiceRequestDocumentVisibilityGuide
+} from "@/features/service-requests/service-request-document-visibility-guide";
 import { ServiceRequestFeedbackForm } from "@/features/service-requests/service-request-feedback-form";
 import {
   answerClearanceRequestQuestionAction,
@@ -645,6 +649,7 @@ export function ClearanceRequestRow({
           <p className="text-sm font-semibold text-slate-950">통관 의뢰 서류</p>
           <Badge tone={documents.length > 0 ? "info" : "neutral"}>{documents.length}건</Badge>
         </div>
+        <ServiceRequestDocumentVisibilityGuide kind="clearance" />
         {documents.length > 0 ? (
           <div className="grid gap-2">
             {documents.map((document) => (
@@ -872,6 +877,7 @@ export function ClearanceOpportunityRow({
           <p className="text-xs font-semibold text-slate-800">공개된 요청 서류</p>
           <Badge tone={documents.length > 0 ? "info" : "neutral"}>{documents.length}건</Badge>
         </div>
+        <PartnerVisibleDocumentNotice kind="clearance" />
         {documents.length > 0 ? (
           <div className="grid gap-2">
             {documents.map((document) => (
