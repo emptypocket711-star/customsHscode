@@ -223,6 +223,23 @@
 - Playwright requester list check: 운송/통관 목록에서 선정 후 다음 업무 상세 카드 제목 미노출 확인
 - `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
 
+### compact completion report summary
+
+- 이전 작업은 P93 선정 후 다음 업무 카드의 목록 row 요약이고, 이번 작업은 P94 완료 상태 row의 완료 리포트 패널 과밀도 정리다.
+- 완료된 운송/통관 요청 row는 compact 목록에서도 완료 리포트, 보관 서류, 피드백 form 전체를 펼쳐 보이고 있었다.
+- 목록 row에서는 `완료 리포트, 보관 서류, 거래 피드백은 상세 작업에서 확인합니다.` 요약만 표시하게 했다.
+- 상세 화면과 partner opportunity 상세에서는 기존 완료 리포트 패널과 피드백 form을 유지한다.
+- 완료 리포트 action, 피드백 action, 권한/RLS, DB schema는 변경하지 않았다.
+- 다음 작업은 P95 파트너 입찰 가능 목록 row 밀도 점검이다. 이번 P94가 화주 완료 row의 리포트 패널 요약이라면, P95는 포워더·관세사무소가 보는 입찰 가능 목록 row의 compact 정보량을 보는 작업이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- Playwright requester list check: 운송/통관 목록에서 완료 리포트 전체 제목 미노출, 완료 요약 문구 노출 확인
+- Playwright requester detail smoke: 운송/통관 상세 route 렌더링 확인
+- `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
+
 ## 2026-06-02
 
 ### local login review smoke

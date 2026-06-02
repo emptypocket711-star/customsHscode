@@ -268,6 +268,7 @@ function missingFreightPublishFieldLabels(request: FreightRequestListItem) {
 }
 
 function FreightLifecycleControls({
+  compact = false,
   completionReport,
   completionReportDocuments = [],
   documents,
@@ -276,6 +277,7 @@ function FreightLifecycleControls({
   status,
   viewerRole
 }: {
+  compact?: boolean;
   completionReport?: ServiceRequestCompletionReport;
   completionReportDocuments?: ServiceRequestCompletionReportDocument[];
   documents: FreightRequestDocumentItem[];
@@ -298,6 +300,14 @@ function FreightLifecycleControls({
   }, [completeState.status, router, startState.status]);
 
   if (status === "completed") {
+    if (compact) {
+      return (
+        <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-xs leading-5 text-emerald-900">
+          완료 리포트, 보관 서류, 거래 피드백은 상세 작업에서 확인합니다.
+        </p>
+      );
+    }
+
     return (
       <div className="grid scroll-mt-6 gap-3" id="request-completion">
         <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
@@ -673,7 +683,7 @@ export function FreightRequestRow({
       {!compact && (request.status === "partner_selected" || request.status === "in_progress" || request.status === "completed") ? (
         <SelectedFreightPartnerNextSteps documents={documents} selectedBid={selectedBid} />
       ) : null}
-      <FreightLifecycleControls completionReport={completionReport} completionReportDocuments={completionReportDocuments} documents={documents} existingFeedback={feedbackByRequestId[request.id]} requestId={request.id} status={request.status} viewerRole="requester" />
+      <FreightLifecycleControls compact={compact} completionReport={completionReport} completionReportDocuments={completionReportDocuments} documents={documents} existingFeedback={feedbackByRequestId[request.id]} requestId={request.id} status={request.status} viewerRole="requester" />
       {request.status === "draft" && !hasPublishFields ? (
         <div className="grid gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900 sm:grid-cols-[1fr_auto] sm:items-center">
           <div>
