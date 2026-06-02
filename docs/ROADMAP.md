@@ -404,7 +404,8 @@
 | P113.1 notification provider readiness review | 완료 | 완료 리포트 후속 UX가 아니라 실제 알림 provider 운영 연결 전에 env, adapter, dry-run 검증 범위를 다시 점검한다 | recipient resolver selected | code/ops review |
 | P114.1 marketplace notification recipient resolver | 완료 | provider 준비상태 점검이 아니라 파트너 회사의 알림 수신 대상 사용자를 안전하게 고르는 read helper를 만든다 | partner notification recipients | unit, typecheck, lint |
 | P115.1 marketplace transactional email provider skeleton | 완료 | 수신자 후보 조회가 아니라 resolver를 사용해 외부 transactional email provider skeleton을 worker sender로 연결한다 | email provider skeleton | unit, typecheck, lint, rehearsal |
-| P116.1 marketplace transactional email provider self-review | 예정 | email provider skeleton 구현이 아니라 민감정보, recipient missing, readiness, 운영 runbook 차단 조건을 자체 리뷰한다 | email provider safety review | tests, docs, route rehearsal |
+| P116.1 marketplace transactional email provider self-review | 완료 | email provider skeleton 구현이 아니라 민감정보, recipient missing, readiness, 운영 runbook 차단 조건을 자체 리뷰한다 | email provider safety review | tests, docs, route rehearsal |
+| P117.1 marketplace notification preference and unsubscribe planning | 예정 | email provider 안전 리뷰가 아니라 파트너 사용자별 알림 수신 설정과 거부 기준을 어떻게 둘지 정한다 | notification preference plan | product/security review |
 
 #### P109 다음 병목 선정
 
@@ -516,6 +517,23 @@ P115에서 marketplace notification provider에 `transactional_email` skeleton�
 7. worker route는 같은 Supabase client를 provider와 worker에 넘겨 route-level 연결을 유지한다.
 
 다음 작업은 P116 marketplace transactional email provider self-review다. P115가 provider skeleton 구현이라면, P116은 실제 운영 전 민감정보, recipient missing, readiness, runbook 차단 조건을 다시 검증하는 작업이다.
+
+#### P116 transactional email provider self-review
+
+P116에서 `transactional_email` provider skeleton을 자체 리뷰했다.
+
+확인 결과:
+
+1. 수신자 없음은 provider 호출 전 `recipient_missing`으로 중단된다.
+2. delivery 실패 기록은 `provider_recipient_missing`으로 정규화된다.
+3. readiness는 send flag, provider, Resend key, 발신자 env를 모두 요구한다.
+4. 메일 본문은 요청 유형, 알림 유형, 알림 사유, 대시보드 확인 안내만 포함한다.
+5. 요청 ID, 서류명, 질문/답변 원문, 견적 금액, invoice text, 사업자번호, 전화번호, API key는 메일 본문과 delivery metadata에 넣지 않는다.
+6. local rehearsal은 dry-run, send 차단, claim-only 동작을 유지한다.
+
+남은 위험은 production email rehearsal 미실행, 다중 수신자 fanout 미구현, 사용자별 수신 설정/거부 정책 미구현, branded email template 미구현이다.
+
+다음 작업은 P117 marketplace notification preference and unsubscribe planning이다. P116이 provider 안전 리뷰라면, P117은 실제 운영 전 파트너 사용자별 알림 수신 설정과 거부 기준을 어떻게 둘지 정하는 작업이다.
 
 #### P34 다음 코드 작업 후보
 

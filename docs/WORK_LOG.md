@@ -620,6 +620,25 @@
 - `npm run lint`
 - local-only env override로 `npm run ops:marketplace-notifications:rehearse-local`: dry-run, send 차단, claim-only `result=ok`
 
+### marketplace transactional email provider self-review
+
+- 이전 작업은 P115 marketplace `transactional_email` provider skeleton 구현이고, 이번 작업은 P116 실제 운영 전 민감정보, recipient missing, readiness, runbook 차단 조건을 자체 리뷰한 작업이다.
+- `MARKETPLACE_NOTIFICATION_EMAIL_PROVIDER_SELF_REVIEW.md`를 추가했다.
+- 수신자 없음은 provider 호출 전 `recipient_missing`으로 중단되고 delivery 실패 정규화는 `provider_recipient_missing`으로 저장되는 것을 확인했다.
+- readiness가 send flag, provider, Resend key, 발신자 env를 모두 요구하는 것을 확인했다.
+- 메일 본문은 요청 유형, 알림 유형, 알림 사유, 대시보드 확인 안내만 포함한다.
+- 요청 ID, 서류명, 질문/답변 원문, 견적 금액, invoice text, 사업자번호, 전화번호, API key를 메일 본문이나 delivery metadata에 넣지 않는 기준을 문서화했다.
+- local rehearsal에서 dry-run, send 차단, claim-only 동작이 유지되는 것을 P115 검증 결과로 확인했다.
+- 남은 위험은 production email send rehearsal 미실행, 다중 수신자 fanout 미구현, 사용자별 알림 수신 설정/거부 정책 미구현, branded email template 미구현이다.
+- 이번 P116은 P115처럼 provider 코드를 추가한 작업이 아니다. 운영 전 안전 기준과 남은 위험을 문서로 고정한 자체 리뷰다.
+- 다음 작업은 P117 marketplace notification preference and unsubscribe planning이다. 이번 P116이 provider 안전 리뷰라면, P117은 실제 운영 전 파트너 사용자별 알림 수신 설정과 거부 기준을 어떻게 둘지 정하는 작업이다.
+
+검증:
+
+- `rg -n "requestId|request_id|fileName|file_name|question|answer|amount|total_amount|invoice|personal|phone|business_no|email" server/jobs/marketplace-notification-provider.ts server/jobs/marketplace-notification-recipients.ts server/jobs/marketplace-notification-provider.test.ts docs/MARKETPLACE_NOTIFICATION_RUNBOOK.md`
+- `rg -n "transactional_email|provider_recipient_missing|RESEND_API_KEY|NOTIFICATION_FROM_EMAIL|recipient_missing|claimedWithoutSenderCount|sendReadiness" server/jobs server/repositories docs/MARKETPLACE_NOTIFICATION_RUNBOOK.md app/api/jobs/marketplace-notifications/route.ts`
+- `git diff --check`
+
 ## 2026-06-02
 
 ### local login review smoke
