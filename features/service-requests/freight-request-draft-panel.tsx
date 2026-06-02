@@ -277,6 +277,24 @@ function FreightPartnerBidSubmissionReadiness({
   );
 }
 
+function FreightOwnSubmittedBidSummary({ bid }: { bid: ReceivedFreightBidItem }) {
+  return (
+    <div id="opportunity-bid" className="scroll-mt-6 grid gap-2 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-xs leading-5 text-emerald-950">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-semibold">제출한 운송 견적</p>
+        <Badge tone={serviceRequestBidStatusTone(bid.status)}>{serviceRequestBidStatusLabel(bid.status)}</Badge>
+      </div>
+      <div className="grid gap-2 md:grid-cols-4">
+        <p className="rounded-md bg-white p-2">총액 {formatAmount(bid.totalAmount, bid.currency)}</p>
+        <p className="rounded-md bg-white p-2">유효기한 {bid.validUntil ?? "-"}</p>
+        <p className="rounded-md bg-white p-2">리드타임 {bid.leadTimeDays ?? "-"}일</p>
+        <p className="rounded-md bg-white p-2">제출 {bid.submittedAt?.slice(0, 10) ?? bid.createdAt.slice(0, 10)}</p>
+      </div>
+      <p>이미 제출한 견적이 있어 중복 제출 form은 숨깁니다. 수정 또는 철회 기능은 별도 정책으로 열기 전까지 운영 확인이 필요합니다.</p>
+    </div>
+  );
+}
+
 function statusLabel(status: string) {
   if (status === "draft") return "임시저장";
   if (status === "open") return "모집중";
@@ -914,6 +932,7 @@ export function FreightOpportunityRow({
   documents = [],
   feedbackByRequestId = {},
   opportunity,
+  ownSubmittedBid,
   questions = []
 }: {
   anchorPrefix?: string;
@@ -923,6 +942,7 @@ export function FreightOpportunityRow({
   documents?: FreightRequestDocumentItem[];
   feedbackByRequestId?: Record<string, OwnServiceRequestFeedback>;
   opportunity: FreightOpportunityItem;
+  ownSubmittedBid?: ReceivedFreightBidItem;
   questions?: FreightRequestQuestionItem[];
 }) {
   const router = useRouter();
@@ -1034,7 +1054,9 @@ export function FreightOpportunityRow({
         ) : null}
       </div>
 
-      {opportunity.status === "partner_selected" || opportunity.status === "in_progress" || opportunity.status === "completed" ? null : (
+      {ownSubmittedBid ? (
+        <FreightOwnSubmittedBidSummary bid={ownSubmittedBid} />
+      ) : opportunity.status === "partner_selected" || opportunity.status === "in_progress" || opportunity.status === "completed" ? null : (
       <>
       <FreightPartnerBidSubmissionReadiness documents={documents} interestStatus={opportunity.interestStatus} questions={questions} />
       <form id={anchorPrefix ? `${anchorPrefix}-bid` : undefined} action={action} className="scroll-mt-6 grid gap-3 rounded-md bg-slate-50 p-3">

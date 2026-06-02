@@ -430,6 +430,7 @@
 | P139.1 requester bid selection readiness detail | 완료 | 목록의 비교 유도 표시가 아니라 상세 견적 영역에서 선정 전 질문·서류·가격·후기 준비도를 한눈에 보여준다 | bid readiness detail summary | UX self-review, typecheck, lint, browser |
 | P140.1 partner bid submission readiness detail | 완료 | 화주 선정 준비도가 아니라 파트너가 견적 제출 전 공개 서류·질문·참여 상태를 점검하게 한다 | partner bid readiness summary | UX self-review, typecheck, lint, browser |
 | P141.1 marketplace bid readiness route regression | 완료 | 새 UI 추가가 아니라 화주·포워더·관세사 주요 route가 연속 변경 후 계속 정상 렌더링되는지 확인한다 | role route smoke | browser, typecheck, lint |
+| P142.1 partner submitted bid duplicate UX guard | 완료 | route 검증이 아니라 이미 견적을 제출한 파트너에게 중복 제출 form 대신 제출 상태를 보여준다 | own submitted bid summary | UX self-review, typecheck, lint, browser |
 
 #### P109 다음 병목 선정
 

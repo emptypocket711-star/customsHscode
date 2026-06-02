@@ -8,6 +8,7 @@ import { PartnerOpportunityResponseClues } from "@/features/service-requests/par
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   getMatchedClearanceOpportunity,
+  listReceivedClearanceBids,
   listClearanceRequestDocuments,
   listClearanceRequestQuestions
 } from "@/server/repositories/clearance-requests.repository";
@@ -54,12 +55,14 @@ export default async function ClearanceOpportunityDetailPage({
     ? { ...opportunity.item, interestStatus: "viewed" }
     : opportunity.item;
 
-  const [requestDocuments, requestQuestions, feedbackByRequestId, completionReports] = await Promise.all([
+  const [requestDocuments, requestQuestions, ownBids, feedbackByRequestId, completionReports] = await Promise.all([
     listClearanceRequestDocuments(supabase, [opportunityItem.id]),
     listClearanceRequestQuestions(supabase, [opportunityItem.id]),
+    listReceivedClearanceBids(supabase, [opportunityItem.id]),
     listOwnServiceRequestFeedbackRecordForRequest(supabase, opportunityItem),
     listOwnCompletionReportsForRequests(supabase, [opportunityItem.id])
   ]);
+  const ownSubmittedBid = ownBids.items[0];
   const completionReportsByRequestId = serviceRequestCompletionReportListToRecord(completionReports.items);
   const completionReport = completionReportsByRequestId[opportunityItem.id];
   const completionReportDocuments = completionReport
@@ -127,6 +130,7 @@ export default async function ClearanceOpportunityDetailPage({
         documents={requestDocuments.items}
         feedbackByRequestId={feedbackByRequestId}
         opportunity={opportunityItem}
+        ownSubmittedBid={ownSubmittedBid}
         questions={requestQuestions.items}
       />
     </div>

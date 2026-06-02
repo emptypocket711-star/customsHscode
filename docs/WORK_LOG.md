@@ -7665,3 +7665,25 @@
   - requester `/dashboard`, `/requests/freight`, `/requests/freight/75000000-0000-4000-8000-000000000001#request-bids`, `/requests/clearance`, `/requests/clearance/75000000-0000-4000-8000-000000000002#request-bids`
   - forwarder `/dashboard`, `/requests/freight`, `/requests/freight/opportunities/75000000-0000-4000-8000-000000000101#opportunity-bid`
   - broker `/dashboard`, `/requests/clearance`, `/requests/clearance/opportunities/75000000-0000-4000-8000-000000000102#opportunity-bid`
+
+### partner submitted bid duplicate UX guard
+
+- 이전 작업은 역할별 route 회귀 검증인 P141.1이고, 이번 작업은 이미 견적을 제출한 파트너에게 중복 제출 form이 계속 보이는 문제를 정리한 P142.1이다.
+- DB/RPC에는 파트너당 활성 견적 1개 unique index와 `이미 제출 중인 견적이 있습니다.` 중복 제출 차단이 이미 있다.
+- 하지만 포워더/관세사무소 opportunity 상세에서는 이미 제출한 요청에도 제출 form이 계속 보였다.
+- opportunity 상세 loader에서 현재 파트너가 읽을 수 있는 기존 견적을 조회해 row에 전달했다.
+- 운송 opportunity는 기존 견적이 있으면 `제출한 운송 견적` 요약을 표시하고 제출 form을 숨긴다.
+- 통관 opportunity도 기존 견적이 있으면 `제출한 통관 견적` 요약을 표시하고 제출 form을 숨긴다.
+- 수정·철회 기능은 MVP에서 바로 열지 않고, 별도 정책 전까지 운영 확인 필요 문구로 제한했다.
+- 새 migration, RLS 변경은 없다.
+- 로컬 파일만 수정했고 원격 푸시, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- RPC `submit_freight_bid`, `submit_clearance_bid`의 기존 중복 제출 차단 확인
+- Playwright 포워더 계정으로 `/requests/freight/opportunities/75000000-0000-4000-8000-000000000001#opportunity-bid` 접속
+- 운송 상세에서 `제출한 운송 견적`, 중복 form 숨김 문구 확인, `포워더 운송 견적 제출` form 비노출 확인
+- Playwright 관세사무소 계정으로 `/requests/clearance/opportunities/75000000-0000-4000-8000-000000000002#opportunity-bid` 접속
+- 통관 상세에서 `제출한 통관 견적`, 중복 form 숨김 문구 확인, `관세사무소 예비 견적 제출` form 비노출 확인
