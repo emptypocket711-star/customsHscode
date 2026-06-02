@@ -829,6 +829,24 @@
 - `npm run lint`
 - Playwright developer check: 포워더 계정 `/requests/freight/opportunities/75000000-0000-4000-8000-000000000101`, 관세사 계정 `/requests/clearance/opportunities/75000000-0000-4000-8000-000000000102`에서 `응답 판단 단서` 렌더 확인
 
+### marketplace no-response cause segmentation
+
+- 이전 작업은 P126 파트너 opportunity 상세에서 응답 판단 단서를 보여준 작업이고, 이번 작업은 P127 운영 요약에서 알림 후 무응답 원인을 질문/서류/관심상태 기준으로 세분화한 작업이다.
+- `PlatformRequestOperationsSummary`에 `notifiedWithoutBidsWithUnansweredQuestions`, `notifiedWithoutBidsWithoutDocuments`, `notifiedWithoutBidsPartnerActivity`, `notifiedWithoutBidsPartnerUnseen`을 추가했다.
+- `service_request_partner_matches.interest_status`를 운영 요약 집계에 포함해 열람, 관심, 보류, 미확인 상태를 구분한다.
+- `service_request_documents`의 request id만 집계해 공개 서류가 없는 no-response 요청을 계산한다.
+- 대표 우선순위 큐의 `알림 후 무응답` detail에 질문/서류/파트너 활동/미열람 추정 카운트를 표시했다.
+- 복사용 운영 개선 요청문과 상세 진단 지표에도 no-response 원인 단서를 추가했다.
+- 브라우저 검증에서는 공개/무입찰 샘플에 sent 매칭 row를 임시로 추가하고 상세 진단 details를 열어 `무응답·서류 없음`, `무응답·미열람 추정` 렌더를 확인한 뒤 삭제했다.
+- 다음 작업은 P128 marketplace no-response detail cause prompt다. 이번 P127이 운영 요약 화면의 원인 지표라면, P128은 개별 요청 상세의 개선 프롬프트에도 같은 원인 단서를 포함하는 작업이다.
+
+검증:
+
+- `npx vitest run server/repositories/platform-operations.repository.test.ts features/operations/platform-request-operations-panel.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- Playwright developer check: `/operations/users#platform-request-operations`, 임시 sent match 기반 상세 진단 details 열기 후 no-response 원인 단서 렌더 확인
+
 ## 2026-06-02
 
 ### local login review smoke

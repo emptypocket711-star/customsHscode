@@ -24,6 +24,10 @@ function summaryFixture(overrides: Partial<PlatformRequestOperationsSummary> = {
     inProgress: 0,
     lowFeedbacks: 0,
     notifiedWithoutBids: 0,
+    notifiedWithoutBidsPartnerActivity: 0,
+    notifiedWithoutBidsPartnerUnseen: 0,
+    notifiedWithoutBidsWithUnansweredQuestions: 0,
+    notifiedWithoutBidsWithoutDocuments: 0,
     open: 0,
     openWithoutBids: 0,
     openWithoutMatches: 0,
@@ -59,7 +63,7 @@ describe("platform request operations panel", () => {
       "선정 후 진행",
       "거래 후기"
     ]);
-    expect(groups.diagnosticMetrics).toHaveLength(13);
+    expect(groups.diagnosticMetrics).toHaveLength(17);
   });
 
   it("moves workflow diagnosis counts out of the default metric cards", () => {
@@ -77,6 +81,10 @@ describe("platform request operations panel", () => {
     expect(groups.diagnosticMetrics.map((metric) => metric.label)).toContain("미답변 질문");
     expect(groups.diagnosticMetrics.map((metric) => metric.label)).toContain("노출 0건");
     expect(groups.diagnosticMetrics.map((metric) => metric.label)).toContain("알림 후 무응답");
+    expect(groups.diagnosticMetrics.map((metric) => metric.label)).toContain("무응답·질문");
+    expect(groups.diagnosticMetrics.map((metric) => metric.label)).toContain("무응답·서류 없음");
+    expect(groups.diagnosticMetrics.map((metric) => metric.label)).toContain("무응답·파트너 활동");
+    expect(groups.diagnosticMetrics.map((metric) => metric.label)).toContain("무응답·미열람 추정");
     expect(groups.diagnosticMetrics.map((metric) => metric.label)).toContain("견적 없는 공개");
   });
 
@@ -126,6 +134,10 @@ describe("platform request operations panel", () => {
           feedbackCount: 8,
           inProgress: 9,
           notifiedWithoutBids: 1,
+          notifiedWithoutBidsPartnerActivity: 1,
+          notifiedWithoutBidsPartnerUnseen: 0,
+          notifiedWithoutBidsWithUnansweredQuestions: 1,
+          notifiedWithoutBidsWithoutDocuments: 1,
           open: 10,
           total: 11
         })
@@ -135,7 +147,32 @@ describe("platform request operations panel", () => {
     expect(html).toContain("핵심 지표:");
     expect(html).toContain("완료 리포트 없음: 1건");
     expect(html).toContain("알림 후 무응답: 1건");
+    expect(html).toContain("무응답 원인 단서: 미답변 질문 1건 / 공개 서류 없음 1건 / 파트너 활동 1건 / 미열람 추정 0건");
     expect(html).not.toContain("완료 리포트 운영 검토 필요: 3건");
     expect(html).not.toContain("완료 리포트 잠금 완료: 5건");
+  });
+
+  it("renders no-response cause segmentation in the owner action detail", () => {
+    const html = renderToStaticMarkup(
+      createElement(PlatformRequestOperationsPanel, {
+        summary: summaryFixture({
+          actionItems: [],
+          actionRequest: "알림 후 무응답 요청을 점검해줘.",
+          notifiedWithoutBids: 3,
+          notifiedWithoutBidsPartnerActivity: 1,
+          notifiedWithoutBidsPartnerUnseen: 2,
+          notifiedWithoutBidsWithUnansweredQuestions: 1,
+          notifiedWithoutBidsWithoutDocuments: 2,
+          total: 3
+        })
+      })
+    );
+
+    expect(html).toContain("알림 후 무응답");
+    expect(html).toContain("질문 1건 / 서류 없음 2건 / 파트너 활동 1건 / 미열람 추정 2건");
+    expect(html).toContain("무응답·질문");
+    expect(html).toContain("무응답·서류 없음");
+    expect(html).toContain("무응답·파트너 활동");
+    expect(html).toContain("무응답·미열람 추정");
   });
 });

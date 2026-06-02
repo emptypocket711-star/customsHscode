@@ -143,6 +143,51 @@ describe("platform request operations summary", () => {
     });
   });
 
+  it("segments notified requests without bids by question, document, and partner activity clues", () => {
+    const summary = summarizePlatformRequestOperations({
+      bids: [],
+      documents: [
+        { id: "doc-1", request_id: "req-2" }
+      ],
+      matchSummaries: new Map([
+        ["req-1", {
+          declinedInterestCount: 0,
+          failedNotificationCount: 0,
+          interestedInterestCount: 1,
+          matchedPartnerCount: 2,
+          noneInterestCount: 1,
+          pendingNotificationCount: 0,
+          sentNotificationCount: 2,
+          skippedNotificationCount: 0,
+          viewedInterestCount: 0
+        }],
+        ["req-2", {
+          declinedInterestCount: 0,
+          failedNotificationCount: 0,
+          interestedInterestCount: 0,
+          matchedPartnerCount: 1,
+          noneInterestCount: 1,
+          pendingNotificationCount: 0,
+          sentNotificationCount: 1,
+          skippedNotificationCount: 0,
+          viewedInterestCount: 0
+        }]
+      ]),
+      now: new Date("2026-06-01T00:00:00.000Z"),
+      questions: [{ answer: null, id: "q-1", request_id: "req-1" }],
+      requests: [
+        { created_at: "2026-05-31T00:00:00.000Z", deadline_at: "2026-06-02T00:00:00.000Z", id: "req-1", request_type: "freight", status: "open" },
+        { created_at: "2026-05-31T00:00:00.000Z", deadline_at: "2026-06-02T00:00:00.000Z", id: "req-2", request_type: "clearance", status: "open" }
+      ]
+    });
+
+    expect(summary.notifiedWithoutBids).toBe(2);
+    expect(summary.notifiedWithoutBidsWithUnansweredQuestions).toBe(1);
+    expect(summary.notifiedWithoutBidsWithoutDocuments).toBe(1);
+    expect(summary.notifiedWithoutBidsPartnerActivity).toBe(1);
+    expect(summary.notifiedWithoutBidsPartnerUnseen).toBe(1);
+  });
+
   it("tracks post-selection lifecycle counts and stale in-progress requests", () => {
     const summary = summarizePlatformRequestOperations({
       bids: [],

@@ -32,17 +32,27 @@ export type PlatformQuestionOperationsRow = {
   request_id: string;
 };
 
+export type PlatformDocumentOperationsRow = {
+  id: string;
+  request_id: string;
+};
+
 export type PlatformMatchOperationsRow = {
+  interest_status?: string | null;
   notification_status: string | null;
   request_id: string;
 };
 
 export type PlatformMatchOperationsSummary = {
+  declinedInterestCount?: number;
   failedNotificationCount: number;
+  interestedInterestCount?: number;
   matchedPartnerCount: number;
+  noneInterestCount?: number;
   pendingNotificationCount: number;
   sentNotificationCount: number;
   skippedNotificationCount: number;
+  viewedInterestCount?: number;
 };
 
 export type PlatformFeedbackOperationsRow = {
@@ -175,6 +185,10 @@ export type PlatformRequestOperationsSummary = {
   inProgress: number;
   lowFeedbacks: number;
   notifiedWithoutBids: number;
+  notifiedWithoutBidsPartnerActivity: number;
+  notifiedWithoutBidsPartnerUnseen: number;
+  notifiedWithoutBidsWithUnansweredQuestions: number;
+  notifiedWithoutBidsWithoutDocuments: number;
   open: number;
   openWithoutBids: number;
   openWithoutMatches: number;
@@ -235,6 +249,10 @@ function emptySummary(schemaReady: boolean): PlatformRequestOperationsSummary {
     inProgress: 0,
     lowFeedbacks: 0,
     notifiedWithoutBids: 0,
+    notifiedWithoutBidsPartnerActivity: 0,
+    notifiedWithoutBidsPartnerUnseen: 0,
+    notifiedWithoutBidsWithUnansweredQuestions: 0,
+    notifiedWithoutBidsWithoutDocuments: 0,
     open: 0,
     openWithoutBids: 0,
     openWithoutMatches: 0,
@@ -280,11 +298,15 @@ function formatPromptLine(label: string, value: string | number) {
 
 function emptyMatchOperationsSummary(): PlatformMatchOperationsSummary {
   return {
+    declinedInterestCount: 0,
     failedNotificationCount: 0,
+    interestedInterestCount: 0,
     matchedPartnerCount: 0,
+    noneInterestCount: 0,
     pendingNotificationCount: 0,
     sentNotificationCount: 0,
-    skippedNotificationCount: 0
+    skippedNotificationCount: 0,
+    viewedInterestCount: 0
   };
 }
 
@@ -293,6 +315,13 @@ function incrementMatchNotificationStatus(summary: PlatformMatchOperationsSummar
   if (status === "sent") summary.sentNotificationCount += 1;
   if (status === "skipped") summary.skippedNotificationCount += 1;
   if (status === "failed") summary.failedNotificationCount += 1;
+}
+
+function incrementMatchInterestStatus(summary: PlatformMatchOperationsSummary, status: string | null | undefined) {
+  if (status === "viewed") summary.viewedInterestCount = (summary.viewedInterestCount ?? 0) + 1;
+  else if (status === "interested") summary.interestedInterestCount = (summary.interestedInterestCount ?? 0) + 1;
+  else if (status === "declined") summary.declinedInterestCount = (summary.declinedInterestCount ?? 0) + 1;
+  else summary.noneInterestCount = (summary.noneInterestCount ?? 0) + 1;
 }
 
 function summarizeMatchOperations(
@@ -309,6 +338,7 @@ function summarizeMatchOperations(
     const summary = summaryByRequestId.get(match.request_id) ?? emptyMatchOperationsSummary();
     summary.matchedPartnerCount += 1;
     incrementMatchNotificationStatus(summary, match.notification_status);
+    incrementMatchInterestStatus(summary, match.interest_status);
     summaryByRequestId.set(match.request_id, summary);
   }
 
@@ -469,6 +499,7 @@ export function buildPlatformRequestImprovementPrompt(
 export function summarizePlatformRequestOperations(input: {
   bids: PlatformBidOperationsRow[];
   completionReports?: PlatformCompletionReportOperationsRow[];
+  documents?: PlatformDocumentOperationsRow[];
   feedbacks?: PlatformFeedbackOperationsRow[];
   matchSummaries?: Map<string, PlatformMatchOperationsSummary>;
   now: Date;
@@ -483,6 +514,9 @@ export function summarizePlatformRequestOperations(input: {
   const requestById = new Map(input.requests.map((request) => [request.id, request]));
   const feedbacks = input.feedbacks ?? [];
   const completionReports = input.completionReports ?? [];
+  const documentRequestIds = input.documents
+    ? new Set(input.documents.map((document) => document.request_id))
+    : null;
   const activeCompletionReports = completionReports.filter((report) => report.status !== "voided");
   const feedbackRequestIds = new Set(feedbacks.map((feedback) => feedback.request_id));
   const completionReportRequestIds = new Set(activeCompletionReports.map((report) => report.request_id));
@@ -513,6 +547,9 @@ export function summarizePlatformRequestOperations(input: {
   const threeDaysAgo = input.now.getTime() - 3 * 24 * 60 * 60 * 1000;
   const sevenDaysAgo = input.now.getTime() - 7 * 24 * 60 * 60 * 1000;
   const unansweredQuestions = input.questions.filter((question) => !question.answer).length;
+  const unansweredQuestionRequestIds = new Set(input.questions
+    .filter((question) => !question.answer)
+    .map((question) => question.request_id));
   const staleDraftRows = input.requests.filter((request) =>
     request.status === "draft" && new Date(request.created_at).getTime() < threeDaysAgo
   );
@@ -536,6 +573,33 @@ export function summarizePlatformRequestOperations(input: {
     ? openWithoutBidRows.filter((request) =>
       (input.matchSummaries?.get(request.id)?.sentNotificationCount ?? 0) > 0
     )
+    : [];
+  const notifiedWithoutBidRowsWithQuestions = notifiedWithoutBidRows.filter((request) =>
+    unansweredQuestionRequestIds.has(request.id)
+  );
+  const notifiedWithoutBidRowsWithoutDocuments = documentRequestIds
+    ? notifiedWithoutBidRows.filter((request) => !documentRequestIds.has(request.id))
+    : [];
+  const notifiedWithoutBidRowsWithPartnerActivity = input.matchSummaries
+    ? notifiedWithoutBidRows.filter((request) => {
+      const matchSummary = input.matchSummaries?.get(request.id);
+      return (
+        (matchSummary?.viewedInterestCount ?? 0) +
+        (matchSummary?.interestedInterestCount ?? 0) +
+        (matchSummary?.declinedInterestCount ?? 0)
+      ) > 0;
+    })
+    : [];
+  const notifiedWithoutBidRowsPartnerUnseen = input.matchSummaries
+    ? notifiedWithoutBidRows.filter((request) => {
+      const matchSummary = input.matchSummaries?.get(request.id);
+      return (
+        (matchSummary?.sentNotificationCount ?? 0) > 0 &&
+        (matchSummary?.viewedInterestCount ?? 0) +
+        (matchSummary?.interestedInterestCount ?? 0) +
+        (matchSummary?.declinedInterestCount ?? 0) === 0
+      );
+    })
     : [];
   const bidsReceivedRows = input.requests.filter((request) => request.status === "bids_received");
   const inProgressRows = input.requests.filter((request) => request.status === "in_progress");
@@ -561,6 +625,10 @@ export function summarizePlatformRequestOperations(input: {
   summary.openWithoutBids = openWithoutBidRows.length;
   summary.openWithoutMatches = openWithoutMatchRows.length;
   summary.notifiedWithoutBids = notifiedWithoutBidRows.length;
+  summary.notifiedWithoutBidsPartnerActivity = notifiedWithoutBidRowsWithPartnerActivity.length;
+  summary.notifiedWithoutBidsPartnerUnseen = notifiedWithoutBidRowsPartnerUnseen.length;
+  summary.notifiedWithoutBidsWithUnansweredQuestions = notifiedWithoutBidRowsWithQuestions.length;
+  summary.notifiedWithoutBidsWithoutDocuments = notifiedWithoutBidRowsWithoutDocuments.length;
   summary.staleDrafts = staleDraftRows.length;
   summary.staleInProgress = staleInProgressRows.length;
   summary.staleOpen = staleOpenRows.length;
@@ -641,7 +709,7 @@ export function summarizePlatformRequestOperations(input: {
       label: "노출 0건 확인"
     }));
   } else if (notifiedWithoutBidRows.length > 0) {
-    summary.actionRequest = `알림이 전달됐지만 견적이 없는 공개 요청 ${notifiedWithoutBidRows.length}건의 파트너 응답 유도와 운영 후속 조치를 점검해줘.`;
+    summary.actionRequest = `알림이 전달됐지만 견적이 없는 공개 요청 ${notifiedWithoutBidRows.length}건의 파트너 응답 유도와 운영 후속 조치를 점검해줘. 원인 단서: 미답변 질문 ${summary.notifiedWithoutBidsWithUnansweredQuestions}건, 공개 서류 없음 ${summary.notifiedWithoutBidsWithoutDocuments}건, 파트너 열람·관심·보류 ${summary.notifiedWithoutBidsPartnerActivity}건, 미열람 추정 ${summary.notifiedWithoutBidsPartnerUnseen}건.`;
     summary.actionItems = notifiedWithoutBidRows.slice(0, 3).map((request) => buildActionItem(request, {
       anchor: "request-matches",
       detail: `${requestTypeLabel(request.request_type)} 요청의 알림 전달 후 파트너 무응답 상태를 확인합니다.`,
@@ -698,7 +766,7 @@ export async function getPlatformRequestOperationsSummary(
 
   if (requestIds.length === 0) return emptySummary(true);
 
-  const [bidsResult, questionsResult, feedbacksResult, completionReportsResult, matchesResult] = await Promise.all([
+  const [bidsResult, questionsResult, documentsResult, feedbacksResult, completionReportsResult, matchesResult] = await Promise.all([
     supabase
       .from("service_bids")
       .select("id,request_id,status")
@@ -706,6 +774,10 @@ export async function getPlatformRequestOperationsSummary(
     supabase
       .from("service_request_questions")
       .select("id,request_id,answer")
+      .in("request_id", requestIds),
+    supabase
+      .from("service_request_documents")
+      .select("id,request_id")
       .in("request_id", requestIds),
     supabase
       .from("service_request_feedbacks")
@@ -717,12 +789,13 @@ export async function getPlatformRequestOperationsSummary(
       .in("request_id", requestIds),
     supabase
       .from("service_request_partner_matches")
-      .select("request_id,notification_status")
+      .select("request_id,notification_status,interest_status")
       .in("request_id", requestIds)
   ]);
 
   if (bidsResult.error) throw new Error(bidsResult.error.message);
   if (questionsResult.error) throw new Error(questionsResult.error.message);
+  if (documentsResult.error) throw new Error(documentsResult.error.message);
   if (feedbacksResult.error) throw new Error(feedbacksResult.error.message);
   if (completionReportsResult.error && !isMissingMarketplaceSchemaError(completionReportsResult.error)) {
     throw new Error(completionReportsResult.error.message);
@@ -734,6 +807,7 @@ export async function getPlatformRequestOperationsSummary(
   return summarizePlatformRequestOperations({
     bids: (bidsResult.data ?? []) as PlatformBidOperationsRow[],
     completionReports: completionReportsResult.error ? [] : (completionReportsResult.data ?? []) as PlatformCompletionReportOperationsRow[],
+    documents: (documentsResult.data ?? []) as PlatformDocumentOperationsRow[],
     feedbacks: (feedbacksResult.data ?? []) as PlatformFeedbackOperationsRow[],
     matchSummaries: matchesResult.error
       ? undefined
@@ -824,7 +898,7 @@ export async function getPlatformRequestOperationsDetail(
       .order("created_at", { ascending: false }),
     supabase
       .from("service_request_partner_matches")
-      .select("request_id,notification_status")
+      .select("request_id,notification_status,interest_status")
       .eq("request_id", requestId),
     requestRow.request_type === "freight"
       ? supabase

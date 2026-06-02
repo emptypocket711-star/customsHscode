@@ -415,7 +415,8 @@
 | P124.1 marketplace no-response notification operations selection | 완료 | email provider 준비가 아니라 알림 후에도 응답 없는 파트너를 운영자가 어떻게 발견하고 조치할지 다음 병목을 정한다 | no-response ops metric | unit, typecheck, lint, browser |
 | P125.1 marketplace no-response operations detail handoff | 완료 | 운영 요약 지표가 아니라 알림 후 무응답 샘플 상세에서 운영자가 어떤 확인 위치와 개선 요청문을 보게 할지 연결한다 | no-response detail handoff | unit, typecheck, lint, browser |
 | P126.1 marketplace partner opportunity response clue | 완료 | 운영자 상세 프롬프트가 아니라 파트너 opportunity 화면에서 알림을 받은 파트너가 왜 응답하지 않는지 판단할 수 있는 상태 단서를 보강한다 | partner response clue | unit, typecheck, lint, browser |
-| P127.1 marketplace no-response cause segmentation | 예정 | 파트너 화면 단서가 아니라 운영 요약에서 알림 후 무응답 원인을 질문/서류/관심상태 기준으로 더 세분화한다 | no-response cause segmentation | unit, UX, browser |
+| P127.1 marketplace no-response cause segmentation | 완료 | 파트너 화면 단서가 아니라 운영 요약에서 알림 후 무응답 원인을 질문/서류/관심상태 기준으로 더 세분화한다 | no-response cause segmentation | unit, typecheck, lint, browser |
+| P128.1 marketplace no-response detail cause prompt | 예정 | 운영 요약 원인 지표가 아니라 개별 요청 상세의 개선 프롬프트에도 무응답 원인 단서를 포함한다 | no-response detail cause prompt | unit, UX, browser |
 
 #### P109 다음 병목 선정
 
@@ -713,6 +714,23 @@ P125는 운영자 상세 화면에서 무응답 샘플을 개선 프롬프트로
 6. 포워더/관세사 테스트 계정으로 실제 상세 화면 렌더를 확인했다.
 
 다음 작업은 P127 marketplace no-response cause segmentation이다. P126이 파트너 상세 화면에서 응답 판단 단서를 보여주는 작업이라면, P127은 운영 요약에서 알림 후 무응답 원인을 질문/서류/관심상태 기준으로 나눠 운영자가 더 빨리 병목을 고르게 하는 작업이다.
+
+#### P127 no-response cause segmentation
+
+P127에서 운영 요약의 `알림 후 무응답` 지표를 원인 단서별로 세분화했다.
+
+P126은 파트너 opportunity 상세 화면에서 파트너가 응답 전 확인할 단서를 보여주는 작업이었다. 이번 P127은 대표/운영자 화면에서 알림 후 무응답 요청을 봤을 때 질문, 서류, 파트너 활동 상태 중 어떤 병목이 큰지 먼저 판단하게 하는 작업이다.
+
+구현 기준:
+
+1. `notifiedWithoutBidsWithUnansweredQuestions`를 추가해 미답변 질문이 남은 무응답 요청을 센다.
+2. `notifiedWithoutBidsWithoutDocuments`를 추가해 공개 서류가 없는 무응답 요청을 센다.
+3. `notifiedWithoutBidsPartnerActivity`를 추가해 파트너가 열람, 관심, 보류 상태를 남긴 무응답 요청을 센다.
+4. `notifiedWithoutBidsPartnerUnseen`을 추가해 알림은 발송됐지만 파트너 활동 상태가 없는 요청을 미열람 추정으로 분리한다.
+5. 운영 패널의 대표 우선순위 detail, 복사용 요청문, 상세 진단 지표에 세분화 카운트를 표시했다.
+6. 브라우저 검증에서는 공개/무입찰 샘플에 sent 매칭 row를 임시로 추가하고 상세 진단 details를 열어 원인 단서 렌더를 확인한 뒤 삭제했다.
+
+다음 작업은 P128 marketplace no-response detail cause prompt다. P127이 운영 요약 화면의 원인 지표라면, P128은 개별 요청 상세의 복사 프롬프트에도 같은 원인 단서를 넣어 내가 바로 개선 작업을 이어받을 수 있게 하는 작업이다.
 
 #### P34 다음 코드 작업 후보
 
