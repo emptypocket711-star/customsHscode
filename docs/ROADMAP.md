@@ -33,13 +33,15 @@
 
 | Phase | 상태 | 목표 | 핵심 산출물 |
 | --- | --- | --- | --- |
-| Platform Phase 0. 방향 전환 고정 | 진행 | HS 도구 중심에서 연결 플랫폼 중심으로 제품 문서와 IA 재정리 | PRODUCT_SPEC, ROADMAP, DECISIONS 갱신 |
-| Platform Phase 1. 회원 유형·검증 기반 | 예정 | 화주, 포워더, 관세사무소, 해외 업체를 계정 구조에서 명확히 분리 | account type, company profile, verification status, 증빙 업로드 |
-| Platform Phase 2. 운송 견적 요청 MVP | 예정 | 화주가 서류와 운송 조건을 올리고 포워더에게 견적을 받을 수 있게 함 | quote request, attachment, deadline, forwarder bid, shipper comparison |
-| Platform Phase 3. 통관 의뢰 요청 MVP | 예정 | 화주가 통관 의뢰를 올리고 관세사무소가 수수료와 조건을 제안 | clearance request, broker bid, 추가서류 요청, 리드타임 |
-| Platform Phase 4. 알림·관심 조건 | 예정 | 전체 알림 남발 없이 조건에 맞는 업체에게만 요청 노출·알림 | partner preferences, notification policy, reminder rules |
-| Platform Phase 5. 조회 도구와 요청 연결 | 진행 | HS/품명/관세/요건/중고차 도구에서 견적·의뢰 요청으로 전환 | “이 품목으로 견적 요청”, “통관 의뢰 요청”, 조회 결과 첨부 |
-| Platform Phase 6. 거래 신뢰·운영 관리 | 예정 | 최저가 경쟁만 막고 검증, 응답속도, 전문분야, 거래 이력 기반 비교 제공 | verification badges, response metrics, admin approval, abuse handling |
+| Platform Phase 0. 방향 전환 고정 | 완료 | HS 도구 중심에서 연결 플랫폼 중심으로 제품 문서와 IA 재정리 | PRODUCT_SPEC, ROADMAP, DECISIONS 갱신 |
+| Platform Phase 1. 회원 유형·검증 기반 | 완료 | 화주, 포워더, 관세사무소, 해외 업체를 계정 구조에서 명확히 분리 | account type, company profile, verification status, 증빙 업로드 |
+| Platform Phase 2. 운송 견적 요청 MVP | 완료 | 화주가 서류와 운송 조건을 올리고 포워더에게 견적을 받을 수 있게 함 | quote request, attachment, deadline, forwarder bid, shipper comparison |
+| Platform Phase 3. 통관 의뢰 요청 MVP | 완료 | 화주가 통관 의뢰를 올리고 관세사무소가 수수료와 조건을 제안 | clearance request, broker bid, 추가서류 요청, 리드타임 |
+| Platform Phase 4. 알림·관심 조건 | 로컬 완료 | 전체 알림 남발 없이 조건에 맞는 업체에게만 요청 노출·알림 | partner preferences, notification policy, reminder rules |
+| Platform Phase 5. 조회 도구와 요청 연결 | 완료 | HS/품명/관세/요건/중고차 도구에서 견적·의뢰 요청으로 전환 | “이 품목으로 견적 요청”, “통관 의뢰 요청”, 조회 결과 첨부 |
+| Platform Phase 6. 거래 신뢰·운영 관리 | 진행 | 최저가 경쟁만 막고 검증, 응답속도, 전문분야, 거래 이력 기반 비교 제공 | verification badges, response metrics, admin approval, abuse handling |
+
+2026-06-03 기준 세부 실행 레일과 local marketplace transaction E2E는 요청 생성, 공개, 입찰, 선정, zero-match 확인까지 통과했다. 아직 production 알림 provider 연결, 운영 배포 검증, 완료 거래 리포트 실무화는 남아 있으므로 전체 제품은 제한 공개 테스트 전 로컬 완성도를 높이는 단계로 본다.
 
 ### Platform Execution Rail
 
@@ -395,7 +397,24 @@
 | P106.1 operations RPC lint blocker review | 완료 | 매칭 0건 공개 허용이 아니라 Supabase local lint에서 드러난 운영 RPC 모호 컬럼 오류와 local DB 함수 갱신 상태를 정리한다 | operations rpc lint blockers | Supabase lint, governance |
 | P107.1 partner preference match diagnostics review | 완료 | RPC lint 정리가 아니라 파트너 관심 조건 UI가 매칭 0건 원인을 줄일 만큼 충분히 안내하는지 점검한다 | partner preference diagnostics | unit, browser, typecheck, lint |
 | P108.1 marketplace zero-match end-to-end review | 완료 | 파트너 관심 조건 안내가 아니라 화주 공개 후 0건 상태가 요청자·운영자 화면까지 이어지는 흐름을 E2E 관점에서 점검한다 | zero-match E2E readiness | local E2E, typecheck, lint, route 확인 |
-| P109.1 marketplace post-E2E next bottleneck review | 예정 | zero-match E2E가 아니라 로컬 거래 E2E 통과 후 남은 MVP 병목을 다시 고른다 | next bottleneck selection | product/code review |
+| P109.1 marketplace post-E2E next bottleneck review | 완료 | zero-match E2E가 아니라 로컬 거래 E2E 통과 후 남은 MVP 병목을 다시 고른다 | completion report practicalization selected | product/code review |
+| P110.1 completion report practicalization scope review | 예정 | 다음 병목 선정이 아니라 완료 거래에서 실제 신고/운송 결과·정산·보관 서류를 어디까지 받을지 범위를 정한다 | completion report scope | code/data review |
+
+#### P109 다음 병목 선정
+
+P109 기준 다음 큰 병목은 `완료 리포트 실무화`다. 요청 생성, 공개, 입찰, 선정, zero-match 예외 흐름은 local E2E로 통과했기 때문에 이제 새 요청을 더 늘리는 것보다 거래가 끝난 뒤 실제 업무 기록이 남는지 확인해야 한다.
+
+우선순위는 아래 순서로 둔다.
+
+1. 완료 리포트 실무화
+   - 이미 완료 상태와 피드백 골격은 있으나 실제 운송/통관 결과, 최종 금액, 최종 보관 서류, 담당자 메모의 범위가 아직 실무 흐름으로 충분히 정리되지 않았다.
+   - 이 작업은 “새 요청 생성”이 아니라 선정 후 완료된 거래를 신뢰 데이터와 운영 기록으로 닫는 작업이다.
+2. 실제 알림 provider 운영 연결
+   - dry-run, claim, inbox, RLS는 준비됐지만 production email/app provider 연결은 별도 운영 검증이 필요하다.
+3. 해외 파트너 온보딩 정교화
+   - 기본 안내와 CTA는 준비됐지만 국가별 증빙, 언어, 한국 포워더/관세사 연결 기대치를 더 세밀하게 만들 수 있다.
+4. 운영 화면 최종 단순화
+   - 대표가 지표를 보고 나에게 바로 고쳐달라고 할 수 있는 구조는 생겼지만, 실제 데이터가 쌓인 후 카드 수와 우선순위는 다시 줄일 수 있다.
 
 #### P34 다음 코드 작업 후보
 

@@ -484,6 +484,22 @@
 - `npm run lint`
 - `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
 
+### marketplace post-E2E next bottleneck review
+
+- 이전 작업은 P108 화주 공개 후 노출 0건 상태가 요청자·운영자 화면까지 이어지는지 E2E fixture로 확인한 작업이고, 이번 작업은 P109 로컬 거래 E2E 통과 후 남은 MVP 병목을 다시 고르는 작업이다.
+- `docs/ROADMAP.md` 상단 Rebased Phase Plan이 세부 실행 레일 완료 상태와 맞지 않아 실제 상태로 갱신했다.
+- Platform Phase 0, 1, 2, 3, 5는 완료로, Phase 4는 로컬 완료로, Phase 6은 진행으로 재정리했다.
+- local marketplace transaction E2E가 요청 생성, 공개, 입찰, 선정, zero-match 확인까지 통과했으므로 다음 병목은 `완료 리포트 실무화`로 정했다.
+- P110은 완료 거래에서 실제 신고/운송 결과, 최종 금액, 최종 보관 서류, 담당자 메모를 어디까지 받을지 범위를 정하는 작업으로 잡았다.
+- 이 작업은 새 E2E를 추가하는 P108과 다르다. P109는 검증이 끝난 거래 흐름 다음에 어떤 실무 공백을 먼저 막을지 제품/데이터 관점에서 기준선을 다시 잡는 작업이다.
+- production 알림 provider 연결, 해외 파트너 온보딩 정교화, 운영 화면 최종 단순화는 후순위 후보로 남겼다.
+- 다음 작업은 P110 completion report practicalization scope review다. 이번 P109가 다음 병목 선정이라면, P110은 실제 완료 리포트 모델과 UI 범위를 코드/데이터 기준으로 점검하는 작업이다.
+
+검증:
+
+- `rg -n "Platform Phase 0|P109.1|P110.1|완료 리포트 실무화|completion report practicalization" docs/ROADMAP.md docs/WORK_LOG.md`
+- `git diff --check`
+
 ## 2026-06-02
 
 ### local login review smoke
