@@ -293,7 +293,8 @@
 | P72.3 completion workflow disabled guidance | 완료 | 초안 CTA 배치가 아니라 제출·확인 단계 카드의 비활성 버튼 문구가 왜 대기인지 충분히 설명하는지 보강한다 | completion workflow disabled copy | unit, browser, typecheck, lint |
 | P72.4 feedback submitted state clarity | 완료 | 완료 리포트 단계 문구가 아니라 완료 후 피드백이 이미 제출된 상태에서 사용자가 다음 행동을 혼동하지 않는지 점검한다 | feedback submitted UX | browser, typecheck, lint |
 | P72.5 completion handoff docs sync | 완료 | 피드백 제출 상태 UI가 아니라 P72 완료 리포트·보관 서류·피드백 UX 개선사항을 거래 E2E 문서에 반영한다 | completion handoff docs sync | docs, diff check |
-| P73.1 dashboard completion next-action review | 예정 | 완료 상세 handoff가 아니라 대시보드의 다음 행동 카드가 완료 리포트·피드백 누락 거래를 바로 상세로 연결하는지 점검한다 | dashboard completion action UX | browser, unit, typecheck, lint |
+| P73.1 dashboard completion next-action review | 완료 | 완료 상세 handoff가 아니라 대시보드의 다음 행동 카드가 완료 리포트·피드백 누락 거래를 바로 상세로 연결하는지 점검한다 | dashboard completion action UX | browser, unit, typecheck, lint |
+| P73.2 dashboard completion metric visibility | 예정 | 대시보드 다음 행동 링크가 아니라 완료 리포트 대기 수를 하단 지표에서도 바로 볼 수 있게 정리한다 | dashboard completion metric UX | browser, unit, typecheck, lint |
 
 #### P34 다음 코드 작업 후보
 

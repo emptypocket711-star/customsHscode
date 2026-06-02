@@ -35,6 +35,7 @@ export type DashboardMarketplaceActivitySummary = {
   clearancePartnerActions: number;
   clearanceRequesterActionRequestId?: string | null;
   clearanceRequesterActions: number;
+  completionReportPending: number;
   completedRequests: number;
   draftRequests: number;
   feedbackPending: number;
@@ -304,7 +305,7 @@ export function buildMarketplaceNextActions(
   }> = [
     {
       count: activity?.freightRequesterActions ?? 0,
-      description: "운송 요청의 견적 비교, 업체 선정, 진행 상태, 완료 피드백을 처리합니다.",
+      description: "운송 요청의 견적 비교, 업체 선정, 진행 상태, 완료 리포트와 피드백을 처리합니다.",
       href: activity?.freightRequesterActionRequestId
         ? `/requests/freight/${activity.freightRequesterActionRequestId}`
         : "/requests/freight?workspace=requester",
@@ -314,7 +315,7 @@ export function buildMarketplaceNextActions(
     },
     {
       count: activity?.clearanceRequesterActions ?? 0,
-      description: "통관 의뢰의 견적 비교, 업체 선정, 진행 상태, 완료 피드백을 처리합니다.",
+      description: "통관 의뢰의 견적 비교, 업체 선정, 진행 상태, 완료 리포트와 피드백을 처리합니다.",
       href: activity?.clearanceRequesterActionRequestId
         ? `/requests/clearance/${activity.clearanceRequesterActionRequestId}`
         : "/requests/clearance?workspace=requester",

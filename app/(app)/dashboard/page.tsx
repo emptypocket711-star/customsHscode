@@ -113,6 +113,7 @@ async function getDashboardMarketplaceActivitySummary(
     clearancePartnerActions: 0,
     clearanceRequesterActionRequestId: null,
     clearanceRequesterActions: 0,
+    completionReportPending: 0,
     completedRequests: 0,
     draftRequests: 0,
     feedbackPending: 0,
@@ -161,10 +162,22 @@ async function getDashboardMarketplaceActivitySummary(
   const completedRequestIds = requests
     .filter((request) => request.status === "completed")
     .map((request) => String(request.id));
-  const ownFeedbacks = await listOwnServiceRequestFeedbacks(supabase, completedRequestIds).catch(() => new Map());
+  const [ownFeedbacks, completionReportsResult] = await Promise.all([
+    listOwnServiceRequestFeedbacks(supabase, completedRequestIds).catch(() => new Map()),
+    completedRequestIds.length > 0
+      ? supabase
+        .from("service_request_completion_reports")
+        .select("request_id,status")
+        .in("request_id", completedRequestIds)
+        .neq("status", "voided")
+      : Promise.resolve({ data: [], error: null })
+  ]);
+  const completionReportRequestIds = new Set((completionReportsResult.error ? [] : completionReportsResult.data ?? [])
+    .map((row) => String(row.request_id)));
+  const lacksCompletionReport = (requestId: string) => completedRequestIds.includes(requestId) && !completionReportRequestIds.has(requestId);
   const needsRequesterAction = (request: { id: unknown; status: string | null }) => {
     if (["draft", "open", "bids_received", "partner_selected", "in_progress"].includes(String(request.status))) return true;
-    return request.status === "completed" && !ownFeedbacks.has(String(request.id));
+    return request.status === "completed" && (lacksCompletionReport(String(request.id)) || !ownFeedbacks.has(String(request.id)));
   };
   const matches = (partnerMatches ?? []) as Array<{
     service_requests?: { id?: string | null; request_type?: string | null; status?: string | null } | Array<{ id?: string | null; request_type?: string | null; status?: string | null }> | null;
@@ -177,8 +190,21 @@ async function getDashboardMarketplaceActivitySummary(
     .map((match) => Array.isArray(match.service_requests) ? match.service_requests[0] : match.service_requests)
     .filter((request) => request?.status === "open" || request?.status === "bids_received");
   const requesterActionRequests = requests.filter((request) => needsRequesterAction(request));
+  const requesterActionPriority = (request: { id: unknown; status: string | null }) => {
+    const requestId = String(request.id);
+    if (request.status === "completed" && lacksCompletionReport(requestId)) return 100;
+    if (request.status === "completed" && !ownFeedbacks.has(requestId)) return 90;
+    if (request.status === "bids_received") return 80;
+    if (request.status === "partner_selected") return 70;
+    if (request.status === "in_progress") return 60;
+    if (request.status === "open") return 50;
+    if (request.status === "draft") return 40;
+    return 0;
+  };
   const firstRequesterActionId = (requestType: "clearance" | "freight") => {
-    const request = requesterActionRequests.find((item) => item.request_type === requestType);
+    const request = requesterActionRequests
+      .filter((item) => item.request_type === requestType)
+      .sort((a, b) => requesterActionPriority(b) - requesterActionPriority(a))[0];
     return request?.id ? String(request.id) : null;
   };
   const firstPartnerActionId = (requestType: "clearance" | "freight") => {
@@ -192,6 +218,7 @@ async function getDashboardMarketplaceActivitySummary(
     clearancePartnerActions: partnerOpportunityRequests.filter((request) => request?.request_type === "clearance").length,
     clearanceRequesterActionRequestId: firstRequesterActionId("clearance"),
     clearanceRequesterActions: requests.filter((request) => request.request_type === "clearance" && needsRequesterAction(request)).length,
+    completionReportPending: completedRequestIds.filter((requestId) => !completionReportRequestIds.has(requestId)).length,
     completedRequests: completedRequestIds.length,
     draftRequests: requests.filter((request) => request.status === "draft").length,
     feedbackPending: completedRequestIds.filter((requestId) => !ownFeedbacks.has(requestId)).length,

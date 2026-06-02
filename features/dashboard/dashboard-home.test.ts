@@ -12,6 +12,7 @@ function activityFixture(overrides: Partial<DashboardMarketplaceActivitySummary>
     clearancePartnerActions: 0,
     clearanceRequesterActionRequestId: null,
     clearanceRequesterActions: 0,
+    completionReportPending: 0,
     completedRequests: 0,
     draftRequests: 0,
     feedbackPending: 0,
@@ -48,6 +49,7 @@ describe("dashboard marketplace next actions", () => {
     }), summaryFixture);
 
     expect(actions[0]).toMatchObject({
+      description: "운송 요청의 견적 비교, 업체 선정, 진행 상태, 완료 리포트와 피드백을 처리합니다.",
       href: "/requests/freight/freight-1",
       title: "내 운송 요청 처리"
     });
@@ -55,6 +57,24 @@ describe("dashboard marketplace next actions", () => {
       href: "/requests/clearance/clearance-1",
       title: "내 통관 의뢰 처리"
     });
+  });
+
+  it("keeps completed handoff work in requester next actions", () => {
+    const actions = buildMarketplaceNextActions(activityFixture({
+      completionReportPending: 1,
+      completedRequests: 1,
+      feedbackPending: 1,
+      freightRequesterActionRequestId: "completed-freight-1",
+      freightRequesterActions: 1
+    }), summaryFixture);
+
+    expect(actions[0]).toMatchObject({
+      href: "/requests/freight/completed-freight-1",
+      label: "화주 업무",
+      title: "내 운송 요청 처리"
+    });
+    expect(actions[0].description).toContain("완료 리포트");
+    expect(actions[0].description).toContain("피드백");
   });
 
   it("keeps workspace fallback links when no first request id is available", () => {
