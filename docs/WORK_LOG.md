@@ -559,6 +559,27 @@
 - Playwright requester detail check: locked 운송/운영검토 통관은 수정 잠금 안내 표시, draft 운송은 수정 폼 표시 확인
 - local-only env override로 `npm run e2e:completion-preview:local`: preview 접근 권한, draft 저장 mutation, preview 반영 모두 `result=ok`
 
+### notification provider readiness review
+
+- 이전 작업은 P112 완료 리포트 non-draft 수정 잠금 UX이고, 이번 작업은 P113 실제 marketplace 알림 provider 운영 연결 전에 현재 준비 상태와 다음 병목을 다시 점검한 작업이다.
+- marketplace notification worker, claim RPC, delivery 저장소, 실패 기록, retryable failed, inbox, read action은 이미 있다.
+- provider allowlist는 현재 `internal_dry_run`만 허용한다.
+- `send=1`은 `MARKETPLACE_NOTIFICATIONS_SEND_ENABLED`와 `MARKETPLACE_NOTIFICATIONS_PROVIDER`가 준비되지 않으면 route에서 차단된다.
+- unsupported provider는 readiness에서 `MARKETPLACE_NOTIFICATIONS_PROVIDER is not supported.`로 차단된다.
+- Resend 기반 `sendTransactionalEmail`, `RESEND_API_KEY`, `NOTIFICATION_FROM_EMAIL` env는 운영 이슈 알림과 적하목록 알림에서 이미 쓰는 경로가 있다.
+- 실제 병목은 email provider 함수 자체가 아니라 marketplace target의 `partnerCompanyId`에서 어느 사용자 이메일로 보낼지 안전하게 고르는 recipient resolver다.
+- 이번 P113은 완료 리포트 후속 작업이 아니다. 알림 provider 운영 연결 전 recipient/metadata/실패 경계를 다시 고르는 작업이다.
+- 다음 작업은 P114 marketplace notification recipient resolver다. 이번 P113이 다음 병목 선정이라면, P114는 파트너 회사의 active 사용자 중 알림 수신 후보를 고르는 read helper와 단위 테스트를 만드는 작업이다.
+
+검증:
+
+- `server/jobs/marketplace-notification-provider.ts` 코드 리뷰
+- `server/jobs/marketplace-notification-send-readiness.ts` 코드 리뷰
+- `server/jobs/marketplace-notification-worker.service.ts` 코드 리뷰
+- `app/api/jobs/marketplace-notifications/route.ts` 코드 리뷰
+- `docs/MARKETPLACE_NOTIFICATION_RUNBOOK.md`와 `docs/MARKETPLACE_NOTIFICATION_SELF_REVIEW.md` 문서 리뷰
+- `rg -n "sendTransactionalEmail|RESEND_API_KEY|NOTIFICATION_FROM_EMAIL|MARKETPLACE_NOTIFICATIONS_PROVIDER|internal_dry_run" server docs app`
+
 ## 2026-06-02
 
 ### local login review smoke

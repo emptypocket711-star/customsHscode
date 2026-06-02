@@ -401,7 +401,8 @@
 | P110.1 completion report practicalization scope review | 완료 | 다음 병목 선정이 아니라 완료 거래에서 실제 신고/운송 결과·정산·보관 서류를 어디까지 받을지 범위를 정한다 | practical completion report fields | unit, typecheck, lint, E2E, browser |
 | P111.1 completion report mutation E2E coverage | 완료 | 실무 입력 필드 노출이 아니라 사용자가 입력한 완료 리포트 값이 저장 후 미리보기에 반영되는지 자동 검증한다 | completion report save-to-preview E2E | local E2E, typecheck, lint |
 | P112.1 completion report non-draft edit guard UX | 완료 | 저장 mutation 검증이 아니라 제출·운영검토·잠금 리포트에서 수정 폼이 열리는 UX/권한 불일치를 정리한다 | non-draft edit guard | UX, browser, typecheck, lint, E2E |
-| P113.1 notification provider readiness review | 예정 | 완료 리포트 후속 UX가 아니라 실제 알림 provider 운영 연결 전에 env, adapter, dry-run 검증 범위를 다시 점검한다 | notification provider readiness | code/ops review |
+| P113.1 notification provider readiness review | 완료 | 완료 리포트 후속 UX가 아니라 실제 알림 provider 운영 연결 전에 env, adapter, dry-run 검증 범위를 다시 점검한다 | recipient resolver selected | code/ops review |
+| P114.1 marketplace notification recipient resolver | 예정 | provider 준비상태 점검이 아니라 파트너 회사의 알림 수신 대상 사용자를 안전하게 고르는 read helper를 만든다 | partner notification recipients | unit, typecheck, lint |
 
 #### P109 다음 병목 선정
 
@@ -463,6 +464,26 @@ P112에서 완료 리포트 상태와 수정 UI를 맞췄다. DB/RPC는 `draft`�
    - 사용자는 보관 서류, 미리보기, 상태 전환 흐름을 확인한다.
 
 다음 작업은 P113 notification provider readiness review다. P112가 완료 리포트 UX/권한 정리라면, P113은 완료 리포트 축을 잠시 닫고 P109의 후순위였던 실제 알림 provider 운영 연결 전 준비 상태를 점검하는 작업이다.
+
+#### P113 알림 provider 준비 상태
+
+P113에서 실제 외부 발송 전 준비 상태를 다시 점검했다.
+
+현재 상태:
+
+1. worker, claim RPC, delivery 저장소, 실패 기록, retryable failed, inbox, read action은 이미 있다.
+2. provider allowlist는 `internal_dry_run`만 허용한다.
+3. `send=1`은 `MARKETPLACE_NOTIFICATIONS_SEND_ENABLED`와 `MARKETPLACE_NOTIFICATIONS_PROVIDER`가 준비되지 않으면 route에서 차단된다.
+4. Resend 기반 `sendTransactionalEmail`과 `RESEND_API_KEY`, `NOTIFICATION_FROM_EMAIL` env는 다른 운영 알림/적하목록 알림에서 이미 사용 중이다.
+
+남은 병목은 email provider 자체보다 recipient resolver다. marketplace target은 partner company 단위로 계산되지만, 실제 이메일을 보내려면 파트너 회사 안에서 어느 사용자에게 보낼지 안전하게 정해야 한다.
+
+P114에서는 아래 기준으로 진행한다.
+
+1. 파트너 회사의 active admin/member profile만 후보로 삼는다.
+2. developer/internal 계정이나 다른 회사 사용자는 제외한다.
+3. 이메일 원문은 delivery metadata에 저장하지 않는다.
+4. 대상이 없으면 발송 provider를 호출하지 않고 `recipient_missing`류의 안전한 실패/스킵 경로로 남긴다.
 
 #### P34 다음 코드 작업 후보
 
