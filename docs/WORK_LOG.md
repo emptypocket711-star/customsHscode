@@ -172,6 +172,23 @@
 - Playwright detail check: 화주 운송/통관 상세와 포워더/관세사무소 opportunity 상세에서 `다음 작업 바로가기` 유지, 상세 흐름 패널 제목 미노출 확인
 - `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
 
+### marketplace start guidance workspace alignment
+
+- 이전 작업은 P90 상세 화면 반복 안내 제거이고, 이번 작업은 P91 요청 시작·목록 화면에 남은 안내 패널의 역할별 위치 점검이다.
+- 운송 화면은 화주 workspace에 운송 입찰 흐름이 노출되지 않고, 포워더 workspace에만 `운송 입찰 작업 흐름`이 노출되는 상태라 유지했다.
+- 통관 화면은 화주 workspace의 `내 통관 의뢰 요청` 카드 안에 관세사무소용 `통관 입찰 작업 흐름`이 잘못 노출되고 있었다.
+- 해당 패널을 화주 목록에서 제거하고, 관세사 workspace의 `입찰 가능 통관 의뢰` 카드로 옮겼다.
+- 요청 시작 흐름, 초안 저장 form, 견적 제출 action, 권한/RLS, DB schema는 변경하지 않았다.
+- 다음 작업은 P92 요청 row 안의 카드/버튼/상태 문구 밀도 점검이다. 이번 P91이 안내 패널의 역할별 위치 수정이라면, P92는 각 요청 row 내부에서 실제 행동 버튼과 상태 문구가 과하게 반복되는지 보는 작업이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- Playwright list check: 통관 화주 목록에서 `통관 입찰 작업 흐름` 미노출, 관세사 목록에서 노출 확인
+- Playwright list check: 운송 화주 목록에서 `운송 입찰 작업 흐름` 미노출, 포워더 목록에서 노출 확인
+- `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
+
 ## 2026-06-02
 
 ### local login review smoke

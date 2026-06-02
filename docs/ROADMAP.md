@@ -367,7 +367,9 @@
 | P90.1 marketplace duplicate guidance selection | 완료 | 복사용 운영 요청문이 아니라 marketplace 거래 화면 안에서 반복 안내가 과한 곳을 다시 점검한다 | detail flow panel duplicate selected | UX/code review |
 | P90.2 request detail duplicate flow panels | 완료 | 중복 안내 선택이 아니라 화주·파트너 상세에서 상단 다음 작업 바로가기와 반복되는 상세 흐름 패널을 걷어낸다 | detail density trim | browser, typecheck, lint |
 | P90.3 requester detail flow dead code cleanup | 완료 | 화면 패널 제거가 아니라 더 이상 쓰이지 않는 화주 상세 전용 흐름 컴포넌트를 정리한다 | unused component cleanup | typecheck, lint |
-| P91.1 marketplace start guidance scope review | 예정 | 상세 화면 중복 제거가 아니라 요청 시작·목록 화면의 안내 패널이 실제 시작 흐름에만 남아 있는지 점검한다 | start/list guidance audit | UX/code review |
+| P91.1 marketplace start guidance scope review | 완료 | 상세 화면 중복 제거가 아니라 요청 시작·목록 화면의 안내 패널이 실제 시작 흐름에만 남아 있는지 점검한다 | clearance requester misplaced partner flow selected | UX/code review |
+| P91.2 clearance list guidance workspace alignment | 완료 | 안내 범위 점검이 아니라 통관 화주 목록에 잘못 보이던 관세사무소 입찰 흐름 패널을 관세사 workspace로 옮긴다 | workspace-specific guidance | browser, typecheck, lint |
+| P92.1 marketplace compact row action density review | 예정 | 시작·목록 안내 위치가 아니라 요청 row 안의 카드/버튼/상태 문구가 너무 많은지 점검한다 | row action density audit | UX/code review |
 
 #### P34 다음 코드 작업 후보
 
