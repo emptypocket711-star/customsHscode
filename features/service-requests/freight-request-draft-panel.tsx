@@ -290,8 +290,19 @@ function FreightOwnSubmittedBidSummary({ bid }: { bid: ReceivedFreightBidItem })
         <p className="rounded-md bg-white p-2">리드타임 {bid.leadTimeDays ?? "-"}일</p>
         <p className="rounded-md bg-white p-2">제출 {bid.submittedAt?.slice(0, 10) ?? bid.createdAt.slice(0, 10)}</p>
       </div>
-      <p>이미 제출한 견적이 있어 중복 제출 form은 숨깁니다. 수정 또는 철회 기능은 별도 정책으로 열기 전까지 운영 확인이 필요합니다.</p>
+      <p>이미 제출한 견적이 있어 중복 제출 form은 숨깁니다.</p>
+      <BidRevisionPolicyNotice viewer="partner" />
     </div>
+  );
+}
+
+function BidRevisionPolicyNotice({ viewer }: { viewer: "partner" | "requester" }) {
+  return (
+    <p className="rounded-md border border-slate-200 bg-slate-50 p-2 text-xs leading-5 text-slate-600">
+      {viewer === "partner"
+        ? "제출 후 견적 수정·철회는 아직 직접 처리할 수 없습니다. 조건 변경이 필요하면 운영 확인 후 별도 정책으로 처리합니다."
+        : "이 견적은 파트너가 제출한 시점의 조건입니다. 수정·철회는 아직 직접 처리하지 않으며, 조건 변경은 운영 확인 후 반영합니다."}
+    </p>
   );
 }
 
@@ -537,6 +548,7 @@ function ReceivedFreightBidRow({
         <span>부대비용 {formatAmount(bid.surchargeAmount, bid.currency)}</span>
       </div>
       <FreightPreSelectChecklist bid={bid} />
+      <BidRevisionPolicyNotice viewer="requester" />
       {bid.message ? <p className="text-sm leading-6 text-slate-600">{bid.message}</p> : null}
       {state.message && state.bidId === bid.bidId ? (
         <p
