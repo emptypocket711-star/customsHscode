@@ -863,6 +863,24 @@
 - 로컬 fixture `75000000-0000-4000-8000-000000000101`, `75000000-0000-4000-8000-000000000102`를 임시로 `in_progress`로 변경
 - Playwright 화주 계정으로 운송·통관 상세의 `완료 처리 전 확인` 문구 확인
 - 검증 후 두 fixture 상태를 원래 `open`으로 원복 확인
+
+### completed transaction follow-up order
+
+- 이전 작업은 진행 중 요청을 완료 처리하기 전 확인 문구를 보강한 P148.1이고, 이번 작업은 이미 완료된 요청에서 완료 리포트·보관 서류·피드백 확인 순서를 상단에 표시한 P149.1이다.
+- 운송 완료 상태 화면에 `운송 요청 완료 후 확인 순서`를 추가했다.
+- 운송 완료 후 확인 순서는 완료 리포트 상태, 최종 보관 서류 연결, 거래 품질 피드백 순서로 표시한다.
+- 통관 완료 상태 화면에 `통관 의뢰 완료 후 확인 순서`를 추가했다.
+- 통관 완료 후 확인 순서는 신고 결과와 예비 조회 출처 구분, 최종 보관 서류 연결, 거래 품질 피드백 순서로 표시한다.
+- 완료 리포트 저장, 보관 서류 연결, 피드백 제출 동작은 변경하지 않았다.
+- 새 migration, RLS 변경은 없다.
+- 로컬 파일만 수정했고 원격 푸시, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- Playwright 화주 계정으로 완료 운송 요청 `/requests/freight/00000000-0000-4000-8000-000000000101#request-completion` 확인
+- Playwright 화주 계정으로 완료 통관 의뢰 `/requests/clearance/00000000-0000-4000-8000-000000000201#request-completion` 확인
 - Playwright developer check: `/operations/requests/75000000-0000-4000-8000-000000000201`, 임시 sent match 기반 `알림 후 파트너 무응답 개선` 렌더 확인
 
 ### marketplace partner opportunity response clue

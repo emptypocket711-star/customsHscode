@@ -437,6 +437,7 @@
 | P146.1 marketplace bid revision policy boundary | 완료 | 프롬프트 문구가 아니라 견적 수정·철회 기능을 나중에 열 때 필요한 RPC/RLS/audit 경계를 문서화한다 | bid revision policy doc | docs, diff check |
 | P147.1 selected transaction start CTA clarity | 완료 | 견적 수정·철회 정책이 아니라 업체 선정 후 실제 진행 시작 전에 확인할 일정·서류·범위를 CTA 주변에 명확히 표시한다 | selected start CTA clarity | typecheck, lint, browser |
 | P148.1 in-progress completion CTA clarity | 완료 | 선정 후 진행 시작이 아니라 진행 중 요청을 완료 처리하기 전 완료 여부·보관 서류·민감정보 제외 메모를 확인하게 한다 | completion CTA clarity | typecheck, lint, browser |
+| P149.1 completed transaction follow-up order | 완료 | 완료 처리 전 확인이 아니라 완료 상태에서 리포트·보관 서류·피드백 확인 순서를 상단에 명확히 표시한다 | completed follow-up order | typecheck, lint, browser |
 
 #### P109 다음 병목 선정
 

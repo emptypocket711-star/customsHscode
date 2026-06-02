@@ -396,9 +396,14 @@ function ClearanceLifecycleControls({
 
     return (
       <div className="grid scroll-mt-6 gap-3" id="request-completion">
-        <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
-          통관 의뢰가 완료 처리되었습니다. 완료 리포트와 보관 서류를 확인하고, 거래 품질 피드백을 남길 수 있습니다.
-        </p>
+        <div className="grid gap-3 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+          <p className="font-semibold text-emerald-950">통관 의뢰 완료 후 확인 순서</p>
+          <div className="grid gap-2 text-xs leading-5 md:grid-cols-3">
+            <p className="rounded-md bg-white p-2">1. 완료 리포트의 신고 결과와 예비 조회 출처 구분을 확인합니다.</p>
+            <p className="rounded-md bg-white p-2">2. 최종 보관 서류 연결 상태를 확인합니다.</p>
+            <p className="rounded-md bg-white p-2">3. 거래 품질 피드백을 남겨 다음 견적 비교 신뢰 지표에 반영합니다.</p>
+          </div>
+        </div>
         <ServiceRequestCompletionReportPanel documents={documents} kind="clearance" report={completionReport} reportDocuments={completionReportDocuments} requestId={requestId} viewerRole={viewerRole} />
         <ServiceRequestFeedbackForm existingFeedback={existingFeedback} requestId={requestId} />
       </div>
