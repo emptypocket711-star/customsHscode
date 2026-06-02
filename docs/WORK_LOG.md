@@ -847,6 +847,23 @@
 - `npm run lint`
 - Playwright developer check: `/operations/users#platform-request-operations`, 임시 sent match 기반 상세 진단 details 열기 후 no-response 원인 단서 렌더 확인
 
+### marketplace no-response detail cause prompt
+
+- 이전 작업은 P127 운영 요약에서 무응답 원인 지표를 세분화한 작업이고, 이번 작업은 P128 개별 요청 상세의 개선 프롬프트에 같은 원인 단서를 포함한 작업이다.
+- `알림 후 파트너 무응답 개선` 프롬프트에 `공개 서류 없음` 여부를 추가했다.
+- 프롬프트에 `파트너 열람·관심·보류 수`와 `미열람 추정 파트너 수`를 추가했다.
+- 미열람 추정은 파트너 노출 수에서 열람/관심/보류 상태를 남긴 파트너 수를 뺀 값으로 계산한다.
+- 요청 제목, 품목 설명, 서류 파일명, 질문·답변 원문, 견적 금액·메시지는 계속 프롬프트에 포함하지 않는다.
+- 브라우저 검증에서는 공개/무입찰 샘플에 sent 매칭 row를 임시로 추가해 상세 프롬프트의 원인 단서 렌더를 확인한 뒤 삭제했다.
+- 다음 작업은 P129 marketplace operations match interest detail이다. 이번 P128이 복사 프롬프트의 원인 단서라면, P129는 요청 상세의 파트너 노출·알림 요약 카드 자체에 열람/관심/보류/미확인 카운트를 보여주는 작업이다.
+
+검증:
+
+- `npx vitest run server/repositories/platform-operations.repository.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- Playwright developer check: `/operations/requests/75000000-0000-4000-8000-000000000201`, 임시 sent match 기반 no-response 상세 프롬프트 원인 단서 렌더 확인
+
 ## 2026-06-02
 
 ### local login review smoke

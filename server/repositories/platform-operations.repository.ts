@@ -421,6 +421,15 @@ export function buildPlatformRequestImprovementPrompt(
     activeBids === 0 &&
     (detail.matchSummary?.sentNotificationCount ?? 0) > 0
   ) {
+    const partnerActivityCount = (
+      (detail.matchSummary?.viewedInterestCount ?? 0) +
+      (detail.matchSummary?.interestedInterestCount ?? 0) +
+      (detail.matchSummary?.declinedInterestCount ?? 0)
+    );
+    const unseenPartnerCount = detail.matchSummary
+      ? Math.max(0, detail.matchSummary.matchedPartnerCount - partnerActivityCount)
+      : 0;
+
     return {
       category: "notification_no_response",
       label: "알림 후 파트너 무응답 개선",
@@ -429,8 +438,11 @@ export function buildPlatformRequestImprovementPrompt(
         formatPromptLine("알림 발송 수", detail.matchSummary?.sentNotificationCount ?? 0),
         formatPromptLine("알림 대기 수", detail.matchSummary?.pendingNotificationCount ?? 0),
         formatPromptLine("알림 실패 수", detail.matchSummary?.failedNotificationCount ?? 0),
+        formatPromptLine("공개 서류 없음", detail.documents.length === 0 ? "예" : "아니오"),
+        formatPromptLine("파트너 열람·관심·보류 수", partnerActivityCount),
+        formatPromptLine("미열람 추정 파트너 수", unseenPartnerCount),
         "목표: 알림이 전달됐지만 견적이 없는 요청에서 파트너가 응답하기 쉽게 만들고 운영 후속 조치 기준을 정리해줘.",
-        "확인할 것: 파트너 노출·알림 상태, 요청 필수 정보 부족 여부, 질문하기 CTA, 후속 알림/운영 연락 기준, 알림 피로도."
+        "확인할 것: 파트너 노출·알림 상태, 공개 서류 부족 여부, 미답변 질문, 질문하기 CTA, 후속 알림/운영 연락 기준, 알림 피로도."
       ].join("\n")
     };
   }

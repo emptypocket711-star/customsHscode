@@ -416,7 +416,8 @@
 | P125.1 marketplace no-response operations detail handoff | 완료 | 운영 요약 지표가 아니라 알림 후 무응답 샘플 상세에서 운영자가 어떤 확인 위치와 개선 요청문을 보게 할지 연결한다 | no-response detail handoff | unit, typecheck, lint, browser |
 | P126.1 marketplace partner opportunity response clue | 완료 | 운영자 상세 프롬프트가 아니라 파트너 opportunity 화면에서 알림을 받은 파트너가 왜 응답하지 않는지 판단할 수 있는 상태 단서를 보강한다 | partner response clue | unit, typecheck, lint, browser |
 | P127.1 marketplace no-response cause segmentation | 완료 | 파트너 화면 단서가 아니라 운영 요약에서 알림 후 무응답 원인을 질문/서류/관심상태 기준으로 더 세분화한다 | no-response cause segmentation | unit, typecheck, lint, browser |
-| P128.1 marketplace no-response detail cause prompt | 예정 | 운영 요약 원인 지표가 아니라 개별 요청 상세의 개선 프롬프트에도 무응답 원인 단서를 포함한다 | no-response detail cause prompt | unit, UX, browser |
+| P128.1 marketplace no-response detail cause prompt | 완료 | 운영 요약 원인 지표가 아니라 개별 요청 상세의 개선 프롬프트에도 무응답 원인 단서를 포함한다 | no-response detail cause prompt | unit, typecheck, lint, browser |
+| P129.1 marketplace operations match interest detail | 예정 | 개선 프롬프트 문구가 아니라 요청 상세의 파트너 노출·알림 요약 카드에 열람/관심/보류/미확인 카운트를 표시한다 | match interest detail | unit, UX, browser |
 
 #### P109 다음 병목 선정
 
@@ -731,6 +732,22 @@ P126은 파트너 opportunity 상세 화면에서 파트너가 응답 전 확인
 6. 브라우저 검증에서는 공개/무입찰 샘플에 sent 매칭 row를 임시로 추가하고 상세 진단 details를 열어 원인 단서 렌더를 확인한 뒤 삭제했다.
 
 다음 작업은 P128 marketplace no-response detail cause prompt다. P127이 운영 요약 화면의 원인 지표라면, P128은 개별 요청 상세의 복사 프롬프트에도 같은 원인 단서를 넣어 내가 바로 개선 작업을 이어받을 수 있게 하는 작업이다.
+
+#### P128 no-response detail cause prompt
+
+P128에서 개별 운영 요청 상세의 `알림 후 파트너 무응답 개선` 프롬프트에 원인 단서를 추가했다.
+
+P127은 운영 요약 패널에서 무응답 원인 지표를 세분화한 작업이었다. 이번 P128은 운영자가 개별 요청 상세에서 복사하는 개선 프롬프트 안에도 같은 단서를 포함해, 다음 개발 작업으로 넘겼을 때 원인 맥락이 빠지지 않게 하는 작업이다.
+
+구현 기준:
+
+1. no-response 프롬프트에 `공개 서류 없음` 여부를 추가했다.
+2. no-response 프롬프트에 `파트너 열람·관심·보류 수`를 추가했다.
+3. no-response 프롬프트에 `미열람 추정 파트너 수`를 추가했다.
+4. 민감한 요청 제목, 품목 설명, 파일명, 단가 원문은 계속 프롬프트에 포함하지 않는다.
+5. 브라우저 검증에서는 공개/무입찰 샘플에 sent 매칭 row를 임시로 추가해 상세 프롬프트 렌더를 확인한 뒤 삭제했다.
+
+다음 작업은 P129 marketplace operations match interest detail이다. P128이 복사 프롬프트의 원인 단서라면, P129는 요청 상세의 파트너 노출·알림 요약 카드 자체에 열람/관심/보류/미확인 카운트를 보여주는 작업이다.
 
 #### P34 다음 코드 작업 후보
 

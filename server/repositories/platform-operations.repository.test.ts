@@ -555,11 +555,15 @@ describe("platform request operations summary", () => {
       feedbackSummary: { averageRating: null, count: 0, lowScoreCount: 0 },
       freightDetail: null,
       matchSummary: {
+        declinedInterestCount: 0,
         failedNotificationCount: 1,
+        interestedInterestCount: 1,
         matchedPartnerCount: 2,
+        noneInterestCount: 1,
         pendingNotificationCount: 0,
         sentNotificationCount: 2,
-        skippedNotificationCount: 0
+        skippedNotificationCount: 0,
+        viewedInterestCount: 0
       },
       questions: [],
       request: {
@@ -584,6 +588,9 @@ describe("platform request operations summary", () => {
     expect(prompt?.label).toBe("알림 후 파트너 무응답 개선");
     expect(prompt?.prompt).toContain("알림 발송 수: 2");
     expect(prompt?.prompt).toContain("알림 실패 수: 1");
+    expect(prompt?.prompt).toContain("공개 서류 없음: 예");
+    expect(prompt?.prompt).toContain("파트너 열람·관심·보류 수: 1");
+    expect(prompt?.prompt).toContain("미열람 추정 파트너 수: 1");
     expect(prompt?.prompt).toContain("후속 알림/운영 연락 기준");
     expect(prompt?.prompt).not.toContain("민감한 품목 설명");
     expect(prompt?.prompt).not.toContain("민감한 요청 제목");
