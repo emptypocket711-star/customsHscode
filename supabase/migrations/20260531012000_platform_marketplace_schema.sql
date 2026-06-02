@@ -2632,7 +2632,7 @@ declare
   v_request public.service_requests%rowtype;
   v_detail public.freight_request_details%rowtype;
   v_match_count integer := 0;
-  v_cargo_tags text[] := '{}';
+  v_cargo_tags text[] := array[]::text[];
 begin
   if auth.uid() is null then
     raise exception '로그인이 필요합니다.';
@@ -2764,10 +2764,6 @@ begin
   on conflict (request_id, partner_company_id) do nothing;
 
   get diagnostics v_match_count = row_count;
-
-  if v_match_count = 0 then
-    raise exception '조건에 맞는 검증 포워더가 없어 요청을 공개할 수 없습니다.';
-  end if;
 
   update public.service_requests
     set status = 'open'::public.service_request_status,
@@ -2918,10 +2914,6 @@ begin
   on conflict (request_id, partner_company_id) do nothing;
 
   get diagnostics v_match_count = row_count;
-
-  if v_match_count = 0 then
-    raise exception '조건에 맞는 검증 관세사무소가 없어 요청을 공개할 수 없습니다.';
-  end if;
 
   update public.service_requests
     set status = 'open'::public.service_request_status,

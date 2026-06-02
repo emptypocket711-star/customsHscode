@@ -336,7 +336,8 @@ describe("platform marketplace migration governance", () => {
     expect(rpc).toContain("v_request.requester_company_id is distinct from v_actor_company_id");
     expect(rpc).toContain("not public.is_company_active_for_marketplace(v_request.requester_company_id)");
     expect(rpc).toContain("not public.is_company_verified_for_marketplace(v_request.requester_company_id)");
-    expect(rpc).toContain("조건에 맞는 검증 포워더가 없어 요청을 공개할 수 없습니다.");
+    expect(rpc).not.toContain("조건에 맞는 검증 포워더가 없어 요청을 공개할 수 없습니다.");
+    expect(rpc).toContain("'matched_count', v_match_count");
     expect(rpc).toContain("preference.cargo_tags && v_cargo_tags");
     expect(rpc).toContain("action,");
     expect(rpc).toContain("'freight_request_published'");
@@ -388,7 +389,8 @@ describe("platform marketplace migration governance", () => {
     expect(rpc).toContain("v_request.requester_company_id is distinct from v_actor_company_id");
     expect(rpc).toContain("not public.is_company_active_for_marketplace(v_request.requester_company_id)");
     expect(rpc).toContain("not public.is_company_verified_for_marketplace(v_request.requester_company_id)");
-    expect(rpc).toContain("조건에 맞는 검증 관세사무소가 없어 요청을 공개할 수 없습니다.");
+    expect(rpc).not.toContain("조건에 맞는 검증 관세사무소가 없어 요청을 공개할 수 없습니다.");
+    expect(rpc).toContain("'matched_count', v_match_count");
     expect(rpc).toContain("detail.urgent");
     expect(rpc).toContain("'clearance_request_published'");
   });

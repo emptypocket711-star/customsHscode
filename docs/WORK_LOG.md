@@ -407,6 +407,26 @@
 - Playwright developer check: `/operations/users#platform-request-operations`에서 운영 패널 렌더링 확인
 - Playwright developer check: 운영 상세에서 `파트너 노출·알림 운영 요약`과 민감정보 미노출 안내 확인
 
+### marketplace match condition next review
+
+- 이전 작업은 P104 운영자가 노출 0건 요청을 발견하는 화면이고, 이번 작업은 P105 실제 publish 매칭 조건이 그 0건 흐름과 맞는지 점검한 작업이다.
+- 기존 `publish_freight_request`, `publish_clearance_request`는 매칭 0건이면 예외를 던져 요청 공개 자체를 막고 있었다.
+- 이는 P103/P104의 `노출 0건` 안내와 운영 점검 큐가 도달할 수 없는 상태라서 방향이 맞지 않았다.
+- 매칭 0건이어도 요청은 `open`으로 공개하고, `matched_count: 0`을 반환·감사 로그에 남기도록 migration 함수 조건을 수정했다.
+- requester 화면은 공개 후 `노출 0곳`을 보여주고, operations 화면은 `openWithoutMatches`로 운영 점검 대상을 잡는다.
+- `v_cargo_tags` 초기화는 `array[]::text[]`로 명시해 fresh migration 기준 타입 warning을 줄였다.
+- 실제 파트너 매칭 조건 자체는 변경하지 않았다. 방향, 국가, 운송 방식, 항구, 화물 태그, 긴급 가능 여부 기준은 유지했다.
+- 다음 작업은 P106 operations RPC lint blocker review다. 이번 P105가 0건 공개 허용으로 제품 흐름을 맞춘 작업이라면, P106은 Supabase local lint에서 드러난 운영 RPC 모호 컬럼 오류와 local DB 함수 갱신 상태를 정리하는 작업이다.
+
+검증:
+
+- `npx vitest run server/repositories/platform-marketplace-governance.test.ts server/repositories/platform-operations.repository.test.ts features/operations/platform-request-operations-panel.test.ts features/service-requests/service-request-match-summary-panel.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
+- `npx vitest run server/repositories/platform-marketplace-governance.test.ts`
+- `npx supabase db lint --local`: 현재 local DB에 이미 적용된 예전 `publish_freight_request` warning과 기존 `update_company_marketplace_status`, `review_company_party_type_request` 모호 컬럼 오류가 남아 있어 P106으로 분리
+
 ## 2026-06-02
 
 ### local login review smoke
