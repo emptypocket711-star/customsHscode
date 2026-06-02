@@ -7,7 +7,8 @@ import { chromium } from "playwright";
 const baseUrl = process.env.E2E_BASE_URL || "http://localhost:3100";
 const stateDir = process.env.E2E_STORAGE_STATE_DIR || "tmp/e2e-auth";
 const timeoutMs = Number(process.env.E2E_TIMEOUT_MS || 120000);
-const partnerStatePath = path.join(stateDir, "marketplace-notification-partner.json");
+const partnerStateFile = process.env.E2E_MARKETPLACE_NOTIFICATION_PARTNER_STATE_FILE || "marketplace-notification-partner.json";
+const partnerStatePath = path.join(stateDir, partnerStateFile);
 const requestId = process.env.E2E_MARKETPLACE_NOTIFICATION_REQUEST_ID;
 const deliveryId = process.env.E2E_MARKETPLACE_NOTIFICATION_DELIVERY_ID;
 
@@ -50,6 +51,23 @@ async function main() {
     assert(body.includes("파트너 알림"), "대시보드에 파트너 알림 패널이 보이지 않습니다.", { currentUrl: page.url() });
     assert(body.includes("읽음 처리"), "읽음 처리 버튼이 보이지 않습니다.", { currentUrl: page.url() });
     assert(body.includes(requestId) === false, "대시보드에 raw request id가 직접 노출됩니다.");
+
+    const notificationLink = page.locator(`a[href*="/opportunities/${requestId}"]`).first();
+    await Promise.all([
+      page.waitForURL((url) => url.pathname.includes(`/opportunities/${requestId}`), { timeout: timeoutMs }),
+      notificationLink.click({ timeout: timeoutMs })
+    ]);
+    await page.waitForLoadState("networkidle", { timeout: timeoutMs });
+
+    const opportunityText = await page.locator("body").innerText({ timeout: timeoutMs });
+    assert(page.url().includes(`/opportunities/${requestId}`), "알림 클릭 후 입찰 상세 화면으로 이동하지 않았습니다.", { currentUrl: page.url() });
+    assert(
+      opportunityText.includes("입찰 작업") && opportunityText.includes("다음 작업 바로가기") && opportunityText.includes("견적"),
+      "입찰 상세 화면에서 다음 작업과 견적 CTA를 확인할 수 없습니다.",
+      { currentUrl: page.url() }
+    );
+
+    await page.goto(new URL("/dashboard", baseUrl).toString(), { waitUntil: "networkidle", timeout: timeoutMs });
 
     const deliveryForm = page.locator(`form:has(input[name="deliveryId"][value="${deliveryId}"])`);
     await deliveryForm.locator("button", { hasText: "읽음 처리" }).click({ timeout: timeoutMs });

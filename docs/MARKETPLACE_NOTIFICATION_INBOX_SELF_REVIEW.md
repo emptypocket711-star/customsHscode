@@ -38,7 +38,7 @@ Scope: P57.1-P57.7 marketplace notification inbox, partner read RLS, dashboard s
 - Current `.env.local` points to remote Supabase, so the readiness script fails safely.
 - No production job behavior changed.
 - Migration is local draft only; it has not been applied to any database.
-- Local authenticated dashboard E2E now passes with a partner storage state and a seeded in-app delivery. The browser flow verifies the partner notification panel, read action, and absence of raw request ID text in the dashboard.
+- Local authenticated dashboard E2E now passes with a partner storage state and a seeded in-app delivery. The browser flow verifies the partner notification panel, notification-to-opportunity navigation, bid CTA visibility, read action, and absence of raw request ID text in the dashboard.
 
 ## Remaining Risks
 
@@ -54,6 +54,7 @@ Scope: P57.1-P57.7 marketplace notification inbox, partner read RLS, dashboard s
 - `node --check scripts/e2e_marketplace_notification_dashboard.mjs`
 - `npm run e2e:marketplace-notification:ready`
 - `npm run e2e:marketplace-notification`
+- `E2E_MARKETPLACE_NOTIFICATION_PARTNER_STATE_FILE=marketplace-transaction-forwarder.json npm run e2e:marketplace-notification`
 - `npm run typecheck`
 - `npm run lint`
 - `npm run build`

@@ -13,7 +13,7 @@ import {
 const baseUrl = process.env.E2E_BASE_URL || "http://localhost:3100";
 const stateDir = process.env.E2E_STORAGE_STATE_DIR || "tmp/e2e-auth";
 const timeoutMs = Number(process.env.E2E_READINESS_TIMEOUT_MS || 5000);
-const partnerStateFile = "marketplace-notification-partner.json";
+const partnerStateFile = process.env.E2E_MARKETPLACE_NOTIFICATION_PARTNER_STATE_FILE || "marketplace-notification-partner.json";
 
 async function exists(filePath) {
   try {
@@ -31,10 +31,14 @@ function addCheck(checks, name, ok, message) {
 async function main() {
   const localEnv = await loadEnvFile();
   const checks = [];
-  const supabaseUrl = envValue(localEnv, "SUPABASE_URL") || envValue(localEnv, "NEXT_PUBLIC_SUPABASE_URL");
-  const serviceRoleKey = envValue(localEnv, "SUPABASE_SERVICE_ROLE_KEY");
-  const requestId = envValue(localEnv, "E2E_MARKETPLACE_NOTIFICATION_REQUEST_ID");
-  const deliveryId = envValue(localEnv, "E2E_MARKETPLACE_NOTIFICATION_DELIVERY_ID");
+  const supabaseUrl =
+    process.env.SUPABASE_URL ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    envValue(localEnv, "SUPABASE_URL") ||
+    envValue(localEnv, "NEXT_PUBLIC_SUPABASE_URL");
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || envValue(localEnv, "SUPABASE_SERVICE_ROLE_KEY");
+  const requestId = process.env.E2E_MARKETPLACE_NOTIFICATION_REQUEST_ID || envValue(localEnv, "E2E_MARKETPLACE_NOTIFICATION_REQUEST_ID");
+  const deliveryId = process.env.E2E_MARKETPLACE_NOTIFICATION_DELIVERY_ID || envValue(localEnv, "E2E_MARKETPLACE_NOTIFICATION_DELIVERY_ID");
   const partnerStatePath = path.join(stateDir, partnerStateFile);
 
   addCheck(checks, ".env.local", localEnv.exists, localEnv.exists ? "found" : "missing");

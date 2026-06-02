@@ -272,7 +272,8 @@
 | P68.1 next non-DB platform work selection | 완료 | 대시보드 역할별 카드 최종 검증이 아니라 DB 적용 없이 이어갈 다음 제품 작업을 고른다 | marketplace notification local rehearsal selected | roadmap review |
 | P68.2 marketplace notification local rehearsal | 완료 | 인박스 읽음 처리가 아니라 운영자가 worker route의 target 계산, send 차단, claim-only 동작을 로컬에서 확인한다 | notification rehearsal script | node check, rehearsal, unit, typecheck, lint |
 | P68.3 operator visibility simplification | 완료 | 알림 worker 리허설이 아니라 대표/운영자가 다음 조치만 빠르게 보도록 운영 화면 노이즈를 줄인다 | primary metrics, collapsed diagnostics | unit, browser, typecheck, lint |
-| P68.4 partner action conversion review | 예정 | 운영자 관리 화면 단순화가 아니라 파트너가 알림을 본 뒤 입찰 상세로 이동하고 행동할 수 있는지 점검한다 | partner dashboard-to-opportunity review | browser, e2e, typecheck, lint |
+| P68.4 partner action conversion review | 완료 | 운영자 관리 화면 단순화가 아니라 파트너가 알림을 본 뒤 입찰 상세로 이동하고 행동할 수 있는지 점검한다 | notification-to-opportunity E2E | readiness, e2e, typecheck, lint |
+| P68.5 next platform rail selection | 예정 | 파트너 알림 행동 전환 검증이 아니라 다음으로 이어갈 플랫폼 MVP 병목을 다시 고른다 | roadmap/code review | docs review |
 
 #### P34 다음 코드 작업 후보
 
