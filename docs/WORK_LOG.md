@@ -979,6 +979,19 @@
 - `npm run lint`
 - Playwright/RLS check: 포워더 계정 `/requests/freight/opportunities/75000000-0000-4000-8000-000000000201`, `다시 검토` 클릭 후 임시 match가 `viewed`로 변경되는지 DB 확인
 
+### marketplace interest operations regression
+
+- 이전 작업은 P135 파트너 상세에서 `다시 검토` 액션을 구현한 작업이고, 이번 작업은 P136 파트너 관심상태 전환이 운영 상세 카운트에 반영되는지 검증한 작업이다.
+- 임시 match를 `none`으로 생성한 뒤 포워더 계정으로 opportunity 상세에 진입해 자동 `viewed` 기록을 발생시켰다.
+- 운영자 요청 상세에서 `열람 1건`, `보류 0건`을 확인했다.
+- 포워더 계정에서 `참여 보류`를 클릭한 뒤 운영자 요청 상세를 새로고침해 `열람 0건`, `보류 1건`을 확인했다.
+- 검증 후 임시 match row를 삭제했다.
+- 다음 작업은 P137 marketplace post-interest-flow bottleneck review다. 이번 P136이 관심상태 회귀 검증이라면, P137은 no-response/interest flow 이후 남은 marketplace MVP 병목을 다시 고르는 리뷰 작업이다.
+
+검증:
+
+- Playwright/RLS check: 포워더 계정 상세 + 운영자 요청 상세 동시 확인, `viewed -> declined` 운영 카운트 반영 확인
+
 ## 2026-06-02
 
 ### local login review smoke

@@ -424,7 +424,8 @@
 | P133.1 marketplace declined reminder regression | 완료 | 목록 표시가 아니라 참여 보류 상태가 알림 리마인드 정책과 worker rehearsal에서 제외되는지 회귀 검증을 보강한다 | declined reminder regression | unit, typecheck, lint, ops rehearsal |
 | P134.1 marketplace declined re-entry review | 완료 | 알림 제외 검증이 아니라 참여 보류 후 다시 참여할 수 있는 복귀 UX가 필요한지 검토하고 최소 구현 범위를 정한다 | declined re-entry review | product/UX review |
 | P135.1 marketplace declined re-entry action | 완료 | 복귀 UX 검토가 아니라 파트너 상세에서 참여 보류 요청을 다시 검토 상태로 되돌리는 액션을 구현한다 | declined re-entry action | unit, typecheck, lint, RLS, browser |
-| P136.1 marketplace interest operations regression | 예정 | 파트너 상세 액션이 아니라 viewed/declined 전환이 운영 상세 관심상태 카운트에 반영되는지 회귀 검증한다 | interest operations regression | browser, ops check |
+| P136.1 marketplace interest operations regression | 완료 | 파트너 상세 액션이 아니라 viewed/declined 전환이 운영 상세 관심상태 카운트에 반영되는지 회귀 검증한다 | interest operations regression | browser, ops check |
+| P137.1 marketplace post-interest-flow bottleneck review | 예정 | 관심상태 회귀 검증이 아니라 no-response/interest flow 이후 남은 marketplace MVP 병목을 다시 고른다 | next bottleneck selected | product/code review |
 
 #### P109 다음 병목 선정
 
@@ -867,6 +868,23 @@ P134는 보류 후 복귀 UX 범위를 결정한 작업이었다. 이번 P135는
 4. 브라우저/RLS 검증에서 포워더 테스트 계정으로 `다시 검토`를 클릭한 뒤 match 상태가 `viewed`로 바뀌는지 확인했다.
 
 다음 작업은 P136 marketplace interest operations regression이다. P135가 파트너 상세 액션 구현이라면, P136은 viewed/declined 전환이 운영 상세의 관심상태 카운트에 반영되는지 회귀 검증하는 작업이다.
+
+#### P136 interest operations regression
+
+P136에서 파트너 관심상태 전환이 운영 상세 카운트에 반영되는지 브라우저 회귀 검증을 수행했다.
+
+P135는 파트너 상세에서 `다시 검토` 액션을 구현한 작업이었다. 이번 P136은 파트너 화면에서 발생한 `viewed`, `declined` 상태가 운영자 상세의 `열람`, `보류` 카운트에 실제로 반영되는지 확인한 검증 작업이다.
+
+검증 기준:
+
+1. 임시 match를 `interest_status=none`으로 생성한다.
+2. 포워더 계정으로 opportunity 상세에 진입해 자동 `viewed` 기록을 발생시킨다.
+3. 운영자 계정의 요청 상세에서 `열람 1건`, `보류 0건`을 확인한다.
+4. 포워더 계정에서 `참여 보류`를 클릭한다.
+5. 운영자 상세를 새로고침해 `열람 0건`, `보류 1건`을 확인한다.
+6. 임시 match row를 삭제한다.
+
+다음 작업은 P137 marketplace post-interest-flow bottleneck review다. P136이 관심상태 회귀 검증이라면, P137은 no-response/interest flow 이후 marketplace MVP에서 남은 병목을 다시 고르는 리뷰 작업이다.
 
 #### P34 다음 코드 작업 후보
 
