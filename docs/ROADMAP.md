@@ -316,7 +316,8 @@
 | P78.1 next marketplace rail selection | 완료 | 견적 비교 작업 로그가 아니라 다음으로 이어갈 marketplace MVP 병목을 다시 고른다 | overseas partner onboarding rail selected | roadmap/code review |
 | P78.2 overseas signup notice clarity | 완료 | 견적 비교/선정 UX가 아니라 해외 파트너가 사업자번호 없이 가입할 때 검증자료와 제한 기능을 바로 이해하게 한다 | overseas signup UX | typecheck, lint |
 | P78.3 overseas role request clarity | 완료 | 회원가입 안내가 아니라 회사 설정 역할 신청 화면에서 해외 파트너 검증 기준과 보류 가능성을 더 분명히 안내한다 | overseas role request UX | browser, typecheck, lint |
-| P78.4 overseas onboarding route smoke | 진행 | 역할 신청 안내 보강이 아니라 온보딩/설정 변경 후 화주·포워더·관세사 주요 route가 계속 정상 렌더링되는지 확인한다 | role route smoke | browser, typecheck, lint |
+| P78.4 overseas onboarding route smoke | 완료 | 역할 신청 안내 보강이 아니라 온보딩/설정 변경 후 화주·포워더·관세사 주요 route가 계속 정상 렌더링되는지 확인한다 | role route smoke | browser, typecheck, lint |
+| P78.5 overseas onboarding work log sync | 진행 | route smoke가 아니라 해외 파트너 온보딩 안내 보강과 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
 
 #### P34 다음 코드 작업 후보
 
