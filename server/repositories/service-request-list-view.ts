@@ -110,8 +110,36 @@ export function buildRequesterServiceRequestNextFocus(input: {
 export function buildPartnerOpportunityNextFocus(input: {
   bidAnchor: string;
   questionAnchor: string;
+  requestStatus?: string;
   unansweredQuestionCount: number;
 }): ServiceRequestNextFocus {
+  if (input.requestStatus === "completed") {
+    return {
+      href: "#request-completion",
+      label: "리포트·후기",
+      tone: "success",
+      value: "완료"
+    };
+  }
+
+  if (input.requestStatus === "in_progress") {
+    return {
+      href: "#request-lifecycle",
+      label: "완료 처리",
+      tone: "info",
+      value: "진행중"
+    };
+  }
+
+  if (input.requestStatus === "partner_selected") {
+    return {
+      href: "#request-lifecycle",
+      label: "진행 시작",
+      tone: "info",
+      value: "선정"
+    };
+  }
+
   if (input.unansweredQuestionCount > 0) {
     return {
       href: input.questionAnchor,

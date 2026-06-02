@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { buildRequesterServiceRequestNextFocus } from "@/server/repositories/service-request-list-view";
+import {
+  buildPartnerOpportunityNextFocus,
+  buildRequesterServiceRequestNextFocus
+} from "@/server/repositories/service-request-list-view";
 
 const baseInput = {
   bidCount: 0,
@@ -38,6 +41,34 @@ describe("service request list view", () => {
     expect(buildRequesterServiceRequestNextFocus({
       ...baseInput,
       bidCount: 2,
+      requestStatus: "completed",
+      unansweredQuestionCount: 1
+    })).toEqual({
+      href: "#request-completion",
+      label: "리포트·후기",
+      tone: "success",
+      value: "완료"
+    });
+  });
+
+  it("routes selected partner opportunities to lifecycle actions before bid submission", () => {
+    expect(buildPartnerOpportunityNextFocus({
+      bidAnchor: "#opportunity-bid",
+      questionAnchor: "#opportunity-questions",
+      requestStatus: "partner_selected",
+      unansweredQuestionCount: 1
+    })).toEqual({
+      href: "#request-lifecycle",
+      label: "진행 시작",
+      tone: "info",
+      value: "선정"
+    });
+  });
+
+  it("routes completed partner opportunities to the completion report and feedback section", () => {
+    expect(buildPartnerOpportunityNextFocus({
+      bidAnchor: "#opportunity-bid",
+      questionAnchor: "#opportunity-questions",
       requestStatus: "completed",
       unansweredQuestionCount: 1
     })).toEqual({
