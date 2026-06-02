@@ -386,6 +386,27 @@
 - `npm run lint`
 - `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
 
+### zero-match operations handoff review
+
+- 이전 작업은 P103 화주 화면에서 노출 0건 상태를 이해시키는 UX 보강이고, 이번 작업은 P104 운영자가 노출 0건 요청을 발견하고 점검할 수 있게 하는 운영 handoff다.
+- `PlatformRequestOperationsSummary`에 `openWithoutMatches`를 추가했다.
+- 매칭 테이블을 읽을 수 있을 때만 공개 요청의 파트너 노출 0건을 계산한다. 매칭 테이블이 없는 환경에서는 기존 `견적 없는 공개` 흐름을 유지해 0건으로 오판하지 않는다.
+- 운영 우선순위 큐와 상세 진단 지표에 `노출 0건`을 추가했다.
+- 운영 상세에 `파트너 노출·알림 운영 요약` 섹션을 추가해 노출 수, 알림 대기/발송/스킵/실패 수를 표시한다.
+- 운영 상세의 복사용 개선 요청 문구도 `match_condition`으로 분리해 `견적 없음`과 `노출 0건`을 구분한다.
+- 파트너 회사명, 연락처, 견적 원문은 운영 상세의 매칭 요약에 표시하지 않는다.
+- DB schema, RLS, 알림 worker, 실제 매칭 계산 RPC는 변경하지 않았다.
+- 다음 작업은 P105 marketplace match condition next review다. 이번 P104가 운영자가 0건 요청을 발견하는 흐름이라면, P105는 실제 매칭 조건 계산과 파트너 관심 조건 저장값 품질을 점검하는 작업이다.
+
+검증:
+
+- `npx vitest run server/repositories/platform-operations.repository.test.ts features/operations/platform-request-operations-panel.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
+- Playwright developer check: `/operations/users#platform-request-operations`에서 운영 패널 렌더링 확인
+- Playwright developer check: 운영 상세에서 `파트너 노출·알림 운영 요약`과 민감정보 미노출 안내 확인
+
 ## 2026-06-02
 
 ### local login review smoke

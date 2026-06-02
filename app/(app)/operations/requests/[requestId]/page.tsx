@@ -60,6 +60,13 @@ function improvementPromptTarget(category: string) {
     };
   }
 
+  if (category === "match_condition") {
+    return {
+      href: "#request-matches",
+      label: "파트너 노출 상태 확인"
+    };
+  }
+
   if (category === "document_guidance") {
     return {
       href: "#request-documents",
@@ -162,6 +169,36 @@ export default async function OperationsRequestDetailPage({
               <span>예상 신고 {detail.clearanceDetail.estimatedDeclarationCount ?? "-"}건</span>
             </div>
           ) : null}
+        </CardBody>
+      </Card>
+
+      <Card id="request-matches">
+        <CardHeader
+          action={<Badge tone={detail.matchSummary && detail.matchSummary.matchedPartnerCount > 0 ? "info" : "warning"}>노출 {detail.matchSummary?.matchedPartnerCount ?? "-"}곳</Badge>}
+          description="파트너 매칭 row와 알림 상태만 표시합니다. 파트너 회사명, 연락처, 견적 원문은 이 운영 요약에서 표시하지 않습니다."
+          title="파트너 노출·알림 운영 요약"
+        />
+        <CardBody className="grid gap-3">
+          {detail.matchSummary ? (
+            <>
+              {detail.matchSummary.matchedPartnerCount === 0 ? (
+                <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
+                  이 요청은 현재 조건에 맞아 노출된 파트너가 없습니다. 요청 조건, 파트너 관심 조건, 운영자 검증 상태, 알림 worker 대상 계산을 함께 점검해야 합니다.
+                </p>
+              ) : null}
+              <div className="grid gap-2 rounded-md bg-slate-50 p-3 text-sm text-slate-600 md:grid-cols-5">
+                <span>노출 {detail.matchSummary.matchedPartnerCount}곳</span>
+                <span>알림 대기 {detail.matchSummary.pendingNotificationCount}건</span>
+                <span>발송 {detail.matchSummary.sentNotificationCount}건</span>
+                <span>스킵 {detail.matchSummary.skippedNotificationCount}건</span>
+                <span>실패 {detail.matchSummary.failedNotificationCount}건</span>
+              </div>
+            </>
+          ) : (
+            <p className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-slate-600">
+              이 환경에서는 파트너 매칭 요약 테이블을 읽을 수 없습니다. 스키마 적용 상태를 먼저 확인해야 합니다.
+            </p>
+          )}
         </CardBody>
       </Card>
 

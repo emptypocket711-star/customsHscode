@@ -32,6 +32,19 @@ export type PlatformQuestionOperationsRow = {
   request_id: string;
 };
 
+export type PlatformMatchOperationsRow = {
+  notification_status: string | null;
+  request_id: string;
+};
+
+export type PlatformMatchOperationsSummary = {
+  failedNotificationCount: number;
+  matchedPartnerCount: number;
+  pendingNotificationCount: number;
+  sentNotificationCount: number;
+  skippedNotificationCount: number;
+};
+
 export type PlatformFeedbackOperationsRow = {
   communication_score: number | null;
   document_quality_score: number | null;
@@ -103,6 +116,7 @@ export type PlatformRequestOperationsDetail = {
     originPort: string | null;
     transportMode: string | null;
   } | null;
+  matchSummary: PlatformMatchOperationsSummary | null;
   questions: Array<{
     answer: string | null;
     answeredAt: string | null;
@@ -128,7 +142,15 @@ export type PlatformRequestOperationsDetail = {
 };
 
 export type PlatformRequestOperationsImprovementPrompt = {
-  category: "bid_conversion" | "deadline_followup" | "document_guidance" | "draft_activation" | "lifecycle_followup" | "question_response" | "workflow_review";
+  category:
+    | "bid_conversion"
+    | "deadline_followup"
+    | "document_guidance"
+    | "draft_activation"
+    | "lifecycle_followup"
+    | "match_condition"
+    | "question_response"
+    | "workflow_review";
   label: string;
   prompt: string;
 };
@@ -153,6 +175,7 @@ export type PlatformRequestOperationsSummary = {
   lowFeedbacks: number;
   open: number;
   openWithoutBids: number;
+  openWithoutMatches: number;
   partnerSelected: number;
   schemaReady: boolean;
   staleDrafts: number;
@@ -211,6 +234,7 @@ function emptySummary(schemaReady: boolean): PlatformRequestOperationsSummary {
     lowFeedbacks: 0,
     open: 0,
     openWithoutBids: 0,
+    openWithoutMatches: 0,
     partnerSelected: 0,
     schemaReady,
     staleDrafts: 0,
@@ -251,6 +275,43 @@ function formatPromptLine(label: string, value: string | number) {
   return `- ${label}: ${value}`;
 }
 
+function emptyMatchOperationsSummary(): PlatformMatchOperationsSummary {
+  return {
+    failedNotificationCount: 0,
+    matchedPartnerCount: 0,
+    pendingNotificationCount: 0,
+    sentNotificationCount: 0,
+    skippedNotificationCount: 0
+  };
+}
+
+function incrementMatchNotificationStatus(summary: PlatformMatchOperationsSummary, status: string | null) {
+  if (status === "pending") summary.pendingNotificationCount += 1;
+  if (status === "sent") summary.sentNotificationCount += 1;
+  if (status === "skipped") summary.skippedNotificationCount += 1;
+  if (status === "failed") summary.failedNotificationCount += 1;
+}
+
+function summarizeMatchOperations(
+  requestIds: string[],
+  matches: PlatformMatchOperationsRow[]
+) {
+  const summaryByRequestId = new Map<string, PlatformMatchOperationsSummary>();
+
+  for (const requestId of requestIds) {
+    summaryByRequestId.set(requestId, emptyMatchOperationsSummary());
+  }
+
+  for (const match of matches) {
+    const summary = summaryByRequestId.get(match.request_id) ?? emptyMatchOperationsSummary();
+    summary.matchedPartnerCount += 1;
+    incrementMatchNotificationStatus(summary, match.notification_status);
+    summaryByRequestId.set(match.request_id, summary);
+  }
+
+  return summaryByRequestId;
+}
+
 export function buildPlatformRequestImprovementPrompt(
   detail: PlatformRequestOperationsDetail
 ): PlatformRequestOperationsImprovementPrompt | null {
@@ -270,6 +331,7 @@ export function buildPlatformRequestImprovementPrompt(
     formatPromptLine("질문 수", detail.questions.length),
     formatPromptLine("미답변 질문 수", unansweredQuestions),
     formatPromptLine("견적 수", activeBids),
+    formatPromptLine("파트너 노출 수", detail.matchSummary?.matchedPartnerCount ?? "확인 불가"),
     "주의: 서류 원문, 파일명, 단가 원문, 개인정보는 프롬프트나 로그에 포함하지 말고 건수와 상태만 사용해."
   ];
 
@@ -305,6 +367,18 @@ export function buildPlatformRequestImprovementPrompt(
         ...commonLines,
         "목표: 마감 시간이 지난 공개 요청에서 연장, 재공개, 종료 중 다음 행동을 명확히 안내해줘.",
         "확인할 것: 마감 표시, 재공개 버튼 위치, 파트너 알림 재발송 조건, 빈 견적 상태 안내."
+      ].join("\n")
+    };
+  }
+
+  if (request.status === "open" && detail.matchSummary?.matchedPartnerCount === 0) {
+    return {
+      category: "match_condition",
+      label: "파트너 노출 0건 매칭 조건 개선",
+      prompt: [
+        ...commonLines,
+        "목표: 공개됐지만 파트너 노출이 0건인 요청에서 요청 조건, 파트너 관심 조건, 검증 상태, 알림 대상 계산을 점검해줘.",
+        "확인할 것: 요청 국가·업무 유형·특수 조건, 파트너 관심 조건 저장값, 숨김/정지/차단 업체 제외, 알림 worker dry-run 결과."
       ].join("\n")
     };
   }
@@ -374,6 +448,7 @@ export function summarizePlatformRequestOperations(input: {
   bids: PlatformBidOperationsRow[];
   completionReports?: PlatformCompletionReportOperationsRow[];
   feedbacks?: PlatformFeedbackOperationsRow[];
+  matchSummaries?: Map<string, PlatformMatchOperationsSummary>;
   now: Date;
   questions: PlatformQuestionOperationsRow[];
   requests: PlatformRequestOperationsRow[];
@@ -427,6 +502,11 @@ export function summarizePlatformRequestOperations(input: {
     && request.deadline_at
     && new Date(request.deadline_at).getTime() < input.now.getTime()
   );
+  const openWithoutMatchRows = input.matchSummaries
+    ? input.requests.filter((request) =>
+      request.status === "open" && (input.matchSummaries?.get(request.id)?.matchedPartnerCount ?? 0) === 0
+    )
+    : [];
   const openWithoutBidRows = input.requests.filter((request) =>
     request.status === "open" && !bidRequestIds.has(request.id)
   );
@@ -452,6 +532,7 @@ export function summarizePlatformRequestOperations(input: {
   }, emptySummary(true));
 
   summary.openWithoutBids = openWithoutBidRows.length;
+  summary.openWithoutMatches = openWithoutMatchRows.length;
   summary.staleDrafts = staleDraftRows.length;
   summary.staleInProgress = staleInProgressRows.length;
   summary.staleOpen = staleOpenRows.length;
@@ -524,6 +605,13 @@ export function summarizePlatformRequestOperations(input: {
       detail: `${requestTypeLabel(request.request_type)} 완료 거래에서 후기 제출 CTA가 보이는지 확인합니다.`,
       label: "후기 미제출 확인"
     }));
+  } else if (openWithoutMatchRows.length > 0) {
+    summary.actionRequest = `공개됐지만 파트너 노출이 0건인 요청 ${openWithoutMatchRows.length}건의 매칭 조건과 파트너 관심 조건을 점검해줘.`;
+    summary.actionItems = openWithoutMatchRows.slice(0, 3).map((request) => buildActionItem(request, {
+      anchor: "request-matches",
+      detail: `${requestTypeLabel(request.request_type)} 요청의 파트너 노출 수와 알림 상태를 확인합니다.`,
+      label: "노출 0건 확인"
+    }));
   } else if (openWithoutBidRows.length > 0) {
     summary.actionRequest = `공개됐지만 견적이 없는 요청 ${openWithoutBidRows.length}건의 매칭 조건과 파트너 알림 흐름을 점검해줘.`;
     summary.actionItems = openWithoutBidRows.slice(0, 3).map((request) => buildActionItem(request, {
@@ -575,7 +663,7 @@ export async function getPlatformRequestOperationsSummary(
 
   if (requestIds.length === 0) return emptySummary(true);
 
-  const [bidsResult, questionsResult, feedbacksResult, completionReportsResult] = await Promise.all([
+  const [bidsResult, questionsResult, feedbacksResult, completionReportsResult, matchesResult] = await Promise.all([
     supabase
       .from("service_bids")
       .select("id,request_id,status")
@@ -591,6 +679,10 @@ export async function getPlatformRequestOperationsSummary(
     supabase
       .from("service_request_completion_reports")
       .select("id,request_id,status")
+      .in("request_id", requestIds),
+    supabase
+      .from("service_request_partner_matches")
+      .select("request_id,notification_status")
       .in("request_id", requestIds)
   ]);
 
@@ -600,11 +692,17 @@ export async function getPlatformRequestOperationsSummary(
   if (completionReportsResult.error && !isMissingMarketplaceSchemaError(completionReportsResult.error)) {
     throw new Error(completionReportsResult.error.message);
   }
+  if (matchesResult.error && !isMissingMarketplaceSchemaError(matchesResult.error)) {
+    throw new Error(matchesResult.error.message);
+  }
 
   return summarizePlatformRequestOperations({
     bids: (bidsResult.data ?? []) as PlatformBidOperationsRow[],
     completionReports: completionReportsResult.error ? [] : (completionReportsResult.data ?? []) as PlatformCompletionReportOperationsRow[],
     feedbacks: (feedbacksResult.data ?? []) as PlatformFeedbackOperationsRow[],
+    matchSummaries: matchesResult.error
+      ? undefined
+      : summarizeMatchOperations(requestIds, (matchesResult.data ?? []) as PlatformMatchOperationsRow[]),
     now: new Date(),
     questions: (questionsResult.data ?? []) as PlatformQuestionOperationsRow[],
     requests: requestRows
@@ -630,6 +728,7 @@ export async function getPlatformRequestOperationsDetail(
         documents: [],
         feedbackSummary: { averageRating: null, count: 0, lowScoreCount: 0 },
         freightDetail: null,
+        matchSummary: null,
         questions: [],
         request: null,
         schemaReady: false
@@ -647,6 +746,7 @@ export async function getPlatformRequestOperationsDetail(
       documents: [],
       feedbackSummary: { averageRating: null, count: 0, lowScoreCount: 0 },
       freightDetail: null,
+      matchSummary: null,
       questions: [],
       request: null,
       schemaReady: true
@@ -665,7 +765,7 @@ export async function getPlatformRequestOperationsDetail(
     status: PlatformRequestStatus;
   };
 
-  const [documentsResult, questionsResult, bidsResult, feedbacksResult, freightDetailResult, clearanceDetailResult, completionReportResult] = await Promise.all([
+  const [documentsResult, questionsResult, bidsResult, feedbacksResult, matchesResult, freightDetailResult, clearanceDetailResult, completionReportResult] = await Promise.all([
     supabase
       .from("service_request_documents")
       .select(platformRequestOperationsDetailSelects.documents)
@@ -687,6 +787,10 @@ export async function getPlatformRequestOperationsDetail(
       .select(platformRequestOperationsDetailSelects.feedbacks)
       .eq("request_id", requestId)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("service_request_partner_matches")
+      .select("request_id,notification_status")
+      .eq("request_id", requestId),
     requestRow.request_type === "freight"
       ? supabase
         .from("freight_request_details")
@@ -716,6 +820,7 @@ export async function getPlatformRequestOperationsDetail(
     questionsResult.error,
     bidsResult.error,
     feedbacksResult.error,
+    matchesResult.error && !isMissingMarketplaceSchemaError(matchesResult.error) ? matchesResult.error : null,
     freightDetailResult.error,
     clearanceDetailResult.error,
     completionReportResult.error && !isMissingMarketplaceSchemaError(completionReportResult.error) ? completionReportResult.error : null
@@ -749,6 +854,9 @@ export async function getPlatformRequestOperationsDetail(
     summary: string | null;
     updated_at: string;
   } | null;
+  const matchSummary = matchesResult.error
+    ? null
+    : summarizeMatchOperations([requestId], (matchesResult.data ?? []) as PlatformMatchOperationsRow[]).get(requestId) ?? emptyMatchOperationsSummary();
   const feedbackRows = (feedbacksResult.data ?? []) as Array<{
     communication_score: number | null;
     document_quality_score: number | null;
@@ -850,6 +958,7 @@ export async function getPlatformRequestOperationsDetail(
       originPort: freightDetail.origin_port,
       transportMode: freightDetail.transport_mode
     } : null,
+    matchSummary,
     questions: ((questionsResult.data ?? []) as Array<{
       answered_at: string | null;
       bidder_company_id: string;

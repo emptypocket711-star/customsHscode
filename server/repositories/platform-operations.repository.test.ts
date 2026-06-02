@@ -66,6 +66,44 @@ describe("platform request operations summary", () => {
     });
   });
 
+  it("separates zero-match open requests from open requests waiting for bids", () => {
+    const summary = summarizePlatformRequestOperations({
+      bids: [],
+      matchSummaries: new Map([
+        ["req-1", {
+          failedNotificationCount: 0,
+          matchedPartnerCount: 0,
+          pendingNotificationCount: 0,
+          sentNotificationCount: 0,
+          skippedNotificationCount: 0
+        }],
+        ["req-2", {
+          failedNotificationCount: 0,
+          matchedPartnerCount: 2,
+          pendingNotificationCount: 1,
+          sentNotificationCount: 1,
+          skippedNotificationCount: 0
+        }]
+      ]),
+      now: new Date("2026-06-01T00:00:00.000Z"),
+      questions: [],
+      requests: [
+        { created_at: "2026-05-31T00:00:00.000Z", deadline_at: "2026-06-02T00:00:00.000Z", id: "req-1", request_type: "freight", status: "open" },
+        { created_at: "2026-05-31T00:00:00.000Z", deadline_at: "2026-06-02T00:00:00.000Z", id: "req-2", request_type: "clearance", status: "open" }
+      ]
+    });
+
+    expect(summary.openWithoutBids).toBe(2);
+    expect(summary.openWithoutMatches).toBe(1);
+    expect(summary.actionRequest).toContain("파트너 노출이 0건인 요청 1건");
+    expect(summary.actionItems[0]).toMatchObject({
+      href: "/operations/requests/req-1#request-matches",
+      label: "노출 0건 확인",
+      requestId: "req-1",
+      requestType: "freight"
+    });
+  });
+
   it("tracks post-selection lifecycle counts and stale in-progress requests", () => {
     const summary = summarizePlatformRequestOperations({
       bids: [],
@@ -312,6 +350,7 @@ describe("platform request operations summary", () => {
       }],
       feedbackSummary: { averageRating: null, count: 0, lowScoreCount: 0 },
       freightDetail: null,
+      matchSummary: null,
       questions: [{
         answer: null,
         answeredAt: null,
@@ -354,6 +393,7 @@ describe("platform request operations summary", () => {
       documents: [],
       feedbackSummary: { averageRating: null, count: 0, lowScoreCount: 0 },
       freightDetail: null,
+      matchSummary: null,
       questions: [],
       request: {
         createdAt: "2026-06-01T00:00:00.000Z",
@@ -376,6 +416,48 @@ describe("platform request operations summary", () => {
     expect(prompt?.category).toBe("lifecycle_followup");
     expect(prompt?.label).toBe("진행중 요청 완료 전환 개선");
     expect(prompt?.prompt).toContain("진행중 요청");
+    expect(prompt?.prompt).not.toContain("민감한 품목 설명");
+    expect(prompt?.prompt).not.toContain("민감한 요청 제목");
+  });
+
+  it("builds match-condition prompts when an open request has no matched partners", () => {
+    const detail: PlatformRequestOperationsDetail = {
+      bids: [],
+      clearanceDetail: null,
+      completionReport: null,
+      documents: [],
+      feedbackSummary: { averageRating: null, count: 0, lowScoreCount: 0 },
+      freightDetail: null,
+      matchSummary: {
+        failedNotificationCount: 0,
+        matchedPartnerCount: 0,
+        pendingNotificationCount: 0,
+        sentNotificationCount: 0,
+        skippedNotificationCount: 0
+      },
+      questions: [],
+      request: {
+        createdAt: "2026-06-01T00:00:00.000Z",
+        deadlineAt: null,
+        destinationCountryCode: "KR",
+        direction: "import",
+        hskCode: null,
+        id: "req-1",
+        originCountryCode: "CN",
+        productSummary: "민감한 품목 설명",
+        requestType: "freight",
+        status: "open",
+        title: "민감한 요청 제목"
+      },
+      schemaReady: true
+    };
+
+    const prompt = buildPlatformRequestImprovementPrompt(detail);
+
+    expect(prompt?.category).toBe("match_condition");
+    expect(prompt?.label).toBe("파트너 노출 0건 매칭 조건 개선");
+    expect(prompt?.prompt).toContain("파트너 노출 수: 0");
+    expect(prompt?.prompt).toContain("알림 worker dry-run 결과");
     expect(prompt?.prompt).not.toContain("민감한 품목 설명");
     expect(prompt?.prompt).not.toContain("민감한 요청 제목");
   });

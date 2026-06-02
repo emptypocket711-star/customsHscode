@@ -25,6 +25,7 @@ function summaryFixture(overrides: Partial<PlatformRequestOperationsSummary> = {
     lowFeedbacks: 0,
     open: 0,
     openWithoutBids: 0,
+    openWithoutMatches: 0,
     partnerSelected: 0,
     schemaReady: true,
     staleDrafts: 0,
@@ -57,7 +58,7 @@ describe("platform request operations panel", () => {
       "선정 후 진행",
       "거래 후기"
     ]);
-    expect(groups.diagnosticMetrics).toHaveLength(11);
+    expect(groups.diagnosticMetrics).toHaveLength(12);
   });
 
   it("moves workflow diagnosis counts out of the default metric cards", () => {
@@ -65,6 +66,7 @@ describe("platform request operations panel", () => {
       completedWithoutFeedback: 2,
       completionReportsReadyToLock: 3,
       openWithoutBids: 4,
+      openWithoutMatches: 1,
       staleOpen: 5,
       unansweredQuestions: 6
     }));
@@ -72,6 +74,7 @@ describe("platform request operations panel", () => {
     expect(groups.primaryMetrics.map((metric) => metric.label)).not.toContain("미답변 질문");
     expect(groups.primaryMetrics.map((metric) => metric.label)).not.toContain("견적 없는 공개");
     expect(groups.diagnosticMetrics.map((metric) => metric.label)).toContain("미답변 질문");
+    expect(groups.diagnosticMetrics.map((metric) => metric.label)).toContain("노출 0건");
     expect(groups.diagnosticMetrics.map((metric) => metric.label)).toContain("견적 없는 공개");
   });
 
