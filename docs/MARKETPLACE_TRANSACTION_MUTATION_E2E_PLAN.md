@@ -59,6 +59,13 @@ Before each mutation run:
 
 ## Required Assertions
 
+### Dashboard Completion Metrics
+
+- requester dashboard `리포트 대기` means the current user's company has completed requests without an active completion report.
+- requester dashboard `피드백 대기` means the current user's company has completed requests without that company's feedback.
+- operations `완료 리포트 없음` is broader: it is an operator-wide platform bottleneck across visible requests, not a user-specific action count.
+- dashboard next-action detail links should prioritize completion-report gaps before feedback gaps for completed requester work.
+
 ### Freight Partner Submit
 
 - forwarder opens `/requests/freight/opportunities/{mutationFreightRequestId}`
