@@ -113,6 +113,32 @@ async function assertRequesterDetail(browser, kind, requestId) {
   );
 }
 
+async function assertRequesterDashboardNextAction(browser) {
+  const context = await browser.newContext({ storageState: stateFiles.requester });
+  const page = await context.newPage();
+
+  try {
+    await page.goto(new URL("/dashboard", baseUrl).toString(), { waitUntil: "networkidle", timeout: timeoutMs });
+    const actionLink = page.locator(`a[href="/requests/freight/${fixture.freightRequestId}"]`).first();
+    await Promise.all([
+      page.waitForURL((url) => url.pathname === `/requests/freight/${fixture.freightRequestId}`, { timeout: timeoutMs }),
+      actionLink.click({ timeout: timeoutMs })
+    ]);
+    await page.waitForLoadState("networkidle", { timeout: timeoutMs });
+
+    const body = await page.locator("body").innerText({ timeout: timeoutMs });
+    assertContainsAll(body, [
+      "운송 견적 요청 상세",
+      fixtureContract.requests.freight.title,
+      "받은 견적",
+      "견적 비교 기준",
+      "포워더 선정"
+    ], "화주 대시보드 다음 행동 상세 이동");
+  } finally {
+    await context.close();
+  }
+}
+
 async function assertPartnerOpportunity(browser, kind, role, requestId) {
   const result = await pageTextFor(browser, role, transactionUrl(kind, "partner", requestId));
   assert(!result.url.includes("/login"), `${kind} 파트너 상세가 로그인으로 이동했습니다.`, { currentUrl: result.url });
@@ -147,6 +173,7 @@ async function main() {
   try {
     await assertUnauthenticatedRedirect(browser, "freight", "requester", fixture.freightRequestId);
     await assertUnauthenticatedRedirect(browser, "clearance", "requester", fixture.clearanceRequestId);
+    await assertRequesterDashboardNextAction(browser);
     await assertRequesterDetail(browser, "freight", fixture.freightRequestId);
     await assertRequesterDetail(browser, "clearance", fixture.clearanceRequestId);
     await assertPartnerOpportunity(browser, "freight", "forwarder", fixture.freightRequestId);

@@ -109,12 +109,16 @@ async function getDashboardMarketplaceActivitySummary(
 ): Promise<DashboardMarketplaceActivitySummary> {
   const emptySummary = {
     bidsReceived: 0,
+    clearancePartnerActionRequestId: null,
     clearancePartnerActions: 0,
+    clearanceRequesterActionRequestId: null,
     clearanceRequesterActions: 0,
     completedRequests: 0,
     draftRequests: 0,
     feedbackPending: 0,
+    freightPartnerActionRequestId: null,
     freightPartnerActions: 0,
+    freightRequesterActionRequestId: null,
     freightRequesterActions: 0,
     inProgressRequests: 0,
     openRequests: 0,
@@ -145,7 +149,7 @@ async function getDashboardMarketplaceActivitySummary(
       .limit(100),
     supabase
       .from("service_request_partner_matches")
-      .select("id,interest_status,service_requests(request_type,status)")
+      .select("id,interest_status,service_requests(id,request_type,status)")
       .eq("partner_company_id", profile.company_id)
       .order("created_at", { ascending: false })
       .limit(100)
@@ -163,7 +167,7 @@ async function getDashboardMarketplaceActivitySummary(
     return request.status === "completed" && !ownFeedbacks.has(String(request.id));
   };
   const matches = (partnerMatches ?? []) as Array<{
-    service_requests?: { request_type?: string | null; status?: string | null } | Array<{ request_type?: string | null; status?: string | null }> | null;
+    service_requests?: { id?: string | null; request_type?: string | null; status?: string | null } | Array<{ id?: string | null; request_type?: string | null; status?: string | null }> | null;
   }>;
   const partnerOpportunities = matches.filter((match) => {
     const request = Array.isArray(match.service_requests) ? match.service_requests[0] : match.service_requests;
@@ -172,15 +176,28 @@ async function getDashboardMarketplaceActivitySummary(
   const partnerOpportunityRequests = matches
     .map((match) => Array.isArray(match.service_requests) ? match.service_requests[0] : match.service_requests)
     .filter((request) => request?.status === "open" || request?.status === "bids_received");
+  const requesterActionRequests = requests.filter((request) => needsRequesterAction(request));
+  const firstRequesterActionId = (requestType: "clearance" | "freight") => {
+    const request = requesterActionRequests.find((item) => item.request_type === requestType);
+    return request?.id ? String(request.id) : null;
+  };
+  const firstPartnerActionId = (requestType: "clearance" | "freight") => {
+    const request = partnerOpportunityRequests.find((item) => item?.request_type === requestType);
+    return request?.id ? String(request.id) : null;
+  };
 
   return {
     bidsReceived: requests.filter((request) => request.status === "bids_received").length,
+    clearancePartnerActionRequestId: firstPartnerActionId("clearance"),
     clearancePartnerActions: partnerOpportunityRequests.filter((request) => request?.request_type === "clearance").length,
+    clearanceRequesterActionRequestId: firstRequesterActionId("clearance"),
     clearanceRequesterActions: requests.filter((request) => request.request_type === "clearance" && needsRequesterAction(request)).length,
     completedRequests: completedRequestIds.length,
     draftRequests: requests.filter((request) => request.status === "draft").length,
     feedbackPending: completedRequestIds.filter((requestId) => !ownFeedbacks.has(requestId)).length,
+    freightPartnerActionRequestId: firstPartnerActionId("freight"),
     freightPartnerActions: partnerOpportunityRequests.filter((request) => request?.request_type === "freight").length,
+    freightRequesterActionRequestId: firstRequesterActionId("freight"),
     freightRequesterActions: requests.filter((request) => request.request_type === "freight" && needsRequesterAction(request)).length,
     inProgressRequests: requests.filter((request) => request.status === "in_progress").length,
     openRequests: requests.filter((request) => request.status === "open").length,

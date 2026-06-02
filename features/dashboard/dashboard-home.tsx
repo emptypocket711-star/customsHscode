@@ -31,12 +31,16 @@ export type DashboardMarketplaceSummary = {
 
 export type DashboardMarketplaceActivitySummary = {
   bidsReceived: number;
+  clearancePartnerActionRequestId?: string | null;
   clearancePartnerActions: number;
+  clearanceRequesterActionRequestId?: string | null;
   clearanceRequesterActions: number;
   completedRequests: number;
   draftRequests: number;
   feedbackPending: number;
+  freightPartnerActionRequestId?: string | null;
   freightPartnerActions: number;
+  freightRequesterActionRequestId?: string | null;
   freightRequesterActions: number;
   inProgressRequests: number;
   openRequests: number;
@@ -283,7 +287,7 @@ function hasMarketplaceWork(activity: DashboardMarketplaceActivitySummary | null
   );
 }
 
-function buildMarketplaceNextActions(
+export function buildMarketplaceNextActions(
   activity: DashboardMarketplaceActivitySummary | null,
   summary: DashboardMarketplaceSummary | null
 ) {
@@ -301,7 +305,9 @@ function buildMarketplaceNextActions(
     {
       count: activity?.freightRequesterActions ?? 0,
       description: "운송 요청의 견적 비교, 업체 선정, 진행 상태, 완료 피드백을 처리합니다.",
-      href: "/requests/freight?workspace=requester",
+      href: activity?.freightRequesterActionRequestId
+        ? `/requests/freight/${activity.freightRequesterActionRequestId}`
+        : "/requests/freight?workspace=requester",
       label: "화주 업무",
       priority: 10,
       title: "내 운송 요청 처리"
@@ -309,7 +315,9 @@ function buildMarketplaceNextActions(
     {
       count: activity?.clearanceRequesterActions ?? 0,
       description: "통관 의뢰의 견적 비교, 업체 선정, 진행 상태, 완료 피드백을 처리합니다.",
-      href: "/requests/clearance?workspace=requester",
+      href: activity?.clearanceRequesterActionRequestId
+        ? `/requests/clearance/${activity.clearanceRequesterActionRequestId}`
+        : "/requests/clearance?workspace=requester",
       label: "화주 업무",
       priority: 9,
       title: "내 통관 의뢰 처리"
@@ -317,7 +325,9 @@ function buildMarketplaceNextActions(
     {
       count: activity?.freightPartnerActions ?? 0,
       description: "관심 조건에 맞는 운송 요청을 확인하고 견적 제출 가능 건을 처리합니다.",
-      href: "/requests/freight?workspace=forwarder",
+      href: activity?.freightPartnerActionRequestId
+        ? `/requests/freight/opportunities/${activity.freightPartnerActionRequestId}`
+        : "/requests/freight?workspace=forwarder",
       label: "파트너 입찰",
       priority: 8,
       title: "운송 입찰 가능 요청 확인"
@@ -325,7 +335,9 @@ function buildMarketplaceNextActions(
     {
       count: activity?.clearancePartnerActions ?? 0,
       description: "관심 조건에 맞는 통관 요청을 확인하고 수수료와 필요서류를 제안합니다.",
-      href: "/requests/clearance?workspace=broker",
+      href: activity?.clearancePartnerActionRequestId
+        ? `/requests/clearance/opportunities/${activity.clearancePartnerActionRequestId}`
+        : "/requests/clearance?workspace=broker",
       label: "파트너 입찰",
       priority: 7,
       title: "통관 입찰 가능 요청 확인"
