@@ -28,9 +28,19 @@ export function ServiceRequestFeedbackForm({
   if (existingFeedback) {
     return (
       <div className="grid gap-2 rounded-md border border-emerald-200 bg-emerald-50 p-4">
-        <p className="text-sm font-semibold text-emerald-950">완료 요청 피드백 제출됨</p>
-        <p className="text-xs leading-5 text-emerald-900">
-          {existingFeedback.createdAt.slice(0, 10)}에 {existingFeedback.rating}점 피드백을 제출했습니다. 같은 요청에는 회사별로 한 번만 피드백을 남길 수 있습니다.
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <p className="text-sm font-semibold text-emerald-950">완료 요청 피드백 제출됨</p>
+            <p className="mt-1 text-xs leading-5 text-emerald-900">
+              {existingFeedback.createdAt.slice(0, 10)}에 {existingFeedback.rating}점 피드백을 제출했습니다. 같은 요청에는 회사별로 한 번만 피드백을 남길 수 있습니다.
+            </p>
+          </div>
+          <span className="rounded-md bg-white px-3 py-2 text-xs font-semibold text-emerald-900">
+            평점 {existingFeedback.rating}점
+          </span>
+        </div>
+        <p className="rounded-md bg-white p-3 text-xs leading-5 text-emerald-900">
+          추가 제출은 필요하지 않습니다. 완료 리포트와 최종 보관 서류 상태만 확인하면 됩니다.
         </p>
       </div>
     );
