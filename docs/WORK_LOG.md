@@ -206,6 +206,23 @@
 - Playwright requester check: `/requests/clearance?workspace=requester`에서 `상세 작업` 링크 유지, 관세사 입찰 흐름 미노출 확인
 - `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
 
+### compact selected next-step summary
+
+- 이전 작업은 P92 통관 row 상단의 행동 버튼 구조 정리이고, 이번 작업은 P93 선정 후 다음 업무 카드의 목록 row 과밀도 점검이다.
+- `포워더 선정 후 다음 업무`, `관세사무소 선정 후 다음 업무` 카드는 상세 화면에서 필요한 3단계 안내와 선정 파트너 전용 서류 handoff를 보여준다.
+- 같은 카드가 compact 목록 row에도 펼쳐질 수 있어, 목록에서는 한 줄 요약만 보이게 줄였다.
+- 상세 화면에서는 `compact=false`이므로 기존 상세 3단계 안내와 선정 파트너 전용 서류 안내를 유지한다.
+- 완료 리포트 패널은 아직 목록 row에 크게 펼쳐지는 상태라 다음 P94에서 별도 정리 대상으로 잡았다.
+- 권한/RLS, lifecycle action, 완료 리포트 action, DB schema는 변경하지 않았다.
+- 다음 작업은 P94 완료 리포트 목록 row 과밀도 정리다. 이번 P93이 선정 후 다음 업무 카드라면, P94는 완료 리포트 패널 자체가 목록에서 과하게 펼쳐지는 문제를 줄이는 작업이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- Playwright requester list check: 운송/통관 목록에서 선정 후 다음 업무 상세 카드 제목 미노출 확인
+- `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
+
 ## 2026-06-02
 
 ### local login review smoke

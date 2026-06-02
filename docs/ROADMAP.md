@@ -371,7 +371,9 @@
 | P91.2 clearance list guidance workspace alignment | 완료 | 안내 범위 점검이 아니라 통관 화주 목록에 잘못 보이던 관세사무소 입찰 흐름 패널을 관세사 workspace로 옮긴다 | workspace-specific guidance | browser, typecheck, lint |
 | P92.1 marketplace compact row action density review | 완료 | 시작·목록 안내 위치가 아니라 요청 row 안의 카드/버튼/상태 문구가 너무 많은지 점검한다 | clearance row action layout selected | UX/code review |
 | P92.2 clearance row action layout alignment | 완료 | row 밀도 점검이 아니라 통관 row의 상세 작업 버튼을 상태 badge와 분리해 운송 row 구조와 맞춘다 | requester row action layout | browser, typecheck, lint |
-| P93.1 selected partner next-step density review | 예정 | row 상단 버튼 구조가 아니라 선정 후 다음 업무 카드가 너무 많은 문장을 펼쳐 보이는지 점검한다 | selected next-step density audit | UX/code review |
+| P93.1 selected partner next-step density review | 완료 | row 상단 버튼 구조가 아니라 선정 후 다음 업무 카드가 너무 많은 문장을 펼쳐 보이는지 점검한다 | compact selected next-step card selected | UX/code review |
+| P93.2 compact selected next-step summary | 완료 | 선정 후 카드 점검이 아니라 목록 row에서는 상세 3단계 카드를 요약 문구로 줄이고 상세 화면에서만 전체 안내를 유지한다 | compact selected summary | browser, typecheck, lint |
+| P94.1 compact completion report density review | 예정 | 선정 후 다음 업무 카드가 아니라 완료 상태 row의 완료 리포트 패널이 목록에서 과하게 펼쳐지는지 점검한다 | compact completion report audit | UX/code review |
 
 #### P34 다음 코드 작업 후보
 

@@ -670,7 +670,7 @@ export function FreightRequestRow({
         questions={questions}
         status={request.status}
       />
-      {request.status === "partner_selected" || request.status === "in_progress" || request.status === "completed" ? (
+      {!compact && (request.status === "partner_selected" || request.status === "in_progress" || request.status === "completed") ? (
         <SelectedFreightPartnerNextSteps documents={documents} selectedBid={selectedBid} />
       ) : null}
       <FreightLifecycleControls completionReport={completionReport} completionReportDocuments={completionReportDocuments} documents={documents} existingFeedback={feedbackByRequestId[request.id]} requestId={request.id} status={request.status} viewerRole="requester" />
@@ -698,6 +698,11 @@ export function FreightRequestRow({
       {compact ? (
         <p className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600">
           서류 {documents.length}건 / 질문 {questions.length}건 / 견적 {bids.length}건입니다. 첨부, 답변, 견적 비교와 공개 설정은 상세 작업에서 처리합니다.
+        </p>
+      ) : null}
+      {compact && (request.status === "partner_selected" || request.status === "in_progress" || request.status === "completed") ? (
+        <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-xs leading-5 text-emerald-900">
+          선정된 포워더와 후속 일정, 비용 포함 범위, 선정 파트너 전용 서류를 상세 작업에서 관리합니다.
         </p>
       ) : null}
       {compact ? null : (
