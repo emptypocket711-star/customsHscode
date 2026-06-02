@@ -2201,6 +2201,27 @@
 - 로컬 서버 `http://localhost:3100` 실행
 - 비로그인 상태 `/requests/freight/11111111-1111-4111-8111-111111111111`, `/requests/clearance/opportunities/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
 
+### marketplace completion handoff and dashboard action review
+
+- 이전 작업은 완료 전 피드백 조회 gating 회귀 테스트였고, 이번 작업 묶음은 완료된 거래의 리포트, 보관 서류, 피드백, 대시보드 다음 행동 흐름을 정리한 P72-P75다.
+- 완료 리포트 패널에서 보관 서류가 없을 때 `최종 보관 서류 연결이 필요합니다` 안내와 초안 작성 바로가기를 표시한다.
+- 완료 리포트 workflow의 비활성 단계 버튼은 `대기:` 문구로 왜 제출, 확인, 운영 검토, 잠금이 막혀 있는지 설명한다.
+- 이미 제출한 피드백은 평점과 제출 완료 상태를 보여주고, 추가 제출이 필요하지 않다는 안내를 표시한다.
+- 화주 대시보드는 완료 리포트 누락을 피드백 누락보다 먼저 상세 링크로 연결하고, 하단 지표에 `리포트 대기`와 `피드백 대기`를 분리 표시한다.
+- 파트너 대시보드는 공개/견적 가능 요청뿐 아니라 선정 후 진행 중인 요청도 `파트너 업무`로 잡도록 확장했고, `입찰 가능`과 `파트너 업무` 지표를 분리했다.
+- 운영 통계의 `완료 리포트 없음`과 사용자 대시보드의 `리포트 대기` 의미 차이를 E2E 문서에 남겼다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 원격 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npx vitest run features/service-requests/service-request-completion-report-workflow.test.ts`
+- `npx vitest run features/dashboard/dashboard-home.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- Playwright 브라우저 확인: 화주 완료 요청 상세, 화주 대시보드, 포워더 대시보드
+- Playwright role route smoke: requester `/dashboard`, `/requests/freight`, `/requests/clearance`; forwarder `/dashboard`, `/requests/freight/opportunities/{id}`; broker `/dashboard`, `/requests/clearance/opportunities/{id}`
+
 ### 요청 상세 loader 중복 패턴 정리
 
 - 이전 작업은 조회된 feedback Map을 record로 변환하는 helper 적용인 P21.2이고, 이번 작업은 상세 페이지 loader가 완료 상태 피드백 조회와 record 변환을 매번 직접 조립하던 반복을 줄인 P21.3이다.

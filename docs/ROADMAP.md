@@ -300,7 +300,8 @@
 | P74.2 partner dashboard metric wording | 완료 | 파트너 다음 행동 카드가 아니라 하단 지표에서 입찰 가능 수와 선정 후 파트너 업무 수가 혼동되지 않게 정리한다 | partner metric wording UX | browser, typecheck, lint |
 | P74.3 partner dashboard metric semantics docs | 완료 | 파트너 대시보드 지표 추가가 아니라 파트너 업무와 입찰 가능 지표의 차이를 E2E 문서 기준에 남긴다 | partner metric semantics docs | docs, diff check |
 | P75.1 marketplace final route smoke after dashboard changes | 완료 | 대시보드 문서 정리가 아니라 화주·포워더·관세사 주요 route가 이번 변경 뒤에도 깨지지 않는지 한 번에 점검한다 | role route smoke | browser, typecheck, lint |
-| P75.2 marketplace dashboard-change final log | 예정 | route smoke가 아니라 이번 대시보드/완료 handoff 변경 묶음의 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
+| P75.2 marketplace dashboard-change final log | 완료 | route smoke가 아니라 이번 대시보드/완료 handoff 변경 묶음의 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
+| P76.1 next marketplace rail selection | 예정 | 작업 로그 정리가 아니라 다음으로 이어갈 marketplace MVP 병목을 다시 고른다 | roadmap review | docs/code review |
 
 #### P34 다음 코드 작업 후보
 
