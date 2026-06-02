@@ -65,7 +65,19 @@ export const marketplaceTransactionFixture: {
     email: string;
     id: string;
   }>;
+  zeroMatch: {
+    envKeys: {
+      freightRequestId: string;
+    };
+    requests: {
+      freight: {
+        id: string;
+        title: string;
+      };
+    };
+  };
 };
 
 export function marketplaceTransactionEnvExports(fixture?: typeof marketplaceTransactionFixture): string[];
 export function marketplaceTransactionMutationEnvExports(fixture?: typeof marketplaceTransactionFixture): string[];
+export function marketplaceTransactionZeroMatchEnvExports(fixture?: typeof marketplaceTransactionFixture): string[];

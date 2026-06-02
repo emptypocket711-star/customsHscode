@@ -34,7 +34,8 @@ function fixtureEnv() {
     [fixture.mutation.envKeys.clearanceBidId]: fixture.mutation.bids.clearance.id,
     [fixture.mutation.envKeys.clearanceRequestId]: fixture.mutation.requests.clearance.id,
     [fixture.mutation.envKeys.freightBidId]: fixture.mutation.bids.freight.id,
-    [fixture.mutation.envKeys.freightRequestId]: fixture.mutation.requests.freight.id
+    [fixture.mutation.envKeys.freightRequestId]: fixture.mutation.requests.freight.id,
+    [fixture.zeroMatch.envKeys.freightRequestId]: fixture.zeroMatch.requests.freight.id
   };
 }
 

@@ -90,6 +90,17 @@ export const marketplaceTransactionFixture = {
       email: "marketplace-transaction-requester@example.test",
       id: "75000000-0000-4000-8000-000000000020"
     }
+  },
+  zeroMatch: {
+    envKeys: {
+      freightRequestId: "E2E_MARKETPLACE_ZERO_MATCH_FREIGHT_REQUEST_ID"
+    },
+    requests: {
+      freight: {
+        id: "75000000-0000-4000-8000-000000000201",
+        title: "E2E 운송 견적 요청 노출 0건"
+      }
+    }
   }
 };
 
@@ -108,5 +119,11 @@ export function marketplaceTransactionMutationEnvExports(fixture = marketplaceTr
     `export ${fixture.mutation.envKeys.freightBidId}=${fixture.mutation.bids.freight.id}`,
     `export ${fixture.mutation.envKeys.clearanceRequestId}=${fixture.mutation.requests.clearance.id}`,
     `export ${fixture.mutation.envKeys.clearanceBidId}=${fixture.mutation.bids.clearance.id}`
+  ];
+}
+
+export function marketplaceTransactionZeroMatchEnvExports(fixture = marketplaceTransactionFixture) {
+  return [
+    `export ${fixture.zeroMatch.envKeys.freightRequestId}=${fixture.zeroMatch.requests.freight.id}`
   ];
 }

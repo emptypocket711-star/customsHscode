@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   marketplaceTransactionEnvExports,
   marketplaceTransactionFixture,
-  marketplaceTransactionMutationEnvExports
+  marketplaceTransactionMutationEnvExports,
+  marketplaceTransactionZeroMatchEnvExports
 } from "@/tests/fixtures/marketplace-transaction.fixture";
 
 describe("marketplace transaction fixture", () => {
@@ -46,6 +47,21 @@ describe("marketplace transaction fixture", () => {
     );
     expect(marketplaceTransactionMutationEnvExports()).toContain(
       `export E2E_MARKETPLACE_MUTATION_CLEARANCE_BID_ID=${marketplaceTransactionFixture.mutation.bids.clearance.id}`
+    );
+  });
+
+  it("defines separate zero-match request ids and env exports", () => {
+    const usedIds = [
+      marketplaceTransactionFixture.requests.freight.id,
+      marketplaceTransactionFixture.requests.clearance.id,
+      marketplaceTransactionFixture.mutation.requests.freight.id,
+      marketplaceTransactionFixture.mutation.requests.clearance.id,
+      marketplaceTransactionFixture.zeroMatch.requests.freight.id
+    ];
+
+    expect(new Set(usedIds).size).toBe(usedIds.length);
+    expect(marketplaceTransactionZeroMatchEnvExports()).toContain(
+      `export E2E_MARKETPLACE_ZERO_MATCH_FREIGHT_REQUEST_ID=${marketplaceTransactionFixture.zeroMatch.requests.freight.id}`
     );
   });
 

@@ -13,11 +13,13 @@ const fixture = {
   clearanceBidId: process.env[fixtureContract.envKeys.clearanceBidId],
   clearanceRequestId: process.env[fixtureContract.envKeys.clearanceRequestId],
   freightBidId: process.env[fixtureContract.envKeys.freightBidId],
-  freightRequestId: process.env[fixtureContract.envKeys.freightRequestId]
+  freightRequestId: process.env[fixtureContract.envKeys.freightRequestId],
+  zeroMatchFreightRequestId: process.env[fixtureContract.zeroMatch.envKeys.freightRequestId]
 };
 
 const stateFiles = {
   broker: path.join(stateDir, fixtureContract.storageStates.broker),
+  developer: path.join(stateDir, process.env.E2E_MARKETPLACE_DEVELOPER_STATE_FILE || "local-developer.json"),
   forwarder: path.join(stateDir, fixtureContract.storageStates.forwarder),
   requester: path.join(stateDir, fixtureContract.storageStates.requester)
 };
@@ -38,11 +40,21 @@ function assertLocalBaseUrl(value) {
 
 async function assertStorageStatesExist() {
   for (const [role, statePath] of Object.entries(stateFiles)) {
+    if (role === "developer") continue;
     try {
       await access(statePath);
     } catch {
       throw new Error(`${role} storage state가 없습니다: ${statePath}. 먼저 marketplace transaction auth state를 생성하세요.`);
     }
+  }
+}
+
+async function storageStateExists(statePath) {
+  try {
+    await access(statePath);
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -161,6 +173,34 @@ async function assertRequesterDetailBidFocus(browser, kind, requestId, requestTi
   }
 }
 
+async function assertRequesterZeroMatchDetail(browser) {
+  const result = await pageTextFor(browser, "requester", transactionUrl("freight", "requester", fixture.zeroMatchFreightRequestId));
+  assert(!result.url.includes("/login"), "zero-match 화주 상세가 로그인으로 이동했습니다.", { currentUrl: result.url });
+  assertContainsAll(result.text, [
+    "운송 견적 요청 상세",
+    fixtureContract.zeroMatch.requests.freight.title,
+    "파트너 노출·알림 상태",
+    "조건에 맞는 포워더 0곳",
+    "운영 점검 필요"
+  ], "zero-match 화주 상세");
+}
+
+async function assertOperationsZeroMatchDetail(browser) {
+  if (!(await storageStateExists(stateFiles.developer))) {
+    console.log(`skip operations zero-match detail: developer storage state missing at ${stateFiles.developer}`);
+    return;
+  }
+
+  const result = await pageTextFor(browser, "developer", new URL(`/operations/requests/${fixture.zeroMatchFreightRequestId}`, baseUrl).toString());
+  assert(!result.url.includes("/login"), "zero-match 운영 상세가 로그인으로 이동했습니다.", { currentUrl: result.url });
+  assertContainsAll(result.text, [
+    "플랫폼 요청 운영 상세",
+    "파트너 노출·알림 운영 요약",
+    "노출 0곳",
+    "요청 조건, 파트너 관심 조건, 운영자 검증 상태"
+  ], "zero-match 운영 상세");
+}
+
 async function assertPartnerOpportunity(browser, kind, role, requestId) {
   const result = await pageTextFor(browser, role, transactionUrl(kind, "partner", requestId));
   assert(!result.url.includes("/login"), `${kind} 파트너 상세가 로그인으로 이동했습니다.`, { currentUrl: result.url });
@@ -200,6 +240,8 @@ async function main() {
     await assertRequesterDetail(browser, "clearance", fixture.clearanceRequestId);
     await assertRequesterDetailBidFocus(browser, "freight", fixture.freightRequestId, fixtureContract.requests.freight.title);
     await assertRequesterDetailBidFocus(browser, "clearance", fixture.clearanceRequestId, fixtureContract.requests.clearance.title);
+    await assertRequesterZeroMatchDetail(browser);
+    await assertOperationsZeroMatchDetail(browser);
     await assertPartnerOpportunity(browser, "freight", "forwarder", fixture.freightRequestId);
     await assertPartnerOpportunity(browser, "clearance", "broker", fixture.clearanceRequestId);
 

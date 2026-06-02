@@ -463,6 +463,27 @@
 - Playwright forwarder check: `/settings/members`에서 운송 매칭 진단 문구 확인
 - Playwright broker check: `/settings/members`에서 통관 긴급 매칭 진단 문구 확인
 
+### marketplace zero-match end-to-end review
+
+- 이전 작업은 P107 파트너 관심 조건 저장 전 안내와 정규화이고, 이번 작업은 P108 화주 공개 후 노출 0건 상태가 요청자·운영자 화면까지 이어지는지 E2E fixture로 확인한 작업이다.
+- marketplace transaction fixture에 `zeroMatch` 운송 요청 ID와 env export를 추가했다.
+- seed runner가 `open` 상태이지만 `service_request_partner_matches`가 없는 zero-match 운송 요청을 local Supabase에 넣도록 확장했다.
+- readiness runner가 `E2E_MARKETPLACE_ZERO_MATCH_FREIGHT_REQUEST_ID`도 확인한다.
+- local runner가 zero-match env 값을 자동 주입한다.
+- marketplace transaction E2E가 요청자 zero-match 상세에서 `파트너 노출·알림 상태`, `조건에 맞는 포워더 0곳`, `운영 점검 필요`를 확인한다.
+- developer storage state가 있으면 운영 상세에서 `파트너 노출·알림 운영 요약`, `노출 0곳`, 매칭 조건 점검 안내도 확인한다.
+- 기존 정상 거래 E2E와 mutation E2E는 그대로 유지했다.
+- 다음 작업은 P109 marketplace post-E2E next bottleneck review다. 이번 P108이 zero-match E2E 검증이라면, P109는 거래 E2E 통과 후 남은 MVP 병목을 다시 고르는 작업이다.
+
+검증:
+
+- `node --check tests/fixtures/marketplace-transaction.fixture.mjs && node --check scripts/seed_marketplace_transaction_fixture.mjs && node --check scripts/e2e_marketplace_transaction_flow.mjs && node --check scripts/check_marketplace_transaction_e2e_readiness.mjs && node --check scripts/run_marketplace_transaction_e2e_local.mjs`
+- `npx vitest run tests/fixtures/marketplace-transaction.fixture.test.ts`
+- local-only env override로 `npm run e2e:marketplace-transaction:local`: seed, auth, readiness, static E2E, mutation E2E 모두 `result=ok`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
+
 ## 2026-06-02
 
 ### local login review smoke

@@ -10,6 +10,7 @@ import {
 import {
   marketplaceTransactionEnvExports,
   marketplaceTransactionMutationEnvExports,
+  marketplaceTransactionZeroMatchEnvExports,
   marketplaceTransactionFixture as fixture
 } from "../tests/fixtures/marketplace-transaction.fixture.mjs";
 
@@ -170,7 +171,8 @@ async function cleanupTransactionFixture(client) {
     fixture.requests.freight.id,
     fixture.requests.clearance.id,
     fixture.mutation.requests.freight.id,
-    fixture.mutation.requests.clearance.id
+    fixture.mutation.requests.clearance.id,
+    fixture.zeroMatch.requests.freight.id
   ]);
 }
 
@@ -440,6 +442,64 @@ async function seedMutationRequests(client, authUsers) {
   ], { onConflict: "request_id,partner_company_id" });
 }
 
+async function seedZeroMatchRequests(client, authUsers) {
+  const requesterUserId = authUsers.get("requester").id;
+
+  await upsertOrThrow(client, "service_requests", [
+    {
+      created_at: seededAt,
+      created_by: requesterUserId,
+      deadline_at: "2026-06-30T00:00:00.000Z",
+      destination_country_code: "JP",
+      direction: "export",
+      export_country_code: "KR",
+      id: fixture.zeroMatch.requests.freight.id,
+      incoterms: "FOB",
+      internal_note: "E2E zero-match fixture only",
+      missing_information: [],
+      origin_country_code: "KR",
+      preferred_arrival_date: "2026-07-10",
+      preferred_start_date: "2026-06-20",
+      product_summary: "E2E zero-match 운송 품목",
+      published_at: seededAt,
+      requester_company_id: fixture.companies.requester.id,
+      request_type: "freight",
+      shipment_country_code: "KR",
+      source_lookup_snapshot: {
+        generatedAt: seededAt,
+        legalCertainty: false,
+        source: "e2e zero-match fixture"
+      },
+      status: "open",
+      title: fixture.zeroMatch.requests.freight.title,
+      updated_at: seededAt,
+      visibility: "matched_partners"
+    }
+  ], { onConflict: "id" });
+
+  await upsertOrThrow(client, "freight_request_details", [
+    {
+      cbm: 4.25,
+      container_type: "LCL",
+      destination_place: "Tokyo synthetic warehouse",
+      destination_port: "JPTYO",
+      gross_weight: 600,
+      hazardous: false,
+      load_type: "lcl",
+      origin_place: "Seoul synthetic factory",
+      origin_port: "KRINC",
+      package_count: 5,
+      package_unit: "CT",
+      request_id: fixture.zeroMatch.requests.freight.id,
+      temperature_controlled: false,
+      transport_mode: "sea",
+      used_car: false,
+      vehicle_vin: null,
+      weight_unit: "KG"
+    }
+  ], { onConflict: "request_id" });
+}
+
 async function seedBids(client, authUsers) {
   await upsertOrThrow(client, "service_bids", [
     {
@@ -534,12 +594,16 @@ async function main() {
   await seedPartnerMatches(client);
   await seedBids(client, authUsers);
   await seedMutationRequests(client, authUsers);
+  await seedZeroMatchRequests(client, authUsers);
 
   console.log("envExports=");
   for (const line of marketplaceTransactionEnvExports(fixture)) {
     console.log(line);
   }
   for (const line of marketplaceTransactionMutationEnvExports(fixture)) {
+    console.log(line);
+  }
+  for (const line of marketplaceTransactionZeroMatchEnvExports(fixture)) {
     console.log(line);
   }
 

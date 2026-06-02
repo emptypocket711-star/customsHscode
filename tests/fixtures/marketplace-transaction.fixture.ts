@@ -1,5 +1,6 @@
 export {
   marketplaceTransactionEnvExports,
   marketplaceTransactionFixture,
-  marketplaceTransactionMutationEnvExports
+  marketplaceTransactionMutationEnvExports,
+  marketplaceTransactionZeroMatchEnvExports
 } from "./marketplace-transaction.fixture.mjs";

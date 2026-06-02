@@ -16,7 +16,10 @@ const stateDir = process.env.E2E_STORAGE_STATE_DIR || "tmp/e2e-auth";
 const timeoutMs = Number(process.env.E2E_READINESS_TIMEOUT_MS || 5000);
 
 const stateFiles = Object.values(fixture.storageStates);
-const fixtureEnvKeys = Object.values(fixture.envKeys);
+const fixtureEnvKeys = [
+  ...Object.values(fixture.envKeys),
+  ...Object.values(fixture.zeroMatch.envKeys)
+];
 
 async function exists(filePath) {
   try {
