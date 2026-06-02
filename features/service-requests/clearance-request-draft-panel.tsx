@@ -28,7 +28,9 @@ import {
   isSelectedOrLaterStatus,
   serviceRequestBidStatusLabel,
   serviceRequestBidStatusTone,
-  serviceRequestDocumentTypeLabel
+  serviceRequestDocumentTypeLabel,
+  serviceRequestPartnerInterestStatusLabel,
+  serviceRequestPartnerInterestStatusTone
 } from "@/features/service-requests/service-request-status";
 import {
   answerClearanceRequestQuestionAction,
@@ -816,6 +818,9 @@ export function ClearanceOpportunityRow({
             <p className="text-sm font-semibold text-slate-950">{opportunity.title}</p>
             <Badge tone={statusTone(opportunity.status)}>{statusLabel(opportunity.status)}</Badge>
             <Badge tone="neutral">{opportunity.direction === "export" ? "수출통관" : "수입통관"}</Badge>
+            <Badge tone={serviceRequestPartnerInterestStatusTone(opportunity.interestStatus)}>
+              {serviceRequestPartnerInterestStatusLabel(opportunity.interestStatus)}
+            </Badge>
             {opportunity.urgent ? <Badge tone="warning">긴급</Badge> : null}
           </div>
           <p className="mt-1 text-xs leading-5 text-slate-500">
@@ -832,7 +837,7 @@ export function ClearanceOpportunityRow({
       {opportunity.productSummary ? <p className="text-sm leading-6 text-slate-600">{opportunity.productSummary}</p> : null}
       {compact ? (
         <p className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600">
-          공개 서류 {documents.length}건 / 질문 {questions.length}건입니다. {opportunity.status === "partner_selected" || opportunity.status === "in_progress" || opportunity.status === "completed" ? "선정 후 업무는 입찰 작업에서 확인합니다." : "조건 확인, 질문 등록, 통관 견적 제출은 입찰 작업에서 처리합니다."}
+          공개 서류 {documents.length}건 / 질문 {questions.length}건입니다. {opportunity.interestStatus === "declined" ? "참여 보류로 저장된 요청입니다. 다시 참여하려면 입찰 작업에서 상태를 확인합니다." : opportunity.status === "partner_selected" || opportunity.status === "in_progress" || opportunity.status === "completed" ? "선정 후 업무는 입찰 작업에서 확인합니다." : "조건 확인, 질문 등록, 통관 견적 제출은 입찰 작업에서 처리합니다."}
         </p>
       ) : null}
       {compact ? null : (

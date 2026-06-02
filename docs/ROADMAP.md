@@ -420,7 +420,8 @@
 | P129.1 marketplace operations match interest detail | 완료 | 개선 프롬프트 문구가 아니라 요청 상세의 파트너 노출·알림 요약 카드에 열람/관심/보류/미확인 카운트를 표시한다 | match interest detail | typecheck, lint, browser |
 | P130.1 marketplace opportunity viewed tracking | 완료 | 운영 상세 표시가 아니라 파트너가 opportunity 상세을 열었을 때 미확인 매칭을 열람 상태로 기록한다 | opportunity viewed tracking | unit, typecheck, lint, RLS, browser |
 | P131.1 marketplace opportunity decline action | 완료 | 자동 열람 기록이 아니라 파트너가 참여 보류를 명시해 리마인드와 운영 지표에서 구분되게 한다 | opportunity decline action | unit, typecheck, lint, RLS, browser |
-| P132.1 marketplace declined opportunity list clarity | 예정 | 상세 보류 액션이 아니라 opportunity 목록과 요약에서 참여 보류 상태를 더 명확히 구분한다 | declined opportunity list clarity | unit, UX, browser |
+| P132.1 marketplace declined opportunity list clarity | 완료 | 상세 보류 액션이 아니라 opportunity 목록과 요약에서 참여 보류 상태를 더 명확히 구분한다 | declined opportunity list clarity | unit, typecheck, lint, browser |
+| P133.1 marketplace declined reminder regression | 예정 | 목록 표시가 아니라 참여 보류 상태가 알림 리마인드 정책과 worker rehearsal에서 제외되는지 회귀 검증을 보강한다 | declined reminder regression | unit, ops rehearsal |
 
 #### P109 다음 병목 선정
 
@@ -798,6 +799,22 @@ P130은 상세 진입 시 미확인 매칭을 자동으로 `viewed`로 기록하
 6. 브라우저/RLS 검증에서 포워더 계정으로 버튼을 클릭한 뒤 match 상태가 `declined`로 바뀌는지 확인했다.
 
 다음 작업은 P132 marketplace declined opportunity list clarity다. P131이 상세 화면에서 보류 상태를 저장하는 작업이라면, P132는 opportunity 목록과 요약에서 보류된 요청이 계속 일반 견적 대기처럼 보이지 않도록 구분하는 작업이다.
+
+#### P132 declined opportunity list clarity
+
+P132에서 파트너 opportunity row에 참여 상태 배지와 보류 안내를 추가했다.
+
+P131은 상세 화면에서 `참여 보류`를 저장하는 액션이었다. 이번 P132는 저장된 보류 상태가 목록과 row 요약에서도 일반 견적 대기처럼 보이지 않도록 구분하는 표시 작업이다.
+
+구현 기준:
+
+1. 공통 `serviceRequestPartnerInterestStatusLabel`과 `serviceRequestPartnerInterestStatusTone` helper를 추가했다.
+2. 운송 opportunity row에 `미확인`, `검토중`, `관심 표시`, `참여 보류` 배지를 표시한다.
+3. 통관 opportunity row에도 같은 참여 상태 배지를 표시한다.
+4. compact 목록 문구에서 `declined` 상태이면 참여 보류로 저장된 요청임을 안내한다.
+5. 브라우저 검증에서는 포워더 목록에서 입찰 가능 요청 탭을 열고 임시 declined match의 보류 배지와 안내 문구를 확인했다.
+
+다음 작업은 P133 marketplace declined reminder regression이다. P132가 목록 표시 작업이라면, P133은 참여 보류 상태가 알림 리마인드 정책과 worker rehearsal에서 실제로 제외되는지 검증을 보강하는 작업이다.
 
 #### P34 다음 코드 작업 후보
 

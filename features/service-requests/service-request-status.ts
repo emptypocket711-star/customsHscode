@@ -43,3 +43,17 @@ export function serviceRequestBidStatusTone(status: string): "neutral" | "warnin
   if (status === "shortlisted") return "warning";
   return "neutral";
 }
+
+export function serviceRequestPartnerInterestStatusLabel(status: string) {
+  if (status === "viewed") return "검토중";
+  if (status === "interested") return "관심 표시";
+  if (status === "declined") return "참여 보류";
+  return "미확인";
+}
+
+export function serviceRequestPartnerInterestStatusTone(status: string): "neutral" | "warning" | "info" | "success" {
+  if (status === "interested") return "success";
+  if (status === "declined") return "warning";
+  if (status === "viewed") return "info";
+  return "neutral";
+}

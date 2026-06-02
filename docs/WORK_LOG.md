@@ -914,6 +914,23 @@
 - `npm run lint`
 - Playwright/RLS check: 포워더 계정 `/requests/freight/opportunities/75000000-0000-4000-8000-000000000201`, `참여 보류` 클릭 후 임시 match가 `declined`로 변경되는지 DB 확인
 
+### marketplace declined opportunity list clarity
+
+- 이전 작업은 P131 상세 화면에서 `참여 보류` 상태를 저장하는 액션이고, 이번 작업은 P132 목록 row와 요약 문구에서 보류 상태를 일반 견적 대기와 구분하는 작업이다.
+- `serviceRequestPartnerInterestStatusLabel`과 `serviceRequestPartnerInterestStatusTone` helper를 추가했다.
+- 운송 opportunity row에 `미확인`, `검토중`, `관심 표시`, `참여 보류` 배지를 표시한다.
+- 통관 opportunity row에도 같은 참여 상태 배지를 표시한다.
+- compact 목록 문구에서 `declined` 상태이면 `참여 보류로 저장된 요청입니다` 안내를 보여준다.
+- 브라우저 검증에서는 포워더 목록에서 `입찰 가능 요청` 탭을 연 뒤 임시 declined match의 보류 배지와 안내 문구가 렌더되는지 확인했다.
+- 다음 작업은 P133 marketplace declined reminder regression이다. 이번 P132가 목록 표시 작업이라면, P133은 참여 보류 상태가 알림 리마인드 정책과 worker rehearsal에서 제외되는지 회귀 검증을 보강하는 작업이다.
+
+검증:
+
+- `npx vitest run features/service-requests/service-request-status.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- Playwright check: 포워더 계정 `/requests/freight`, `입찰 가능 요청` 탭에서 임시 declined match의 `참여 보류` 배지와 안내 문구 렌더 확인
+
 ## 2026-06-02
 
 ### local login review smoke
