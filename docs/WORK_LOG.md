@@ -7869,3 +7869,20 @@
   - broker `/requests/clearance/opportunities/75000000-0000-4000-8000-000000000002` top next focus `#opportunity-bid`
   - requester `/requests/freight/00000000-0000-4000-8000-000000000101` top next focus `#request-completion`
   - requester `/requests/clearance/00000000-0000-4000-8000-000000000201` top next focus `#request-completion`
+
+### notification opportunity section anchors
+
+- 이전 작업은 상세 화면 상단 바로가기 버튼을 검증한 P152.1이고, 이번 작업은 대시보드 파트너 알림 링크가 opportunity의 실제 처리 섹션으로 이동하게 한 P153.1이다.
+- 공개·견적 수신 알림은 `#opportunity-bid`로 이동한다.
+- 선정·진행 상태 알림은 `#request-lifecycle`로 이동한다.
+- 완료 상태 알림은 `#request-completion`으로 이동한다.
+- 새 migration, RLS 변경은 없다.
+- 로컬 파일만 수정했고 원격 푸시, 배포는 하지 않았다.
+
+검증:
+
+- `npx vitest run features/dashboard/marketplace-notification-inbox.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- Playwright forwarder/broker `/dashboard` 파트너 알림 영역 렌더링 확인
+- 현재 local fixture에는 파트너 알림 링크가 없어 실제 링크 클릭 검증은 단위 테스트로 고정

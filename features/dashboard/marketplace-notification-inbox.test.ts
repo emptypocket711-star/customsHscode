@@ -11,14 +11,32 @@ describe("marketplace notification inbox dashboard helpers", () => {
     expect(getMarketplaceNotificationHref({
       channel: "in_app",
       requestId: "request-1",
+      requestStatus: "open",
       requestType: "freight"
-    })).toBe("/requests/freight/opportunities/request-1");
+    })).toBe("/requests/freight/opportunities/request-1#opportunity-bid");
 
     expect(getMarketplaceNotificationHref({
       channel: "in_app",
       requestId: "request-2",
+      requestStatus: "bids_received",
       requestType: "clearance"
-    })).toBe("/requests/clearance/opportunities/request-2");
+    })).toBe("/requests/clearance/opportunities/request-2#opportunity-bid");
+  });
+
+  it("links selected and completed partner notifications to lifecycle sections", () => {
+    expect(getMarketplaceNotificationHref({
+      channel: "in_app",
+      requestId: "request-3",
+      requestStatus: "partner_selected",
+      requestType: "freight"
+    })).toBe("/requests/freight/opportunities/request-3#request-lifecycle");
+
+    expect(getMarketplaceNotificationHref({
+      channel: "in_app",
+      requestId: "request-4",
+      requestStatus: "completed",
+      requestType: "clearance"
+    })).toBe("/requests/clearance/opportunities/request-4#request-completion");
   });
 
   it("keeps notification labels concise for dashboard display", () => {

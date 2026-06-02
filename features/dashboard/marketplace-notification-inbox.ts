@@ -28,9 +28,15 @@ export function marketplaceNotificationStatusLabel(status: MarketplaceNotificati
 export function getMarketplaceNotificationHref(item: {
   channel: MarketplaceNotificationChannel;
   requestId: string;
+  requestStatus?: MarketplaceNotificationInboxItem["requestStatus"];
   requestType: MarketplaceNotificationInboxItem["requestType"];
 }) {
-  if (item.requestType === "freight") return `/requests/freight/opportunities/${item.requestId}`;
-  if (item.requestType === "clearance") return `/requests/clearance/opportunities/${item.requestId}`;
+  const anchor = item.requestStatus === "completed"
+    ? "#request-completion"
+    : item.requestStatus === "partner_selected" || item.requestStatus === "in_progress"
+      ? "#request-lifecycle"
+      : "#opportunity-bid";
+  if (item.requestType === "freight") return `/requests/freight/opportunities/${item.requestId}${anchor}`;
+  if (item.requestType === "clearance") return `/requests/clearance/opportunities/${item.requestId}${anchor}`;
   return "/dashboard";
 }
