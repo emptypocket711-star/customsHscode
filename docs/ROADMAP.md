@@ -440,6 +440,7 @@
 | P149.1 completed transaction follow-up order | 완료 | 완료 처리 전 확인이 아니라 완료 상태에서 리포트·보관 서류·피드백 확인 순서를 상단에 명확히 표시한다 | completed follow-up order | typecheck, lint, browser |
 | P150.1 transaction state route regression | 완료 | 완료 상태 후속 안내 추가가 아니라 최근 견적·선정·진행·완료 상태 UI 변경 후 역할별 route가 계속 정상 렌더링되는지 확인한다 | transaction state route smoke | browser, diff check |
 | P151.1 dashboard next action section anchors | 완료 | 상세 route smoke가 아니라 대시보드 다음 행동 CTA가 현재 상태의 실제 처리 섹션으로 바로 이동하게 한다 | dashboard next action anchors | unit, typecheck, lint, browser |
+| P152.1 detail top next-focus anchor regression | 완료 | 대시보드 CTA가 아니라 상세 화면 상단 다음 작업 바로가기 버튼이 상태별 처리 섹션으로 계속 이동하는지 확인한다 | detail next-focus smoke | unit, browser, diff check |
 
 #### P109 다음 병목 선정
 

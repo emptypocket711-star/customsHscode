@@ -7849,3 +7849,23 @@
 - Playwright requester `/dashboard`에서 다음 행동 링크가 `/requests/freight/75000000-0000-4000-8000-000000000001#request-bids`와 `/requests/clearance/75000000-0000-4000-8000-000000000002#request-bids`로 이동하는지 확인
 - Playwright forwarder `/dashboard`에서 다음 행동 링크가 `/requests/freight/opportunities/75000000-0000-4000-8000-000000000101#opportunity-bid`로 이동하는지 확인
 - Playwright broker `/dashboard`에서 다음 행동 링크가 `/requests/clearance/opportunities/75000000-0000-4000-8000-000000000102#opportunity-bid`로 이동하는지 확인
+
+### detail top next-focus anchor regression
+
+- 이전 작업은 대시보드 다음 행동 CTA가 상세 섹션으로 이동하게 한 P151.1이고, 이번 작업은 상세 화면 상단의 `다음 작업 바로가기` 버튼이 상태별 처리 섹션으로 계속 이동하는지 확인한 P152.1이다.
+- requester 운송·통관 상세는 받은 견적/비교 영역으로 이동하는지 확인했다.
+- forwarder 운송 opportunity와 broker 통관 opportunity는 견적 제출/제출 요약 영역으로 이동하는지 확인했다.
+- 완료 preview requester 운송·통관 상세는 완료 리포트·피드백 영역으로 이동하는지 확인했다.
+- 새 코드 변경은 없고, 문서 상태만 완료로 갱신했다.
+- 로컬 파일만 수정했고 원격 푸시, 배포는 하지 않았다.
+
+검증:
+
+- `npx vitest run server/repositories/service-request-list-view.test.ts`
+- Playwright route smoke:
+  - requester `/requests/freight/75000000-0000-4000-8000-000000000001` top next focus `#request-bids`
+  - requester `/requests/clearance/75000000-0000-4000-8000-000000000002` top next focus `#request-bids`
+  - forwarder `/requests/freight/opportunities/75000000-0000-4000-8000-000000000001` top next focus `#opportunity-bid`
+  - broker `/requests/clearance/opportunities/75000000-0000-4000-8000-000000000002` top next focus `#opportunity-bid`
+  - requester `/requests/freight/00000000-0000-4000-8000-000000000101` top next focus `#request-completion`
+  - requester `/requests/clearance/00000000-0000-4000-8000-000000000201` top next focus `#request-completion`
