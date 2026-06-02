@@ -2272,6 +2272,26 @@
 - 브라우저 포워더 세션 `/settings/members`에서 `조건 일치 요청은 공개 직후 1회 알림 대상입니다.`, `비워두면 출발·수출 국가로 제한하지 않습니다.`, `알림을 꺼도 파트너 워크스페이스의 입찰 가능 요청은 계속 확인할 수 있습니다.` 표시 확인
 - `npm run review:local-routes`
 
+### marketplace owner operations triage review
+
+- 이전 작업 묶음은 파트너 관심 조건과 알림 기준이었고, 이번 작업은 대표가 운영 통계를 해석하지 않아도 개선 요청을 맡길 수 있게 만든 P80이다.
+- 다음 marketplace MVP 병목을 `owner operations triage`로 선정했다.
+- 운영 우선순위 큐 카드에 `담당 개발자/운영자`와 `이유 ...` 표시를 추가했다.
+- 복사용 운영 개선 요청문에도 담당 주체와 우선 이유를 포함했다.
+- 운영 샘플 상세 화면에서 개선 요청 문구를 바로 복사할 수 있게 하고, 먼저 확인할 상세 섹션 링크를 함께 표시했다.
+- 운영 상세 화면은 기존처럼 요청 제목, 품목 설명, 서류 파일명, 질문·답변 원문, 견적 금액과 메시지를 노출하지 않는다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 원격 push는 하지 않았다.
+
+검증:
+
+- `npx vitest run features/operations/platform-request-operations-panel.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- 브라우저 개발자 세션 `/operations/users#platform-request-operations`에서 `대표 우선순위 큐`, `담당 개발자` 또는 `담당 운영자`, `이유 ...` 표시 확인
+- 브라우저 개발자 세션 `/operations/requests/75000000-0000-4000-8000-000000000001`에서 개선 요청 안내, 바로 확인 링크, `요청 문장 복사` 버튼 확인
+- `npm run review:local-routes`
+
 ### marketplace completion handoff and dashboard action review
 
 - 이전 작업은 완료 전 피드백 조회 gating 회귀 테스트였고, 이번 작업 묶음은 완료된 거래의 리포트, 보관 서류, 피드백, 대시보드 다음 행동 흐름을 정리한 P72-P75다.
