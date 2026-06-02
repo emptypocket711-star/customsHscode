@@ -407,13 +407,21 @@ function ClearanceLifecycleControls({
 
   if (status === "partner_selected") {
     return (
-      <form action={startAction} className="flex scroll-mt-6 flex-wrap items-center gap-3" id="request-lifecycle">
+      <form action={startAction} className="grid scroll-mt-6 gap-3 rounded-md border border-emerald-200 bg-emerald-50 p-3 md:grid-cols-[1fr_auto] md:items-center" id="request-lifecycle">
         <input name="requestId" type="hidden" value={requestId} />
+        <div className="grid gap-1 text-sm leading-6 text-emerald-950">
+          <p className="font-semibold">선정 후 진행 시작 확인</p>
+          <p>
+            {viewerRole === "partner"
+              ? "화주와 신고 일정, 필요서류, HS/FTA/요건 검토 범위를 확인한 뒤 통관 진행을 시작합니다."
+              : "선정 관세사무소와 신고 일정, 필요서류, HS/FTA/요건 검토 범위를 확인한 뒤 통관 진행을 시작합니다."}
+          </p>
+        </div>
         <button className="focus-ring inline-flex h-10 items-center justify-center rounded-md bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-500" disabled={startPending} type="submit">
           {startPending ? "처리 중" : "통관 진행 시작"}
         </button>
         {startState.message && startState.requestId === requestId ? (
-          <span className={startState.status === "success" ? "text-sm font-medium text-emerald-800" : "text-sm font-medium text-red-700"}>
+          <span className={startState.status === "success" ? "text-sm font-medium text-emerald-800 md:col-span-2" : "text-sm font-medium text-red-700 md:col-span-2"}>
             {startState.message}
           </span>
         ) : null}

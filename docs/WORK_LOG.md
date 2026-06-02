@@ -826,6 +826,26 @@
 
 - `rg -n "withdraw|철회|수정|service_bids|견적 수정|견적 철회" docs supabase/migrations server/repositories`
 - `git diff -- docs/MARKETPLACE_BID_REVISION_POLICY.md docs/ROADMAP.md docs/WORK_LOG.md`
+
+### selected transaction start CTA clarity
+
+- 이전 작업은 견적 수정·철회 기능을 나중에 열 때 필요한 정책 경계를 문서화한 P146.1이고, 이번 작업은 업체 선정 후 실제 진행 시작 CTA의 확인 문구를 보강한 P147.1이다.
+- 운송 요청의 `partner_selected` 상태에서 진행 시작 버튼 주변에 선적 일정, 비용 포함 범위, 선정 파트너 전용 서류 공개 범위 확인 문구를 추가했다.
+- 운송 파트너 화면에는 화주와 선적 가능 일정, 비용 포함 범위, 필요 서류 전달 방식을 확인한 뒤 진행 시작하도록 표시했다.
+- 통관 요청의 `partner_selected` 상태에서도 신고 일정, 필요서류, HS/FTA/요건 검토 범위를 확인한 뒤 진행 시작하도록 표시했다.
+- 진행 시작 RPC와 상태 전이는 변경하지 않았다.
+- 새 migration, RLS 변경은 없다.
+- 로컬 파일만 수정했고 원격 푸시, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- 로컬 fixture `75000000-0000-4000-8000-000000000101`, `75000000-0000-4000-8000-000000000102`를 임시로 `partner_selected`로 변경
+- Playwright 화주 계정으로 운송·통관 상세의 `선정 후 진행 시작 확인` 문구 확인
+- Playwright 포워더 계정으로 운송 opportunity의 선정 후 확인 문구 확인
+- Playwright 관세사무소 계정으로 통관 opportunity의 선정 후 확인 문구 확인
+- 검증 후 두 fixture 상태를 원래 `open`으로 원복 확인
 - Playwright developer check: `/operations/requests/75000000-0000-4000-8000-000000000201`, 임시 sent match 기반 `알림 후 파트너 무응답 개선` 렌더 확인
 
 ### marketplace partner opportunity response clue
