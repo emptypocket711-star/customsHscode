@@ -208,4 +208,46 @@ describe("marketplace notification worker", () => {
       status: "retryable_failed"
     }));
   });
+
+  it("excludes declined matches from deadline reminder dry-runs", async () => {
+    const matchQuery = createQuery([{
+      id: "match-declined",
+      interest_status: "declined",
+      notification_status: "sent",
+      partner_company_id: "partner-1",
+      service_requests: {
+        deadline_at: "2026-06-01T03:00:00.000Z",
+        id: "request-1",
+        request_type: "freight",
+        status: "open"
+      }
+    }]);
+    const bidQuery = { in: vi.fn().mockResolvedValue({ data: [], error: null }), select: vi.fn().mockReturnThis() };
+    const deliveryQuery = { in: vi.fn().mockReturnThis(), select: vi.fn().mockReturnThis() };
+    deliveryQuery.in.mockReturnValueOnce(deliveryQuery).mockResolvedValueOnce({ data: [], error: null });
+
+    const supabase = {
+      from: vi.fn((table: string) => {
+        if (table === "service_request_partner_matches") return matchQuery;
+        if (table === "service_bids") return bidQuery;
+        if (table === "marketplace_notification_deliveries") return deliveryQuery;
+        throw new Error(`unexpected table ${table}`);
+      }),
+      rpc: vi.fn()
+    };
+
+    const result = await runMarketplaceNotificationWorker(supabase as never, {
+      dryRun: true,
+      now: new Date("2026-06-01T00:00:00.000Z"),
+      reminderWindowHours: 6
+    });
+
+    expect(result).toMatchObject({
+      dryRun: true,
+      initialTargetCount: 0,
+      reminderTargetCount: 0,
+      targetCount: 0
+    });
+    expect(supabase.rpc).not.toHaveBeenCalled();
+  });
 });

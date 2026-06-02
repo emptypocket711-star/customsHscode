@@ -931,6 +931,23 @@
 - `npm run lint`
 - Playwright check: 포워더 계정 `/requests/freight`, `입찰 가능 요청` 탭에서 임시 declined match의 `참여 보류` 배지와 안내 문구 렌더 확인
 
+### marketplace declined reminder regression
+
+- 이전 작업은 P132 목록에서 참여 보류 상태를 명확히 보여준 작업이고, 이번 작업은 P133 참여 보류 상태가 알림 리마인드 정책과 worker 경로에서 제외되는지 검증을 보강한 작업이다.
+- `marketplace-notification-worker.service.test.ts`에 declined match dry-run 회귀 테스트를 추가했다.
+- `interest_status=declined`, `notification_status=sent`, 마감 3시간 전이어도 `reminderTargetCount=0`, `targetCount=0`이 되는지 확인한다.
+- declined match에 대해 claim RPC가 호출되지 않는지도 확인한다.
+- notification policy test와 worker test를 함께 실행했다.
+- 로컬 notification rehearsal은 원격 Supabase URL 안전장치로 1차 차단됐고, `SUPABASE_URL=http://127.0.0.1:54321`와 로컬 service role key를 명시해 재실행 후 통과했다.
+- 다음 작업은 P134 marketplace declined re-entry review다. 이번 P133이 보류 상태의 알림 제외 검증이라면, P134는 보류 후 다시 참여할 수 있는 복귀 UX가 필요한지 검토하는 작업이다.
+
+검증:
+
+- `npx vitest run server/notifications/marketplace-notification-policy.test.ts server/jobs/marketplace-notification-worker.service.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_SERVICE_ROLE_KEY=... npm run ops:marketplace-notifications:rehearse-local`
+
 ## 2026-06-02
 
 ### local login review smoke

@@ -421,7 +421,8 @@
 | P130.1 marketplace opportunity viewed tracking | 완료 | 운영 상세 표시가 아니라 파트너가 opportunity 상세을 열었을 때 미확인 매칭을 열람 상태로 기록한다 | opportunity viewed tracking | unit, typecheck, lint, RLS, browser |
 | P131.1 marketplace opportunity decline action | 완료 | 자동 열람 기록이 아니라 파트너가 참여 보류를 명시해 리마인드와 운영 지표에서 구분되게 한다 | opportunity decline action | unit, typecheck, lint, RLS, browser |
 | P132.1 marketplace declined opportunity list clarity | 완료 | 상세 보류 액션이 아니라 opportunity 목록과 요약에서 참여 보류 상태를 더 명확히 구분한다 | declined opportunity list clarity | unit, typecheck, lint, browser |
-| P133.1 marketplace declined reminder regression | 예정 | 목록 표시가 아니라 참여 보류 상태가 알림 리마인드 정책과 worker rehearsal에서 제외되는지 회귀 검증을 보강한다 | declined reminder regression | unit, ops rehearsal |
+| P133.1 marketplace declined reminder regression | 완료 | 목록 표시가 아니라 참여 보류 상태가 알림 리마인드 정책과 worker rehearsal에서 제외되는지 회귀 검증을 보강한다 | declined reminder regression | unit, typecheck, lint, ops rehearsal |
+| P134.1 marketplace declined re-entry review | 예정 | 알림 제외 검증이 아니라 참여 보류 후 다시 참여할 수 있는 복귀 UX가 필요한지 검토하고 최소 구현 범위를 정한다 | declined re-entry review | product/UX review |
 
 #### P109 다음 병목 선정
 
@@ -815,6 +816,22 @@ P131은 상세 화면에서 `참여 보류`를 저장하는 액션이었다. 이
 5. 브라우저 검증에서는 포워더 목록에서 입찰 가능 요청 탭을 열고 임시 declined match의 보류 배지와 안내 문구를 확인했다.
 
 다음 작업은 P133 marketplace declined reminder regression이다. P132가 목록 표시 작업이라면, P133은 참여 보류 상태가 알림 리마인드 정책과 worker rehearsal에서 실제로 제외되는지 검증을 보강하는 작업이다.
+
+#### P133 declined reminder regression
+
+P133에서 참여 보류 상태가 알림 리마인드 대상에서 제외되는지 worker 레벨 회귀 테스트를 보강했다.
+
+P132는 목록에서 보류 상태를 명확히 보여주는 화면 작업이었다. 이번 P133은 보류 상태가 실제 알림 정책과 worker 경로에서도 일반 검토중 요청처럼 리마인드되지 않는지 검증하는 작업이다.
+
+구현 기준:
+
+1. `marketplace-notification-worker.service.test.ts`에 declined match dry-run 케이스를 추가했다.
+2. `interest_status=declined`, `notification_status=sent`, 마감 3시간 전이어도 `reminderTargetCount=0`임을 확인한다.
+3. worker가 declined match에 대해 claim RPC를 호출하지 않는지 확인한다.
+4. 기존 notification policy test와 worker test를 함께 실행했다.
+5. 로컬 notification rehearsal은 원격 Supabase URL 안전장치로 1차 차단됐고, 로컬 URL/키를 명시해 재실행 후 통과했다.
+
+다음 작업은 P134 marketplace declined re-entry review다. P133이 보류 상태의 알림 제외 검증이라면, P134는 파트너가 보류 후 다시 참여하고 싶을 때 어떤 복귀 UX가 필요한지 검토하는 작업이다.
 
 #### P34 다음 코드 작업 후보
 
