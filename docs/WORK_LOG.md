@@ -2238,6 +2238,23 @@
 - 브라우저 화주 세션 `/requests/clearance/75000000-0000-4000-8000-000000000002`에서 `최저 총액`, `최단 통관`, `예비 검토 가능` 배지 확인
 - `npm run review:local-routes`
 
+### marketplace overseas partner onboarding review
+
+- 이전 작업 묶음은 견적 도착 후 비교/선정 UX였고, 이번 작업은 해외 파트너가 가입하거나 역할 신청할 때 검증 자료와 제한 기능을 이해하는 앞단 병목을 보강한 P78이다.
+- 다음 marketplace MVP 병목을 `overseas partner onboarding`으로 선정했다.
+- 해외 수출입 파트너 가입 안내에 운영자 확인 자료와 확인 전 제한될 수 있는 기능을 분리해 표시했다.
+- 회사 설정의 플랫폼 역할 신청 화면에 해외 파트너 확인 자료와 보류될 수 있는 경우를 추가했다.
+- 한국 사업자등록번호가 없어도 신청 가능하다는 기존 방향은 유지하되, 공개 요청·매칭·민감 서류 공유는 운영 확인 전 제한될 수 있음을 명확히 했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 원격 push는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- 브라우저 화주 세션 `/settings/members`에서 `해외 파트너 확인 자료`, `보류될 수 있는 경우`, `회사명과 실제 사업 국가`, `거래 서류, 제품 자료, 선적 예정 정보` 표시 확인
+- `npm run review:local-routes`
+
 ### marketplace completion handoff and dashboard action review
 
 - 이전 작업은 완료 전 피드백 조회 gating 회귀 테스트였고, 이번 작업 묶음은 완료된 거래의 리포트, 보관 서류, 피드백, 대시보드 다음 행동 흐름을 정리한 P72-P75다.
