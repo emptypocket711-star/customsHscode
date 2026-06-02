@@ -340,7 +340,11 @@
 | P83.2 owner queue single primary action | 완료 | 담당/이유 표시가 아니라 대표 우선순위 큐에서 1순위만 기본 노출하고 다음 후보는 접어둔다 | operations density UX | unit, browser, typecheck, lint |
 | P83.3 operations density route smoke | 완료 | 우선순위 큐 밀도 조정이 아니라 변경 후 화주·포워더·관세사 주요 route가 계속 정상 렌더링되는지 확인한다 | role route smoke | browser, typecheck, lint |
 | P83.4 operations density work log sync | 완료 | route smoke가 아니라 운영 우선순위 큐 밀도 조정과 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
-| P84.1 operations detail handoff selection | 예정 | 운영 목록 밀도 조정이 아니라 복사한 개선 요청이 운영 상세의 실제 확인 위치로 이어지는 흐름을 다시 점검한다 | operations detail handoff rail | UX/code review |
+| P84.1 operations detail handoff selection | 완료 | 운영 목록 밀도 조정이 아니라 복사한 개선 요청이 운영 상세의 실제 확인 위치로 이어지는 흐름을 다시 점검한다 | handoff action strip selected | UX/code review |
+| P84.2 operations detail handoff action strip | 완료 | 운영 목록 1순위 노출이 아니라 운영 상세에서 확인 위치, 복사, 작업 전달 순서를 한 번에 보이게 한다 | operations detail UX | browser, typecheck, lint |
+| P84.3 operations detail route smoke | 완료 | 상세 handoff 표시가 아니라 변경 후 화주·포워더·관세사 주요 route가 계속 정상 렌더링되는지 확인한다 | role route smoke | browser, typecheck, lint |
+| P84.4 operations detail work log sync | 완료 | route smoke가 아니라 운영 상세 handoff 보강과 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
+| P85.1 requester next-action selection | 예정 | 운영 상세 handoff가 아니라 화주 요청 상세에서 사용자가 다음 행동을 바로 찾는지 다시 점검한다 | requester next-action rail | UX/code review |
 
 #### P34 다음 코드 작업 후보
 

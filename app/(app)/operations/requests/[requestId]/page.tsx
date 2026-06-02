@@ -173,6 +173,11 @@ export default async function OperationsRequestDetailPage({
             title={improvementPrompt.label}
           />
           <CardBody className="grid gap-3">
+            <div className="grid gap-2 rounded-md border border-slate-200 bg-slate-50 p-3 text-xs font-semibold text-slate-700 md:grid-cols-3">
+              <span>1. {improvementTarget?.label ?? "운영 요약 확인"}</span>
+              <span>2. 요청 문장 복사</span>
+              <span>3. 개발 작업으로 전달</span>
+            </div>
             <div className="grid gap-3 rounded-md border border-blue-100 bg-blue-50 p-3 text-sm leading-6 text-blue-950 md:grid-cols-[1fr_auto_auto] md:items-center">
               <p>
                 이 요청은 복사해서 개발 작업으로 넘기고, 먼저 <span className="font-semibold">{improvementTarget?.label}</span>에서 상태와 건수를 확인합니다.

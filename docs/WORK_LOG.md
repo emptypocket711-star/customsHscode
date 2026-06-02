@@ -57,6 +57,21 @@
 - Playwright developer check: `/operations/users#platform-request-operations`
 - `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
 
+### operations detail handoff action strip
+
+- 이전 작업은 P83 운영 우선순위 큐 밀도 조정이고, 이번 작업은 P84 운영 상세에서 복사한 개선 요청을 실제 작업 전달로 이어주는 handoff 보강이다.
+- 운영 상세 개선 요청 카드에 `확인 위치 -> 요청 문장 복사 -> 개발 작업으로 전달` 순서를 1-2-3 형태로 추가했다.
+- 기존 민감정보 제외 안내, 확인 위치 anchor, 복사 버튼, 개선 요청 pre 문구는 유지했다.
+- 권한/RLS, 운영 상세 조회 repository, 원문 비노출 정책, DB schema는 변경하지 않았다.
+- 다음 작업은 P85 marketplace 거래 흐름에서 사용자가 요청 작성 이후 “다음 행동”을 더 쉽게 찾는지 다시 점검하는 것이다. 이번 P84가 운영자 상세 handoff라면, P85는 실제 화주/파트너 거래 화면의 다음 행동 가시성 점검이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- Playwright developer check: `/operations/requests/75000000-0000-4000-8000-000000000001`
+- `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
+
 ## 2026-06-02
 
 ### local login review smoke
