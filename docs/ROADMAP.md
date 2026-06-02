@@ -375,7 +375,9 @@
 | P93.2 compact selected next-step summary | 완료 | 선정 후 카드 점검이 아니라 목록 row에서는 상세 3단계 카드를 요약 문구로 줄이고 상세 화면에서만 전체 안내를 유지한다 | compact selected summary | browser, typecheck, lint |
 | P94.1 compact completion report density review | 완료 | 선정 후 다음 업무 카드가 아니라 완료 상태 row의 완료 리포트 패널이 목록에서 과하게 펼쳐지는지 점검한다 | compact completion report panel selected | UX/code review |
 | P94.2 compact completion report summary | 완료 | 완료 리포트 점검이 아니라 목록 row에서는 전체 리포트/피드백 패널 대신 상세 작업 안내 요약만 보여준다 | compact completion summary | browser, typecheck, lint |
-| P95.1 partner compact opportunity density review | 예정 | 화주 완료 row 요약이 아니라 파트너 입찰 가능 목록의 compact opportunity row가 필요한 정보만 보여주는지 점검한다 | partner compact row audit | UX/code review |
+| P95.1 partner compact opportunity density review | 완료 | 화주 완료 row 요약이 아니라 파트너 입찰 가능 목록의 compact opportunity row가 필요한 정보만 보여주는지 점검한다 | freight compact status copy selected | UX/code review |
+| P95.2 freight opportunity compact status copy | 완료 | 파트너 목록 점검이 아니라 운송 compact row도 진행중/완료 상태를 선정 후 업무 안내로 묶어 통관과 맞춘다 | partner compact copy alignment | browser, typecheck, lint |
+| P96.1 marketplace status copy consistency review | 예정 | 파트너 compact row 단일 조건 수정이 아니라 운송·통관 요청/입찰 상태 문구 전반의 불일치를 점검한다 | status copy consistency audit | UX/code review |
 
 #### P34 다음 코드 작업 후보
 

@@ -240,6 +240,22 @@
 - Playwright requester detail smoke: 운송/통관 상세 route 렌더링 확인
 - `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
 
+### partner compact opportunity status copy
+
+- 이전 작업은 P94 화주 완료 row의 완료 리포트 요약이고, 이번 작업은 P95 파트너 입찰 가능 목록 row의 상태별 안내 문구 정합성 점검이다.
+- 통관 compact opportunity row는 `partner_selected`, `in_progress`, `completed` 상태를 모두 선정 후 업무 안내로 묶고 있었다.
+- 운송 compact opportunity row는 `partner_selected`만 선정 후 업무로 판단해, 진행중/완료 상태에서도 조건 확인·질문 등록·견적 제출 안내처럼 보일 수 있었다.
+- 운송 compact opportunity row도 진행중/완료 상태를 선정 후 업무 안내로 묶어 통관과 맞췄다.
+- 견적 제출 form, lifecycle action, 권한/RLS, DB schema는 변경하지 않았다.
+- 다음 작업은 P96 marketplace 상태 문구 전반의 정합성 점검이다. 이번 P95가 운송 compact row의 단일 상태 조건이라면, P96은 운송·통관 요청/입찰 상태 문구 전체를 훑는 작업이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- Playwright partner list check: 포워더/관세사무소 목록 route 렌더링 및 `입찰 작업` 링크 확인
+- `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
+
 ## 2026-06-02
 
 ### local login review smoke
