@@ -353,6 +353,22 @@
 - Playwright requester check: 운송/통관 화주 목록과 상세 route에서 `파트너 노출·알림 상태` 또는 상세 route 렌더링 확인
 - `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
 
+### requester match summary test coverage
+
+- 이전 작업은 P101 화주 요청 row의 파트너 노출·알림 상태 표시이고, 이번 작업은 P102 해당 read model과 panel의 회귀 테스트 보강이다.
+- `listServiceRequestMatchSummaries`가 request별 매칭 수와 pending/sent/skipped/failed 알림 상태를 집계하는지 테스트했다.
+- marketplace match schema가 없는 환경에서는 empty summary를 반환하는 fallback을 테스트했다.
+- `ServiceRequestMatchSummaryPanel`이 draft 상태에서는 렌더링되지 않고, 공개 이후에는 노출/알림 count를 렌더링하는지 테스트했다.
+- 코드 동작 변경 없이 테스트와 문서만 추가했다.
+- 다음 작업은 P103 zero-match UX 점검이다. 이번 P102가 테스트 보강이라면, P103은 노출 0건일 때 화주가 관심조건 확장 또는 운영 점검 요청으로 이어질 수 있는지 보는 작업이다.
+
+검증:
+
+- `npx vitest run server/repositories/service-request-match-summary.repository.test.ts features/service-requests/service-request-match-summary-panel.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
+
 ## 2026-06-02
 
 ### local login review smoke
