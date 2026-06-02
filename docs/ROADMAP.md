@@ -377,7 +377,9 @@
 | P94.2 compact completion report summary | 완료 | 완료 리포트 점검이 아니라 목록 row에서는 전체 리포트/피드백 패널 대신 상세 작업 안내 요약만 보여준다 | compact completion summary | browser, typecheck, lint |
 | P95.1 partner compact opportunity density review | 완료 | 화주 완료 row 요약이 아니라 파트너 입찰 가능 목록의 compact opportunity row가 필요한 정보만 보여주는지 점검한다 | freight compact status copy selected | UX/code review |
 | P95.2 freight opportunity compact status copy | 완료 | 파트너 목록 점검이 아니라 운송 compact row도 진행중/완료 상태를 선정 후 업무 안내로 묶어 통관과 맞춘다 | partner compact copy alignment | browser, typecheck, lint |
-| P96.1 marketplace status copy consistency review | 예정 | 파트너 compact row 단일 조건 수정이 아니라 운송·통관 요청/입찰 상태 문구 전반의 불일치를 점검한다 | status copy consistency audit | UX/code review |
+| P96.1 marketplace status copy consistency review | 완료 | 파트너 compact row 단일 조건 수정이 아니라 운송·통관 요청/입찰 상태 문구 전반의 불일치를 점검한다 | selected-or-later progress gap selected | UX/code review |
+| P96.2 request progress selected-or-later state | 완료 | 상태 문구 점검이 아니라 진행중/완료 요청도 이미 선정 단계가 끝난 것으로 progress를 표시하게 맞춘다 | progress state consistency | browser, typecheck, lint |
+| P97.1 request progress helper consolidation review | 예정 | progress 상태 보정이 아니라 운송·통관 progress 단계 계산을 공통 helper로 합칠 가치가 있는지 점검한다 | progress helper audit | code review |
 
 #### P34 다음 코드 작업 후보
 

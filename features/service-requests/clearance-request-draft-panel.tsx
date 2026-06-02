@@ -144,6 +144,10 @@ function statusTone(status: string): "neutral" | "warning" | "info" | "success" 
   return "neutral";
 }
 
+function isSelectedOrLaterStatus(status: string) {
+  return status === "partner_selected" || status === "in_progress" || status === "completed";
+}
+
 function bidStatusLabel(status: string) {
   if (status === "submitted") return "제출";
   if (status === "shortlisted") return "검토중";
@@ -369,8 +373,8 @@ function ClearanceProgress({
     { done: documents.length > 0, label: "서류" },
     { done: request.status !== "draft", label: "공개" },
     { done: questions.length > 0 && questions.every((question) => question.answer), label: "질문" },
-    { done: request.status === "bids_received" || request.status === "partner_selected", label: "견적" },
-    { done: request.status === "partner_selected", label: "선정" }
+    { done: request.status === "bids_received" || isSelectedOrLaterStatus(request.status), label: "견적" },
+    { done: isSelectedOrLaterStatus(request.status), label: "선정" }
   ];
 
   return (

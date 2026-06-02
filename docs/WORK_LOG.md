@@ -256,6 +256,22 @@
 - Playwright partner list check: 포워더/관세사무소 목록 route 렌더링 및 `입찰 작업` 링크 확인
 - `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
 
+### request progress selected-or-later state
+
+- 이전 작업은 P95 운송 compact opportunity row의 상태별 안내 문구 정합성이고, 이번 작업은 P96 운송·통관 요청 progress 단계의 상태 정합성 점검이다.
+- 진행중/완료 상태는 이미 파트너 선정 이후 단계인데, 요청 progress의 `선정` 단계는 `partner_selected` 상태에서만 완료로 표시될 수 있었다.
+- 운송/통관 파일에 `isSelectedOrLaterStatus` helper를 추가해 `partner_selected`, `in_progress`, `completed`를 모두 선정 이후 상태로 판단하게 했다.
+- 통관 progress의 `견적` 단계도 진행중/완료 상태에서 완료로 이어지게 맞췄다.
+- 상태 라벨, lifecycle action, 권한/RLS, DB schema는 변경하지 않았다.
+- 다음 작업은 P97 progress 단계 계산 공통화 검토다. 이번 P96이 상태 판단 보정이라면, P97은 운송·통관 progress 계산 중복을 공통 helper로 합칠 가치가 있는지 보는 작업이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- Playwright requester list check: 운송/통관 목록 렌더링 및 완료 row 요약 유지 확인
+- `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
+
 ## 2026-06-02
 
 ### local login review smoke

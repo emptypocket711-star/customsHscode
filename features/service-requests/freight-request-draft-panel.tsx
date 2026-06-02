@@ -239,6 +239,10 @@ function statusTone(status: string): "neutral" | "warning" | "info" | "success" 
   return "neutral";
 }
 
+function isSelectedOrLaterStatus(status: string) {
+  return status === "partner_selected" || status === "in_progress" || status === "completed";
+}
+
 function nextActionLabel(input: {
   bids: ReceivedFreightBidItem[];
   documents: FreightRequestDocumentItem[];
@@ -374,7 +378,7 @@ function RequestProgress({
     { done: status !== "draft", label: "공개" },
     { done: questions.length > 0 && questions.every((question) => question.answer), label: "질문" },
     { done: bids.length > 0, label: "견적" },
-    { done: status === "partner_selected", label: "선정" }
+    { done: isSelectedOrLaterStatus(status), label: "선정" }
   ];
 
   return (
