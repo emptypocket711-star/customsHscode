@@ -352,7 +352,11 @@
 | P86.2 partner next-focus regression tests | 완료 | 파트너 상세 UI 추가가 아니라 질문 확인, 견적 제출, 완료 처리 우선순위를 테스트로 고정한다 | partner next-action tests | unit, browser, typecheck, lint |
 | P86.3 partner next-action route smoke | 완료 | 파트너 next-focus 테스트가 아니라 변경 후 화주·포워더·관세사 주요 route가 계속 정상 렌더링되는지 확인한다 | role route smoke | browser, typecheck, lint |
 | P86.4 partner next-action work log sync | 완료 | route smoke가 아니라 파트너 next-focus 테스트 보강과 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
-| P87.1 partner bid form guidance selection | 예정 | 파트너 next-action이 아니라 포워더·관세사무소 견적 제출 form의 입력 전 안내와 안전 문구를 점검한다 | partner bid form rail | UX/code review |
+| P87.1 partner bid form guidance selection | 완료 | 파트너 next-action이 아니라 포워더·관세사무소 견적 제출 form의 입력 전 안내와 안전 문구를 점검한다 | freight bid guidance gap selected | UX/code review |
+| P87.2 freight bid form guidance | 완료 | 통관 견적 안전 문구가 아니라 포워더 운송 견적 form에도 입력 전 확인 안내와 제안 성격 문구를 추가한다 | freight bid form UX | browser, typecheck, lint |
+| P87.3 partner bid form route smoke | 완료 | 운송 견적 form 안내 보강이 아니라 변경 후 화주·포워더·관세사 주요 route가 계속 정상 렌더링되는지 확인한다 | role route smoke | browser, typecheck, lint |
+| P87.4 partner bid form work log sync | 완료 | route smoke가 아니라 포워더 운송 견적 form 안내 보강과 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
+| P88.1 completion feedback CTA selection | 예정 | 파트너 견적 form이 아니라 완료 후 화주/파트너 피드백 CTA가 적절한지 점검한다 | completion feedback rail | UX/code review |
 
 #### P34 다음 코드 작업 후보
 

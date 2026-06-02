@@ -969,6 +969,12 @@ export function FreightOpportunityRow({
       {opportunity.status === "partner_selected" || opportunity.status === "in_progress" || opportunity.status === "completed" ? null : (
       <form id={anchorPrefix ? `${anchorPrefix}-bid` : undefined} action={action} className="scroll-mt-6 grid gap-3 rounded-md bg-slate-50 p-3">
         <input name="requestId" type="hidden" value={opportunity.id} />
+        <div className="grid gap-1">
+          <p className="text-sm font-semibold text-slate-950">포워더 운송 견적 제출</p>
+          <p className="text-xs leading-5 text-slate-500">
+            총액, 포함·제외 비용, 유효기한, 리드타임을 함께 입력해 주세요. 위험물, 온도관리, 중고차 등 특수 조건은 견적 메모에 남기거나 제출 전 질문으로 확인합니다.
+          </p>
+        </div>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <label className="grid gap-1 text-sm font-medium text-slate-700">
             통화
@@ -1016,6 +1022,9 @@ export function FreightOpportunityRow({
             <RadioTower aria-hidden="true" size={16} />
             {pending ? "제출 중" : "견적 제출"}
           </button>
+          <span className="text-xs leading-5 text-slate-500">
+            운송 가능 여부를 보장하는 확정서가 아니라 화주가 비교할 운송 조건 제안입니다.
+          </span>
         </div>
         {state.message && state.requestId === opportunity.id ? (
           <p

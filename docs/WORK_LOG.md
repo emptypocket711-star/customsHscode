@@ -107,6 +107,22 @@
 - Playwright partner check: `/requests/freight/opportunities/75000000-0000-4000-8000-000000000001`, `/requests/clearance/opportunities/75000000-0000-4000-8000-000000000002`
 - `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
 
+### freight bid form guidance
+
+- 이전 작업은 P86 파트너 opportunity next-focus 테스트 보강이고, 이번 작업은 P87 포워더 운송 견적 제출 form의 입력 전 안내 보강이다.
+- 통관 견적 form에는 예비 견적과 담당자 검토 문구가 이미 있었지만, 운송 견적 form은 바로 입력칸부터 시작했다.
+- 포워더 운송 견적 제출 영역에 총액, 포함·제외 비용, 유효기한, 리드타임, 위험물·온도관리·중고차 특수 조건 확인 안내를 추가했다.
+- 제출 버튼 옆에 운송 가능 여부 보장 확정서가 아니라 화주 비교용 조건 제안이라는 문구를 추가했다.
+- 견적 제출 action, schema, RLS, DB schema는 변경하지 않았다.
+- 다음 작업은 P88 완료 후 피드백 CTA가 화주/파트너 양쪽에서 과하지 않고 실제 신뢰 데이터 축적에 도움이 되는지 점검하는 것이다. 이번 P87이 견적 제출 전 안내라면, P88은 완료 후 피드백 제출 안내다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- Playwright forwarder check: `/requests/freight/opportunities/75000000-0000-4000-8000-000000000001#opportunity-bid`
+- `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
+
 ## 2026-06-02
 
 ### local login review smoke
