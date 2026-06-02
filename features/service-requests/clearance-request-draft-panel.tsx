@@ -222,6 +222,20 @@ function ClearancePreSelectChecklist({ bid }: { bid: ReceivedClearanceBidItem })
   );
 }
 
+function clearanceBidComparisonBadges(bid: ReceivedClearanceBidItem, bids: ReceivedClearanceBidItem[]) {
+  const pricedBids = bids.filter((item) => item.totalAmount !== null);
+  const clearanceDayBids = bids.filter((item) => item.expectedClearanceDays !== null);
+  const lowestAmount = pricedBids.length > 0 ? Math.min(...pricedBids.map((item) => item.totalAmount ?? Infinity)) : null;
+  const shortestClearanceDays = clearanceDayBids.length > 0 ? Math.min(...clearanceDayBids.map((item) => item.expectedClearanceDays ?? Infinity)) : null;
+  const badges = [];
+
+  if (bid.totalAmount !== null && bid.totalAmount === lowestAmount) badges.push({ label: "최저 총액", tone: "success" as const });
+  if (bid.expectedClearanceDays !== null && bid.expectedClearanceDays === shortestClearanceDays) badges.push({ label: "최단 통관", tone: "info" as const });
+  if (bid.reviewAvailable) badges.push({ label: "예비 검토 가능", tone: "info" as const });
+
+  return badges;
+}
+
 function nextClearanceActionLabel(
   request: ClearanceRequestListItem,
   documents: ClearanceRequestDocumentItem[],
@@ -379,14 +393,17 @@ function requestStatusCounts(requests: ClearanceRequestListItem[], opportunities
 
 function ReceivedClearanceBidRow({
   bid,
+  bids,
   requestStatus
 }: {
   bid: ReceivedClearanceBidItem;
+  bids: ReceivedClearanceBidItem[];
   requestStatus: string;
 }) {
   const router = useRouter();
   const [state, action, pending] = useActionState(selectClearanceBidAction, selectBidInitialState);
   const canSelect = requestStatus !== "partner_selected" && (bid.status === "submitted" || bid.status === "shortlisted");
+  const comparisonBadges = clearanceBidComparisonBadges(bid, bids);
 
   useEffect(() => {
     if (state.status !== "idle") {
@@ -407,7 +424,9 @@ function ReceivedClearanceBidRow({
             <Badge tone="neutral">업체 {bid.bidderCompanyId.slice(0, 8)}</Badge>
             <Badge tone={bid.partnerTrust?.verificationStatus === "recommended_partner" ? "success" : bid.partnerTrust ? "info" : "neutral"}>{partnerTrustLabel(bid.partnerTrust)}</Badge>
             <Badge tone={bid.partnerFeedback ? "info" : "neutral"}>{partnerFeedbackLabel(bid.partnerFeedback)}</Badge>
-            {bid.reviewAvailable ? <Badge tone="info">예비 검토 가능</Badge> : null}
+            {comparisonBadges.map((badge) => (
+              <Badge key={badge.label} tone={badge.tone}>{badge.label}</Badge>
+            ))}
           </div>
           <p className="mt-1 text-xs text-slate-500">
             유효기한 {bid.validUntil ?? "-"} / 리드타임 {bid.leadTimeDays ?? "-"}일 / 예상 통관 {bid.expectedClearanceDays ?? "-"}일
@@ -714,7 +733,7 @@ export function ClearanceRequestRow({
           <div className="grid gap-3">
             <ClearanceBidComparisonGuide bids={bids} />
             {bids.map((bid) => (
-              <ReceivedClearanceBidRow bid={bid} key={bid.bidId} requestStatus={request.status} />
+              <ReceivedClearanceBidRow bid={bid} bids={bids} key={bid.bidId} requestStatus={request.status} />
             ))}
           </div>
         ) : (

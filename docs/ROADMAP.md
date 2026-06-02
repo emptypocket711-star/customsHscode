@@ -309,7 +309,8 @@
 | P76.6 publish readiness work log sync | 완료 | route smoke가 아니라 공개 준비 UX와 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
 | P77.1 next marketplace rail selection | 완료 | 공개 준비 작업 로그가 아니라 다음으로 이어갈 marketplace MVP 병목을 다시 고른다 | bid comparison and selection rail selected | roadmap/code review |
 | P77.2 freight bid comparison badges | 완료 | 공개 전 필수값 안내가 아니라 견적 도착 후 화주가 운송 견적의 최저가·최단 일정·후기 여부를 카드에서 바로 구분하게 한다 | freight bid comparison UX | browser, typecheck, lint |
-| P77.3 clearance bid comparison badges | 진행 | 운송 견적 비교 배지가 아니라 통관 견적에서도 총액·통관일수·검토 가능성을 같은 기준으로 보이게 한다 | clearance bid comparison UX | browser, typecheck, lint |
+| P77.3 clearance bid comparison badges | 완료 | 운송 견적 비교 배지가 아니라 통관 견적에서도 총액·통관일수·검토 가능성을 같은 기준으로 보이게 한다 | clearance bid comparison UX | browser, typecheck, lint |
+| P77.4 bid comparison e2e criteria docs | 진행 | 통관 견적 비교 배지가 아니라 운송·통관 견적 비교 배지 기준을 E2E 문서에 고정한다 | bid comparison docs sync | docs, diff check |
 
 #### P34 다음 코드 작업 후보
 
