@@ -241,6 +241,12 @@ function nextClearanceActionLabel(
   return "상태 확인 필요";
 }
 
+function missingClearancePublishFieldLabels(request: ClearanceRequestListItem) {
+  return [{ label: "목적국", value: request.destinationCountryCode }]
+    .filter((item) => !item.value)
+    .map((item) => item.label);
+}
+
 function ClearanceLifecycleControls({
   completionReport,
   completionReportDocuments = [],
@@ -552,7 +558,8 @@ export function ClearanceRequestRow({
   const router = useRouter();
   const [state, action, pending] = useActionState(publishClearanceRequestAction, publishInitialState);
   const [documentState, documentAction, documentPending] = useActionState(uploadClearanceRequestDocumentAction, documentUploadInitialState);
-  const canPublish = request.status === "draft";
+  const missingPublishFields = missingClearancePublishFieldLabels(request);
+  const canPublish = request.status === "draft" && missingPublishFields.length === 0;
   const selectedBid = bids.find((bid) => bid.status === "selected");
 
   useEffect(() => {
@@ -593,6 +600,20 @@ export function ClearanceRequestRow({
         <SelectedClearanceBrokerNextSteps documents={documents} selectedBid={selectedBid} />
       ) : null}
       <ClearanceLifecycleControls completionReport={completionReport} completionReportDocuments={completionReportDocuments} documents={documents} existingFeedback={feedbackByRequestId[request.id]} requestId={request.id} status={request.status} viewerRole="requester" />
+      {request.status === "draft" && missingPublishFields.length > 0 ? (
+        <div className="grid gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900 sm:grid-cols-[1fr_auto] sm:items-center">
+          <div>
+            <p className="font-semibold">관세사무소 공개 전 필수값을 보완해야 합니다.</p>
+            <p>누락값: {missingPublishFields.join(", ")}</p>
+          </div>
+          <a
+            className="focus-ring inline-flex h-9 items-center justify-center rounded-md border border-amber-300 bg-white px-3 text-xs font-semibold text-amber-900 hover:bg-amber-100"
+            href="#request-draft-form"
+          >
+            초안 작성으로 이동
+          </a>
+        </div>
+      ) : null}
       {compact ? (
         <p className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600">
           서류 {documents.length}건 / 질문 {questions.length}건 / 견적 {bids.length}건입니다. 첨부, 답변, 견적 비교와 공개 설정은 상세 작업에서 처리합니다.
