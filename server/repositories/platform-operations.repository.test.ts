@@ -500,4 +500,47 @@ describe("platform request operations summary", () => {
     expect(prompt?.prompt).not.toContain("민감한 품목 설명");
     expect(prompt?.prompt).not.toContain("민감한 요청 제목");
   });
+
+  it("builds no-response prompts when notifications were sent but no bid was submitted", () => {
+    const detail: PlatformRequestOperationsDetail = {
+      bids: [],
+      clearanceDetail: null,
+      completionReport: null,
+      documents: [],
+      feedbackSummary: { averageRating: null, count: 0, lowScoreCount: 0 },
+      freightDetail: null,
+      matchSummary: {
+        failedNotificationCount: 1,
+        matchedPartnerCount: 2,
+        pendingNotificationCount: 0,
+        sentNotificationCount: 2,
+        skippedNotificationCount: 0
+      },
+      questions: [],
+      request: {
+        createdAt: "2026-06-01T00:00:00.000Z",
+        deadlineAt: null,
+        destinationCountryCode: "KR",
+        direction: "import",
+        hskCode: null,
+        id: "req-1",
+        originCountryCode: "CN",
+        productSummary: "민감한 품목 설명",
+        requestType: "freight",
+        status: "open",
+        title: "민감한 요청 제목"
+      },
+      schemaReady: true
+    };
+
+    const prompt = buildPlatformRequestImprovementPrompt(detail);
+
+    expect(prompt?.category).toBe("notification_no_response");
+    expect(prompt?.label).toBe("알림 후 파트너 무응답 개선");
+    expect(prompt?.prompt).toContain("알림 발송 수: 2");
+    expect(prompt?.prompt).toContain("알림 실패 수: 1");
+    expect(prompt?.prompt).toContain("후속 알림/운영 연락 기준");
+    expect(prompt?.prompt).not.toContain("민감한 품목 설명");
+    expect(prompt?.prompt).not.toContain("민감한 요청 제목");
+  });
 });

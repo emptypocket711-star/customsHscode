@@ -413,7 +413,8 @@
 | P122.1 marketplace production email rehearsal gate | 완료 | fanout 정책 결정이 아니라 실제 provider를 통제된 테스트 수신함으로 리허설할 수 있는 조건을 정한다 | production email rehearsal gate | ops/security review |
 | P123.1 marketplace email provider final readiness review | 완료 | production rehearsal gate가 아니라 알림 email provider 전체의 남은 위험과 다음 병목을 최종 정리한다 | email readiness final review | docs, rg, tests |
 | P124.1 marketplace no-response notification operations selection | 완료 | email provider 준비가 아니라 알림 후에도 응답 없는 파트너를 운영자가 어떻게 발견하고 조치할지 다음 병목을 정한다 | no-response ops metric | unit, typecheck, lint, browser |
-| P125.1 marketplace no-response operations detail handoff | 예정 | 운영 요약 지표가 아니라 알림 후 무응답 샘플 상세에서 운영자가 어떤 확인 위치와 개선 요청문을 보게 할지 연결한다 | no-response detail handoff | unit, UX, browser |
+| P125.1 marketplace no-response operations detail handoff | 완료 | 운영 요약 지표가 아니라 알림 후 무응답 샘플 상세에서 운영자가 어떤 확인 위치와 개선 요청문을 보게 할지 연결한다 | no-response detail handoff | unit, typecheck, lint, browser |
+| P126.1 marketplace partner opportunity response clue | 예정 | 운영자 상세 프롬프트가 아니라 파트너 opportunity 화면에서 알림을 받은 파트너가 왜 응답하지 않는지 판단할 수 있는 상태 단서를 보강한다 | partner response clue | unit, UX, browser |
 
 #### P109 다음 병목 선정
 
@@ -678,6 +679,22 @@ P124에서 운영 요약에 `알림 후 무응답` 지표를 추가했다.
 6. 운영 화면 details를 펼쳐 브라우저에서 새 지표가 표시되는지 확인했다.
 
 다음 작업은 P125 marketplace no-response operations detail handoff다. P124가 운영 요약에 새 지표를 추가한 작업이라면, P125는 무응답 샘플 상세 페이지에서 운영자가 어떤 위치를 확인하고 나에게 어떤 개선 요청문을 줄지 더 구체적으로 연결하는 작업이다.
+
+#### P125 no-response operations detail handoff
+
+P125에서 알림 후에도 견적이 없는 요청 상세 화면에 별도 개선 프롬프트를 연결했다.
+
+P124는 운영 요약 패널에서 `알림 후 무응답` 요청 수와 샘플 큐를 발견하게 하는 작업이었다. 이번 P125는 그 샘플을 클릭한 뒤 개별 요청 상세에서 운영자가 확인해야 할 위치와 복사 가능한 개선 요청문을 바로 받게 하는 작업이다.
+
+구현 기준:
+
+1. open 상태, active bid 없음, `sentNotificationCount > 0`이면 `notification_no_response` 개선 프롬프트를 만든다.
+2. zero-match 요청은 여전히 `파트너 노출 0건` 프롬프트가 우선한다.
+3. 프롬프트에는 알림 발송/대기/실패 수만 포함하고 요청 제목, 품목 설명, 파일명, 단가 원문은 포함하지 않는다.
+4. 상세 화면의 바로가기 target은 `#request-matches`로 연결해 파트너 노출·알림 상태를 먼저 보게 한다.
+5. 단위 테스트, typecheck, lint, 브라우저 검증으로 상세 프롬프트 렌더를 확인했다.
+
+다음 작업은 P126 marketplace partner opportunity response clue다. P125가 운영자 상세 화면의 개선 프롬프트 연결이라면, P126은 파트너가 실제 opportunity 화면에서 응답하기 전에 어떤 정보가 부족하거나 어떤 다음 행동을 해야 하는지 더 쉽게 판단하게 만드는 작업이다.
 
 #### P34 다음 코드 작업 후보
 

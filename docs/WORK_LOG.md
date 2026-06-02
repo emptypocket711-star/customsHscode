@@ -792,6 +792,25 @@
 - `npm run lint`
 - Playwright developer check: `/operations/users#platform-request-operations`, details 펼침 후 `알림 후 무응답` 렌더 확인
 
+### marketplace no-response operations detail handoff
+
+- 이전 작업은 P124 운영 요약 패널에 `알림 후 무응답` 지표를 추가한 작업이고, 이번 작업은 P125 개별 요청 상세 화면에서 같은 병목을 운영 개선 프롬프트와 확인 위치로 연결한 작업이다.
+- `PlatformRequestOperationsImprovementPrompt`에 `notification_no_response` category를 추가했다.
+- open 상태, active bid 없음, `sentNotificationCount > 0`인 요청은 `알림 후 파트너 무응답 개선` 프롬프트를 표시한다.
+- zero-match 요청은 계속 `파트너 노출 0건 매칭 조건 개선` 프롬프트가 먼저 나오도록 순서를 유지했다.
+- 프롬프트에는 알림 발송/대기/실패 수만 포함하고, 요청 제목·품목 설명·서류 파일명·견적 원문은 포함하지 않는다.
+- 상세 화면의 `notification_no_response` 바로가기는 `#request-matches`의 `파트너 노출 상태 확인`으로 연결했다.
+- 브라우저 검증에서는 공개/무입찰 샘플 요청에 sent 매칭 row를 임시로 추가해 프롬프트 렌더를 확인한 뒤 즉시 삭제했다.
+- reviewer agent는 현재 thread agent limit 때문에 새로 생성하지 못해, 이번 단계는 직접 코드 리뷰와 자동 검증으로 대체했다.
+- 다음 작업은 P126 marketplace partner opportunity response clue다. 이번 P125가 운영자 상세 화면의 개선 프롬프트 연결이라면, P126은 파트너 opportunity 화면에서 응답 판단 단서를 보강하는 작업이다.
+
+검증:
+
+- `npx vitest run server/repositories/platform-operations.repository.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- Playwright developer check: `/operations/requests/75000000-0000-4000-8000-000000000201`, 임시 sent match 기반 `알림 후 파트너 무응답 개선` 렌더 확인
+
 ## 2026-06-02
 
 ### local login review smoke

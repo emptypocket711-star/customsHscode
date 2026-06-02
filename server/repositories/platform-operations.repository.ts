@@ -149,6 +149,7 @@ export type PlatformRequestOperationsImprovementPrompt = {
     | "draft_activation"
     | "lifecycle_followup"
     | "match_condition"
+    | "notification_no_response"
     | "question_response"
     | "workflow_review";
   label: string;
@@ -381,6 +382,25 @@ export function buildPlatformRequestImprovementPrompt(
         ...commonLines,
         "목표: 공개됐지만 파트너 노출이 0건인 요청에서 요청 조건, 파트너 관심 조건, 검증 상태, 알림 대상 계산을 점검해줘.",
         "확인할 것: 요청 국가·업무 유형·특수 조건, 파트너 관심 조건 저장값, 숨김/정지/차단 업체 제외, 알림 worker dry-run 결과."
+      ].join("\n")
+    };
+  }
+
+  if (
+    request.status === "open" &&
+    activeBids === 0 &&
+    (detail.matchSummary?.sentNotificationCount ?? 0) > 0
+  ) {
+    return {
+      category: "notification_no_response",
+      label: "알림 후 파트너 무응답 개선",
+      prompt: [
+        ...commonLines,
+        formatPromptLine("알림 발송 수", detail.matchSummary?.sentNotificationCount ?? 0),
+        formatPromptLine("알림 대기 수", detail.matchSummary?.pendingNotificationCount ?? 0),
+        formatPromptLine("알림 실패 수", detail.matchSummary?.failedNotificationCount ?? 0),
+        "목표: 알림이 전달됐지만 견적이 없는 요청에서 파트너가 응답하기 쉽게 만들고 운영 후속 조치 기준을 정리해줘.",
+        "확인할 것: 파트너 노출·알림 상태, 요청 필수 정보 부족 여부, 질문하기 CTA, 후속 알림/운영 연락 기준, 알림 피로도."
       ].join("\n")
     };
   }

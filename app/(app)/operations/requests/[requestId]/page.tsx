@@ -60,7 +60,7 @@ function improvementPromptTarget(category: string) {
     };
   }
 
-  if (category === "match_condition") {
+  if (category === "match_condition" || category === "notification_no_response") {
     return {
       href: "#request-matches",
       label: "파트너 노출 상태 확인"
