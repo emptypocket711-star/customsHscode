@@ -2255,6 +2255,23 @@
 - 브라우저 화주 세션 `/settings/members`에서 `해외 파트너 확인 자료`, `보류될 수 있는 경우`, `회사명과 실제 사업 국가`, `거래 서류, 제품 자료, 선적 예정 정보` 표시 확인
 - `npm run review:local-routes`
 
+### marketplace partner preference notification review
+
+- 이전 작업 묶음은 해외 파트너 온보딩 안내였고, 이번 작업은 포워더·관세사무소가 어떤 조건과 알림 기준으로 요청을 받을지 설정하는 P79다.
+- 다음 marketplace MVP 병목을 `partner preference notification`으로 선정했다.
+- 파트너 관심 조건 화면의 알림 영역에 공개 직후 1회 알림, 마감 임박·묶음 알림, 알림 off 시에도 워크스페이스 확인 가능 기준을 추가했다.
+- 출발/수출 국가, 도착/수입 국가, 항구·공항·지역, 화물 태그 입력칸에 비워둘 때 제한하지 않는다는 안내를 추가했다.
+- 기존 저장 액션, partner preference schema, 알림 on/off 필드는 유지했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 원격 push는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- 브라우저 포워더 세션 `/settings/members`에서 `조건 일치 요청은 공개 직후 1회 알림 대상입니다.`, `비워두면 출발·수출 국가로 제한하지 않습니다.`, `알림을 꺼도 파트너 워크스페이스의 입찰 가능 요청은 계속 확인할 수 있습니다.` 표시 확인
+- `npm run review:local-routes`
+
 ### marketplace completion handoff and dashboard action review
 
 - 이전 작업은 완료 전 피드백 조회 gating 회귀 테스트였고, 이번 작업 묶음은 완료된 거래의 리포트, 보관 서류, 피드백, 대시보드 다음 행동 흐름을 정리한 P72-P75다.
