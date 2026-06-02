@@ -772,6 +772,26 @@
 - `rg -n "P123.1|P124.1|MARKETPLACE_EMAIL_PROVIDER_FINAL_READINESS_REVIEW|Remaining Risks|no-response" docs/MARKETPLACE_EMAIL_PROVIDER_FINAL_READINESS_REVIEW.md docs/ROADMAP.md docs/WORK_LOG.md`
 - `git diff --check`
 
+### marketplace no-response notification operations metric
+
+- 이전 작업은 P123 email provider 준비 상태를 닫는 최종 리뷰이고, 이번 작업은 P124 알림 후에도 응답 없는 파트너를 운영자가 발견할 수 있게 운영 요약 지표를 추가한 작업이다.
+- `PlatformRequestOperationsSummary`에 `notifiedWithoutBids`를 추가했다.
+- open 상태, active bid 없음, match summary의 `sentNotificationCount > 0`인 요청을 알림 후 무응답으로 계산한다.
+- 파트너 노출이 0건인 요청은 계속 `노출 0건`으로 먼저 분리한다.
+- 운영 우선순위 큐에 `알림 후 무응답` 항목을 추가했다.
+- 복사용 운영 개선 요청문에 `알림 후 무응답` 핵심 지표를 추가했다.
+- 상세 진단 지표에 `알림 전달 후에도 견적이 없는 공개 요청`을 추가했다.
+- 운영 화면 details를 펼쳐 `/operations/users#platform-request-operations`에서 새 지표가 렌더링되는지 브라우저로 확인했다.
+- 이번 P124는 P123처럼 email provider 준비 상태를 리뷰한 작업이 아니다. 알림 이후 실제 파트너 응답이 없는 운영 병목을 화면 지표로 분리한 코드 작업이다.
+- 다음 작업은 P125 marketplace no-response operations detail handoff다. 이번 P124가 운영 요약 지표라면, P125는 무응답 샘플 상세 페이지에서 운영자가 어떤 확인 위치와 개선 요청문을 보게 할지 연결하는 작업이다.
+
+검증:
+
+- `npx vitest run server/repositories/platform-operations.repository.test.ts features/operations/platform-request-operations-panel.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- Playwright developer check: `/operations/users#platform-request-operations`, details 펼침 후 `알림 후 무응답` 렌더 확인
+
 ## 2026-06-02
 
 ### local login review smoke

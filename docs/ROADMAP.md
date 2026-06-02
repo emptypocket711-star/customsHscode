@@ -412,7 +412,8 @@
 | P121.1 marketplace notification fanout decision | 완료 | opt-in rehearsal이 아니라 한 회사의 여러 opt-in 사용자에게 알림을 보낼지, 1명 관리자 우선 구조를 유지할지 결정한다 | single-recipient MVP retained | product/security review |
 | P122.1 marketplace production email rehearsal gate | 완료 | fanout 정책 결정이 아니라 실제 provider를 통제된 테스트 수신함으로 리허설할 수 있는 조건을 정한다 | production email rehearsal gate | ops/security review |
 | P123.1 marketplace email provider final readiness review | 완료 | production rehearsal gate가 아니라 알림 email provider 전체의 남은 위험과 다음 병목을 최종 정리한다 | email readiness final review | docs, rg, tests |
-| P124.1 marketplace no-response notification operations selection | 예정 | email provider 준비가 아니라 알림 후에도 응답 없는 파트너를 운영자가 어떻게 발견하고 조치할지 다음 병목을 정한다 | no-response ops selection | product/code review |
+| P124.1 marketplace no-response notification operations selection | 완료 | email provider 준비가 아니라 알림 후에도 응답 없는 파트너를 운영자가 어떻게 발견하고 조치할지 다음 병목을 정한다 | no-response ops metric | unit, typecheck, lint, browser |
+| P125.1 marketplace no-response operations detail handoff | 예정 | 운영 요약 지표가 아니라 알림 후 무응답 샘플 상세에서 운영자가 어떤 확인 위치와 개선 요청문을 보게 할지 연결한다 | no-response detail handoff | unit, UX, browser |
 
 #### P109 다음 병목 선정
 
@@ -660,6 +661,23 @@ P123에서 P113-P122 email provider 준비 작업 전체를 최종 리뷰했다.
 세부 리뷰는 [MARKETPLACE_EMAIL_PROVIDER_FINAL_READINESS_REVIEW.md](./MARKETPLACE_EMAIL_PROVIDER_FINAL_READINESS_REVIEW.md)에 정리했다.
 
 다음 작업은 P124 marketplace no-response notification operations selection이다. P123이 email provider 준비 상태를 닫는 리뷰라면, P124는 알림 이후에도 응답 없는 파트너를 운영자가 어떻게 발견하고 조치할지 다음 병목을 정하는 작업이다.
+
+#### P124 no-response notification operations metric
+
+P124에서 운영 요약에 `알림 후 무응답` 지표를 추가했다.
+
+기존 `견적 없는 공개`는 공개됐지만 견적이 없는 모든 요청을 묶었다. 이번 작업에서는 그중 파트너 매칭과 알림 전달이 있었는데도 견적이 없는 요청을 별도로 분리했다.
+
+구현 기준:
+
+1. `notifiedWithoutBids` summary count를 추가했다.
+2. open 상태, active bid 없음, match summary의 `sentNotificationCount > 0`인 요청을 알림 후 무응답으로 본다.
+3. zero-match 요청은 여전히 `노출 0건`으로 우선 분리한다.
+4. 운영 우선순위 큐와 복사용 요청문에 `알림 후 무응답`을 포함했다.
+5. 상세 진단 지표에 `알림 전달 후에도 견적이 없는 공개 요청`을 추가했다.
+6. 운영 화면 details를 펼쳐 브라우저에서 새 지표가 표시되는지 확인했다.
+
+다음 작업은 P125 marketplace no-response operations detail handoff다. P124가 운영 요약에 새 지표를 추가한 작업이라면, P125는 무응답 샘플 상세 페이지에서 운영자가 어떤 위치를 확인하고 나에게 어떤 개선 요청문을 줄지 더 구체적으로 연결하는 작업이다.
 
 #### P34 다음 코드 작업 후보
 

@@ -173,6 +173,7 @@ export type PlatformRequestOperationsSummary = {
   freight: number;
   inProgress: number;
   lowFeedbacks: number;
+  notifiedWithoutBids: number;
   open: number;
   openWithoutBids: number;
   openWithoutMatches: number;
@@ -232,6 +233,7 @@ function emptySummary(schemaReady: boolean): PlatformRequestOperationsSummary {
     freight: 0,
     inProgress: 0,
     lowFeedbacks: 0,
+    notifiedWithoutBids: 0,
     open: 0,
     openWithoutBids: 0,
     openWithoutMatches: 0,
@@ -510,6 +512,11 @@ export function summarizePlatformRequestOperations(input: {
   const openWithoutBidRows = input.requests.filter((request) =>
     request.status === "open" && !bidRequestIds.has(request.id)
   );
+  const notifiedWithoutBidRows = input.matchSummaries
+    ? openWithoutBidRows.filter((request) =>
+      (input.matchSummaries?.get(request.id)?.sentNotificationCount ?? 0) > 0
+    )
+    : [];
   const bidsReceivedRows = input.requests.filter((request) => request.status === "bids_received");
   const inProgressRows = input.requests.filter((request) => request.status === "in_progress");
   const unansweredQuestionRows = Array.from(new Set(input.questions
@@ -533,6 +540,7 @@ export function summarizePlatformRequestOperations(input: {
 
   summary.openWithoutBids = openWithoutBidRows.length;
   summary.openWithoutMatches = openWithoutMatchRows.length;
+  summary.notifiedWithoutBids = notifiedWithoutBidRows.length;
   summary.staleDrafts = staleDraftRows.length;
   summary.staleInProgress = staleInProgressRows.length;
   summary.staleOpen = staleOpenRows.length;
@@ -611,6 +619,13 @@ export function summarizePlatformRequestOperations(input: {
       anchor: "request-matches",
       detail: `${requestTypeLabel(request.request_type)} 요청의 파트너 노출 수와 알림 상태를 확인합니다.`,
       label: "노출 0건 확인"
+    }));
+  } else if (notifiedWithoutBidRows.length > 0) {
+    summary.actionRequest = `알림이 전달됐지만 견적이 없는 공개 요청 ${notifiedWithoutBidRows.length}건의 파트너 응답 유도와 운영 후속 조치를 점검해줘.`;
+    summary.actionItems = notifiedWithoutBidRows.slice(0, 3).map((request) => buildActionItem(request, {
+      anchor: "request-matches",
+      detail: `${requestTypeLabel(request.request_type)} 요청의 알림 전달 후 파트너 무응답 상태를 확인합니다.`,
+      label: "알림 후 무응답 확인"
     }));
   } else if (openWithoutBidRows.length > 0) {
     summary.actionRequest = `공개됐지만 견적이 없는 요청 ${openWithoutBidRows.length}건의 매칭 조건과 파트너 알림 흐름을 점검해줘.`;

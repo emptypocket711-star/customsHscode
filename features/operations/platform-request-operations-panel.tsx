@@ -114,6 +114,15 @@ function buildOwnerActionQueue(summary: PlatformRequestOperationsSummary) {
       tone: "warning" as const
     },
     {
+      action: "알림 후 파트너 무응답 운영 후속 조치 요청",
+      count: summary.notifiedWithoutBids,
+      detail: "알림이 전달됐는데도 견적이 없으면 요청 조건보다 파트너 응답 유도와 후속 알림 기준을 먼저 봅니다.",
+      label: "알림 후 무응답",
+      owner: "운영자",
+      reason: "파트너 응답 지연",
+      tone: "warning" as const
+    },
+    {
       action: "파트너 매칭 조건과 알림 worker 점검 요청",
       count: summary.openWithoutBids,
       detail: "공개됐지만 견적이 없으면 요청 품질, 관심 조건, 알림 중복 방지가 같이 점검 대상입니다.",
@@ -182,6 +191,7 @@ function buildCopyReadyOperationsRequest(
     `- 선정 후 진행: ${summary.inProgress}건`,
     `- 완료: ${summary.completed}건`,
     `- 파트너 노출 0건: ${summary.openWithoutMatches}건`,
+    `- 알림 후 무응답: ${summary.notifiedWithoutBids}건`,
     `- 완료 리포트 없음: ${summary.completedWithoutReport}건`,
     `- 완료 후 피드백 없음: ${summary.completedWithoutFeedback}건`,
     "",
@@ -262,6 +272,7 @@ export function buildPlatformRequestOperationsMetricGroups(summary: PlatformRequ
       { detail: "완료 후 신뢰 데이터가 비어있는 거래", label: "후기 미제출", tone: tone(summary.completedWithoutFeedback), value: `${summary.completedWithoutFeedback}건` },
       { detail: "화주 답변이 필요한 질문", label: "미답변 질문", tone: tone(summary.unansweredQuestions), value: `${summary.unansweredQuestions}건` },
       { detail: "파트너 관심 조건과 맞지 않아 노출되지 않은 공개 요청", label: "노출 0건", tone: tone(summary.openWithoutMatches), value: `${summary.openWithoutMatches}건` },
+      { detail: "알림 전달 후에도 견적이 없는 공개 요청", label: "알림 후 무응답", tone: tone(summary.notifiedWithoutBids), value: `${summary.notifiedWithoutBids}건` },
       { detail: "매칭·알림 점검 대상", label: "견적 없는 공개", tone: tone(summary.openWithoutBids), value: `${summary.openWithoutBids}건` },
       { detail: "저장 후 다음 행동 안내 대상", label: "오래된 초안", tone: tone(summary.staleDrafts), value: `${summary.staleDrafts}건` },
       { detail: "완료 처리·후속 안내 점검 대상", label: "오래 진행중", tone: tone(summary.staleInProgress), value: `${summary.staleInProgress}건` },

@@ -104,6 +104,45 @@ describe("platform request operations summary", () => {
     });
   });
 
+  it("separates notified partners without bids from generic open requests without bids", () => {
+    const summary = summarizePlatformRequestOperations({
+      bids: [],
+      matchSummaries: new Map([
+        ["req-1", {
+          failedNotificationCount: 0,
+          matchedPartnerCount: 2,
+          pendingNotificationCount: 0,
+          sentNotificationCount: 2,
+          skippedNotificationCount: 0
+        }],
+        ["req-2", {
+          failedNotificationCount: 0,
+          matchedPartnerCount: 1,
+          pendingNotificationCount: 1,
+          sentNotificationCount: 0,
+          skippedNotificationCount: 0
+        }]
+      ]),
+      now: new Date("2026-06-01T00:00:00.000Z"),
+      questions: [],
+      requests: [
+        { created_at: "2026-05-31T00:00:00.000Z", deadline_at: "2026-06-02T00:00:00.000Z", id: "req-1", request_type: "freight", status: "open" },
+        { created_at: "2026-05-31T00:00:00.000Z", deadline_at: "2026-06-02T00:00:00.000Z", id: "req-2", request_type: "clearance", status: "open" }
+      ]
+    });
+
+    expect(summary.openWithoutBids).toBe(2);
+    expect(summary.openWithoutMatches).toBe(0);
+    expect(summary.notifiedWithoutBids).toBe(1);
+    expect(summary.actionRequest).toContain("알림이 전달됐지만 견적이 없는 공개 요청 1건");
+    expect(summary.actionItems[0]).toMatchObject({
+      href: "/operations/requests/req-1#request-matches",
+      label: "알림 후 무응답 확인",
+      requestId: "req-1",
+      requestType: "freight"
+    });
+  });
+
   it("tracks post-selection lifecycle counts and stale in-progress requests", () => {
     const summary = summarizePlatformRequestOperations({
       bids: [],

@@ -23,6 +23,7 @@ function summaryFixture(overrides: Partial<PlatformRequestOperationsSummary> = {
     freight: 0,
     inProgress: 0,
     lowFeedbacks: 0,
+    notifiedWithoutBids: 0,
     open: 0,
     openWithoutBids: 0,
     openWithoutMatches: 0,
@@ -58,7 +59,7 @@ describe("platform request operations panel", () => {
       "선정 후 진행",
       "거래 후기"
     ]);
-    expect(groups.diagnosticMetrics).toHaveLength(12);
+    expect(groups.diagnosticMetrics).toHaveLength(13);
   });
 
   it("moves workflow diagnosis counts out of the default metric cards", () => {
@@ -75,6 +76,7 @@ describe("platform request operations panel", () => {
     expect(groups.primaryMetrics.map((metric) => metric.label)).not.toContain("견적 없는 공개");
     expect(groups.diagnosticMetrics.map((metric) => metric.label)).toContain("미답변 질문");
     expect(groups.diagnosticMetrics.map((metric) => metric.label)).toContain("노출 0건");
+    expect(groups.diagnosticMetrics.map((metric) => metric.label)).toContain("알림 후 무응답");
     expect(groups.diagnosticMetrics.map((metric) => metric.label)).toContain("견적 없는 공개");
   });
 
@@ -123,6 +125,7 @@ describe("platform request operations panel", () => {
           completionReportsSubmitted: 7,
           feedbackCount: 8,
           inProgress: 9,
+          notifiedWithoutBids: 1,
           open: 10,
           total: 11
         })
@@ -131,6 +134,7 @@ describe("platform request operations panel", () => {
 
     expect(html).toContain("핵심 지표:");
     expect(html).toContain("완료 리포트 없음: 1건");
+    expect(html).toContain("알림 후 무응답: 1건");
     expect(html).not.toContain("완료 리포트 운영 검토 필요: 3건");
     expect(html).not.toContain("완료 리포트 잠금 완료: 5건");
   });
