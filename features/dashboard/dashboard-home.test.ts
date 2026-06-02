@@ -86,4 +86,21 @@ describe("dashboard marketplace next actions", () => {
     expect(actions.map((action) => action.href)).toContain("/requests/freight?workspace=requester");
     expect(actions.map((action) => action.href)).toContain("/requests/freight?workspace=forwarder");
   });
+
+  it("labels partner next actions as ongoing partner work, not only bid availability", () => {
+    const actions = buildMarketplaceNextActions(activityFixture({
+      freightPartnerActionRequestId: "selected-freight-1",
+      freightPartnerActions: 1
+    }), {
+      ...summaryFixture,
+      partyTypes: ["forwarder"]
+    });
+
+    expect(actions[0]).toMatchObject({
+      description: "매칭된 운송 요청의 견적 제출, 선정 후 진행, 완료 전환 업무를 처리합니다.",
+      href: "/requests/freight/opportunities/selected-freight-1",
+      label: "파트너 업무",
+      title: "운송 파트너 업무 확인"
+    });
+  });
 });

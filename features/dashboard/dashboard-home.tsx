@@ -325,23 +325,23 @@ export function buildMarketplaceNextActions(
     },
     {
       count: activity?.freightPartnerActions ?? 0,
-      description: "관심 조건에 맞는 운송 요청을 확인하고 견적 제출 가능 건을 처리합니다.",
+      description: "매칭된 운송 요청의 견적 제출, 선정 후 진행, 완료 전환 업무를 처리합니다.",
       href: activity?.freightPartnerActionRequestId
         ? `/requests/freight/opportunities/${activity.freightPartnerActionRequestId}`
         : "/requests/freight?workspace=forwarder",
-      label: "파트너 입찰",
+      label: "파트너 업무",
       priority: 8,
-      title: "운송 입찰 가능 요청 확인"
+      title: "운송 파트너 업무 확인"
     },
     {
       count: activity?.clearancePartnerActions ?? 0,
-      description: "관심 조건에 맞는 통관 요청을 확인하고 수수료와 필요서류를 제안합니다.",
+      description: "매칭된 통관 요청의 견적 제출, 선정 후 진행, 완료 전환 업무를 처리합니다.",
       href: activity?.clearancePartnerActionRequestId
         ? `/requests/clearance/opportunities/${activity.clearancePartnerActionRequestId}`
         : "/requests/clearance?workspace=broker",
-      label: "파트너 입찰",
+      label: "파트너 업무",
       priority: 7,
-      title: "통관 입찰 가능 요청 확인"
+      title: "통관 파트너 업무 확인"
     }
   ];
 

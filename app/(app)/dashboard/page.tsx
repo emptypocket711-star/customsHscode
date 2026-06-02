@@ -186,9 +186,14 @@ async function getDashboardMarketplaceActivitySummary(
     const request = Array.isArray(match.service_requests) ? match.service_requests[0] : match.service_requests;
     return request?.status === "open" || request?.status === "bids_received";
   }).length;
-  const partnerOpportunityRequests = matches
+  const partnerActionRequests = matches
     .map((match) => Array.isArray(match.service_requests) ? match.service_requests[0] : match.service_requests)
-    .filter((request) => request?.status === "open" || request?.status === "bids_received");
+    .filter((request) =>
+      request?.status === "open" ||
+      request?.status === "bids_received" ||
+      request?.status === "partner_selected" ||
+      request?.status === "in_progress"
+    );
   const requesterActionRequests = requests.filter((request) => needsRequesterAction(request));
   const requesterActionPriority = (request: { id: unknown; status: string | null }) => {
     const requestId = String(request.id);
@@ -208,14 +213,14 @@ async function getDashboardMarketplaceActivitySummary(
     return request?.id ? String(request.id) : null;
   };
   const firstPartnerActionId = (requestType: "clearance" | "freight") => {
-    const request = partnerOpportunityRequests.find((item) => item?.request_type === requestType);
+    const request = partnerActionRequests.find((item) => item?.request_type === requestType);
     return request?.id ? String(request.id) : null;
   };
 
   return {
     bidsReceived: requests.filter((request) => request.status === "bids_received").length,
     clearancePartnerActionRequestId: firstPartnerActionId("clearance"),
-    clearancePartnerActions: partnerOpportunityRequests.filter((request) => request?.request_type === "clearance").length,
+    clearancePartnerActions: partnerActionRequests.filter((request) => request?.request_type === "clearance").length,
     clearanceRequesterActionRequestId: firstRequesterActionId("clearance"),
     clearanceRequesterActions: requests.filter((request) => request.request_type === "clearance" && needsRequesterAction(request)).length,
     completionReportPending: completedRequestIds.filter((requestId) => !completionReportRequestIds.has(requestId)).length,
@@ -223,7 +228,7 @@ async function getDashboardMarketplaceActivitySummary(
     draftRequests: requests.filter((request) => request.status === "draft").length,
     feedbackPending: completedRequestIds.filter((requestId) => !ownFeedbacks.has(requestId)).length,
     freightPartnerActionRequestId: firstPartnerActionId("freight"),
-    freightPartnerActions: partnerOpportunityRequests.filter((request) => request?.request_type === "freight").length,
+    freightPartnerActions: partnerActionRequests.filter((request) => request?.request_type === "freight").length,
     freightRequesterActionRequestId: firstRequesterActionId("freight"),
     freightRequesterActions: requests.filter((request) => request.request_type === "freight" && needsRequesterAction(request)).length,
     inProgressRequests: requests.filter((request) => request.status === "in_progress").length,
