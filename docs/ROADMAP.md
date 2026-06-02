@@ -306,7 +306,8 @@
 | P76.3 clearance request publish readiness review | 완료 | 운송 공개 전환이 아니라 통관 의뢰 초안에서도 관세사무소 공개 필수값과 다음 행동이 같은 기준으로 보이는지 점검한다 | clearance draft-to-publish UX | browser, typecheck, lint |
 | P76.4 publish readiness e2e criteria docs | 완료 | 통관 UI 보강이 아니라 운송·통관 공개 전환 기준과 브라우저 검증 항목을 E2E 문서에 고정한다 | publish readiness docs sync | docs, diff check |
 | P76.5 publish readiness route smoke | 완료 | 공개 준비 기준 문서화가 아니라 변경 후 화주·포워더·관세사 주요 요청 route가 계속 정상 렌더링되는지 확인한다 | role route smoke | browser, typecheck, lint |
-| P76.6 publish readiness work log sync | 진행 | route smoke가 아니라 공개 준비 UX와 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
+| P76.6 publish readiness work log sync | 완료 | route smoke가 아니라 공개 준비 UX와 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
+| P77.1 next marketplace rail selection | 예정 | 공개 준비 작업 로그가 아니라 다음으로 이어갈 marketplace MVP 병목을 다시 고른다 | roadmap/code review | docs/code review |
 
 #### P34 다음 코드 작업 후보
 

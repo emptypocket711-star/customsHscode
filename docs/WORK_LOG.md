@@ -2201,6 +2201,24 @@
 - 로컬 서버 `http://localhost:3100` 실행
 - 비로그인 상태 `/requests/freight/11111111-1111-4111-8111-111111111111`, `/requests/clearance/opportunities/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
 
+### marketplace request publish readiness review
+
+- 이전 작업 묶음은 완료 리포트, 피드백, 대시보드 다음 행동 handoff였고, 이번 작업은 화주가 새 요청 초안을 공개 모집으로 전환하기 전 막히는 지점을 보강한 P76이다.
+- 다음 marketplace MVP 병목을 `request publish readiness`로 선정했다.
+- 운송 요청 초안 카드에서 출발 국가, 도착 국가, 운송 방식이 없으면 공개 버튼만 비활성화하는 데서 끝내지 않고 `포워더 공개 전 필수값을 보완해야 합니다.`, `누락값: 출발 국가, 도착 국가, 운송 방식`, `초안 작성으로 이동`을 표시한다.
+- 통관 의뢰 초안 카드에서 목적국이 없으면 관세사무소 공개 설정을 먼저 노출하지 않고 `관세사무소 공개 전 필수값을 보완해야 합니다.`, `누락값: 목적국`, `초안 작성으로 이동`을 표시한다.
+- 공개 준비 기준을 `MARKETPLACE_TRANSACTION_MUTATION_E2E_PLAN.md`에 추가해 draft-to-open 전환 검증 항목으로 고정했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 원격 push는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- 브라우저 화주 세션 `/requests/freight`에서 공개 필수값 없는 운송 초안 생성 후 누락값 안내와 초안 작성 바로가기 확인
+- 브라우저 화주 세션 `/requests/clearance`에서 목적국 없는 통관 초안 생성 후 누락값 안내, 초안 작성 바로가기, 공개 설정 숨김 확인
+- `npm run review:local-routes`
+
 ### marketplace completion handoff and dashboard action review
 
 - 이전 작업은 완료 전 피드백 조회 gating 회귀 테스트였고, 이번 작업 묶음은 완료된 거래의 리포트, 보관 서류, 피드백, 대시보드 다음 행동 흐름을 정리한 P72-P75다.
