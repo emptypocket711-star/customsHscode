@@ -699,6 +699,27 @@
 - `npm run lint`
 - Playwright forwarder check: `/settings/members`, email preference card render and save success
 
+### marketplace email opt-in rehearsal
+
+- 이전 작업은 P119 사용자가 email 수신 설정을 켜고 끄는 UI/서버 액션이고, 이번 작업은 P120 실제 운영 rehearsal에서 opt-in preference가 수신자 선택을 제어하는지 확인하는 작업이다.
+- `rehearse_marketplace_email_opt_in_local.mjs`를 추가했다.
+- `ops:marketplace-notifications:email-opt-in-local` npm script를 추가했다.
+- 스크립트는 로컬 Supabase와 로컬 Next.js origin만 허용한다.
+- fixture 상수 id가 아니라 실제 로컬 profile id를 email로 조회해 preference row를 정리·seed한다.
+- seed 전에는 forwarder initial 수신자가 없어야 함을 확인한다.
+- seed 후에는 forwarder `initial` opt-in, broker `deadline_reminder` opt-in만 수신자 후보가 되는지 확인한다.
+- `send=1` route는 production send readiness가 꺼진 상태에서 계속 400으로 차단되는지 확인한다.
+- 기존 `ops:marketplace-notifications:rehearse-local`도 dry-run, blocked send, claim-only 흐름이 유지되는지 재확인했다.
+- runbook의 `transactional_email` 설명을 사용자별 email opt-in 기준으로 갱신했다.
+- 이번 P120은 P119처럼 설정 UI를 만든 작업이 아니다. 실제 운영 rehearsal에서 opt-in row가 수신자 선택에 반영되는지 확인한 작업이다.
+- 다음 작업은 P121 marketplace notification fanout decision이다. 이번 P120이 opt-in 수신자 선택 검증이라면, P121은 한 회사에 opt-in 사용자가 여러 명일 때 1명 관리자 우선으로 보낼지 다중 수신자 fanout으로 보낼지 결정하는 작업이다.
+
+검증:
+
+- `node --check scripts/rehearse_marketplace_email_opt_in_local.mjs`
+- `npm run ops:marketplace-notifications:email-opt-in-local`
+- `npm run ops:marketplace-notifications:rehearse-local`
+
 ## 2026-06-02
 
 ### local login review smoke

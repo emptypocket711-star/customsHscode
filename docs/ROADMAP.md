@@ -408,7 +408,8 @@
 | P117.1 marketplace notification preference and unsubscribe planning | 완료 | email provider 안전 리뷰가 아니라 파트너 사용자별 알림 수신 설정과 거부 기준을 어떻게 둘지 정한다 | notification preference policy selected | product/security review |
 | P118.1 marketplace email notification preference schema | 완료 | 수신 설정 정책 문서화가 아니라 실제 사용자별 email opt-in 저장 schema와 resolver gate를 추가한다 | email preference schema | migration, RLS, unit |
 | P119.1 marketplace email notification settings UI | 완료 | schema/resolver gate가 아니라 사용자가 로그인 상태에서 marketplace email 수신 설정을 직접 켜고 끄게 한다 | email preference settings UI | server action, UX, browser |
-| P120.1 marketplace email opt-in rehearsal | 예정 | 설정 UI가 아니라 opt-in preference가 실제 notification worker/provider rehearsal에서 수신자 선택을 제어하는지 확인한다 | opt-in send rehearsal | local ops rehearsal, unit |
+| P120.1 marketplace email opt-in rehearsal | 완료 | 설정 UI가 아니라 opt-in preference가 실제 notification worker/provider rehearsal에서 수신자 선택을 제어하는지 확인한다 | opt-in send rehearsal | local ops rehearsal, unit |
+| P121.1 marketplace notification fanout decision | 예정 | opt-in rehearsal이 아니라 한 회사의 여러 opt-in 사용자에게 알림을 보낼지, 1명 관리자 우선 구조를 유지할지 결정한다 | fanout policy decision | product/security review |
 
 #### P109 다음 병목 선정
 
@@ -585,6 +586,23 @@ P119에서 `/settings/members`에 사용자별 email notification preference 설
 6. 브라우저에서 포워더 테스트 계정으로 `/settings/members` 렌더링과 저장 성공 문구를 확인했다.
 
 다음 작업은 P120 marketplace email opt-in rehearsal이다. P119가 사용자가 설정을 켜고 끄는 UI라면, P120은 실제 notification worker/provider rehearsal에서 opt-in row가 수신자 선택을 제어하는지 운영 실행 관점으로 확인하는 작업이다.
+
+#### P120 email opt-in rehearsal
+
+P120에서 marketplace email opt-in이 실제 운영 rehearsal에서 수신자 선택을 제어하는지 확인했다.
+
+구현 기준:
+
+1. `ops:marketplace-notifications:email-opt-in-local` 명령을 추가했다.
+2. 로컬 Supabase와 로컬 Next.js만 허용한다.
+3. 테스트 fixture 사용자의 실제 profile id를 email로 조회한다.
+4. preference row를 정리한 뒤, 미동의 상태에서는 수신자가 나오지 않는지 확인한다.
+5. forwarder는 `initial`, broker는 `deadline_reminder`만 opt-in으로 seed한다.
+6. notification kind별로 opt-in된 사용자만 수신자 후보가 되는지 검증한다.
+7. route `send=1`은 production send readiness가 꺼진 상태에서 계속 차단되는지 확인한다.
+8. 기존 `ops:marketplace-notifications:rehearse-local`도 dry-run, blocked send, claim-only 흐름이 유지되는지 재확인했다.
+
+다음 작업은 P121 marketplace notification fanout decision이다. P120이 opt-in row가 실제 수신자 선택을 제어하는지 확인한 작업이라면, P121은 한 회사에 opt-in 사용자가 여러 명일 때 1명 관리자 우선으로 보낼지 다중 수신자 fanout으로 보낼지 결정하는 작업이다.
 
 #### P34 다음 코드 작업 후보
 

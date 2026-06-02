@@ -7,6 +7,7 @@
 - 기본 실행은 target 계산 후 delivery claim까지만 수행한다.
 - sender 없이 claim된 건은 `claimedWithoutSenderCount`로 표시되며, 외부 발송 완료가 아니다.
 - 외부 이메일 provider skeleton은 `transactional_email`로 연결되어 있다. 문자, 푸시 provider는 아직 연결하지 않았다.
+- `transactional_email`은 사용자별 email opt-in preference가 켜진 수신자만 대상으로 한다.
 - `send=1`은 명시적으로 요청한 경우에만 sender 경로를 탄다.
 - `MARKETPLACE_NOTIFICATIONS_SEND_ENABLED`와 `MARKETPLACE_NOTIFICATIONS_PROVIDER`가 준비되지 않으면 `send=1`은 worker 실행 전에 차단된다.
 
@@ -25,7 +26,7 @@
 | provider | 외부 발송 여부 | 용도 |
 | --- | --- | --- |
 | `internal_dry_run` | 없음 | delivery claim 후 provider id 기록만 확인하는 리허설 |
-| `transactional_email` | 이메일 | partner company의 onboarding 완료 client profile 중 수신자를 찾아 Resend 기반 transactional email을 보냄 |
+| `transactional_email` | 이메일 | partner company의 onboarding 완료 client profile 중 사용자별 email opt-in이 켜진 수신자를 찾아 Resend 기반 transactional email을 보냄 |
 
 그 외 provider 값은 지원하지 않는다. 문자, 푸시 provider를 추가하기 전까지는 `MARKETPLACE_NOTIFICATIONS_PROVIDER`에 다른 값을 넣어도 발송 준비 완료로 보지 않는다.
 
@@ -38,6 +39,15 @@ E2E_BASE_URL=http://127.0.0.1:3100 \
 SUPABASE_URL=http://127.0.0.1:54321 \
 SUPABASE_SERVICE_ROLE_KEY=... \
 npm run ops:marketplace-notifications:rehearse-local
+```
+
+email opt-in preference가 실제 수신자 선택을 제어하는지는 별도 로컬 명령으로 확인한다. 이 명령은 외부 발송을 하지 않고, fixture 파트너 사용자에게 local preference row를 넣은 뒤 notification kind별 포함·제외를 검증한다.
+
+```bash
+E2E_BASE_URL=http://127.0.0.1:3100 \
+SUPABASE_URL=http://127.0.0.1:54321 \
+SUPABASE_SERVICE_ROLE_KEY=... \
+npm run ops:marketplace-notifications:email-opt-in-local
 ```
 
 1. Target 계산만 확인한다.
@@ -91,7 +101,7 @@ RESEND_API_KEY=...
 NOTIFICATION_FROM_EMAIL=...
 ```
 
-이 상태에서 `send=1`을 호출하면 partner company의 onboarding 완료 client profile 중 관리자 우선 수신자를 찾아 이메일을 발송한다. 수신자가 없으면 provider는 발송하지 않고 실패 상태를 기록한다.
+이 상태에서 `send=1`을 호출하면 partner company의 onboarding 완료 client profile 중 해당 notification kind의 email opt-in이 켜진 수신자를 찾아 이메일을 발송한다. 수신자가 없거나 opt-in이 없으면 provider는 발송하지 않고 실패 상태를 기록한다.
 
 ## 결과 필드 해석
 
