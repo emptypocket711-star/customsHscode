@@ -196,7 +196,7 @@ export function ServiceRequestCompletionReportPreviewDocument({
       ) : null}
 
       <Card className="print:border-slate-300 print:shadow-none">
-        <CardHeader action={<Badge tone={preview.archiveDocuments.length > 0 ? "info" : "neutral"}>{preview.archiveDocuments.length}건</Badge>} description="파일명과 다운로드 링크는 표시하지 않습니다." title="최종 보관 서류" />
+        <CardHeader action={<Badge tone={preview.archiveDocuments.length > 0 ? "info" : "neutral"}>{preview.archiveDocuments.length}건</Badge>} description="파일명과 원문 링크는 표시하지 않습니다." title="최종 보관 서류" />
         <CardBody className="grid gap-2">
           {preview.archiveDocuments.length ? preview.archiveDocuments.map((document) => (
             <p className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600 print:bg-white" key={document.documentRole}>

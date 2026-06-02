@@ -231,6 +231,7 @@ async function main() {
 
   await upsertOrThrow(client, "service_request_completion_reports", [
     {
+      clearance_result: {},
       created_by: requesterUserId,
       currency: "KRW",
       final_amount: 220000,
@@ -270,6 +271,7 @@ async function main() {
       created_by: requesterUserId,
       currency: "KRW",
       final_amount: 110000,
+      freight_result: {},
       id: "00000000-0000-4000-8000-000000000221",
       request_id: fixture.clearanceRequestId,
       request_type: "clearance",
