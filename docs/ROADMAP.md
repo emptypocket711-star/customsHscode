@@ -312,7 +312,8 @@
 | P77.3 clearance bid comparison badges | 완료 | 운송 견적 비교 배지가 아니라 통관 견적에서도 총액·통관일수·검토 가능성을 같은 기준으로 보이게 한다 | clearance bid comparison UX | browser, typecheck, lint |
 | P77.4 bid comparison e2e criteria docs | 완료 | 통관 견적 비교 배지가 아니라 운송·통관 견적 비교 배지 기준을 E2E 문서에 고정한다 | bid comparison docs sync | docs, diff check |
 | P77.5 bid comparison route smoke | 완료 | 견적 비교 기준 문서화가 아니라 비교 배지 변경 후 화주·포워더·관세사 주요 route가 계속 정상 렌더링되는지 확인한다 | role route smoke | browser, typecheck, lint |
-| P77.6 bid comparison work log sync | 진행 | route smoke가 아니라 견적 비교/선정 UX와 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
+| P77.6 bid comparison work log sync | 완료 | route smoke가 아니라 견적 비교/선정 UX와 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
+| P78.1 next marketplace rail selection | 예정 | 견적 비교 작업 로그가 아니라 다음으로 이어갈 marketplace MVP 병목을 다시 고른다 | roadmap/code review | docs/code review |
 
 #### P34 다음 코드 작업 후보
 

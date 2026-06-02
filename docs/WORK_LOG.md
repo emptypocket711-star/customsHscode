@@ -2219,6 +2219,25 @@
 - 브라우저 화주 세션 `/requests/clearance`에서 목적국 없는 통관 초안 생성 후 누락값 안내, 초안 작성 바로가기, 공개 설정 숨김 확인
 - `npm run review:local-routes`
 
+### marketplace bid comparison and selection review
+
+- 이전 작업 묶음은 초안에서 공개 모집으로 전환하기 전 필수값 안내였고, 이번 작업은 견적이 도착한 뒤 화주가 비교하고 선정하는 중간 병목을 보강한 P77이다.
+- 다음 marketplace MVP 병목을 `bid comparison and selection`으로 선정했다.
+- 운송 견적 카드에 `최저 총액`, `최단 리드타임`, `후기 보유` 비교 배지를 추가했다.
+- 통관 견적 카드에 `최저 총액`, `최단 통관`, `예비 검토 가능` 비교 배지를 추가했다.
+- 기존 선정 전 체크리스트, 파트너 신뢰/후기 표시, 선정 액션은 유지했다.
+- 견적 비교 배지 기준을 `MARKETPLACE_TRANSACTION_MUTATION_E2E_PLAN.md`에 추가했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 원격 push는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- 브라우저 화주 세션 `/requests/freight/75000000-0000-4000-8000-000000000001`에서 `최저 총액`, `최단 리드타임`, `후기 보유` 배지 확인
+- 브라우저 화주 세션 `/requests/clearance/75000000-0000-4000-8000-000000000002`에서 `최저 총액`, `최단 통관`, `예비 검토 가능` 배지 확인
+- `npm run review:local-routes`
+
 ### marketplace completion handoff and dashboard action review
 
 - 이전 작업은 완료 전 피드백 조회 gating 회귀 테스트였고, 이번 작업 묶음은 완료된 거래의 리포트, 보관 서류, 피드백, 대시보드 다음 행동 흐름을 정리한 P72-P75다.
