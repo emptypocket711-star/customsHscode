@@ -51,6 +51,20 @@ describe("service request list view", () => {
     });
   });
 
+  it("routes requester drafts with documents to the publish anchor when available", () => {
+    expect(buildRequesterServiceRequestNextFocus({
+      ...baseInput,
+      documentCount: 1,
+      publishAnchor: "#request-publish",
+      requestStatus: "draft"
+    })).toEqual({
+      href: "#request-publish",
+      label: "공개 설정",
+      tone: "info",
+      value: "대기"
+    });
+  });
+
   it("routes selected partner opportunities to lifecycle actions before bid submission", () => {
     expect(buildPartnerOpportunityNextFocus({
       bidAnchor: "#opportunity-bid",

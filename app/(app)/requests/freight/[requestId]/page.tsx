@@ -59,6 +59,7 @@ export default async function FreightRequestDetailPage({
   const nextFocus = buildRequesterServiceRequestNextFocus({
     bidCount: receivedBids.items.length,
     documentCount: requestDocuments.items.length,
+    publishAnchor: "#request-publish",
     questionAnchor: "#request-questions",
     requestStatus: request.item.status,
     unansweredQuestionCount
@@ -91,6 +92,9 @@ export default async function FreightRequestDetailPage({
           <a className="focus-ring inline-flex h-9 items-center rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50" href="#request-documents">서류</a>
           <a className="focus-ring inline-flex h-9 items-center rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50" href="#request-questions">질문</a>
           <a className="focus-ring inline-flex h-9 items-center rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50" href="#request-bids">견적</a>
+          {request.item.status === "draft" ? (
+            <a className="focus-ring inline-flex h-9 items-center rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50" href="#request-publish">공개</a>
+          ) : null}
         </div>
       </div>
       <RequesterDetailFlowPanel kind="freight" />

@@ -72,6 +72,24 @@
 - Playwright developer check: `/operations/requests/75000000-0000-4000-8000-000000000001`
 - `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
 
+### requester next-action publish anchor
+
+- 이전 작업은 P84 운영 상세 handoff이고, 이번 작업은 P85 화주 요청 상세의 다음 작업 바로가기 연결을 점검한 UX 보강이다.
+- 화주 상세에는 이미 `다음 작업 바로가기`가 있으므로 새 안내를 중복 추가하지 않았다.
+- 대신 운송 상세도 초안+서류 있음 상태에서 `공개 설정` next-focus가 `#request-publish`로 이동하도록 `publishAnchor`를 전달했다.
+- 운송/통관 요청 row의 공개 form에 `id="request-publish"`를 붙여 상단 바로가기가 실제 공개 CTA 위치로 이동하게 했다.
+- 서류, 질문, 견적 anchor와 기존 상세 작업 흐름은 유지했다.
+- 권한/RLS, 요청 공개 action, DB schema는 변경하지 않았다.
+- 다음 작업은 P86 파트너 opportunity 상세에서 파트너가 질문/견적/진행 시작 중 다음 행동을 바로 찾는지 점검하는 것이다. 이번 P85가 화주 상세 next-action이라면, P86은 포워더·관세사무소 opportunity 상세 next-action이다.
+
+검증:
+
+- `npx vitest run server/repositories/service-request-list-view.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- Playwright requester check: `/requests/freight/75000000-0000-4000-8000-000000000001`, `/requests/clearance/75000000-0000-4000-8000-000000000002`
+- `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
+
 ## 2026-06-02
 
 ### local login review smoke

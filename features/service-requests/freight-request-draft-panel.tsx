@@ -637,7 +637,7 @@ export function FreightRequestRow({
             상세 작업
           </Link>
           {!compact ? (
-            <form action={action} className="grid gap-2 sm:col-span-2 sm:grid-cols-[150px_auto]">
+            <form action={action} className="grid scroll-mt-6 gap-2 sm:col-span-2 sm:grid-cols-[150px_auto]" id={anchorPrefix ? `${anchorPrefix}-publish` : undefined}>
               <input name="requestId" type="hidden" value={request.id} />
               <label className="grid gap-1 text-xs font-semibold text-slate-600">
                 견적 접수 마감

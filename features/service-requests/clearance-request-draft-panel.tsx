@@ -752,7 +752,7 @@ export function ClearanceRequestRow({
           <summary className="cursor-pointer list-none px-3 py-2 text-sm font-semibold text-slate-800">
             관세사무소 공개 설정
           </summary>
-          <form action={action} className="grid gap-3 border-t border-slate-200 p-3">
+          <form action={action} className="grid scroll-mt-6 gap-3 border-t border-slate-200 p-3" id={anchorPrefix ? `${anchorPrefix}-publish` : undefined}>
             <input name="requestId" type="hidden" value={request.id} />
             <div className="grid gap-1 text-xs leading-5 text-slate-600">
               <p className="font-semibold text-slate-800">공개 전 확인</p>

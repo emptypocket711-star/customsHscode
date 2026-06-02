@@ -344,7 +344,11 @@
 | P84.2 operations detail handoff action strip | 완료 | 운영 목록 1순위 노출이 아니라 운영 상세에서 확인 위치, 복사, 작업 전달 순서를 한 번에 보이게 한다 | operations detail UX | browser, typecheck, lint |
 | P84.3 operations detail route smoke | 완료 | 상세 handoff 표시가 아니라 변경 후 화주·포워더·관세사 주요 route가 계속 정상 렌더링되는지 확인한다 | role route smoke | browser, typecheck, lint |
 | P84.4 operations detail work log sync | 완료 | route smoke가 아니라 운영 상세 handoff 보강과 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
-| P85.1 requester next-action selection | 예정 | 운영 상세 handoff가 아니라 화주 요청 상세에서 사용자가 다음 행동을 바로 찾는지 다시 점검한다 | requester next-action rail | UX/code review |
+| P85.1 requester next-action selection | 완료 | 운영 상세 handoff가 아니라 화주 요청 상세에서 사용자가 다음 행동을 바로 찾는지 다시 점검한다 | requester publish anchor gap selected | UX/code review |
+| P85.2 requester publish next-action anchor | 완료 | 기존 다음 작업 바로가기 표시가 아니라 운송/통관 초안 공개 CTA가 실제 공개 form anchor로 이동하게 한다 | requester next-action UX | unit, browser, typecheck, lint |
+| P85.3 requester next-action route smoke | 완료 | 공개 anchor 보강이 아니라 변경 후 화주·포워더·관세사 주요 route가 계속 정상 렌더링되는지 확인한다 | role route smoke | browser, typecheck, lint |
+| P85.4 requester next-action work log sync | 완료 | route smoke가 아니라 화주 상세 next-action anchor 보강과 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
+| P86.1 partner next-action selection | 예정 | 화주 상세 next-action이 아니라 포워더·관세사무소 opportunity 상세의 다음 행동 바로가기를 다시 점검한다 | partner next-action rail | UX/code review |
 
 #### P34 다음 코드 작업 후보
 
