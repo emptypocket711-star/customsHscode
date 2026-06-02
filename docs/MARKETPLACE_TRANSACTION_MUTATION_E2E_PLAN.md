@@ -65,6 +65,8 @@ Before each mutation run:
 - requester dashboard `피드백 대기` means the current user's company has completed requests without that company's feedback.
 - operations `완료 리포트 없음` is broader: it is an operator-wide platform bottleneck across visible requests, not a user-specific action count.
 - dashboard next-action detail links should prioritize completion-report gaps before feedback gaps for completed requester work.
+- partner dashboard `입찰 가능` means matched open or bids-received requests where the partner can still submit or review a bid opportunity.
+- partner dashboard `파트너 업무` is broader: it includes bid opportunities plus selected or in-progress requests where the selected partner must continue the transaction lifecycle.
 
 ### Freight Partner Submit
 

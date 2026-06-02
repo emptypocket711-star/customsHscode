@@ -298,7 +298,8 @@
 | P73.3 dashboard operations metric alignment | 완료 | 대시보드 지표 추가가 아니라 사용자 대시보드의 리포트 대기 의미가 운영 통계의 완료 리포트 없음과 어떻게 다른지 정리한다 | dashboard metric alignment docs | docs, diff check |
 | P74.1 partner dashboard completion handoff review | 완료 | 화주 대시보드 완료 지표가 아니라 파트너 대시보드에서 선정 후 완료/리포트 관련 다음 행동이 누락되지 않는지 점검한다 | partner dashboard handoff UX | browser, unit, typecheck, lint |
 | P74.2 partner dashboard metric wording | 완료 | 파트너 다음 행동 카드가 아니라 하단 지표에서 입찰 가능 수와 선정 후 파트너 업무 수가 혼동되지 않게 정리한다 | partner metric wording UX | browser, typecheck, lint |
-| P74.3 partner dashboard metric semantics docs | 예정 | 파트너 대시보드 지표 추가가 아니라 파트너 업무와 입찰 가능 지표의 차이를 E2E 문서 기준에 남긴다 | partner metric semantics docs | docs, diff check |
+| P74.3 partner dashboard metric semantics docs | 완료 | 파트너 대시보드 지표 추가가 아니라 파트너 업무와 입찰 가능 지표의 차이를 E2E 문서 기준에 남긴다 | partner metric semantics docs | docs, diff check |
+| P75.1 marketplace final route smoke after dashboard changes | 예정 | 대시보드 문서 정리가 아니라 화주·포워더·관세사 주요 route가 이번 변경 뒤에도 깨지지 않는지 한 번에 점검한다 | role route smoke | browser, typecheck, lint |
 
 #### P34 다음 코드 작업 후보
 
