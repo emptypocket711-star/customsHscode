@@ -91,4 +91,18 @@ npm run e2e:completion-preview
 
 이 e2e는 로컬 Supabase fixture 전용이다. production smoke와 섞지 않는다.
 
+## Cleanup
+
+role별 storage state를 정리하려면 먼저 dry-run으로 삭제 대상을 확인한다.
+
+```bash
+npm run e2e:storage:cleanup
+```
+
+실제로 삭제할 때만 `-- --apply`를 붙인다.
+
+```bash
+npm run e2e:storage:cleanup -- --apply
+```
+
 스크립트 자체 리뷰 결과는 [SERVICE_REQUEST_COMPLETION_REPORT_PREVIEW_E2E_SELF_REVIEW.md](./SERVICE_REQUEST_COMPLETION_REPORT_PREVIEW_E2E_SELF_REVIEW.md)를 따른다.

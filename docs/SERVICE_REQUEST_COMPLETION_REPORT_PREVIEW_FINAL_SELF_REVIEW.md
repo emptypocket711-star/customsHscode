@@ -65,4 +65,4 @@ Verified:
 ## Remaining Risk
 
 - Authenticated mobile preview body screenshots are stored under `tmp/screenshots/completion-preview-mobile-*.png` for local review, but they are intentionally not committed.
-- Stale `tmp/e2e-auth/completion-preview-*.json` files are not automatically cleaned up after E2E.
+- Stale `tmp/e2e-auth/*.json` files can be reviewed and deleted with `npm run e2e:storage:cleanup -- --apply`; cleanup is intentionally manual so repeated local E2E runs do not need to recreate sessions.

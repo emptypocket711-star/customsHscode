@@ -115,3 +115,17 @@ npm run e2e:marketplace-transaction:mutation
 - The auth-state script checks both local app URL and local Supabase origin before browser login.
 - The static E2E verifies protected route access and role-specific page reachability.
 - The mutation E2E submits synthetic freight/clearance bids and selects them through the requester UI, but it still depends on local Supabase and generated storage states for positive execution.
+
+## Cleanup
+
+role별 Playwright storage state를 정리하려면 먼저 dry-run으로 삭제 대상을 확인한다.
+
+```bash
+npm run e2e:storage:cleanup
+```
+
+실제로 삭제할 때만 `-- --apply`를 붙인다.
+
+```bash
+npm run e2e:storage:cleanup -- --apply
+```
