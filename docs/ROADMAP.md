@@ -322,7 +322,9 @@
 | P79.2 partner preference notification clarity | 완료 | 해외 파트너 온보딩이 아니라 포워더·관세사무소가 어떤 조건과 알림 기준으로 요청을 받을지 설정 화면에서 바로 이해하게 한다 | partner preference UX | browser, typecheck, lint |
 | P79.3 partner preference route smoke | 완료 | 관심 조건 안내 보강이 아니라 변경 후 화주·포워더·관세사 주요 route가 계속 정상 렌더링되는지 확인한다 | role route smoke | browser, typecheck, lint |
 | P79.4 partner preference work log sync | 완료 | route smoke가 아니라 파트너 관심 조건/알림 안내 보강과 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
-| P80.1 next marketplace rail selection | 예정 | 파트너 관심 조건 작업 로그가 아니라 다음으로 이어갈 marketplace MVP 병목을 다시 고른다 | roadmap/code review | docs/code review |
+| P80.1 next marketplace rail selection | 완료 | 파트너 관심 조건 작업 로그가 아니라 다음으로 이어갈 marketplace MVP 병목을 다시 고른다 | owner operations triage rail selected | roadmap/code review |
+| P80.2 owner operations priority owner cues | 완료 | 파트너 관심 조건/알림이 아니라 대표가 운영 우선순위 큐에서 담당 주체와 우선 이유를 바로 이해하게 한다 | operations priority UX | unit, browser, typecheck, lint |
+| P80.3 operations sample detail action cues | 예정 | 운영 통계 큐가 아니라 운영 샘플 상세 화면에서 개선 요청 문구와 다음 확인 위치가 충분히 명확한지 점검한다 | operations detail UX | browser, typecheck, lint |
 
 #### P34 다음 코드 작업 후보
 

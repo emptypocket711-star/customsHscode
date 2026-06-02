@@ -96,6 +96,8 @@ describe("platform request operations panel", () => {
 
     expect(html).toContain("바로 확인할 운영 샘플");
     expect(html).toContain("/operations/requests/req-1#request-bids");
+    expect(html).toContain("담당 개발자");
+    expect(html).toContain("이유 선정 전환 병목");
     expect(html.indexOf("바로 확인할 운영 샘플")).toBeLessThan(html.indexOf("상세 진단 지표와 확인 샘플"));
   });
 });

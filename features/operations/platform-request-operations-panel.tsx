@@ -15,6 +15,8 @@ function buildOwnerActionQueue(summary: PlatformRequestOperationsSummary) {
       action: "플랫폼 요청 데이터 준비 상태 확인",
       detail: "요청 운영 통계를 계산할 수 없어 기능 개선보다 데이터 준비 상태 점검이 우선입니다.",
       label: "데이터 준비",
+      owner: "개발자",
+      reason: "운영 지표 계산 불가",
       tone: "warning" as const,
       value: "필수"
     }];
@@ -26,6 +28,8 @@ function buildOwnerActionQueue(summary: PlatformRequestOperationsSummary) {
       count: summary.unansweredQuestions,
       detail: "화주 답변이 없으면 파트너 견적 제출과 후속 협의가 멈춥니다.",
       label: "미답변 질문",
+      owner: "개발자",
+      reason: "견적 제출 전 병목",
       tone: "warning" as const
     },
     {
@@ -33,6 +37,8 @@ function buildOwnerActionQueue(summary: PlatformRequestOperationsSummary) {
       count: summary.bidsReceived,
       detail: "견적이 도착했는데 선택으로 이어지지 않는 구간을 먼저 봅니다.",
       label: "견적 도착",
+      owner: "개발자",
+      reason: "선정 전환 병목",
       tone: "warning" as const
     },
     {
@@ -40,6 +46,8 @@ function buildOwnerActionQueue(summary: PlatformRequestOperationsSummary) {
       count: summary.staleInProgress,
       detail: "선정 이후 진행중 상태가 오래 지속되면 거래 완료 데이터가 쌓이지 않습니다.",
       label: "오래 진행중",
+      owner: "운영자",
+      reason: "완료 전환 지연",
       tone: "info" as const
     },
     {
@@ -47,6 +55,8 @@ function buildOwnerActionQueue(summary: PlatformRequestOperationsSummary) {
       count: summary.lowFeedbacks,
       detail: "낮은 후기가 있는 완료 거래는 파트너 비교 기준과 후속 관리 흐름을 함께 봅니다.",
       label: "낮은 후기",
+      owner: "운영자",
+      reason: "신뢰 품질 저하",
       tone: "warning" as const
     },
     {
@@ -54,6 +64,8 @@ function buildOwnerActionQueue(summary: PlatformRequestOperationsSummary) {
       count: summary.completedWithoutReport,
       detail: "완료됐지만 리포트가 없으면 정산·서류 보관·후속 확인이 끊깁니다.",
       label: "완료 리포트 없음",
+      owner: "운영자",
+      reason: "완료 기록 누락",
       tone: "info" as const
     },
     {
@@ -61,6 +73,8 @@ function buildOwnerActionQueue(summary: PlatformRequestOperationsSummary) {
       count: summary.completionReportsSubmitted,
       detail: "제출된 리포트가 상대방 확인으로 이어지지 않으면 거래 종료 기록이 잠기지 못합니다.",
       label: "리포트 확인 대기",
+      owner: "개발자",
+      reason: "상대방 확인 지연",
       tone: "warning" as const
     },
     {
@@ -68,6 +82,8 @@ function buildOwnerActionQueue(summary: PlatformRequestOperationsSummary) {
       count: summary.completionReportsAcknowledged,
       detail: "확인된 리포트는 운영자가 민감정보와 보관 서류를 점검해야 잠금 단계로 넘어갑니다.",
       label: "운영 검토 필요",
+      owner: "운영자",
+      reason: "운영 검토 대기",
       tone: "warning" as const
     },
     {
@@ -75,6 +91,8 @@ function buildOwnerActionQueue(summary: PlatformRequestOperationsSummary) {
       count: summary.completionReportsReadyToLock,
       detail: "운영 검토 후 잠금 대기 리포트는 금지 표현과 최종 보관 서류 연결을 마무리해야 합니다.",
       label: "잠금 대기",
+      owner: "운영자",
+      reason: "최종 보관 전 점검",
       tone: "info" as const
     },
     {
@@ -82,6 +100,8 @@ function buildOwnerActionQueue(summary: PlatformRequestOperationsSummary) {
       count: summary.completedWithoutFeedback,
       detail: "완료 거래에 피드백이 없으면 파트너 신뢰 지표와 추천 품질이 쌓이지 않습니다.",
       label: "후기 미제출",
+      owner: "개발자",
+      reason: "신뢰 데이터 누락",
       tone: "info" as const
     },
     {
@@ -89,6 +109,8 @@ function buildOwnerActionQueue(summary: PlatformRequestOperationsSummary) {
       count: summary.openWithoutBids,
       detail: "공개됐지만 견적이 없으면 요청 품질, 관심 조건, 알림 중복 방지가 같이 점검 대상입니다.",
       label: "견적 없는 공개",
+      owner: "운영자",
+      reason: "매칭·알림 점검",
       tone: "warning" as const
     },
     {
@@ -96,6 +118,8 @@ function buildOwnerActionQueue(summary: PlatformRequestOperationsSummary) {
       count: summary.staleDrafts,
       detail: "초안이 오래 남으면 사용자가 요청 공개 전 어디서 막혔는지 확인해야 합니다.",
       label: "오래된 초안",
+      owner: "개발자",
+      reason: "공개 전환 지연",
       tone: "neutral" as const
     },
     {
@@ -103,6 +127,8 @@ function buildOwnerActionQueue(summary: PlatformRequestOperationsSummary) {
       count: summary.staleOpen,
       detail: "마감이 지난 공개 요청은 상태 정리와 후속 안내가 필요합니다.",
       label: "마감 지난 공개",
+      owner: "운영자",
+      reason: "마감 후 상태 정리",
       tone: "neutral" as const
     }
   ]
@@ -112,6 +138,8 @@ function buildOwnerActionQueue(summary: PlatformRequestOperationsSummary) {
       action: item.action,
       detail: item.detail,
       label: item.label,
+      owner: item.owner,
+      reason: item.reason,
       tone: item.tone,
       value: `${item.count}건`
     }));
@@ -120,6 +148,8 @@ function buildOwnerActionQueue(summary: PlatformRequestOperationsSummary) {
     action: "다음 MVP 기능 구현 계속 진행",
     detail: "즉시 막힌 운영 병목은 적습니다. 요청 생성부터 완료 피드백까지 다음 기능 레일을 이어갑니다.",
     label: "즉시 병목 적음",
+    owner: "개발자",
+    reason: "새 병목 선정",
     tone: "success" as const,
     value: "정상"
   }];
@@ -135,7 +165,7 @@ function buildCopyReadyOperationsRequest(
     summary.actionRequest,
     "",
     "대표 우선순위:",
-    ...ownerActionQueue.map((item, index) => `${index + 1}. ${item.label} ${item.value} - ${item.action}`),
+    ...ownerActionQueue.map((item, index) => `${index + 1}. ${item.label} ${item.value} - ${item.action} / 담당 ${item.owner} / 이유 ${item.reason}`),
     "",
     "운영 지표:",
     `- 전체 요청: ${summary.total}건`,
@@ -287,6 +317,10 @@ export function PlatformRequestOperationsPanel({
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-sm font-semibold text-slate-950">{item.label}</p>
                     <Badge tone={item.tone}>{item.value}</Badge>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-slate-700">담당 {item.owner}</span>
+                    <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-slate-700">이유 {item.reason}</span>
                   </div>
                   <p className="mt-2 text-xs font-semibold leading-5 text-slate-800">{item.action}</p>
                   <p className="mt-1 text-xs leading-5 text-slate-600">{item.detail}</p>
