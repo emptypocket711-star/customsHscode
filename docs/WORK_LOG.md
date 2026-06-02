@@ -895,6 +895,25 @@
 - `npm run lint`
 - Playwright/RLS check: 포워더 계정 `/requests/freight/opportunities/75000000-0000-4000-8000-000000000201`, 임시 `none` match가 `viewed`로 변경되는지 DB 확인
 
+### marketplace opportunity decline action
+
+- 이전 작업은 P130 파트너 opportunity 상세 진입 시 미확인 매칭을 자동으로 열람 상태로 기록한 작업이고, 이번 작업은 P131 파트너가 참여 보류를 명시할 수 있게 한 작업이다.
+- `setServiceRequestPartnerMatchInterest` helper를 추가해 기존 `set_service_request_partner_interest` RPC로 `declined` 상태를 저장한다.
+- `declineServiceRequestPartnerMatchAction` 서버 액션을 추가했다.
+- Next server action 파일은 async function만 export해야 하므로 action state 타입/초기값은 별도 feature 파일로 분리했다.
+- `PartnerOpportunityInterestActions` 컴포넌트를 추가해 현재 참여 상태와 `참여 보류` 버튼을 표시했다.
+- 운송 opportunity 상세과 통관 opportunity 상세 모두 참여 상태 컴포넌트를 연결했다.
+- 최초 브라우저 검증에서 server action 파일의 non-async export 때문에 500이 발생했고, action state 분리 후 재검증에서 통과했다.
+- 브라우저/RLS 검증에서는 포워더 테스트 계정으로 실제 버튼을 클릭한 뒤 service role 조회로 match 상태가 `declined`로 변경됐는지 확인하고 임시 row를 삭제했다.
+- 다음 작업은 P132 marketplace declined opportunity list clarity다. 이번 P131이 상세 화면에서 보류 상태를 저장하는 작업이라면, P132는 목록과 요약에서 보류된 요청을 일반 견적 대기와 구분하는 작업이다.
+
+검증:
+
+- `npx vitest run server/repositories/service-request-partner-match.repository.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- Playwright/RLS check: 포워더 계정 `/requests/freight/opportunities/75000000-0000-4000-8000-000000000201`, `참여 보류` 클릭 후 임시 match가 `declined`로 변경되는지 DB 확인
+
 ## 2026-06-02
 
 ### local login review smoke

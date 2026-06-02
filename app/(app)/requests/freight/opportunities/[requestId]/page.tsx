@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { PageHeading } from "@/components/page-heading";
 import { Badge } from "@/components/ui/badge";
 import { FreightOpportunityRow } from "@/features/service-requests/freight-request-draft-panel";
+import { PartnerOpportunityInterestActions } from "@/features/service-requests/partner-opportunity-interest-actions";
 import { PartnerOpportunityResponseClues } from "@/features/service-requests/partner-opportunity-response-clues";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
@@ -112,6 +113,13 @@ export default async function FreightOpportunityDetailPage({
         </div>
       </div>
       <PartnerOpportunityResponseClues clues={responseClues} />
+      <PartnerOpportunityInterestActions
+        interestStatus={opportunityItem.interestStatus}
+        matchId={opportunityItem.matchId}
+        requestId={opportunityItem.id}
+        requestStatus={opportunityItem.status}
+        requestType="freight"
+      />
       <FreightOpportunityRow
         anchorPrefix="opportunity"
         completionReport={completionReport}

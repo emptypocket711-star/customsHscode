@@ -20,8 +20,21 @@ export async function markServiceRequestPartnerMatchViewed(
     return { marked: false, schemaReady: true };
   }
 
+  return setServiceRequestPartnerMatchInterest(supabase, {
+    interestStatus: "viewed",
+    matchId: input.matchId
+  });
+}
+
+export async function setServiceRequestPartnerMatchInterest(
+  supabase: SupabaseClient,
+  input: {
+    interestStatus: "declined" | "interested" | "viewed";
+    matchId: string;
+  }
+): Promise<{ marked: boolean; schemaReady: boolean }> {
   const { error } = await supabase.rpc("set_service_request_partner_interest", {
-    p_interest_status: "viewed",
+    p_interest_status: input.interestStatus,
     p_match_id: input.matchId
   });
 

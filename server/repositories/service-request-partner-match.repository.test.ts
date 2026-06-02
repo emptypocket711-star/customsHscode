@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { markServiceRequestPartnerMatchViewed } from "@/server/repositories/service-request-partner-match.repository";
+import {
+  markServiceRequestPartnerMatchViewed,
+  setServiceRequestPartnerMatchInterest
+} from "@/server/repositories/service-request-partner-match.repository";
 
 describe("service request partner match repository", () => {
   it("marks none interest matches as viewed through the guarded RPC", async () => {
@@ -25,6 +28,20 @@ describe("service request partner match repository", () => {
     )).resolves.toEqual({ marked: false, schemaReady: true });
 
     expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("sets explicit partner interest statuses through the guarded RPC", async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: "match-1", error: null });
+
+    await expect(setServiceRequestPartnerMatchInterest(
+      { rpc } as never,
+      { interestStatus: "declined", matchId: "match-1" }
+    )).resolves.toEqual({ marked: true, schemaReady: true });
+
+    expect(rpc).toHaveBeenCalledWith("set_service_request_partner_interest", {
+      p_interest_status: "declined",
+      p_match_id: "match-1"
+    });
   });
 
   it("returns schemaReady false when the marketplace RPC is not available", async () => {

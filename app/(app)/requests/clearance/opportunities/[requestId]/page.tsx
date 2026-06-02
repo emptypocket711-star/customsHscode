@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { PageHeading } from "@/components/page-heading";
 import { Badge } from "@/components/ui/badge";
 import { ClearanceOpportunityRow } from "@/features/service-requests/clearance-request-draft-panel";
+import { PartnerOpportunityInterestActions } from "@/features/service-requests/partner-opportunity-interest-actions";
 import { PartnerOpportunityResponseClues } from "@/features/service-requests/partner-opportunity-response-clues";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
@@ -112,6 +113,13 @@ export default async function ClearanceOpportunityDetailPage({
         </div>
       </div>
       <PartnerOpportunityResponseClues clues={responseClues} />
+      <PartnerOpportunityInterestActions
+        interestStatus={opportunityItem.interestStatus}
+        matchId={opportunityItem.matchId}
+        requestId={opportunityItem.id}
+        requestStatus={opportunityItem.status}
+        requestType="clearance"
+      />
       <ClearanceOpportunityRow
         anchorPrefix="opportunity"
         completionReport={completionReport}
