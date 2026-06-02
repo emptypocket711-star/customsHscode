@@ -122,6 +122,9 @@ async function completeRequesterLifecycle(browser, kind, requestId, labels) {
     await clickAndSettle(page, page.getByRole("button", { name: labels.completeButton }));
     await page.goto(transactionUrl(kind, "requester", requestId), { waitUntil: "networkidle", timeout: timeoutMs });
     await waitForBodyText(page, labels.afterCompleteText, `${kind} requester detail에 완료 상태와 피드백 폼이 보이지 않습니다.`);
+    await waitForBodyText(page, "완료 후 다음 행동", `${kind} requester detail에 완료 리포트 다음 행동 안내가 보이지 않습니다.`);
+    await waitForBodyText(page, "최종 보관 서류", `${kind} requester detail에 최종 보관 서류 영역이 보이지 않습니다.`);
+    await waitForBodyText(page, "초안 저장", `${kind} requester detail에 완료 리포트 초안 저장 CTA가 보이지 않습니다.`);
     await waitForBodyText(page, "완료 요청 피드백", `${kind} requester detail에 완료 후 피드백 폼이 보이지 않습니다.`);
     await clickAndSettle(page, page.getByRole("button", { name: "피드백 제출" }));
     await page.goto(transactionUrl(kind, "requester", requestId), { waitUntil: "networkidle", timeout: timeoutMs });

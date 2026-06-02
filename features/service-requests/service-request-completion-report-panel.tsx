@@ -146,6 +146,13 @@ export function ServiceRequestCompletionReportPanel({
         <p className="rounded-md bg-slate-50 p-2">출처: 요청, 선정 견적, 조회 snapshot, 실제 업무 결과를 분리합니다.</p>
       </div>
 
+      <div className="rounded-md border border-blue-100 bg-blue-50 p-3 text-xs leading-5 text-blue-950">
+        <p className="font-semibold">완료 후 다음 행동</p>
+        <p className="mt-1">
+          먼저 완료 리포트 초안을 저장하고, 요청 서류를 최종 보관 역할로 연결한 뒤 제출·확인·운영 검토·잠금 순서로 마감합니다.
+        </p>
+      </div>
+
       {report ? (
         <div className="grid gap-2 rounded-md border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600 md:grid-cols-3">
           <span>상태 {reportStatusLabel(report.status)}</span>
@@ -160,7 +167,7 @@ export function ServiceRequestCompletionReportPanel({
           <div>
             <p className="text-sm font-semibold text-blue-950">제출·확인 진행</p>
             <p className="mt-1 text-xs leading-5 text-blue-900">
-              현재는 상태 전이 RPC 연결 전 단계입니다. 초안, 보관 서류, 제출, 확인, 운영 검토, 잠금 순서를 먼저 화면에 고정합니다.
+              초안, 보관 서류, 제출, 확인, 운영 검토, 잠금 순서로 완료 기록을 확정합니다. 잠금 전까지는 보관 서류와 완료 요약을 다시 확인해야 합니다.
             </p>
           </div>
           <Badge tone={currentStatus === "locked" ? "success" : currentStatus ? "info" : "neutral"}>{reportStatusLabel(currentStatus)}</Badge>
@@ -259,7 +266,7 @@ export function ServiceRequestCompletionReportPanel({
           </p>
         )}
         {activeReportId ? (
-          <details className="rounded-md border border-slate-200 bg-white">
+          <details className="rounded-md border border-slate-200 bg-white" open={reportDocuments.length === 0}>
             <summary className="cursor-pointer list-none px-3 py-2 text-sm font-semibold text-slate-800">
               요청 서류를 보관 서류로 연결
             </summary>
@@ -314,7 +321,7 @@ export function ServiceRequestCompletionReportPanel({
         ) : null}
       </div>
 
-      <details className="rounded-md border border-slate-200 bg-slate-50">
+      <details className="rounded-md border border-slate-200 bg-slate-50" open={!report}>
         <summary className="cursor-pointer list-none px-3 py-2 text-sm font-semibold text-slate-800">
           {report ? "완료 리포트 초안 수정" : "완료 리포트 초안 작성"}
         </summary>

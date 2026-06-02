@@ -277,7 +277,8 @@
 | P69.1 requester dashboard action conversion review | 완료 | 파트너 알림에서 입찰 상세로 이동하는 검증이 아니라 화주가 대시보드 다음 행동에서 요청 상세와 견적 비교 CTA로 이동하는지 점검한다 | requester dashboard direct detail links | unit, browser, e2e, typecheck, lint |
 | P69.2 requester detail bid-focus review | 완료 | 대시보드가 상세로 바로 가는 링크가 아니라 상세 도착 후 견적 비교·선정 영역이 충분히 빨리 보이는지 점검한다 | request-bids anchor E2E | e2e, node check |
 | P69.3 post-selection completion flow review | 완료 | 상세 견적 앵커 검증이 아니라 업체 선정 후 진행중·완료·피드백 전환이 실제 사용 흐름에서 막히지 않는지 점검한다 | mutation E2E lifecycle extension | local runner, node check |
-| P69.4 post-completion report handoff review | 예정 | 완료/피드백 전환 검증이 아니라 완료 이후 리포트·정산·보관 서류 안내가 실제 다음 행동으로 충분한지 점검한다 | completion report handoff UX | browser, typecheck, lint |
+| P69.4 post-completion report handoff review | 완료 | 완료/피드백 전환 검증이 아니라 완료 이후 리포트·정산·보관 서류 안내가 실제 다음 행동으로 충분한지 점검한다 | completion report handoff UX | local runner, typecheck, lint |
+| P69.5 transaction flow final self-review | 예정 | 완료 리포트 안내 보강이 아니라 P69 대시보드→상세→선정→완료→피드백→리포트 흐름 전체를 자체 리뷰한다 | flow self-review | tests, docs |
 
 #### P34 다음 코드 작업 후보
 
