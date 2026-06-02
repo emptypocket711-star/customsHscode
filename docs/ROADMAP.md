@@ -402,7 +402,8 @@
 | P111.1 completion report mutation E2E coverage | 완료 | 실무 입력 필드 노출이 아니라 사용자가 입력한 완료 리포트 값이 저장 후 미리보기에 반영되는지 자동 검증한다 | completion report save-to-preview E2E | local E2E, typecheck, lint |
 | P112.1 completion report non-draft edit guard UX | 완료 | 저장 mutation 검증이 아니라 제출·운영검토·잠금 리포트에서 수정 폼이 열리는 UX/권한 불일치를 정리한다 | non-draft edit guard | UX, browser, typecheck, lint, E2E |
 | P113.1 notification provider readiness review | 완료 | 완료 리포트 후속 UX가 아니라 실제 알림 provider 운영 연결 전에 env, adapter, dry-run 검증 범위를 다시 점검한다 | recipient resolver selected | code/ops review |
-| P114.1 marketplace notification recipient resolver | 예정 | provider 준비상태 점검이 아니라 파트너 회사의 알림 수신 대상 사용자를 안전하게 고르는 read helper를 만든다 | partner notification recipients | unit, typecheck, lint |
+| P114.1 marketplace notification recipient resolver | 완료 | provider 준비상태 점검이 아니라 파트너 회사의 알림 수신 대상 사용자를 안전하게 고르는 read helper를 만든다 | partner notification recipients | unit, typecheck, lint |
+| P115.1 marketplace transactional email provider skeleton | 예정 | 수신자 후보 조회가 아니라 resolver를 사용해 외부 transactional email provider skeleton을 worker sender로 연결한다 | email provider skeleton | unit, typecheck, lint |
 
 #### P109 다음 병목 선정
 
@@ -484,6 +485,20 @@ P114에서는 아래 기준으로 진행한다.
 2. developer/internal 계정이나 다른 회사 사용자는 제외한다.
 3. 이메일 원문은 delivery metadata에 저장하지 않는다.
 4. 대상이 없으면 발송 provider를 호출하지 않고 `recipient_missing`류의 안전한 실패/스킵 경로로 남긴다.
+
+#### P114 알림 수신자 resolver
+
+P114에서 marketplace 알림 발송 전 단계인 recipient resolver를 추가했다.
+
+기준:
+
+1. `profiles`에서 partner company ID가 일치하는 사용자만 조회한다.
+2. `role = client`, `onboarding_completed_at is not null`, email 존재 조건을 쿼리와 코드 필터로 모두 확인한다.
+3. 회사 관리자(`company_role = admin`)를 우선하고, 그 다음 member를 이메일 기준으로 정렬한다.
+4. developer, 다른 회사 사용자, onboarding 미완료 사용자, 형식이 깨진 이메일은 제외한다.
+5. helper는 이메일을 반환하지만 delivery metadata 저장은 하지 않는다.
+
+다음 작업은 P115 marketplace transactional email provider skeleton이다. P114가 받을 사람을 고르는 read helper라면, P115는 이 helper를 사용해 Resend 기반 transactional email sender skeleton을 marketplace notification worker에 안전하게 연결하는 작업이다.
 
 #### P34 다음 코드 작업 후보
 

@@ -580,6 +580,24 @@
 - `docs/MARKETPLACE_NOTIFICATION_RUNBOOK.md`와 `docs/MARKETPLACE_NOTIFICATION_SELF_REVIEW.md` 문서 리뷰
 - `rg -n "sendTransactionalEmail|RESEND_API_KEY|NOTIFICATION_FROM_EMAIL|MARKETPLACE_NOTIFICATIONS_PROVIDER|internal_dry_run" server docs app`
 
+### marketplace notification recipient resolver
+
+- 이전 작업은 P113 marketplace 알림 provider 운영 연결 전 준비 상태 점검이고, 이번 작업은 P114 파트너 회사의 알림 수신 대상 사용자를 안전하게 고르는 read helper를 만든 작업이다.
+- `server/jobs/marketplace-notification-recipients.ts`를 추가했다.
+- recipient 후보는 `profiles`에서 partner company ID가 일치하고, `role = client`, `onboarding_completed_at is not null`, email 존재 조건을 만족하는 사용자만 조회한다.
+- 코드 필터에서도 회사 ID, client role, onboarding 완료, 이메일 형식을 다시 확인한다.
+- 회사 관리자(`company_role = admin`)를 우선 정렬하고, member는 그 다음으로 둔다.
+- developer, 다른 회사 사용자, onboarding 미완료 사용자, 형식이 깨진 이메일은 제외하는 테스트를 추가했다.
+- helper는 email을 반환하지만 delivery metadata에는 저장하지 않는다.
+- 이번 P114는 P113처럼 준비 상태를 고르는 문서 작업이 아니다. 실제 provider 연결 전에 받을 사람 후보를 안전하게 읽는 코드 경계다.
+- 다음 작업은 P115 marketplace transactional email provider skeleton이다. 이번 P114가 받을 사람을 고르는 read helper라면, P115는 이 helper를 사용해 Resend 기반 transactional email sender skeleton을 marketplace notification worker에 연결하는 작업이다.
+
+검증:
+
+- `npx vitest run server/jobs/marketplace-notification-recipients.test.ts server/jobs/marketplace-notification-provider.test.ts server/jobs/marketplace-notification-send-readiness.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+
 ## 2026-06-02
 
 ### local login review smoke
