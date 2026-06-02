@@ -241,114 +241,125 @@ export function PlatformRequestOperationsPanel({
 
   return (
     <div id="platform-request-operations" className="scroll-mt-6">
-    <Card>
-      <CardHeader
-        action={<Badge tone={summary.schemaReady ? "info" : "warning"}>{summary.schemaReady ? "요청 운영" : "스키마 확인"}</Badge>}
-        description="통계를 해석하지 않아도 아래 작업 요청 문장을 그대로 사용해 다음 개선을 맡길 수 있습니다."
-        title="플랫폼 요청 운영 상태"
-      />
-      <CardBody className="grid gap-4">
-        {!summary.schemaReady ? (
-          <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
-            현재 이 환경에서는 플랫폼 요청 운영 데이터가 준비되지 않아 요청 통계를 계산할 수 없습니다. 로그인 문제는 아니며, 요청·입찰 기능 데이터 준비 후 운영 큐가 표시됩니다.
-          </p>
-        ) : null}
-        <div className="rounded-md border border-slate-200 bg-white p-4">
-          <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-sm font-semibold text-slate-950">대표 우선순위 큐</p>
-              <p className="mt-1 text-xs leading-5 text-slate-600">
-                통계를 해석하지 않아도 먼저 맡길 개선 작업을 병목 순서로 정리합니다.
-              </p>
+      <Card>
+        <CardHeader
+          action={<Badge tone={summary.schemaReady ? "info" : "warning"}>{summary.schemaReady ? "요청 운영" : "스키마 확인"}</Badge>}
+          description="대표가 통계를 해석하지 않아도 먼저 맡길 개선 작업과 복사용 요청문만 확인할 수 있게 정리합니다."
+          title="플랫폼 요청 운영 상태"
+        />
+        <CardBody className="grid gap-4">
+          {!summary.schemaReady ? (
+            <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
+              현재 이 환경에서는 플랫폼 요청 운영 데이터가 준비되지 않아 요청 통계를 계산할 수 없습니다. 로그인 문제는 아니며, 요청·입찰 기능 데이터 준비 후 운영 큐가 표시됩니다.
+            </p>
+          ) : null}
+          <div className="rounded-md border border-slate-200 bg-white p-4">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-slate-950">대표 우선순위 큐</p>
+                <p className="mt-1 text-xs leading-5 text-slate-600">
+                  먼저 맡길 개선 작업 3가지만 병목 순서로 보여줍니다.
+                </p>
+              </div>
+              <Badge tone={ownerActionQueue[0]?.tone ?? "neutral"}>{ownerActionQueue[0]?.value ?? "확인"}</Badge>
             </div>
-            <Badge tone={ownerActionQueue[0]?.tone ?? "neutral"}>{ownerActionQueue[0]?.value ?? "확인"}</Badge>
-          </div>
-          <div className="mt-3 grid gap-2 lg:grid-cols-3">
-            {ownerActionQueue.map((item) => (
-              <div className="rounded-md border border-slate-200 bg-slate-50 p-3" key={item.label}>
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-slate-950">{item.label}</p>
-                  <Badge tone={item.tone}>{item.value}</Badge>
+            <div className="mt-3 grid gap-2 lg:grid-cols-3">
+              {ownerActionQueue.map((item) => (
+                <div className="rounded-md border border-slate-200 bg-slate-50 p-3" key={item.label}>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-slate-950">{item.label}</p>
+                    <Badge tone={item.tone}>{item.value}</Badge>
+                  </div>
+                  <p className="mt-2 text-xs font-semibold leading-5 text-slate-800">{item.action}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-600">{item.detail}</p>
                 </div>
-                <p className="mt-2 text-xs font-semibold leading-5 text-slate-800">{item.action}</p>
-                <p className="mt-1 text-xs leading-5 text-slate-600">{item.detail}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="grid gap-3 rounded-md border border-slate-200 bg-white p-4 lg:grid-cols-[1fr_auto] lg:items-center">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="text-sm font-semibold text-slate-950">거래 신뢰지표 해석</p>
-              <Badge tone={trustMetricGuidance.tone}>{trustMetricGuidance.value}</Badge>
-            </div>
-            <p className="mt-1 text-xs font-semibold leading-5 text-slate-800">{trustMetricGuidance.label}</p>
-            <p className="mt-1 text-xs leading-5 text-slate-600">{trustMetricGuidance.detail}</p>
-          </div>
-          <div className="grid grid-cols-3 gap-2 text-center text-xs">
-            <div className="rounded-md bg-slate-50 p-2">
-              <p className="font-semibold text-slate-950">{summary.feedbackCount}건</p>
-              <p className="mt-1 text-slate-500">후기</p>
-            </div>
-            <div className="rounded-md bg-slate-50 p-2">
-              <p className="font-semibold text-slate-950">{summary.averageFeedbackRating ?? "-"}점</p>
-              <p className="mt-1 text-slate-500">평균</p>
-            </div>
-            <div className="rounded-md bg-slate-50 p-2">
-              <p className="font-semibold text-slate-950">{summary.completedWithoutFeedback}건</p>
-              <p className="mt-1 text-slate-500">미제출</p>
-            </div>
-          </div>
-        </div>
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {metrics.map((metric) => (
-            <div className="rounded-md border border-slate-200 bg-slate-50 p-3" key={metric.label}>
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold text-slate-950">{metric.label}</p>
-                <Badge tone={metric.tone}>{metric.value}</Badge>
-              </div>
-              <p className="mt-1 text-xs leading-5 text-slate-600">{metric.detail}</p>
-            </div>
-          ))}
-        </div>
-        <div className="rounded-md border border-blue-100 bg-blue-50 p-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold text-blue-900">다음에 바로 요청할 작업</p>
-              <p className="mt-2 text-sm leading-6 text-blue-950">{summary.actionRequest}</p>
-            </div>
-            <CopyOperationsRequestButton text={copyReadyRequest} />
-          </div>
-          <pre className="mt-3 max-h-48 overflow-auto whitespace-pre-wrap rounded-md border border-blue-100 bg-white p-3 text-xs leading-5 text-slate-700">
-            {copyReadyRequest}
-          </pre>
-        </div>
-        {summary.actionItems.length > 0 ? (
-          <div className="grid gap-2 rounded-md border border-slate-200 bg-white p-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm font-semibold text-slate-950">우선 확인 샘플</p>
-              <Badge tone="neutral">{summary.actionItems.length}건</Badge>
-            </div>
-            <div className="grid gap-2">
-              {summary.actionItems.map((item) => (
-                <Link
-                  className="focus-ring grid gap-1 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm transition hover:border-blue-200 hover:bg-blue-50"
-                  href={item.href}
-                  key={`${item.requestId}-${item.label}`}
-                >
-                  <span className="flex flex-wrap items-center gap-2">
-                    <span className="font-semibold text-slate-950">{item.label}</span>
-                    <Badge tone={item.requestType === "freight" ? "info" : "neutral"}>{item.requestType === "freight" ? "운송" : "통관"}</Badge>
-                    <span className="font-mono text-xs text-slate-500">{item.requestId.slice(0, 8)}</span>
-                  </span>
-                  <span className="text-xs leading-5 text-slate-600">{item.detail}</span>
-                </Link>
               ))}
             </div>
           </div>
-        ) : null}
-      </CardBody>
-    </Card>
+          <div className="grid gap-3 rounded-md border border-slate-200 bg-white p-4 lg:grid-cols-[1fr_auto] lg:items-center">
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-sm font-semibold text-slate-950">거래 신뢰지표 해석</p>
+                <Badge tone={trustMetricGuidance.tone}>{trustMetricGuidance.value}</Badge>
+              </div>
+              <p className="mt-1 text-xs font-semibold leading-5 text-slate-800">{trustMetricGuidance.label}</p>
+              <p className="mt-1 text-xs leading-5 text-slate-600">{trustMetricGuidance.detail}</p>
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-center text-xs">
+              <div className="rounded-md bg-slate-50 p-2">
+                <p className="font-semibold text-slate-950">{summary.feedbackCount}건</p>
+                <p className="mt-1 text-slate-500">후기</p>
+              </div>
+              <div className="rounded-md bg-slate-50 p-2">
+                <p className="font-semibold text-slate-950">{summary.averageFeedbackRating ?? "-"}점</p>
+                <p className="mt-1 text-slate-500">평균</p>
+              </div>
+              <div className="rounded-md bg-slate-50 p-2">
+                <p className="font-semibold text-slate-950">{summary.completedWithoutFeedback}건</p>
+                <p className="mt-1 text-slate-500">미제출</p>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-md border border-blue-100 bg-blue-50 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold text-blue-900">다음에 바로 요청할 작업</p>
+                <p className="mt-2 text-sm leading-6 text-blue-950">{summary.actionRequest}</p>
+              </div>
+              <CopyOperationsRequestButton text={copyReadyRequest} />
+            </div>
+          </div>
+          <details className="rounded-md border border-slate-200 bg-white">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
+              <span>
+                <span className="block text-sm font-semibold text-slate-950">상세 운영 지표와 확인 샘플</span>
+                <span className="mt-1 block text-xs leading-5 text-slate-600">필요할 때만 펼쳐서 건수, 샘플 요청, 복사용 원문을 확인합니다.</span>
+              </span>
+              <Badge tone="neutral">상세</Badge>
+            </summary>
+            <div className="grid gap-4 border-t border-slate-200 p-4">
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {metrics.map((metric) => (
+                  <div className="rounded-md border border-slate-200 bg-slate-50 p-3" key={metric.label}>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-slate-950">{metric.label}</p>
+                      <Badge tone={metric.tone}>{metric.value}</Badge>
+                    </div>
+                    <p className="mt-1 text-xs leading-5 text-slate-600">{metric.detail}</p>
+                  </div>
+                ))}
+              </div>
+              <pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded-md border border-blue-100 bg-blue-50 p-3 text-xs leading-5 text-slate-700">
+                {copyReadyRequest}
+              </pre>
+              {summary.actionItems.length > 0 ? (
+                <div className="grid gap-2 rounded-md border border-slate-200 bg-white p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-slate-950">우선 확인 샘플</p>
+                    <Badge tone="neutral">{summary.actionItems.length}건</Badge>
+                  </div>
+                  <div className="grid gap-2">
+                    {summary.actionItems.map((item) => (
+                      <Link
+                        className="focus-ring grid gap-1 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm transition hover:border-blue-200 hover:bg-blue-50"
+                        href={item.href}
+                        key={`${item.requestId}-${item.label}`}
+                      >
+                        <span className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-slate-950">{item.label}</span>
+                          <Badge tone={item.requestType === "freight" ? "info" : "neutral"}>{item.requestType === "freight" ? "운송" : "통관"}</Badge>
+                          <span className="font-mono text-xs text-slate-500">{item.requestId.slice(0, 8)}</span>
+                        </span>
+                        <span className="text-xs leading-5 text-slate-600">{item.detail}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </details>
+        </CardBody>
+      </Card>
     </div>
   );
 }

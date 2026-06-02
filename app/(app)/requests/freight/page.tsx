@@ -16,7 +16,13 @@ import {
   uniqueServiceRequestIds
 } from "@/server/repositories/service-request-list-view";
 
-export default async function FreightRequestsPage() {
+export default async function FreightRequestsPage({
+  searchParams
+}: {
+  searchParams?: Promise<{ workspace?: string }>;
+}) {
+  const params = (await searchParams) ?? {};
+  const isPartnerWorkspace = params.workspace === "forwarder";
   const supabase = await createSupabaseServerClient();
   const [freightRequests, freightOpportunities] = await Promise.all([
     listOwnFreightRequests(supabase),
@@ -45,7 +51,7 @@ export default async function FreightRequestsPage() {
           화물이 준비되기 전에도 기본 조건을 초안으로 저장하고, 다음 단계에서 서류 첨부와 포워더 모집으로 이어갑니다.
         </p>
       </div>
-      <RequestStartFlowPanel kind="freight" />
+      {isPartnerWorkspace ? null : <RequestStartFlowPanel kind="freight" />}
       <FreightRequestDraftPanel
         bidsByRequestId={bidsByRequestId}
         documentsByRequestId={documentsByRequestId}

@@ -256,6 +256,7 @@ function FreightLifecycleControls({
   status: string;
   viewerRole: "partner" | "requester";
 }) {
+  const router = useRouter();
   const [startState, startAction, startPending] = useActionState(startSelectedFreightRequestAction, lifecycleInitialState);
   const [completeState, completeAction, completePending] = useActionState(completeSelectedFreightRequestAction, lifecycleInitialState);
 
@@ -263,7 +264,10 @@ function FreightLifecycleControls({
     if (startState.status !== "idle" || completeState.status !== "idle") {
       window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
     }
-  }, [completeState.status, startState.status]);
+    if (startState.status === "success" || completeState.status === "success") {
+      router.refresh();
+    }
+  }, [completeState.status, router, startState.status]);
 
   if (status === "completed") {
     return (
@@ -356,6 +360,17 @@ function RequestProgress({
       </p>
     </div>
   );
+}
+
+function requestStatusCounts(requests: FreightRequestListItem[], opportunities: FreightOpportunityItem[]) {
+  return {
+    bidsReceived: requests.filter((request) => request.status === "bids_received").length,
+    drafts: requests.filter((request) => request.status === "draft").length,
+    inProgress: requests.filter((request) => request.status === "in_progress").length,
+    open: requests.filter((request) => request.status === "open").length,
+    opportunities: opportunities.length,
+    selected: requests.filter((request) => request.status === "partner_selected").length
+  };
 }
 
 function ReceivedFreightBidRow({
@@ -470,13 +485,17 @@ function SelectedFreightPartnerNextSteps({
 }
 
 function FreightQuestionAnswerRow({ question }: { question: FreightRequestQuestionItem }) {
+  const router = useRouter();
   const [state, action, pending] = useActionState(answerFreightRequestQuestionAction, questionInitialState);
 
   useEffect(() => {
     if (state.status !== "idle") {
       window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
     }
-  }, [state.status]);
+    if (state.status === "success") {
+      router.refresh();
+    }
+  }, [router, state.status]);
 
   return (
     <div className="grid gap-3 rounded-md bg-white p-3">
@@ -543,6 +562,7 @@ export function FreightRequestRow({
   questions: FreightRequestQuestionItem[];
   request: FreightRequestListItem;
 }) {
+  const router = useRouter();
   const [state, action, pending] = useActionState(publishFreightRequestAction, publishInitialState);
   const [documentState, documentAction, documentPending] = useActionState(uploadFreightRequestDocumentAction, documentUploadInitialState);
   const hasPublishFields = Boolean(request.originCountryCode && request.destinationCountryCode && request.transportMode);
@@ -555,7 +575,10 @@ export function FreightRequestRow({
     if (state.status !== "idle" || documentState.status !== "idle") {
       window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
     }
-  }, [documentState.status, state.status]);
+    if (state.status === "success" || documentState.status === "success") {
+      router.refresh();
+    }
+  }, [documentState.status, router, state.status]);
 
   return (
     <div className="grid gap-3 rounded-md border border-slate-200 bg-white p-4">
@@ -792,6 +815,7 @@ export function FreightOpportunityRow({
   opportunity: FreightOpportunityItem;
   questions?: FreightRequestQuestionItem[];
 }) {
+  const router = useRouter();
   const [state, action, pending] = useActionState(submitFreightBidAction, bidInitialState);
   const [questionState, questionAction, questionPending] = useActionState(askFreightRequestQuestionAction, questionInitialState);
   const selectedPartnerDocuments = documents.filter((document) => document.visibility === "selected_partner").length;
@@ -800,7 +824,10 @@ export function FreightOpportunityRow({
     if (state.status !== "idle" || questionState.status !== "idle") {
       window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
     }
-  }, [questionState.status, state.status]);
+    if (state.status === "success" || questionState.status === "success") {
+      router.refresh();
+    }
+  }, [questionState.status, router, state.status]);
 
   return (
     <div className="grid gap-3 rounded-md border border-slate-200 bg-white p-4">
@@ -1010,6 +1037,7 @@ export function FreightRequestDraftPanel({
   requests: FreightRequestListItem[];
   schemaReady: boolean;
 }) {
+  const router = useRouter();
   const [state, action, pending] = useActionState(createFreightRequestDraftAction, draftInitialState);
   const searchParams = useSearchParams();
   const initialWorkspace = searchParams.get("workspace") === "forwarder" ? "forwarder" : "requester";
@@ -1017,6 +1045,10 @@ export function FreightRequestDraftPanel({
   const prefill = marketplaceRequestPrefillFromSearchParams(searchParams);
   const prefilledProductSummary = marketplacePrefilledProductSummary(prefill);
   const prefilledTitle = marketplacePrefilledTitle(prefill, "freight");
+  const counts = requestStatusCounts(requests, opportunities);
+  const unansweredQuestionCount = Object.values(questionsByRequestId)
+    .flat()
+    .filter((question) => !question.answer).length;
   const [draftValues, setDraftValues] = useState(() => ({
     cbm: "",
     destinationCountryCode: prefill.destinationCountryCode ?? "",
@@ -1036,7 +1068,10 @@ export function FreightRequestDraftPanel({
     if (state.status !== "idle") {
       window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
     }
-  }, [state.status]);
+    if (state.status === "success") {
+      router.refresh();
+    }
+  }, [router, state.status]);
 
   return (
     <div className="grid gap-5">
@@ -1065,6 +1100,18 @@ export function FreightRequestDraftPanel({
           입찰 가능 요청
           <span className="mt-1 block text-xs font-normal opacity-80">매칭 요청 확인, 질문 등록, 운송 견적 제출</span>
         </button>
+      </div>
+
+      <div className="grid gap-2 rounded-md border border-slate-200 bg-white p-3 text-xs text-slate-600 md:grid-cols-6">
+        <span className="rounded-md bg-slate-50 px-3 py-2">초안 {counts.drafts}건</span>
+        <span className="rounded-md bg-slate-50 px-3 py-2">공개중 {counts.open}건</span>
+        <span className="rounded-md bg-slate-50 px-3 py-2">견적 도착 {counts.bidsReceived}건</span>
+        <span className="rounded-md bg-slate-50 px-3 py-2">선정 완료 {counts.selected}건</span>
+        <span className="rounded-md bg-slate-50 px-3 py-2">진행중 {counts.inProgress}건</span>
+        <span className="rounded-md bg-slate-50 px-3 py-2">입찰 가능 {counts.opportunities}건</span>
+        <span className={unansweredQuestionCount > 0 ? "rounded-md bg-amber-50 px-3 py-2 font-semibold text-amber-900 md:col-span-6" : "rounded-md bg-slate-50 px-3 py-2 md:col-span-6"}>
+          미답변 질문 {unansweredQuestionCount}건
+        </span>
       </div>
 
       {activeWorkspace === "requester" ? (

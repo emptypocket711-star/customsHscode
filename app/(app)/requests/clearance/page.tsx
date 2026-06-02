@@ -16,7 +16,13 @@ import {
   uniqueServiceRequestIds
 } from "@/server/repositories/service-request-list-view";
 
-export default async function ClearanceRequestsPage() {
+export default async function ClearanceRequestsPage({
+  searchParams
+}: {
+  searchParams?: Promise<{ workspace?: string }>;
+}) {
+  const params = (await searchParams) ?? {};
+  const isPartnerWorkspace = params.workspace === "broker";
   const supabase = await createSupabaseServerClient();
   const [clearanceRequests, clearanceOpportunities] = await Promise.all([
     listOwnClearanceRequests(supabase),
@@ -44,7 +50,7 @@ export default async function ClearanceRequestsPage() {
           수입·수출 통관에 필요한 HS CODE 여부, FTA 희망, 요건 확인 필요 여부를 정리하고 관세사무소 견적 요청으로 이어갑니다.
         </p>
       </div>
-      <RequestStartFlowPanel kind="clearance" />
+      {isPartnerWorkspace ? null : <RequestStartFlowPanel kind="clearance" />}
       <ClearanceRequestDraftPanel
         bidsByRequestId={bidsByRequestId}
         documentsByRequestId={documentsByRequestId}

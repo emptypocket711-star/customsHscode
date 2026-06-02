@@ -74,6 +74,7 @@ async function submitFreightBid(browser) {
     await page.locator('input[name="transitTimeDays"]').fill("7", { timeout: timeoutMs });
     await page.locator('textarea[name="message"]').fill("E2E mutation freight terms", { timeout: timeoutMs });
     await clickAndSettle(page, page.getByRole("button", { name: "견적 제출" }));
+    await waitForBodyText(page, "운송 견적을 제출했습니다.", "freight partner detail에 견적 제출 성공 메시지가 보이지 않습니다.");
   } finally {
     await context.close();
   }
@@ -90,6 +91,7 @@ async function submitClearanceBid(browser) {
     await page.locator('input[name="expectedClearanceDays"]').fill("4", { timeout: timeoutMs });
     await page.locator('textarea[name="riskNote"]').fill("E2E mutation preliminary review", { timeout: timeoutMs });
     await clickAndSettle(page, page.getByRole("button", { name: "예비 통관 견적 제출" }));
+    await waitForBodyText(page, "통관 견적을 제출했습니다.", "clearance partner detail에 견적 제출 성공 메시지가 보이지 않습니다.");
   } finally {
     await context.close();
   }

@@ -258,6 +258,7 @@ function ClearanceLifecycleControls({
   status: string;
   viewerRole: "partner" | "requester";
 }) {
+  const router = useRouter();
   const [startState, startAction, startPending] = useActionState(startSelectedClearanceRequestAction, lifecycleInitialState);
   const [completeState, completeAction, completePending] = useActionState(completeSelectedClearanceRequestAction, lifecycleInitialState);
 
@@ -265,7 +266,10 @@ function ClearanceLifecycleControls({
     if (startState.status !== "idle" || completeState.status !== "idle") {
       window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
     }
-  }, [completeState.status, startState.status]);
+    if (startState.status === "success" || completeState.status === "success") {
+      router.refresh();
+    }
+  }, [completeState.status, router, startState.status]);
 
   if (status === "completed") {
     return (
@@ -360,6 +364,7 @@ function requestStatusCounts(requests: ClearanceRequestListItem[], opportunities
   return {
     bidsReceived: requests.filter((request) => request.status === "bids_received").length,
     drafts: requests.filter((request) => request.status === "draft").length,
+    inProgress: requests.filter((request) => request.status === "in_progress").length,
     open: requests.filter((request) => request.status === "open").length,
     opportunities: opportunities.length,
     selected: requests.filter((request) => request.status === "partner_selected").length
@@ -477,13 +482,17 @@ function SelectedClearanceBrokerNextSteps({
 }
 
 function ClearanceQuestionAnswerRow({ question }: { question: ClearanceRequestQuestionItem }) {
+  const router = useRouter();
   const [state, action, pending] = useActionState(answerClearanceRequestQuestionAction, questionInitialState);
 
   useEffect(() => {
     if (state.status !== "idle") {
       window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
     }
-  }, [state.status]);
+    if (state.status === "success") {
+      router.refresh();
+    }
+  }, [router, state.status]);
 
   return (
     <div className="grid gap-3 rounded-md bg-white p-3">
@@ -540,10 +549,20 @@ export function ClearanceRequestRow({
   questions: ClearanceRequestQuestionItem[];
   request: ClearanceRequestListItem;
 }) {
+  const router = useRouter();
   const [state, action, pending] = useActionState(publishClearanceRequestAction, publishInitialState);
   const [documentState, documentAction, documentPending] = useActionState(uploadClearanceRequestDocumentAction, documentUploadInitialState);
   const canPublish = request.status === "draft";
   const selectedBid = bids.find((bid) => bid.status === "selected");
+
+  useEffect(() => {
+    if (state.status !== "idle" || documentState.status !== "idle") {
+      window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
+    }
+    if (state.status === "success" || documentState.status === "success") {
+      router.refresh();
+    }
+  }, [documentState.status, router, state.status]);
 
   return (
     <div className="grid gap-3 rounded-md border border-slate-200 bg-white p-4">
@@ -741,6 +760,7 @@ export function ClearanceOpportunityRow({
   opportunity: ClearanceOpportunityItem;
   questions: ClearanceRequestQuestionItem[];
 }) {
+  const router = useRouter();
   const [state, action, pending] = useActionState(submitClearanceBidAction, bidInitialState);
   const [questionState, questionAction, questionPending] = useActionState(askClearanceRequestQuestionAction, questionInitialState);
   const selectedPartnerDocuments = documents.filter((document) => document.visibility === "selected_partner").length;
@@ -749,7 +769,10 @@ export function ClearanceOpportunityRow({
     if (state.status !== "idle" || questionState.status !== "idle") {
       window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
     }
-  }, [questionState.status, state.status]);
+    if (state.status === "success" || questionState.status === "success") {
+      router.refresh();
+    }
+  }, [questionState.status, router, state.status]);
 
   return (
     <div className="grid gap-4 rounded-md border border-slate-200 bg-white p-4">
@@ -946,6 +969,7 @@ export function ClearanceRequestDraftPanel({
   requests: ClearanceRequestListItem[];
   schemaReady: boolean;
 }) {
+  const router = useRouter();
   const [state, action, pending] = useActionState(createClearanceRequestDraftAction, initialState);
   const searchParams = useSearchParams();
   const initialWorkspace = searchParams.get("workspace") === "broker" ? "broker" : "requester";
@@ -954,6 +978,9 @@ export function ClearanceRequestDraftPanel({
   const prefilledProductSummary = marketplacePrefilledProductSummary(prefill);
   const prefilledTitle = marketplacePrefilledTitle(prefill, "clearance");
   const counts = requestStatusCounts(requests, opportunities);
+  const unansweredQuestionCount = Object.values(questionsByRequestId)
+    .flat()
+    .filter((question) => !question.answer).length;
   const [draftValues, setDraftValues] = useState(() => ({
     destinationCountryCode: prefill.destinationCountryCode ?? "",
     direction: prefill.direction ?? "import",
@@ -975,7 +1002,10 @@ export function ClearanceRequestDraftPanel({
     if (state.status !== "idle") {
       window.dispatchEvent(new Event("hsfinder:navigation-progress-done"));
     }
-  }, [state.status]);
+    if (state.status === "success") {
+      router.refresh();
+    }
+  }, [router, state.status]);
 
   return (
     <div className="grid gap-5">
@@ -1006,12 +1036,16 @@ export function ClearanceRequestDraftPanel({
         </button>
       </div>
 
-      <div className="grid gap-2 rounded-md border border-slate-200 bg-white p-3 text-xs text-slate-600 md:grid-cols-5">
+      <div className="grid gap-2 rounded-md border border-slate-200 bg-white p-3 text-xs text-slate-600 md:grid-cols-6">
         <span className="rounded-md bg-slate-50 px-3 py-2">초안 {counts.drafts}건</span>
         <span className="rounded-md bg-slate-50 px-3 py-2">공개중 {counts.open}건</span>
         <span className="rounded-md bg-slate-50 px-3 py-2">견적 도착 {counts.bidsReceived}건</span>
         <span className="rounded-md bg-slate-50 px-3 py-2">선정 완료 {counts.selected}건</span>
+        <span className="rounded-md bg-slate-50 px-3 py-2">진행중 {counts.inProgress}건</span>
         <span className="rounded-md bg-slate-50 px-3 py-2">입찰 가능 {counts.opportunities}건</span>
+        <span className={unansweredQuestionCount > 0 ? "rounded-md bg-amber-50 px-3 py-2 font-semibold text-amber-900 md:col-span-6" : "rounded-md bg-slate-50 px-3 py-2 md:col-span-6"}>
+          미답변 질문 {unansweredQuestionCount}건
+        </span>
       </div>
 
       {activeWorkspace === "requester" ? (

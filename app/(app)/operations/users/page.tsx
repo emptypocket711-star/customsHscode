@@ -35,8 +35,8 @@ export default async function OperationsUsersPage() {
   return (
     <div className="grid gap-5">
       <PageHeading
-        title="고객 계정 관리"
-        description="먼저 처리할 역할 신청과 검증 큐를 확인한 뒤, 필요할 때만 업체 상태와 사용자 상세를 봅니다."
+        title="운영 관리 홈"
+        description="역할 신청, 회사 검증, 플랫폼 요청 병목을 먼저 확인하고 사용자 상세는 문의 대응이 필요할 때만 펼칩니다."
       />
       <OperationsUsersPriorityPanel
         companies={companies}
