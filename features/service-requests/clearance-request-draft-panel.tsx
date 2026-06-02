@@ -208,6 +208,33 @@ function ClearancePreSelectChecklist({ bid }: { bid: ReceivedClearanceBidItem })
   );
 }
 
+function ClearanceBidSelectionReadinessSummary({
+  bids,
+  documents,
+  questions
+}: {
+  bids: ReceivedClearanceBidItem[];
+  documents: ClearanceRequestDocumentItem[];
+  questions: ClearanceRequestQuestionItem[];
+}) {
+  const unansweredQuestionCount = questions.filter((question) => !question.answer).length;
+  const pricedBidCount = bids.filter((bid) => bid.totalAmount !== null || bid.brokerageFeeAmount !== null).length;
+  const reviewAvailableCount = bids.filter((bid) => bid.reviewAvailable).length;
+  const requestedDocumentCount = bids.reduce((count, bid) => count + bid.additionalDocumentsRequired.length, 0);
+  const documentStatus = documents.length > 0 ? `공개 서류 ${documents.length}건` : "공개 서류 없음";
+  const questionStatus = unansweredQuestionCount > 0 ? `미답변 질문 ${unansweredQuestionCount}건` : "질문 답변 완료";
+
+  return (
+    <div className="grid gap-2 rounded-md border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-700 md:grid-cols-4">
+      <p className="font-semibold text-slate-900 md:col-span-4">선정 준비 요약</p>
+      <p className="rounded-md bg-white p-2">{questionStatus}</p>
+      <p className="rounded-md bg-white p-2">{documentStatus}</p>
+      <p className="rounded-md bg-white p-2">금액 입력 {pricedBidCount}/{bids.length}곳</p>
+      <p className="rounded-md bg-white p-2">예비 검토 {reviewAvailableCount}곳 / 요청 서류 {requestedDocumentCount}건</p>
+    </div>
+  );
+}
+
 function clearanceBidComparisonBadges(bid: ReceivedClearanceBidItem, bids: ReceivedClearanceBidItem[]) {
   const pricedBids = bids.filter((item) => item.totalAmount !== null);
   const clearanceDayBids = bids.filter((item) => item.expectedClearanceDays !== null);
@@ -756,6 +783,7 @@ export function ClearanceRequestRow({
         </div>
         {bids.length > 0 ? (
           <div className="grid gap-3">
+            <ClearanceBidSelectionReadinessSummary bids={bids} documents={documents} questions={questions} />
             <ClearanceBidComparisonGuide bids={bids} />
             {bids.map((bid) => (
               <ReceivedClearanceBidRow bid={bid} bids={bids} key={bid.bidId} requestStatus={request.status} />

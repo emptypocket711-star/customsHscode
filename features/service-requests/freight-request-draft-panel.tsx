@@ -187,6 +187,32 @@ function FreightPreSelectChecklist({ bid }: { bid: ReceivedFreightBidItem }) {
   );
 }
 
+function FreightBidSelectionReadinessSummary({
+  bids,
+  documents,
+  questions
+}: {
+  bids: ReceivedFreightBidItem[];
+  documents: FreightRequestDocumentItem[];
+  questions: FreightRequestQuestionItem[];
+}) {
+  const unansweredQuestionCount = questions.filter((question) => !question.answer).length;
+  const pricedBidCount = bids.filter((bid) => bid.totalAmount !== null).length;
+  const reviewedBidCount = bids.filter((bid) => bid.partnerFeedback && bid.partnerFeedback.feedbackCount > 0).length;
+  const documentStatus = documents.length > 0 ? `공개 서류 ${documents.length}건` : "공개 서류 없음";
+  const questionStatus = unansweredQuestionCount > 0 ? `미답변 질문 ${unansweredQuestionCount}건` : "질문 답변 완료";
+
+  return (
+    <div className="grid gap-2 rounded-md border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-700 md:grid-cols-4">
+      <p className="font-semibold text-slate-900 md:col-span-4">선정 준비 요약</p>
+      <p className="rounded-md bg-white p-2">{questionStatus}</p>
+      <p className="rounded-md bg-white p-2">{documentStatus}</p>
+      <p className="rounded-md bg-white p-2">금액 입력 {pricedBidCount}/{bids.length}곳</p>
+      <p className="rounded-md bg-white p-2">후기 보유 {reviewedBidCount}/{bids.length}곳</p>
+    </div>
+  );
+}
+
 function freightBidComparisonBadges(bid: ReceivedFreightBidItem, bids: ReceivedFreightBidItem[]) {
   const pricedBids = bids.filter((item) => item.totalAmount !== null);
   const leadTimeBids = bids.filter((item) => item.leadTimeDays !== null);
@@ -823,6 +849,7 @@ export function FreightRequestRow({
             <Badge tone={bids.some((bid) => bid.status === "selected") ? "success" : "info"}>{bids.length}건</Badge>
           </div>
           <div className="grid gap-2">
+            <FreightBidSelectionReadinessSummary bids={bids} documents={documents} questions={questions} />
             <FreightBidComparisonGuide bids={bids} />
             {bids.map((bid) => (
               <ReceivedFreightBidRow key={bid.bidId} bid={bid} bids={bids} requestStatus={request.status} />
