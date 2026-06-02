@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { buildPlatformRequestOperationsMetricGroups } from "@/features/operations/platform-request-operations-panel";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { buildPlatformRequestOperationsMetricGroups, PlatformRequestOperationsPanel } from "@/features/operations/platform-request-operations-panel";
 import type { PlatformRequestOperationsSummary } from "@/server/repositories/platform-operations.repository";
 
 function summaryFixture(overrides: Partial<PlatformRequestOperationsSummary> = {}): PlatformRequestOperationsSummary {
@@ -71,5 +73,29 @@ describe("platform request operations panel", () => {
     expect(groups.primaryMetrics.map((metric) => metric.label)).not.toContain("견적 없는 공개");
     expect(groups.diagnosticMetrics.map((metric) => metric.label)).toContain("미답변 질문");
     expect(groups.diagnosticMetrics.map((metric) => metric.label)).toContain("견적 없는 공개");
+  });
+
+  it("renders prioritized sample links before the collapsed diagnostics", () => {
+    const html = renderToStaticMarkup(
+      createElement(PlatformRequestOperationsPanel, {
+        summary: summaryFixture({
+          actionItems: [{
+            detail: "운송 요청의 견적 비교·선택 위치를 확인합니다.",
+            href: "/operations/requests/req-1#request-bids",
+            label: "견적 비교 확인",
+            requestId: "req-1",
+            requestType: "freight",
+            status: "bids_received"
+          }],
+          actionRequest: "견적이 도착한 요청 1건의 비교·선택 전환 UX를 점검해줘.",
+          bidsReceived: 1,
+          total: 1
+        })
+      })
+    );
+
+    expect(html).toContain("바로 확인할 운영 샘플");
+    expect(html).toContain("/operations/requests/req-1#request-bids");
+    expect(html.indexOf("바로 확인할 운영 샘플")).toBeLessThan(html.indexOf("상세 진단 지표와 확인 샘플"));
   });
 });

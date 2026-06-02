@@ -293,6 +293,30 @@ export function PlatformRequestOperationsPanel({
                 </div>
               ))}
             </div>
+            {summary.actionItems.length > 0 ? (
+              <div className="mt-3 rounded-md border border-blue-100 bg-blue-50 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-blue-950">바로 확인할 운영 샘플</p>
+                  <Badge tone="info">{summary.actionItems.length}건</Badge>
+                </div>
+                <div className="mt-2 grid gap-2 lg:grid-cols-3">
+                  {summary.actionItems.map((item) => (
+                    <Link
+                      className="focus-ring rounded-md border border-blue-100 bg-white p-3 text-sm transition hover:border-blue-300 hover:bg-blue-50"
+                      href={item.href}
+                      key={`priority-${item.requestId}-${item.label}`}
+                    >
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="font-semibold text-slate-950">{item.label}</span>
+                        <Badge tone={item.requestType === "freight" ? "info" : "neutral"}>{item.requestType === "freight" ? "운송" : "통관"}</Badge>
+                        <span className="font-mono text-xs text-slate-500">{item.requestId.slice(0, 8)}</span>
+                      </span>
+                      <span className="mt-1 block text-xs leading-5 text-slate-600">{item.detail}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
           <div className="grid gap-3 rounded-md border border-slate-200 bg-white p-4 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
