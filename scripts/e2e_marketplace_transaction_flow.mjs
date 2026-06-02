@@ -139,6 +139,28 @@ async function assertRequesterDashboardNextAction(browser) {
   }
 }
 
+async function assertRequesterDetailBidFocus(browser, kind, requestId, requestTitle) {
+  const context = await browser.newContext({ storageState: stateFiles.requester });
+  const page = await context.newPage();
+
+  try {
+    await page.goto(transactionUrl(kind, "requester", requestId), { waitUntil: "networkidle", timeout: timeoutMs });
+    const bidFocusLink = page.locator('a[href="#request-bids"]').filter({ hasText: "견적" }).first();
+    await bidFocusLink.click({ timeout: timeoutMs });
+    await page.waitForLoadState("networkidle", { timeout: timeoutMs }).catch(() => undefined);
+
+    const body = await page.locator("body").innerText({ timeout: timeoutMs });
+    assert(page.url().endsWith("#request-bids"), `${kind} 상세에서 견적 바로가기가 request-bids 앵커로 이동하지 않았습니다.`, { currentUrl: page.url() });
+    assertContainsAll(body, [
+      requestTitle,
+      "받은 견적",
+      "견적 비교 기준"
+    ], `${kind} 화주 상세 견적 focus`);
+  } finally {
+    await context.close();
+  }
+}
+
 async function assertPartnerOpportunity(browser, kind, role, requestId) {
   const result = await pageTextFor(browser, role, transactionUrl(kind, "partner", requestId));
   assert(!result.url.includes("/login"), `${kind} 파트너 상세가 로그인으로 이동했습니다.`, { currentUrl: result.url });
@@ -176,6 +198,8 @@ async function main() {
     await assertRequesterDashboardNextAction(browser);
     await assertRequesterDetail(browser, "freight", fixture.freightRequestId);
     await assertRequesterDetail(browser, "clearance", fixture.clearanceRequestId);
+    await assertRequesterDetailBidFocus(browser, "freight", fixture.freightRequestId, fixtureContract.requests.freight.title);
+    await assertRequesterDetailBidFocus(browser, "clearance", fixture.clearanceRequestId, fixtureContract.requests.clearance.title);
     await assertPartnerOpportunity(browser, "freight", "forwarder", fixture.freightRequestId);
     await assertPartnerOpportunity(browser, "clearance", "broker", fixture.clearanceRequestId);
 

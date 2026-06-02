@@ -275,7 +275,8 @@
 | P68.4 partner action conversion review | 완료 | 운영자 관리 화면 단순화가 아니라 파트너가 알림을 본 뒤 입찰 상세로 이동하고 행동할 수 있는지 점검한다 | notification-to-opportunity E2E | readiness, e2e, typecheck, lint |
 | P68.5 next platform rail selection | 완료 | 파트너 알림 행동 전환 검증이 아니라 다음으로 이어갈 플랫폼 MVP 병목을 다시 고른다 | requester dashboard action conversion selected | roadmap/code review |
 | P69.1 requester dashboard action conversion review | 완료 | 파트너 알림에서 입찰 상세로 이동하는 검증이 아니라 화주가 대시보드 다음 행동에서 요청 상세와 견적 비교 CTA로 이동하는지 점검한다 | requester dashboard direct detail links | unit, browser, e2e, typecheck, lint |
-| P69.2 requester detail bid-focus review | 예정 | 대시보드가 상세로 바로 가는 링크가 아니라 상세 도착 후 견적 비교·선정 영역이 충분히 빨리 보이는지 점검한다 | requester detail bid focus | UX review, browser, typecheck, lint |
+| P69.2 requester detail bid-focus review | 완료 | 대시보드가 상세로 바로 가는 링크가 아니라 상세 도착 후 견적 비교·선정 영역이 충분히 빨리 보이는지 점검한다 | request-bids anchor E2E | e2e, node check |
+| P69.3 post-selection completion flow review | 예정 | 상세 견적 앵커 검증이 아니라 업체 선정 후 진행중·완료·피드백 전환이 실제 사용 흐름에서 막히지 않는지 점검한다 | post-selection action flow | e2e, browser, typecheck, lint |
 
 #### P34 다음 코드 작업 후보
 
