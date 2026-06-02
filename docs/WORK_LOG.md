@@ -738,6 +738,22 @@
 - `rg -n "Fanout Decision|P121.1|P122.1|single-recipient|다중 fanout|관리자 우선 1명" docs/MARKETPLACE_NOTIFICATION_PREFERENCES_PLAN.md docs/ROADMAP.md docs/WORK_LOG.md`
 - `git diff --check`
 
+### marketplace production email rehearsal gate
+
+- 이전 작업은 P121 다중 수신자 fanout을 열지 않기로 한 정책 결정이고, 이번 작업은 P122 실제 `transactional_email` provider 리허설을 어떤 조건에서 허용할지 정한 운영/보안 gate 작업이다.
+- `MARKETPLACE_PRODUCTION_EMAIL_REHEARSAL_GATE.md`를 추가했다.
+- 현재 결정은 실제 provider 리허설 보류다.
+- 발신 도메인 인증, 인증된 `NOTIFICATION_FROM_EMAIL`, secret 비노출, rehearsal window send flag, 통제된 테스트 수신함, synthetic 요청, worker secret, 발송 후 send flag 비활성화를 필수 gate로 정했다.
+- 실제 고객 수신자, 미인증 발신 도메인, real invoice/document/customer data, 공개 unsubscribe 미설계 상태에서는 provider rehearsal을 금지했다.
+- runbook에서 실제 provider 리허설은 gate 문서의 모든 조건이 충족될 때까지 실행하지 않는다고 명시했다.
+- 이번 P122는 P121처럼 fanout 범위를 정한 작업이 아니다. 실제 외부 provider 발송 리허설의 운영 허용 조건을 정한 작업이다.
+- 다음 작업은 P123 marketplace email provider final readiness review다. 이번 P122가 production rehearsal gate라면, P123은 P113-P122 email provider 준비 작업 전체를 다시 훑고 남은 병목을 정리하는 작업이다.
+
+검증:
+
+- `rg -n "MARKETPLACE_PRODUCTION_EMAIL_REHEARSAL_GATE|P122.1|P123.1|production email rehearsal|실제 provider 리허설|MARKETPLACE_NOTIFICATIONS_SEND_ENABLED" docs/MARKETPLACE_PRODUCTION_EMAIL_REHEARSAL_GATE.md docs/MARKETPLACE_NOTIFICATION_RUNBOOK.md docs/ROADMAP.md docs/WORK_LOG.md`
+- `git diff --check`
+
 ## 2026-06-02
 
 ### local login review smoke

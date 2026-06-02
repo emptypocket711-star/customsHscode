@@ -103,6 +103,8 @@ NOTIFICATION_FROM_EMAIL=...
 
 이 상태에서 `send=1`을 호출하면 partner company의 onboarding 완료 client profile 중 해당 notification kind의 email opt-in이 켜진 수신자를 찾아 이메일을 발송한다. 수신자가 없거나 opt-in이 없으면 provider는 발송하지 않고 실패 상태를 기록한다.
 
+실제 provider 리허설은 [MARKETPLACE_PRODUCTION_EMAIL_REHEARSAL_GATE.md](./MARKETPLACE_PRODUCTION_EMAIL_REHEARSAL_GATE.md)의 모든 gate가 충족될 때까지 실행하지 않는다. 인증된 발신 도메인, 통제된 테스트 수신함, synthetic 요청, worker secret, 발송 후 send flag 비활성화 절차가 모두 준비되어야 한다.
+
 ## 결과 필드 해석
 
 | 필드 | 의미 |

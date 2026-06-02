@@ -410,7 +410,8 @@
 | P119.1 marketplace email notification settings UI | 완료 | schema/resolver gate가 아니라 사용자가 로그인 상태에서 marketplace email 수신 설정을 직접 켜고 끄게 한다 | email preference settings UI | server action, UX, browser |
 | P120.1 marketplace email opt-in rehearsal | 완료 | 설정 UI가 아니라 opt-in preference가 실제 notification worker/provider rehearsal에서 수신자 선택을 제어하는지 확인한다 | opt-in send rehearsal | local ops rehearsal, unit |
 | P121.1 marketplace notification fanout decision | 완료 | opt-in rehearsal이 아니라 한 회사의 여러 opt-in 사용자에게 알림을 보낼지, 1명 관리자 우선 구조를 유지할지 결정한다 | single-recipient MVP retained | product/security review |
-| P122.1 marketplace production email rehearsal gate | 예정 | fanout 정책 결정이 아니라 실제 provider를 통제된 테스트 수신함으로 리허설할 수 있는 조건을 정한다 | production email rehearsal gate | ops/security review |
+| P122.1 marketplace production email rehearsal gate | 완료 | fanout 정책 결정이 아니라 실제 provider를 통제된 테스트 수신함으로 리허설할 수 있는 조건을 정한다 | production email rehearsal gate | ops/security review |
+| P123.1 marketplace email provider final readiness review | 예정 | production rehearsal gate가 아니라 알림 email provider 전체의 남은 위험과 다음 병목을 최종 정리한다 | email readiness final review | docs, rg, tests |
 
 #### P109 다음 병목 선정
 
@@ -619,6 +620,26 @@ P121에서 MVP 외부 이메일은 다중 fanout을 열지 않고, opt-in 사용
 fanout은 per-user delivery row, 회사 내 담당자 배정, 공개 unsubscribe, 알림 피로도 telemetry가 준비된 뒤 다시 검토한다.
 
 다음 작업은 P122 marketplace production email rehearsal gate다. P121이 다중 수신자 fanout을 열지 않기로 한 정책 결정이라면, P122는 실제 Resend provider를 통제된 테스트 수신함으로 리허설할 수 있는 운영/보안 조건을 정하는 작업이다.
+
+#### P122 production email rehearsal gate
+
+P122에서 실제 `transactional_email` provider 리허설을 실행할 수 있는 gate를 정했다.
+
+현재 결정은 실제 provider 리허설 보류다. 아래 조건이 모두 준비되기 전에는 production email rehearsal을 실행하지 않는다.
+
+1. 발신 도메인이 provider에서 인증되어야 한다.
+2. `NOTIFICATION_FROM_EMAIL`은 인증된 도메인을 사용해야 한다.
+3. `RESEND_API_KEY`는 로그에 출력하지 않아야 한다.
+4. `MARKETPLACE_NOTIFICATIONS_SEND_ENABLED=true`는 rehearsal window에만 켠다.
+5. 수신자는 운영자가 통제하는 테스트 메일함이어야 한다.
+6. 수신자 profile은 해당 notification kind에 명시적으로 opt-in되어 있어야 한다.
+7. synthetic request에는 실제 고객 서류명, 금액, 연락처, 사업자번호, invoice text가 없어야 한다.
+8. worker route는 `JOB_WORKER_SECRET` 또는 `CRON_SECRET`으로 보호되어야 한다.
+9. 발송 후 `MARKETPLACE_NOTIFICATIONS_SEND_ENABLED`를 즉시 끈다.
+
+세부 gate는 [MARKETPLACE_PRODUCTION_EMAIL_REHEARSAL_GATE.md](./MARKETPLACE_PRODUCTION_EMAIL_REHEARSAL_GATE.md)에 정리했다.
+
+다음 작업은 P123 marketplace email provider final readiness review다. P122가 실제 provider 리허설의 조건을 정한 작업이라면, P123은 P113-P122까지의 email provider 준비 작업 전체를 다시 훑고 남은 병목을 정리하는 작업이다.
 
 #### P34 다음 코드 작업 후보
 
