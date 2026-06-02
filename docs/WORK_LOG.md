@@ -189,6 +189,23 @@
 - Playwright list check: 운송 화주 목록에서 `운송 입찰 작업 흐름` 미노출, 포워더 목록에서 노출 확인
 - `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
 
+### marketplace clearance row action layout
+
+- 이전 작업은 P91 안내 패널의 역할별 위치 수정이고, 이번 작업은 P92 요청 row 내부의 버튼/상태 문구 밀도 점검이다.
+- 운송 화주 row는 제목·상태 badge와 `상세 작업` 버튼이 좌우로 분리되어 있었다.
+- 통관 화주 row는 `상세 작업` 버튼이 상태 badge들과 같은 줄에 섞여 있어 row를 훑을 때 행동 버튼과 상태 정보가 분리되지 않았다.
+- 통관 row 상단을 운송 row와 같은 `본문 + 우측 상세 작업 버튼` 구조로 맞췄다.
+- 제목은 긴 경우 truncate되도록 하고, 목적국/HSK/신고 예상 건수는 제목 아래 보조 정보로 유지했다.
+- 권한/RLS, 상세 링크 대상, 공개 action, DB schema는 변경하지 않았다.
+- 다음 작업은 P93 선정 후 다음 업무 카드 밀도 점검이다. 이번 P92가 row 상단의 행동 버튼 구조라면, P93은 파트너 선정 이후 안내 카드가 너무 많은 문장을 펼쳐 보이는지 확인하는 작업이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- Playwright requester check: `/requests/clearance?workspace=requester`에서 `상세 작업` 링크 유지, 관세사 입찰 흐름 미노출 확인
+- `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
+
 ## 2026-06-02
 
 ### local login review smoke

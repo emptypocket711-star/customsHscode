@@ -596,21 +596,25 @@ export function ClearanceRequestRow({
 
   return (
     <div className="grid gap-3 rounded-md border border-slate-200 bg-white p-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <p className="text-sm font-semibold text-slate-950">{request.title}</p>
-        <Badge tone={statusTone(request.status)}>{statusLabel(request.status)}</Badge>
-        <Badge tone="neutral">{request.direction === "export" ? "수출통관" : "수입통관"}</Badge>
-        {request.urgent ? <Badge tone="warning">긴급</Badge> : null}
+      <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-start">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="truncate text-sm font-semibold text-slate-950">{request.title}</p>
+            <Badge tone={statusTone(request.status)}>{statusLabel(request.status)}</Badge>
+            <Badge tone="neutral">{request.direction === "export" ? "수출통관" : "수입통관"}</Badge>
+            {request.urgent ? <Badge tone="warning">긴급</Badge> : null}
+          </div>
+          <p className="mt-1 text-xs text-slate-500">
+            목적국 {request.destinationCountryCode ?? "-"} / HSK {request.hskCode ?? "미정"} / 신고 예상 {request.estimatedDeclarationCount ?? "-"}건
+          </p>
+        </div>
         <Link
-          className="focus-ring inline-flex h-8 items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+          className="focus-ring inline-flex h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           href={`/requests/clearance/${request.id}`}
         >
           상세 작업
         </Link>
       </div>
-      <p className="text-xs text-slate-500">
-        목적국 {request.destinationCountryCode ?? "-"} / HSK {request.hskCode ?? "미정"} / 신고 예상 {request.estimatedDeclarationCount ?? "-"}건
-      </p>
       <div className="grid gap-2 rounded-md bg-slate-50 p-3 text-xs text-slate-600 md:grid-cols-4">
         <span>HS 확인 {request.hsCodeKnown ? "보유" : "필요"}</span>
         <span>FTA 희망 {request.ftaPreferenceRequested ? "있음" : "없음"}</span>
