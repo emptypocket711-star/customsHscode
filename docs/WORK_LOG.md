@@ -809,6 +809,23 @@
 - `npx vitest run server/repositories/platform-operations.repository.test.ts`
 - `npm run typecheck`
 - `npm run lint`
+
+### marketplace bid revision policy boundary
+
+- 이전 작업은 운영 개선 프롬프트에 견적 수정·철회 MVP 정책을 포함한 P145.1이고, 이번 작업은 나중에 기능을 열 때 필요한 RPC/RLS/audit 경계를 문서화한 P146.1이다.
+- `docs/MARKETPLACE_BID_REVISION_POLICY.md`를 추가했다.
+- 현재 MVP에서는 파트너 직접 견적 수정·철회 기능을 열지 않고, 중복 제출 차단과 제출 상태 표시, 운영 확인 필요 문구까지만 둔다는 결정을 명시했다.
+- 기존 안전장치로 active bid unique index, `submit_freight_bid`, `submit_clearance_bid` 중복 제출 차단, 직접 table write 미제공을 정리했다.
+- 나중에 수정 기능을 열 때 필요한 상태 조건, audit log, 화주 알림, 최근 수정일 표시 기준을 적었다.
+- 나중에 철회 기능을 열 때 필요한 상태 조건, 철회 사유, 화주·운영 표시 기준을 적었다.
+- 직접 `service_bids` update/delete 정책을 열지 않는 금지 사항을 명시했다.
+- 새 migration, RLS 변경은 없다.
+- 로컬 파일만 수정했고 원격 푸시, 배포는 하지 않았다.
+
+검증:
+
+- `rg -n "withdraw|철회|수정|service_bids|견적 수정|견적 철회" docs supabase/migrations server/repositories`
+- `git diff -- docs/MARKETPLACE_BID_REVISION_POLICY.md docs/ROADMAP.md docs/WORK_LOG.md`
 - Playwright developer check: `/operations/requests/75000000-0000-4000-8000-000000000201`, 임시 sent match 기반 `알림 후 파트너 무응답 개선` 렌더 확인
 
 ### marketplace partner opportunity response clue
