@@ -272,6 +272,22 @@
 - Playwright requester list check: 운송/통관 목록 렌더링 및 완료 row 요약 유지 확인
 - `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
 
+### selected-or-later status helper
+
+- 이전 작업은 P96 진행중/완료 요청도 선정 이후 progress로 표시하는 상태 보정이고, 이번 작업은 P97 progress 관련 중복 공통화 검토다.
+- 운송/통관 progress 렌더링은 스타일과 입력값이 달라 한 번에 합치면 UI 회귀 위험이 있어 유지했다.
+- 대신 `partner_selected`, `in_progress`, `completed`를 선정 이후 상태로 판단하는 `isSelectedOrLaterStatus`만 `service-request-status.ts`로 분리했다.
+- 운송/통관 요청 row는 같은 helper를 사용해 progress의 선정 단계와 통관 견적 단계 판단을 유지한다.
+- UI copy, lifecycle action, 권한/RLS, DB schema는 변경하지 않았다.
+- 다음 작업은 P98 상태 count 계산 중복 점검이다. 이번 P97이 상태 판단 helper라면, P98은 운송·통관 상단 summary count 계산이 같은 패턴으로 반복되는지 확인하는 작업이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- Playwright role list check: 화주/포워더/관세사무소 목록 route 렌더링 확인
+- `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
+
 ## 2026-06-02
 
 ### local login review smoke

@@ -22,6 +22,7 @@ import {
   ServiceRequestDocumentVisibilityGuide
 } from "@/features/service-requests/service-request-document-visibility-guide";
 import { ServiceRequestFeedbackForm } from "@/features/service-requests/service-request-feedback-form";
+import { isSelectedOrLaterStatus } from "@/features/service-requests/service-request-status";
 import {
   answerFreightRequestQuestionAction,
   askFreightRequestQuestionAction,
@@ -237,10 +238,6 @@ function statusTone(status: string): "neutral" | "warning" | "info" | "success" 
   if (status === "bids_received") return "warning";
   if (status === "partner_selected" || status === "in_progress" || status === "completed") return "success";
   return "neutral";
-}
-
-function isSelectedOrLaterStatus(status: string) {
-  return status === "partner_selected" || status === "in_progress" || status === "completed";
 }
 
 function nextActionLabel(input: {
