@@ -45,6 +45,17 @@ function completionReportTone(status: string): "neutral" | "warning" | "info" | 
   return "neutral";
 }
 
+function bidStatusTone(status: string): "neutral" | "warning" | "info" | "success" {
+  if (status === "selected") return "success";
+  if (status === "submitted" || status === "shortlisted") return "info";
+  if (status === "withdrawn" || status === "rejected" || status === "expired") return "neutral";
+  return "warning";
+}
+
+function activeBidCount(bids: Array<{ status: string }>) {
+  return bids.filter((bid) => bid.status !== "hidden" && bid.status !== "withdrawn" && bid.status !== "rejected" && bid.status !== "expired").length;
+}
+
 function improvementPromptTarget(category: string) {
   if (category === "question_response") {
     return {
@@ -366,12 +377,23 @@ export default async function OperationsRequestDetailPage({
         <div id="request-bids" className="scroll-mt-6">
         <Card>
           <CardHeader action={<Badge tone={detail.bids.length > 0 ? "info" : "neutral"}>{detail.bids.length}건</Badge>} description="견적 금액과 메시지 원문은 표시하지 않습니다." title="견적 상태" />
-          <CardBody className="grid gap-2">
+          <CardBody className="grid gap-3">
+            {detail.bids.length ? (
+              <div className="grid gap-2 rounded-md border border-slate-200 bg-white p-3 text-xs leading-5 text-slate-600 md:grid-cols-3">
+                <span>활성 견적 {activeBidCount(detail.bids)}건</span>
+                <span>선정 견적 {detail.bids.filter((bid) => bid.status === "selected").length}건</span>
+                <span>수정·철회 직접 처리 미제공</span>
+              </div>
+            ) : null}
             {detail.bids.length ? detail.bids.map((bid) => (
               <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600" key={bid.bidId}>
-                <p className="font-semibold text-slate-950">상태 {bid.status}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-semibold text-slate-950">상태 {bid.status}</p>
+                  <Badge tone={bidStatusTone(bid.status)}>{bid.status}</Badge>
+                </div>
                 <p>통화 {bid.currency ?? "-"} / 리드타임 {bid.leadTimeDays ?? "-"}일 / 제출 {bid.submittedAt ? bid.submittedAt.slice(0, 10) : "-"}</p>
                 <p>선정 {bid.selectedAt ? bid.selectedAt.slice(0, 10) : "-"}</p>
+                <p>정책: 제출 후 파트너 직접 수정·철회는 아직 제공하지 않으며 조건 변경은 운영 확인 후 별도 처리합니다.</p>
               </div>
             )) : (
               <p className="text-sm text-slate-600">제출된 견적이 없습니다.</p>

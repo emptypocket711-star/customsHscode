@@ -432,6 +432,7 @@
 | P141.1 marketplace bid readiness route regression | 완료 | 새 UI 추가가 아니라 화주·포워더·관세사 주요 route가 연속 변경 후 계속 정상 렌더링되는지 확인한다 | role route smoke | browser, typecheck, lint |
 | P142.1 partner submitted bid duplicate UX guard | 완료 | route 검증이 아니라 이미 견적을 제출한 파트너에게 중복 제출 form 대신 제출 상태를 보여준다 | own submitted bid summary | UX self-review, typecheck, lint, browser |
 | P143.1 bid revision policy visibility | 완료 | 중복 제출 form 숨김이 아니라 제출 후 수정·철회 직접 처리 불가 정책을 화주·파트너 견적 화면에 일관되게 표시한다 | bid revision policy notice | UX self-review, typecheck, lint, browser |
+| P144.1 operations bid revision policy visibility | 완료 | 사용자 화면 정책 문구가 아니라 운영 요청 상세에서 견적 상태와 수정·철회 정책을 민감정보 없이 확인하게 한다 | operations bid policy summary | typecheck, lint, browser |
 
 #### P109 다음 병목 선정
 
