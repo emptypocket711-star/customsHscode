@@ -146,11 +146,18 @@ export function ServiceRequestCompletionReportPanel({
         <p className="rounded-md bg-slate-50 p-2">출처: 요청, 선정 견적, 조회 snapshot, 실제 업무 결과를 분리합니다.</p>
       </div>
 
-      <div className="rounded-md border border-blue-100 bg-blue-50 p-3 text-xs leading-5 text-blue-950">
-        <p className="font-semibold">완료 후 다음 행동</p>
-        <p className="mt-1">
-          먼저 완료 리포트 초안을 저장하고, 요청 서류를 최종 보관 역할로 연결한 뒤 제출·확인·운영 검토·잠금 순서로 마감합니다.
-        </p>
+      <div className="grid gap-2 rounded-md border border-blue-100 bg-blue-50 p-3 text-xs leading-5 text-blue-950 md:grid-cols-[1fr_auto] md:items-center">
+        <div>
+          <p className="font-semibold">완료 후 다음 행동</p>
+          <p className="mt-1">
+            먼저 완료 리포트 초안을 저장하고, 요청 서류를 최종 보관 역할로 연결한 뒤 제출·확인·운영 검토·잠금 순서로 마감합니다.
+          </p>
+        </div>
+        {!activeReportId ? (
+          <a className="focus-ring inline-flex h-8 items-center justify-center rounded-md bg-blue-700 px-3 text-xs font-semibold text-white hover:bg-blue-800" href="#completion-report-draft">
+            초안 작성으로 이동
+          </a>
+        ) : null}
       </div>
 
       {report ? (
@@ -324,7 +331,7 @@ export function ServiceRequestCompletionReportPanel({
         ) : null}
       </div>
 
-      <details className="rounded-md border border-slate-200 bg-slate-50" open={!report}>
+      <details className="scroll-mt-6 rounded-md border border-slate-200 bg-slate-50" id="completion-report-draft" open={!report}>
         <summary className="cursor-pointer list-none px-3 py-2 text-sm font-semibold text-slate-800">
           {report ? "완료 리포트 초안 수정" : "완료 리포트 초안 작성"}
         </summary>
