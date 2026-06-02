@@ -93,7 +93,11 @@ Before each mutation run:
 - requester starts the selected freight and clearance requests
 - detail page shows the completed state after requester completion
 - detail page shows `완료 요청 피드백`, `완료 후 다음 행동`, `최종 보관 서류`, and `초안 저장`
+- completion report handoff shows why blocked steps are waiting, with `대기:` copy for submit/acknowledge/review/lock states
+- completion report handoff shows archive-document gap guidance when no final archive documents are linked
+- completion report handoff exposes a direct `초안 작성으로 이동` shortcut before a draft exists
 - requester submits feedback and sees the submitted-feedback state
+- submitted-feedback state shows the rating and clarifies that no additional feedback submission is required
 
 ## RLS And Safety Review Points
 
