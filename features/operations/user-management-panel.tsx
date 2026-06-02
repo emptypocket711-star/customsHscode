@@ -94,6 +94,35 @@ function companyRoleLabel(role: string) {
   return role;
 }
 
+export function buildManagedUserDetailCues(user: Pick<
+  ManagedUser,
+  "accountType" | "allowedIpCount" | "companyName" | "lastSignInAt" | "onboardingCompletedAt" | "role" | "usedLoginIps"
+>) {
+  const cues: Array<{ label: string; tone: "info" | "neutral" | "warning" }> = [];
+
+  if (!user.onboardingCompletedAt) {
+    cues.push({ label: "가입 추가정보 미완료", tone: "warning" });
+  }
+
+  if (user.accountType === "company" && user.usedLoginIps.length > user.allowedIpCount) {
+    cues.push({ label: `허용 IP 초과 ${user.usedLoginIps.length}/${user.allowedIpCount}`, tone: "warning" });
+  }
+
+  if (user.role !== "client") {
+    cues.push({ label: `운영 권한 ${roleLabel(user.role)}`, tone: "info" });
+  }
+
+  if (!user.lastSignInAt) {
+    cues.push({ label: "로그인 이력 없음", tone: "neutral" });
+  }
+
+  if (user.accountType === "company" && !user.companyName) {
+    cues.push({ label: "회사명 확인 필요", tone: "warning" });
+  }
+
+  return cues.length ? cues : [{ label: "평소 확인만 필요", tone: "neutral" as const }];
+}
+
 function StatusMessage({ state }: { state: DeveloperUserActionState }) {
   if (!state.message) return null;
 
@@ -476,6 +505,15 @@ export function UserManagementPanel({ users }: { users: ManagedUser[] }) {
             <div className={expandedUserId === user.id ? "grid grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-out" : "grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 ease-out"}>
               <div className="overflow-hidden">
                 <CardBody className="grid gap-4 border-t border-slate-200 bg-white">
+                  <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                    <p className="text-sm font-semibold text-slate-950">상세에서 먼저 볼 것</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {buildManagedUserDetailCues(user).map((cue) => (
+                        <Badge key={cue.label} tone={cue.tone}>{cue.label}</Badge>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="grid gap-2 rounded-md bg-slate-50 p-3 text-xs text-slate-600 md:grid-cols-3">
                     <span>사용자 ID: {user.id}</span>
                     <span>가입: {formatDate(user.authCreatedAt)}</span>

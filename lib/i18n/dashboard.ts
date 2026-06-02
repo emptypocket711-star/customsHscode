@@ -67,6 +67,15 @@ export type DashboardDictionary = {
     recent: string;
     title: string;
   };
+  marketplace: {
+    foreignPartnerNote: string;
+    statusLabel: Record<string, string>;
+    partyTypeLabel: Record<string, string>;
+    actions: Record<"foreignClearance" | "foreignFreight", {
+      description: string;
+      title: string;
+    }>;
+  };
   workflows: {
     open: string;
     whenLabel: string;
@@ -159,6 +168,35 @@ const dictionaries = {
       pinned: "상단",
       recent: "최근 {count}건",
       title: "공지사항"
+    },
+    marketplace: {
+      foreignPartnerNote: "해외 파트너는 한국 사업자등록번호 없이도 연결 요청을 시작할 수 있습니다.",
+      statusLabel: {
+        blocked: "차단",
+        documents_submitted: "서류 제출",
+        email_verified: "이메일 인증",
+        operator_approved: "운영자 승인",
+        recommended_partner: "추천 파트너",
+        suspended: "숨김/정지",
+        trade_history: "거래 이력",
+        unverified: "미검증"
+      },
+      partyTypeLabel: {
+        customs_broker: "관세사",
+        domestic_shipper: "국내 수출입 화주",
+        foreign_shipper: "해외 수출입 파트너",
+        forwarder: "포워더"
+      },
+      actions: {
+        foreignClearance: {
+          description: "한국 통관이 필요한 품목과 서류 범위를 정리하고 관세사무소 연결 요청을 시작합니다.",
+          title: "한국 통관 연결 요청"
+        },
+        foreignFreight: {
+          description: "한국으로 보내거나 한국에서 받을 화물 정보를 정리하고 포워더 연결 요청을 시작합니다.",
+          title: "한국 운송 연결 요청"
+        }
+      }
     },
     workflows: {
       open: "열기",
@@ -253,6 +291,35 @@ const dictionaries = {
       recent: "{count} recent",
       title: "Notices"
     },
+    marketplace: {
+      foreignPartnerNote: "Overseas partners can start Korea connection requests without a Korean business registration number.",
+      statusLabel: {
+        blocked: "Blocked",
+        documents_submitted: "Documents submitted",
+        email_verified: "Email verified",
+        operator_approved: "Operator approved",
+        recommended_partner: "Recommended partner",
+        suspended: "Hidden / suspended",
+        trade_history: "Trade history",
+        unverified: "Unverified"
+      },
+      partyTypeLabel: {
+        customs_broker: "Customs broker",
+        domestic_shipper: "Korean shipper",
+        foreign_shipper: "Overseas trade partner",
+        forwarder: "Forwarder"
+      },
+      actions: {
+        foreignClearance: {
+          description: "Prepare item and document details for Korean customs brokerage connection.",
+          title: "Request Korea customs connection"
+        },
+        foreignFreight: {
+          description: "Prepare cargo details for shipment to or from Korea and request a forwarder connection.",
+          title: "Request Korea freight connection"
+        }
+      }
+    },
     workflows: {
       open: "Open",
       whenLabel: "Use when",
@@ -345,6 +412,35 @@ const dictionaries = {
       pinned: "置顶",
       recent: "最近{count}条",
       title: "公告"
+    },
+    marketplace: {
+      foreignPartnerNote: "海外伙伴无需韩国营业执照号码，也可以开始韩国业务连接请求。",
+      statusLabel: {
+        blocked: "已阻止",
+        documents_submitted: "资料已提交",
+        email_verified: "邮箱已认证",
+        operator_approved: "运营已批准",
+        recommended_partner: "推荐伙伴",
+        suspended: "隐藏/暂停",
+        trade_history: "交易记录",
+        unverified: "未验证"
+      },
+      partyTypeLabel: {
+        customs_broker: "关务代理",
+        domestic_shipper: "韩国进出口货主",
+        foreign_shipper: "海外贸易伙伴",
+        forwarder: "货代"
+      },
+      actions: {
+        foreignClearance: {
+          description: "整理需要韩国通关的品目和单证范围，并请求连接关务代理。",
+          title: "请求韩国通关连接"
+        },
+        foreignFreight: {
+          description: "整理发往韩国或从韩国发出的货物信息，并请求连接货代。",
+          title: "请求韩国运输连接"
+        }
+      }
     },
     workflows: {
       open: "打开",

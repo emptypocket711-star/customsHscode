@@ -1,0 +1,107 @@
+# Marketplace Transaction Mutation E2E Plan
+
+Date: 2026-06-01
+
+Purpose: extend the current marketplace transaction E2E from page reachability/rendering into a guarded mutation flow:
+
+1. partner submits a freight bid through the UI
+2. partner submits a clearance bid through the UI
+3. requester selects the submitted bid through the UI
+4. request state changes are visible to requester and selected partner
+
+## Current Harness Boundary
+
+Already available:
+
+- local-only readiness check
+- local-only synthetic seed
+- requester, forwarder, broker storage-state creator
+- guarded role-based page E2E
+- one-command local runner
+- fixture IDs shared across seed/readiness/e2e
+
+Not yet covered:
+
+- bid form submission through browser input
+- selected bid transition through browser click
+- post-selection state visibility
+- mutation idempotency/reset after repeated E2E runs
+
+## Mutation Fixture Strategy
+
+Keep the existing static rendering fixture for stable page checks.
+
+Add separate mutation fixture IDs so repeated mutation runs do not conflict with the rendering fixture:
+
+```text
+mutation freight request
+mutation clearance request
+mutation freight bid
+mutation clearance bid
+```
+
+Before each mutation run:
+
+1. delete mutation service requests by ID
+2. seed mutation requests with `status = open`
+3. seed partner matches only
+4. do not pre-seed bids
+5. browser submits bids through partner forms
+6. browser verifies requester sees the newly submitted bids
+7. browser selects bids
+8. browser verifies request state is `partner_selected`
+
+## Required Assertions
+
+### Freight Partner Submit
+
+- forwarder opens `/requests/freight/opportunities/{mutationFreightRequestId}`
+- page shows `운송 입찰 작업`
+- form shows `총 견적 금액`, `견적 메모`, `견적 제출`
+- fill currency, total amount, freight rate, local charge, lead time, transit time, message
+- submit button completes without exposing raw DB errors
+
+### Clearance Partner Submit
+
+- broker opens `/requests/clearance/opportunities/{mutationClearanceRequestId}`
+- page shows `통관 입찰 작업`
+- form shows `관세사무소 예비 견적 제출`, `총 견적 금액`, `예비 통관 견적 제출`
+- fill currency, total amount, brokerage fee, expected clearance days, risk note
+- submit button completes without legal-certainty wording
+
+### Requester Select
+
+- requester opens freight request detail
+- page shows `받은 견적`, submitted amount, partner selection CTA
+- selecting the bid changes request state to selected/partner selected
+- requester opens clearance request detail and repeats the same checks
+
+### Selected Partner Visibility
+
+- forwarder/broker opens the same opportunity after selection
+- page shows selected-partner next-step guidance
+- no file download controls or real document contents are required for this E2E
+
+## RLS And Safety Review Points
+
+- bid submit must go through audited RPC, not direct table insert from client
+- bid selection must go through requester-owned audited RPC
+- partner cannot select its own bid
+- non-matched partner cannot submit a bid
+- requester cannot access another company's mutation request
+- no real documents are uploaded
+- no service role is used after seed setup
+- E2E output must not print passwords, service-role key, cookies, bid messages, document filenames, or customer data
+
+## Implementation Steps
+
+1. Extend `marketplace-transaction.fixture.mjs` with mutation request/bid IDs and env keys.
+2. Update seed runner to seed static rendering fixture and mutation-open fixture separately.
+3. Add mutation E2E script or mutation section in the existing E2E script.
+4. Keep the existing rendering assertions first so route regressions fail before mutation steps.
+5. Add safe-fail checks for missing mutation fixture env/storage states.
+6. Run only through the local runner after local Supabase is ready.
+
+## Deferral
+
+Do not add real document upload or file download assertions here. Storage privacy has separate RLS coverage, and mutation E2E should stay focused on quote submission and selection.

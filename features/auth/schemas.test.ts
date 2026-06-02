@@ -113,6 +113,38 @@ describe("authFormSchema", () => {
     expect(parsed.success).toBe(false);
   });
 
+  it("accepts overseas partner company signup without Korean business registration number", () => {
+    const parsed = authFormSchema.safeParse({
+      mode: "signup",
+      email: "overseas@example.com",
+      password: "Password123!",
+      passwordConfirm: "Password123!",
+      accountType: "company",
+      fullName: "Overseas Partner",
+      companyName: "Overseas Trading LLC",
+      termsAccepted: true,
+      businessTypes: ["foreign_shipper"]
+    });
+
+    expect(parsed.success).toBe(true);
+  });
+
+  it("still requires Korean business registration number when domestic business types are selected", () => {
+    const parsed = authFormSchema.safeParse({
+      mode: "signup",
+      email: "mixed@example.com",
+      password: "Password123!",
+      passwordConfirm: "Password123!",
+      accountType: "company",
+      fullName: "Mixed Partner",
+      companyName: "Mixed Trading LLC",
+      termsAccepted: true,
+      businessTypes: ["foreign_shipper", "importer"]
+    });
+
+    expect(parsed.success).toBe(false);
+  });
+
   it("accepts personal signup without company name", () => {
     const parsed = authFormSchema.safeParse({
       mode: "signup",

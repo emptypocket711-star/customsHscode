@@ -1,4 +1,4 @@
-import { CheckCircle2, ChevronDown, ExternalLink, FileText, Folder } from "lucide-react";
+import { CheckCircle2, ChevronDown, ExternalLink, FileText, Folder, PackagePlus } from "lucide-react";
 import Link from "next/link";
 import { Fragment } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import { DestinationCountryPicker } from "@/features/hs/destination-country-pick
 import { HsCopySummaryButton, type HsCopyGuideLanguage, type HsCopyGuideVariant, type HsCopySummaryTexts } from "@/features/hs/hs-copy-summary-button";
 import { HsDirectSubmitStatus } from "@/features/hs/hs-direct-submit-status";
 import { ProductSupplementResearchForm } from "@/features/hs/product-supplement-research-form";
+import { buildMarketplaceRequestHref } from "@/features/service-requests/marketplace-request-prefill";
 import { destinationAgreementRateDisplayItems, destinationDisplayAgreementRates, destinationDisplayBaseRate } from "@/features/hs/export-destination-tariff-display";
 import { DestinationAgreementRateDialog } from "@/features/hs/destination-agreement-rate-dialog";
 import { displayImportTariffLabel, filterImportTariffsForCountry, importTariffApplicationPriority, isCommonImportTariff } from "@/features/hs/import-tariff-display";
@@ -1109,6 +1110,24 @@ function ProductCandidateCard({
     sourceCandidateRank: candidate.rank,
     sourceProductName: displaySearchQuery
   });
+  const freightRequestHref = buildMarketplaceRequestHref("freight", {
+    basisDate: candidate.basisDate,
+    destinationCountry,
+    direction,
+    hskCode: candidate.hskCode,
+    hs6: candidate.hs6,
+    originCountry,
+    productName: displaySearchQuery
+  });
+  const clearanceRequestHref = buildMarketplaceRequestHref("clearance", {
+    basisDate: candidate.basisDate,
+    destinationCountry,
+    direction,
+    hskCode: candidate.hskCode,
+    hs6: candidate.hs6,
+    originCountry,
+    productName: displaySearchQuery
+  });
 
   return (
     <article
@@ -1162,6 +1181,27 @@ function ProductCandidateCard({
       >
         {normalizeHsInput(candidate.hskCode).length >= 10 ? "이 코드로 조회" : productCandidateDetailButtonText(candidate)}
       </Link>
+      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+        <Link
+          className="focus-ring inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+          data-navigation-progress="운송 견적 요청"
+          href={freightRequestHref}
+        >
+          <PackagePlus aria-hidden="true" size={16} />
+          이 후보로 운송 초안 만들기
+        </Link>
+        <Link
+          className="focus-ring inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+          data-navigation-progress="통관 의뢰 요청"
+          href={clearanceRequestHref}
+        >
+          <FileText aria-hidden="true" size={16} />
+          이 후보로 통관 초안 만들기
+        </Link>
+      </div>
+      <p className="mt-2 text-xs leading-5 text-slate-500">
+        요청 초안에는 HSK 확정 전 예비값으로만 전달됩니다.
+      </p>
 
       <details className="mt-3 rounded-md border border-slate-200 bg-slate-50">
         <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-slate-700">
@@ -2922,6 +2962,43 @@ function ExportDomesticDiagnosisSection({
             <dt className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-600">{dictionary.result.basisDatePrefix}</dt>
             <dd className="border-b border-slate-200 px-3 py-2">{result.basisDate}</dd>
           </dl>
+          <div className="grid gap-2 border-b border-slate-200 bg-blue-50 px-3 py-3 sm:grid-cols-2">
+            <Link
+              className="focus-ring inline-flex items-center justify-center gap-2 rounded-md border border-blue-200 bg-white px-3 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-50"
+              data-navigation-progress="운송 견적 요청"
+              href={buildMarketplaceRequestHref("freight", {
+                basisDate: result.basisDate,
+                destinationCountry,
+                direction: "export",
+                hskCode: result.hskCode,
+                hs6: result.hs6,
+                originCountry,
+                productName: result.productName
+              })}
+            >
+              <PackagePlus aria-hidden="true" size={16} />
+              이 코드로 운송 초안 만들기
+            </Link>
+            <Link
+              className="focus-ring inline-flex items-center justify-center gap-2 rounded-md border border-blue-200 bg-white px-3 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-50"
+              data-navigation-progress="통관 의뢰 요청"
+              href={buildMarketplaceRequestHref("clearance", {
+                basisDate: result.basisDate,
+                destinationCountry,
+                direction: "export",
+                hskCode: result.hskCode,
+                hs6: result.hs6,
+                originCountry,
+                productName: result.productName
+              })}
+            >
+              <FileText aria-hidden="true" size={16} />
+              이 코드로 통관 초안 만들기
+            </Link>
+            <p className="text-xs leading-5 text-blue-900 sm:col-span-2">
+              수출요건, 전략물자, FTA C/O 검토는 예비진단이며 담당자 검토가 필요합니다.
+            </p>
+          </div>
 
           <form action="/hs/overseas" className="grid gap-3 border-t border-slate-200 bg-slate-50 px-3 py-3 sm:grid-cols-[220px_1fr_auto] sm:items-end" method="get">
             <input name="query" type="hidden" value={result.hskCode} />
@@ -4067,6 +4144,38 @@ export async function HsDirectLookupPanel({
                           })}
                         >
                           {dictionary.result.dutyEstimate}
+                        </Link>
+                        <Link
+                          className="focus-ring inline-flex items-center justify-center gap-1 rounded-md bg-white/15 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/25"
+                          data-navigation-progress="운송 견적 요청"
+                          href={buildMarketplaceRequestHref("freight", {
+                            basisDate: result.basisDate,
+                            destinationCountry: selectedDestinationCountry,
+                            direction: lookupDirection,
+                            hskCode: result.hskCode,
+                            hs6: result.hs6,
+                            originCountry: selectedOriginCountry,
+                            productName: sourceProductName ?? result.koreanName
+                          })}
+                        >
+                          <PackagePlus aria-hidden="true" size={14} />
+                          운송 초안
+                        </Link>
+                        <Link
+                          className="focus-ring inline-flex items-center justify-center gap-1 rounded-md bg-white/15 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/25"
+                          data-navigation-progress="통관 의뢰 요청"
+                          href={buildMarketplaceRequestHref("clearance", {
+                            basisDate: result.basisDate,
+                            destinationCountry: selectedDestinationCountry,
+                            direction: lookupDirection,
+                            hskCode: result.hskCode,
+                            hs6: result.hs6,
+                            originCountry: selectedOriginCountry,
+                            productName: sourceProductName ?? result.koreanName
+                          })}
+                        >
+                          <FileText aria-hidden="true" size={14} />
+                          통관 초안
                         </Link>
                         <HsCopySummaryButton
                           texts={hsCopySummaryTexts({

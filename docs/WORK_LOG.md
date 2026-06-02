@@ -2,6 +2,2593 @@
 
 이 문서는 HS FINDER 개발 중 실제로 수행한 작업, 검증 결과, 커밋을 날짜별로 남긴다.
 
+## 2026-06-02
+
+### local login review smoke
+
+- 이전 작업은 P64.2 next platform work selection이고, 이번 작업은 로컬 서버가 테스트 계정 로그인을 실제로 통과하는지 재확인하는 P64.3이다.
+- 기존 로컬 서버 프로세스가 `.env.local`의 Supabase 설정을 읽지 못해 로그인 화면에서 `Supabase 환경 변수가 없어 로그인할 수 없습니다.`가 표시되는 문제를 재현했다.
+- `next dev`를 `http://127.0.0.1:3100`에서 재시작했고, 브라우저 자동화로 `shipper.test@hsfinder.co.kr` 계정이 `/dashboard`에 진입하는 것을 확인했다.
+- `smoke_local_login.mjs`를 추가해 같은 문제를 나중에 명령 한 번으로 재확인할 수 있게 했다.
+- `smoke:local-login` npm script와 `LOCAL_LOGIN_REVIEW_RUNBOOK.md`를 추가했다.
+- 원격 DB에는 쓰지 않았고, DB migration 적용도 하지 않았다.
+- 다음 작업은 P64.4 marketplace role visibility blocker review이다. 이번 P64.3이 로그인 가능 여부 검증이라면, P64.4는 marketplace schema 미적용 상태에서 역할별 화면을 어디까지 확인할 수 있는지 정리하는 작업이다.
+
+검증:
+
+- `node --check scripts/smoke_local_login.mjs`
+- `npm run smoke:local-login`
+- `npm run typecheck`
+- `npm run lint`
+- Playwright login smoke: `shipper.test@hsfinder.co.kr` -> `/dashboard`
+
+### marketplace role visibility blocker review
+
+- 이전 작업은 P64.3 local login review smoke이고, 이번 작업은 로그인 이후 역할별 marketplace 화면이 왜 제한될 수 있는지 확인하는 P64.4다.
+- 세 테스트 계정 모두 로컬 서버에서 `/dashboard` 로그인에 성공했다.
+- 원격 Supabase에는 기본 로그인 테이블은 있으나 marketplace migration의 핵심 컬럼/테이블이 준비되지 않아 역할별 입찰 positive path가 제한됨을 확인했다.
+- auth metadata로 포워더·관세사 권한을 우회 부여하지 않는 기준을 문서화했다.
+- `check_marketplace_schema_visibility.mjs`와 `smoke:marketplace-schema`를 추가해 현재 DB가 marketplace 화면 확인 가능한 상태인지 명령으로 확인할 수 있게 했다.
+- 원격 DB에는 쓰지 않았고, DB migration 적용도 하지 않았다.
+- 다음 작업은 P64.5 local review positive-path decision이다. 이번 P64.4가 blocker 확인이라면, P64.5는 local Supabase에 marketplace migration을 적용해 positive path를 열지 결정하는 작업이다.
+
+검증:
+
+- `node --check scripts/check_marketplace_schema_visibility.mjs`
+- `LOCAL_LOGIN_SMOKE_ALL=1 npm run smoke:local-login`
+- `npm run smoke:marketplace-schema`: 원격 marketplace schema 미적용 상태를 안전 실패로 확인
+- `npm run typecheck`
+- `npm run lint`
+
+### local review positive path decision
+
+- 이전 작업은 P64.4 marketplace role visibility blocker review이고, 이번 작업은 positive path를 local Supabase migration으로 열지 결정하는 P64.5다.
+- 세 테스트 계정 로그인은 복구됐지만, marketplace 요청/입찰 positive path는 marketplace migration이 적용된 DB가 있어야 한다.
+- 사용자 명시 승인 전에는 local Supabase에도 migration을 적용하지 않는 기존 기준을 유지한다.
+- `LOCAL_REVIEW_POSITIVE_PATH_DECISION.md`를 추가했다.
+- 다음 작업은 P65.1 marketplace schema fallback UX이다. 이번 P64.5가 DB 적용 여부 결정이라면, P65.1은 schema 미준비 상태에서 화면이 계정 문제처럼 보이지 않게 문구와 안내를 다듬는 작업이다.
+
+검증:
+
+- decision 문서 작성
+
+### marketplace schema fallback UX
+
+- 이전 작업은 P64.5 local review positive-path decision이고, 이번 작업은 schema 미준비 상태에서 사용자가 계정 문제로 오해하지 않게 화면 문구를 정리하는 P65.1이다.
+- 대시보드, 운송 요청, 통관 의뢰, 요청 상세, 입찰 상세의 fallback 문구를 “로그인은 정상 / 플랫폼 요청·입찰 데이터 준비 중” 기준으로 바꿨다.
+- 일반 사용자 화면에서는 “데이터베이스 미적용” 표현을 줄이고, 계정 문제가 아니라 현재 환경의 플랫폼 요청 기능 준비 상태임을 설명한다.
+- 로컬 브라우저에서 `shipper.test@hsfinder.co.kr`로 `/dashboard`, `/requests/freight`, `/requests/clearance` 화면의 새 안내 문구 렌더링을 확인했다.
+- 원격 DB에는 쓰지 않았고, DB migration 적용도 하지 않았다.
+- 다음 작업은 P65.2 operations schema fallback UX이다. 이번 P65.1이 사용자 요청 화면 문구라면, P65.2는 운영자 전용 요청 통계/상세 화면의 schema 미준비 안내를 정리하는 작업이다.
+
+검증:
+
+- Playwright browser check: `/dashboard`, `/requests/freight`, `/requests/clearance`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run smoke:local-login`
+- `npm run build`
+- `next-env.d.ts` 자동 변경 복구
+
+### operations schema fallback UX
+
+- 이전 작업은 P65.1 marketplace schema fallback UX이고, 이번 작업은 운영자·설정 화면의 schema 미준비 안내를 정리하는 P65.2다.
+- 운영 요청 통계, 운영 요청 상세, 회사 검증 제출, 역할 신청, 파트너 관심 조건, 역할 신청 검토, 업체 상태 관리, 회사 검증 검토 화면의 fallback 문구를 계정 문제가 아닌 현재 환경의 데이터 준비 상태로 설명하게 바꿨다.
+- `settings/members`를 로컬 브라우저에서 확인해 “로그인 문제는 아니며” 안내가 보이고 기존 “데이터베이스가 아직 적용” 문구가 사라진 것을 확인했다.
+- 기술 점검용 `operations/health`와 배포 문서의 DB 스키마 표현은 운영 진단 용도이므로 유지했다.
+- 원격 DB에는 쓰지 않았고, DB migration 적용도 하지 않았다.
+- 다음 작업은 P65.3 local review status snapshot이다. 이번 P65.2가 화면 문구 정리라면, P65.3은 사용자가 돌아와 바로 볼 수 있게 로컬 서버/로그인/스키마 상태를 한 번에 요약하는 작업이다.
+
+검증:
+
+- Playwright browser check: `/settings/members`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run smoke:local-login`
+- `npm run build`
+- `next-env.d.ts` 자동 변경 복구
+
+### local review status snapshot
+
+- 이전 작업은 P65.2 operations schema fallback UX이고, 이번 작업은 사용자가 돌아와 바로 볼 수 있게 현재 로컬 서버/로그인/schema 상태를 요약하는 P65.3이다.
+- `local_review_status.mjs`를 추가했다.
+- `review:local-status` npm script를 추가했다.
+- `LOCAL_REVIEW_STATUS.md`에 로컬 서버 URL, 테스트 계정, 확인 가능한 범위와 제한 범위를 정리했다.
+- schema smoke는 실패해도 전체 상태 스냅샷에서는 `marketplacePositivePath=blocked`로 해석하며, 로그인 smoke 실패만 전체 실패로 처리한다.
+- 다음 작업은 P65.4 next non-DB platform work selection이다. 이번 P65.3이 현 상태 확인 명령이라면, P65.4는 DB 적용 없이 이어갈 다음 플랫폼 작업을 고르는 작업이다.
+
+검증:
+
+- `node --check scripts/local_review_status.mjs`
+- `npm run review:local-status`: `localLogin=ready`, `marketplacePositivePath=blocked`
+- `npm run typecheck`
+- `npm run lint`
+
+### all-role local review smoke
+
+- 이전 작업은 P65.4 next non-DB platform work selection이고, 이번 작업은 로컬 리뷰 상태 명령이 화주·포워더·관세사 세 테스트 계정 로그인을 모두 확인하게 하는 P65.5다.
+- `review:local-status` 내부 로그인 smoke에 `LOCAL_LOGIN_SMOKE_ALL=1`을 주입했다.
+- `LOCAL_REVIEW_STATUS.md`에 세 테스트 계정 전체 확인 기준을 반영했다.
+- 다음 작업은 P65.6 local review browser route bundle이다. 이번 P65.5가 로그인 검증 범위 확대라면, P65.6은 사용자가 실제로 볼 주요 route 묶음을 브라우저로 한 번에 점검하는 작업이다.
+
+검증:
+
+- `npm run review:local-status`: 세 계정 모두 로그인 ready, marketplace positive path blocked
+- `npm run typecheck`
+- `npm run lint`
+
+### local review browser route bundle
+
+- 이전 작업은 P65.5 all-role local review smoke이고, 이번 작업은 사용자가 실제로 볼 주요 route 묶음을 브라우저로 점검하는 P65.6이다.
+- `local_review_routes.mjs`를 추가했다.
+- `review:local-routes` npm script를 추가했다.
+- `/dashboard`, `/requests/freight`, `/requests/clearance`, `/settings/members`, `/hs/direct`를 화주 테스트 계정 세션으로 확인하게 했다.
+- Supabase env 오류 문구와 예전 “데이터베이스가 아직 적용” 문구가 본문에 남으면 실패하도록 했다.
+- 다음 작업은 P65.7 local review final verification이다. 이번 P65.6이 route bundle smoke라면, P65.7은 로그인/route/status/schema 문서와 스크립트 전체를 최종 검증하는 작업이다.
+
+검증:
+
+- `node --check scripts/local_review_routes.mjs`
+- `npm run review:local-routes`
+- `npm run typecheck`
+- `npm run lint`
+
+### local review final verification
+
+- 이전 작업은 P65.6 local review browser route bundle이고, 이번 작업은 로그인/status/routes/schema 문서와 스크립트 전체를 최종 검증하는 P65.7이다.
+- 검증 대상은 `smoke_local_login`, `check_marketplace_schema_visibility`, `local_review_status`, `local_review_routes` 스크립트와 관련 npm 명령이다.
+- 다음 작업은 P66.1 next non-DB platform work selection이다. 이번 P65.7이 로컬 리뷰 unblock 최종 검증이라면, P66.1은 DB 적용 없이 이어갈 다음 제품 작업을 다시 고르는 작업이다.
+
+검증:
+
+- `node --check scripts/smoke_local_login.mjs && node --check scripts/check_marketplace_schema_visibility.mjs && node --check scripts/local_review_status.mjs && node --check scripts/local_review_routes.mjs`
+- `npm run review:local-status`: 세 계정 로그인 ready, marketplace positive path blocked
+- `npm run review:local-routes`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `next-env.d.ts` 자동 변경 복구
+
+### next non-DB platform work selection
+
+- 이전 작업은 P65.7 local review final verification이고, 이번 작업은 DB 적용 없이 이어갈 다음 제품 작업을 고르는 P66.1이다.
+- marketplace positive path는 DB migration 없이는 여전히 막혀 있으므로, 테스트 계정이 포워더/관세사인데 화면에는 역할 미설정처럼 보이는 혼동을 먼저 줄이기로 했다.
+- 다음 작업은 P66.2 display-only role intent visibility이다. 이번 P66.1이 작업 선정이라면, P66.2는 실제 화면에 가입 시 선택한 역할을 승인 권한과 분리해 표시하는 작업이다.
+
+검증:
+
+- ROADMAP 검토
+
+### display-only role intent visibility
+
+- 이전 작업은 P66.1 next non-DB platform work selection이고, 이번 작업은 가입 시 선택한 역할을 승인 권한과 분리해 화면에 표시하는 P66.2다.
+- `intended_marketplace_role` 또는 가입 `business_types` metadata를 display-only role intent로 읽는 helper를 추가했다.
+- 기존 `mapSignupBusinessTypesToMarketplacePartyTypes`는 그대로 고영향 파트너 역할 자동 부여를 하지 않게 유지했다.
+- 대시보드와 회사 설정의 플랫폼 역할 영역에서 승인된 `company_party_types`가 없으면 `승인 역할 없음`과 `가입 선택: 포워더/관세사/국내 수출입 화주`를 분리 표시한다.
+- 포워더 테스트 계정으로 `/dashboard`, `/settings/members`에서 `가입 선택: 포워더`가 표시되는 것을 브라우저로 확인했다.
+- 원격 DB에는 쓰지 않았고, DB migration 적용도 하지 않았다.
+- 다음 작업은 P66.3 local review route all-role intent assertion이다. 이번 P66.2가 역할 의도 배지 표시라면, P66.3은 route smoke가 포워더/관세사 의도 배지까지 회귀 테스트하게 하는 작업이다.
+
+검증:
+
+- `npx vitest run server/repositories/company-marketplace.repository.test.ts`
+- Playwright browser check: forwarder `/dashboard`, `/settings/members`
+- `npm run review:local-routes`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `next-env.d.ts` 자동 변경 복구
+
+### local review route all-role intent assertion
+
+- 이전 작업은 P66.2 display-only role intent visibility이고, 이번 작업은 로컬 route smoke가 포워더/관세사 역할 의도 배지를 회귀 테스트하게 하는 P66.3이다.
+- `local_review_routes.mjs`가 화주 계정뿐 아니라 포워더, 관세사무소 계정으로도 로그인한다.
+- 포워더 `/dashboard`, `/settings/members`에서 `가입 선택: 포워더`를 확인한다.
+- 관세사무소 `/dashboard`, `/settings/members`에서 `가입 선택: 관세사`를 확인한다.
+- `LOCAL_REVIEW_STATUS.md`에 route bundle 확인 범위를 업데이트했다.
+- 다음 작업은 P66.4 role intent visibility final verification이다. 이번 P66.3이 route smoke 확장이라면, P66.4는 역할 의도 표시 변경 전체를 최종 검증하는 작업이다.
+
+검증:
+
+- `node --check scripts/local_review_routes.mjs`
+- `npm run review:local-routes`
+- `npm run typecheck`
+- `npm run lint`
+
+### role intent visibility final verification
+
+- 이전 작업은 P66.3 local review route all-role intent assertion이고, 이번 작업은 역할 의도 표시 변경 전체를 최종 검증하는 P66.4다.
+- display-only role intent helper, 대시보드 표시, 회사 설정 표시, all-role route smoke를 묶어서 재검증했다.
+- `review:local-status`는 세 계정 로그인 ready와 marketplace positive path blocked를 계속 정확히 요약한다.
+- `review:local-routes`는 화주 기본 화면과 포워더/관세사 역할 의도 배지를 모두 확인한다.
+- 원격 DB에는 쓰지 않았고, DB migration 적용도 하지 않았다.
+- 다음 작업은 P67.1 next non-DB platform work selection이다. 이번 P66.4가 역할 의도 표시 최종 검증이라면, P67.1은 DB 적용 없이 이어갈 다음 제품 작업을 다시 고르는 작업이다.
+
+검증:
+
+- `npx vitest run server/repositories/company-marketplace.repository.test.ts`
+- `npm run review:local-status`
+- `npm run review:local-routes`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `next-env.d.ts` 자동 변경 복구
+
+### dashboard role-aware action cards
+
+- 이전 작업은 P67.1 next non-DB platform work selection이고, 이번 작업은 대시보드 시작 카드를 역할에 맞게 줄이는 P67.2다.
+- 화주 또는 역할 미설정 계정에는 운송 견적 요청과 통관 의뢰 요청을 중심으로 표시한다.
+- 포워더 역할 의도 또는 승인 역할이 있으면 포워더 입찰 확인 카드를 표시한다.
+- 관세사무소 역할 의도 또는 승인 역할이 있으면 관세사 입찰 확인 카드를 표시한다.
+- 권한 부여는 여전히 하지 않고, 표시용 role intent와 승인 role을 합쳐 대시보드 카드 노출에만 사용한다.
+- 다음 작업은 P67.3 dashboard role-aware action route assertion이다. 이번 P67.2가 카드 노출 로직이라면, P67.3은 브라우저 route smoke에서 역할별 카드가 맞는지 회귀 검증하는 작업이다.
+
+검증:
+
+- Playwright browser check: shipper/forwarder/customs_broker `/dashboard`
+
+### dashboard role-aware action route assertion
+
+- 이전 작업은 P67.2 dashboard role-aware action cards이고, 이번 작업은 route smoke에서 역할별 카드 노출/미노출을 회귀 검증하는 P67.3이다.
+- `local_review_routes.mjs`에 `forbiddenText` 검증을 추가했다.
+- 화주 대시보드에 포워더/관세사 입찰 카드가 섞이면 실패한다.
+- 포워더 대시보드에 관세사 입찰 카드가 섞이면 실패한다.
+- 관세사무소 대시보드에 포워더 입찰 카드가 섞이면 실패한다.
+- 다음 작업은 P67.4 dashboard role-aware action final verification이다. 이번 P67.3이 route smoke assertion이라면, P67.4는 대시보드 역할별 카드 변경 전체를 최종 검증하는 작업이다.
+
+검증:
+
+- `node --check scripts/local_review_routes.mjs`
+- `npm run review:local-routes`
+- `npm run typecheck`
+- `npm run lint`
+
+### dashboard role-aware action final verification
+
+- 이전 작업은 P67.3 dashboard role-aware action route assertion이고, 이번 작업은 대시보드 역할별 카드 변경 전체를 최종 검증하는 P67.4다.
+- 검증 대상은 display-only role intent, role-aware dashboard action cards, all-role local route smoke다.
+- 다음 작업은 P68.1 next non-DB platform work selection이다. 이번 P67.4가 대시보드 역할별 카드 최종 검증이라면, P68.1은 DB 적용 없이 이어갈 다음 제품 작업을 다시 고르는 작업이다.
+
+검증:
+
+- `npx vitest run server/repositories/company-marketplace.repository.test.ts`
+- `npm run review:local-status`
+- `npm run review:local-routes`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `next-env.d.ts` 자동 변경 복구
+
+## 2026-06-01
+
+### local migration application decision
+
+- 이전 작업은 final lint/build 검증인 P63.3이고, 이번 작업은 positive E2E를 위해 local Supabase에 marketplace migration을 적용할지 판단 기준을 정리한 P64.1이다.
+- `LOCAL_MARKETPLACE_MIGRATION_DECISION.md`를 추가했다.
+- 현재 local Supabase는 실행 중이지만 marketplace migration이 적용되지 않아 positive E2E seed가 막힌다는 점을 정리했다.
+- local migration 적용 명령과, 적용하지 않고 safe-fail 검증만 유지하는 선택지를 분리했다.
+- 사용자 명시 요청 전에는 Codex가 local DB migration을 적용하지 않는다는 기준을 남겼다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P64.2 next platform work selection이다. 이번 P64.1이 local migration 판단 문서라면, P64.2는 DB 적용 없이 이어갈 다음 플랫폼 작업을 다시 고르는 작업이다.
+
+검증:
+
+- local migration decision 문서 작성 및 ROADMAP/WORK_LOG 연결
+
+### marketplace transaction final build after preflight
+
+- 이전 작업은 seed schema preflight를 추가한 P63.2이고, 이번 작업은 최종 lint/build와 `next-env.d.ts` 복구까지 확인한 P63.3이다.
+- `npm run lint`를 통과했다.
+- `npm run build`를 통과했다.
+- Next build가 자동 변경한 `next-env.d.ts` route import는 프로젝트 기준에 맞게 dev route import로 되돌렸다.
+- positive E2E는 local Supabase marketplace schema 미적용 때문에 아직 실행하지 못한다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P64.1 local migration application decision이다. 이번 P63.3이 코드 검증이라면, P64.1은 positive E2E를 위해 local Supabase에 marketplace migration을 적용할지 사용자가 나중에 판단할 수 있게 정리하는 작업이다.
+
+검증:
+
+- `npm run lint`
+- `npm run build`
+- `next-env.d.ts` 자동 변경 복구
+
+### marketplace transaction seed schema preflight
+
+- 이전 작업은 local positive E2E 실행을 막는 실제 조건을 확인한 P63.1이고, 이번 작업은 seed가 schema 미적용 상태를 더 명확히 안내하게 한 P63.2다.
+- `seed_marketplace_transaction_fixture.mjs`에 marketplace schema preflight를 추가했다.
+- seed가 회사 확장 컬럼, party type, partner preference, service request, service bid 테이블을 먼저 확인한다.
+- local Supabase에 platform marketplace migration이 적용되지 않은 경우 DB upsert 전에 명확한 안내 메시지로 실패한다.
+- local-only env override로 runner를 다시 실행해 `companies.contact_email` 누락이 낮은 수준 upsert 오류가 아니라 schema 준비 필요 메시지로 표시되는 것을 확인했다.
+- 원격 DB에는 쓰지 않았다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P63.3 marketplace transaction final build after preflight이다. 이번 P63.2가 schema preflight라면, P63.3은 최종 lint/build와 next-env 복구까지 확인하는 작업이다.
+
+검증:
+
+- `node --check scripts/seed_marketplace_transaction_fixture.mjs`
+- local-only env override로 `npm run e2e:marketplace-transaction:local`: local schema 미적용을 명확히 안내하며 seed 전 실패
+- `npm run typecheck`
+
+### local Supabase positive-run unblock check
+
+- 이전 작업은 mutation harness 최종 검증인 P62.5이고, 이번 작업은 현재 머신에서 local Supabase positive E2E 실행을 막는 실제 조건을 확인한 P63.1이다.
+- `npx supabase status` 기준 local Supabase는 실행 중이다.
+- `.env.local`은 여전히 원격 Supabase origin을 가리키고 있고 `E2E_TEST_PASSWORD`는 없다.
+- 파일을 바꾸지 않고 명령 환경에만 local Supabase URL, local service role key, 임시 E2E password를 주입해 `e2e:marketplace-transaction:local`을 실행했다.
+- 원격 DB에는 쓰지 않았다.
+- local runner는 seed 단계에서 local DB schema가 최신 marketplace migration 상태가 아니라 실패했다.
+- 실제 실패 메시지: `companies` schema cache에 `contact_email` column이 없었다.
+- 다음 작업은 P63.2 marketplace transaction seed schema preflight이다. 이번 P63.1이 실패 조건 확인이라면, P63.2는 seed가 schema 미적용 상태를 더 명확히 안내하게 하는 작업이다.
+
+검증:
+
+- `npx supabase status`
+- `.env.local` origin/password presence check
+- local-only env override로 `npm run e2e:marketplace-transaction:local` 실행: local seed 단계에서 schema 미적용으로 실패
+
+### marketplace transaction mutation harness verification
+
+- 이전 작업은 mutation E2E skeleton을 추가한 P62.4이고, 이번 작업은 seed/static/mutation/local runner 전체를 검증하고 문서 위험을 갱신한 P62.5다.
+- runbook에 one-command local runner가 static rendering E2E와 mutation E2E를 모두 실행한다고 반영했다.
+- self-review에 mutation E2E 스크립트와 local runner를 scope로 추가했다.
+- self-review의 “mutation flow 미구현” 리스크를 “mutation positive path 미실행” 리스크로 갱신했다.
+- 현재 환경에서는 local Supabase와 storage state가 없어 mutation positive path는 실행하지 못했고, safe-fail 경로만 검증했다.
+- Next build가 자동 변경한 `next-env.d.ts` route import는 프로젝트 기준에 맞게 dev route import로 되돌렸다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P63.1 local Supabase positive-run unblock check이다. 이번 P62.5가 mutation harness 코드 검증이라면, P63.1은 현재 머신에서 local Supabase positive E2E 실행을 막는 실제 조건을 확인하는 작업이다.
+
+검증:
+
+- `node --check scripts/check_marketplace_transaction_e2e_readiness.mjs && node --check scripts/seed_marketplace_transaction_fixture.mjs && node --check scripts/create_marketplace_transaction_storage_states.mjs && node --check scripts/e2e_marketplace_transaction_flow.mjs && node --check scripts/e2e_marketplace_transaction_mutation_flow.mjs && node --check scripts/run_marketplace_transaction_e2e_local.mjs`
+- `npx vitest run tests/fixtures/marketplace-transaction.fixture.test.ts`
+- `npm run e2e:marketplace-transaction:mutation`: storage state 없음 상태에서 안전 실패
+- `npm run e2e:marketplace-transaction:local`: 원격 Supabase origin과 E2E password 누락으로 seed 전 안전 실패
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### marketplace transaction mutation E2E skeleton
+
+- 이전 작업은 mutation 요청과 매칭을 seed runner에 연결한 P62.3이고, 이번 작업은 seeded mutation 요청으로 파트너 견적 제출과 화주 선택을 시도하는 guarded E2E skeleton을 만든 P62.4다.
+- `e2e_marketplace_transaction_mutation_flow.mjs`를 추가했다.
+- `e2e:marketplace-transaction:mutation` 스크립트를 추가했다.
+- local runner가 static rendering E2E 뒤에 mutation E2E를 실행하도록 연결했다.
+- mutation E2E는 forwarder가 운송 견적을 제출하고 requester가 해당 견적을 선택한 뒤 selected partner 안내를 확인하는 흐름을 포함한다.
+- mutation E2E는 broker가 통관 견적을 제출하고 requester가 해당 견적을 선택한 뒤 selected partner 안내를 확인하는 흐름을 포함한다.
+- 현재 storage state가 없어 브라우저 mutation 전에 안전 실패한다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P62.5 marketplace transaction mutation harness verification이다. 이번 P62.4가 mutation E2E skeleton이라면, P62.5는 seed/static/mutation/local runner 전체를 최종 검증하고 문서 위험을 갱신하는 작업이다.
+
+검증:
+
+- `node --check scripts/e2e_marketplace_transaction_mutation_flow.mjs && node --check scripts/run_marketplace_transaction_e2e_local.mjs`
+- `npm run e2e:marketplace-transaction:mutation`: storage state 없음 상태에서 안전 실패
+- `npm run typecheck`
+- `npm run lint`
+
+### marketplace transaction mutation seed support
+
+- 이전 작업은 mutation 전용 fixture 상수와 env 계약을 추가한 P62.2이고, 이번 작업은 seed runner가 open 상태의 mutation 요청과 매칭을 준비하게 한 P62.3이다.
+- seed cleanup 대상에 mutation 운송/통관 request ID를 포함했다.
+- static fixture는 기존처럼 `bids_received` 요청과 제출된 bid를 seed한다.
+- mutation fixture는 `open` 상태 요청, 요청 상세, partner match까지만 seed하고 bid는 seed하지 않는다.
+- seed 출력에 static fixture env export와 mutation fixture env export를 함께 표시한다.
+- local runner도 mutation fixture env 값을 내부 주입하게 했다.
+- 현재 `.env.local`은 원격 Supabase origin이라 DB 쓰기 전 안전 실패한다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P62.4 marketplace transaction mutation E2E skeleton이다. 이번 P62.3이 mutation seed 준비라면, P62.4는 seeded mutation 요청으로 파트너 견적 제출과 화주 선택을 시도하는 guarded E2E skeleton을 만드는 작업이다.
+
+검증:
+
+- `node --check scripts/seed_marketplace_transaction_fixture.mjs && node --check scripts/run_marketplace_transaction_e2e_local.mjs`
+- `npm run e2e:marketplace-transaction:seed`: 원격 Supabase origin에서 DB 쓰기 전 안전 실패
+- `npx vitest run tests/fixtures/marketplace-transaction.fixture.test.ts`
+- `npm run typecheck`
+
+### marketplace transaction mutation fixture contract
+
+- 이전 작업은 mutation E2E 계획을 세운 P62.1이고, 이번 작업은 반복 실행 가능한 mutation 전용 fixture 상수와 env 계약을 추가한 P62.2다.
+- `marketplaceTransactionFixture.mutation`에 운송/통관 mutation request ID와 bid ID를 추가했다.
+- static rendering fixture와 mutation fixture가 같은 ID를 쓰지 않도록 분리했다.
+- `E2E_MARKETPLACE_MUTATION_*` env key와 `marketplaceTransactionMutationEnvExports` helper를 추가했다.
+- fixture 테스트에서 static/mutation ID 중복이 없는지 확인한다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P62.3 marketplace transaction mutation seed support이다. 이번 P62.2가 mutation fixture 상수라면, P62.3은 seed runner가 open 상태의 mutation 요청과 매칭을 별도 fixture로 준비하게 하는 작업이다.
+
+검증:
+
+- `node --check tests/fixtures/marketplace-transaction.fixture.mjs`
+- `npx vitest run tests/fixtures/marketplace-transaction.fixture.test.ts`
+- `npm run typecheck`
+
+### marketplace transaction mutation E2E plan
+
+- 이전 작업은 marketplace transaction harness 전체를 최종 검증한 P61.2이고, 이번 작업은 실제 UI mutation E2E 확장 계획을 세운 P62.1이다.
+- `MARKETPLACE_TRANSACTION_MUTATION_E2E_PLAN.md`를 추가했다.
+- 기존 static rendering fixture와 별도로 mutation 전용 request/bid fixture를 두는 방향으로 잡았다.
+- mutation E2E는 open 요청을 seed하고, 파트너가 브라우저로 견적을 제출하고, 화주가 브라우저로 견적을 선택하는 흐름으로 정의했다.
+- RLS/safety 체크 포인트로 audited RPC, non-matched partner 차단, requester 소유권, secret 미출력, 실제 문서 미사용을 명시했다.
+- 문서 업로드/다운로드 검증은 별도 storage privacy 범위로 분리하고 이번 mutation E2E에서는 제외했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P62.2 marketplace transaction mutation fixture contract이다. 이번 P62.1이 mutation E2E 계획이라면, P62.2는 반복 실행 가능한 별도 mutation request/bid fixture 상수와 env 계약을 추가하는 작업이다.
+
+검증:
+
+- mutation E2E 계획 문서 작성 및 ROADMAP/WORK_LOG 연결
+
+### marketplace transaction harness final verification
+
+- 이전 작업은 seed/auth/e2e를 한 명령으로 순차 실행하는 P61.1이고, 이번 작업은 P60-P61 harness 변경 전체를 최종 검증한 P61.2다.
+- marketplace transaction readiness, seed, auth-state, e2e, local runner 스크립트 문법을 모두 확인했다.
+- seed, auth-state, readiness, local runner, e2e가 현재 원격 Supabase/fixture 누락 환경에서 안전 실패하는지 확인했다.
+- fixture 단위 테스트, typecheck, lint, build를 통과했다.
+- Next build가 자동 변경한 `next-env.d.ts` route import는 프로젝트 기준에 맞게 dev route import로 되돌렸다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P62.1 marketplace transaction mutation E2E plan이다. 이번 P61.2가 harness 검증이라면, P62.1은 실제 UI에서 파트너 입찰 제출과 화주 선정까지 mutation E2E로 확장할 계획을 세우는 작업이다.
+
+검증:
+
+- `node --check scripts/check_marketplace_transaction_e2e_readiness.mjs && node --check scripts/seed_marketplace_transaction_fixture.mjs && node --check scripts/create_marketplace_transaction_storage_states.mjs && node --check scripts/e2e_marketplace_transaction_flow.mjs && node --check scripts/run_marketplace_transaction_e2e_local.mjs`
+- `npm run e2e:marketplace-transaction:seed`: 원격 Supabase origin에서 DB 쓰기 전 안전 실패
+- `npm run e2e:marketplace-transaction:auth`: 원격 Supabase origin에서 브라우저 로그인 전 안전 실패
+- `npm run e2e:marketplace-transaction:local`: 원격 Supabase origin과 E2E password 누락으로 seed 전 안전 실패
+- `npm run e2e:marketplace-transaction:ready`: 원격 Supabase origin, E2E password, fixture env, storage state 누락으로 안전 실패
+- `npm run e2e:marketplace-transaction`: fixture env 누락으로 안전 실패
+- `npx vitest run tests/fixtures/marketplace-transaction.fixture.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### marketplace transaction local runner
+
+- 이전 작업은 marketplace transaction E2E harness 자체 리뷰인 P60.11이고, 이번 작업은 local preflight가 통과할 때 seed/auth/e2e를 한 명령으로 순차 실행하는 P61.1이다.
+- `run_marketplace_transaction_e2e_local.mjs`를 추가했다.
+- `e2e:marketplace-transaction:local` 스크립트를 추가했다.
+- runner는 local Next.js, local Supabase, service-role key, E2E password, `/login`, Supabase auth health를 먼저 확인한다.
+- fixture request/bid env 값은 runner가 synthetic fixture 상수에서 내부 주입한다.
+- preflight가 통과할 때만 seed, auth state 생성, readiness, E2E를 순서대로 실행한다.
+- 현재 `.env.local`은 원격 Supabase origin이고 `E2E_TEST_PASSWORD`가 없어 seed 전 안전 실패한다.
+- secret 값은 출력하지 않는다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P61.2 marketplace transaction harness final verification이다. 이번 P61.1이 실행기 추가라면, P61.2는 P60-P61 harness 변경 전체를 type/lint/build와 safe-fail 실행으로 최종 검증하는 작업이다.
+
+검증:
+
+- `node --check scripts/run_marketplace_transaction_e2e_local.mjs`
+- `npm run e2e:marketplace-transaction:local`: 원격 Supabase origin과 E2E password 누락으로 seed 전 안전 실패
+- `npx vitest run tests/fixtures/marketplace-transaction.fixture.test.ts`
+
+### marketplace transaction E2E harness self-review
+
+- 이전 작업은 marketplace transaction E2E assertion을 강화한 P60.10이고, 이번 작업은 seed/auth/readiness/e2e harness 전체를 보안·QA 관점에서 자체 리뷰한 P60.11이다.
+- `MARKETPLACE_TRANSACTION_E2E_SELF_REVIEW.md`를 추가했다.
+- 원격 Supabase write/login 차단, secret 미출력, synthetic fixture, 민감 문서/질문/답변/메시지 미검증 원칙을 확인했다.
+- 현재 환경에서는 local Supabase/storage state가 없어 positive authenticated E2E를 실행하지 못하는 점을 accepted risk로 남겼다.
+- E2E가 아직 UI mutation으로 신규 입찰 제출/선정을 하지 않는 점을 다음 단계 리스크로 남겼다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P61.1 marketplace transaction local runner이다. 이번 P60.11이 자체 리뷰라면, P61.1은 local preflight가 통과할 때 seed/auth/e2e를 한 명령으로 순차 실행하는 runner를 만드는 작업이다.
+
+검증:
+
+- `rg -n "SUPABASE_SERVICE_ROLE_KEY|E2E_TEST_PASSWORD|storageState|storage state|service_role|secretValues|local Supabase|remote Supabase|document|fileName|message|invoice|Commercial Invoice|법적|확정|legalCertainty|confirmed|guaranteed|definitely" scripts/*marketplace_transaction* scripts/check_marketplace_transaction_e2e_readiness.mjs tests/fixtures/marketplace-transaction.fixture.* docs/MARKETPLACE_TRANSACTION_E2E* docs/ROADMAP.md docs/WORK_LOG.md`
+
+### marketplace transaction E2E assertion tightening
+
+- 이전 작업은 seed/auth/e2e 실행 순서를 문서화한 P60.9이고, 이번 작업은 실제 E2E assertion을 더 구체화한 P60.10이다.
+- requester 운송 상세는 fixture 제목, 받은 견적, 견적 비교 기준, 포워더 선정 문구를 확인한다.
+- requester 통관 상세는 fixture 제목, 받은 견적, 견적 비교 기준, 관세사무소 선정 문구를 확인한다.
+- forwarder opportunity는 fixture 제목, 총 견적 금액, 견적 메모, 견적 제출 문구를 확인한다.
+- broker opportunity는 fixture 제목, 관세사무소 예비 견적 제출, 총 견적 금액, 예비 통관 견적 제출 문구를 확인한다.
+- 현재 local fixture env와 storage state가 없어 성공 E2E 본문은 실행하지 못했고, fixture env 누락 상태에서 안전 실패하는 것을 확인했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P60.11 marketplace transaction E2E harness self-review이다. 이번 P60.10이 E2E assertion 강화라면, P60.11은 seed/auth/readiness/e2e harness 전체를 보안·QA 관점에서 자체 리뷰하는 작업이다.
+
+검증:
+
+- `node --check scripts/e2e_marketplace_transaction_flow.mjs`
+- `npm run e2e:marketplace-transaction`: fixture env 누락으로 안전 실패
+- `npm run typecheck`
+- `npm run lint`
+
+### marketplace transaction local runbook
+
+- 이전 작업은 requester, forwarder, broker 로그인 storage state를 만드는 P60.8이고, 이번 작업은 seed/auth/e2e 실행 순서와 막힘 조건을 문서로 고정한 P60.9다.
+- `MARKETPLACE_TRANSACTION_E2E_RUNBOOK.md`를 추가했다.
+- local Next.js, local Supabase, service-role key, E2E password, fixture env export, storage state 파일 준비 순서를 정리했다.
+- 원격 Supabase origin, password 누락, fixture env 누락, storage state 누락, local 서버 중단 시 기대되는 안전 실패를 명시했다.
+- 현재 E2E 범위가 권한/접근/페이지 도달 검증이고, UI를 통한 신규 입찰 제출이나 선택은 다음 강화 단계로 남겼다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P60.10 marketplace transaction E2E assertion tightening이다. 이번 P60.9가 실행 문서라면, P60.10은 E2E assertion이 단순 페이지 도달을 넘어 견적 비교/제출 문구를 더 구체적으로 확인하게 만드는 작업이다.
+
+검증:
+
+- `rg -n "e2e:marketplace-transaction|E2E_MARKETPLACE|storage state|remote Supabase|local Supabase" docs/MARKETPLACE_TRANSACTION_E2E_RUNBOOK.md scripts/check_marketplace_transaction_e2e_readiness.mjs docs/ROADMAP.md docs/WORK_LOG.md`
+
+### marketplace transaction auth state script
+
+- 이전 작업은 marketplace transaction DB fixture를 upsert하는 P60.7이고, 이번 작업은 seeded requester, forwarder, broker 계정으로 로그인 storage state를 만드는 P60.8이다.
+- `create_marketplace_transaction_storage_states.mjs`를 추가했다.
+- `e2e:marketplace-transaction:auth` 스크립트를 추가했다.
+- storage state는 Git 추적 대상이 아닌 `tmp/e2e-auth/`에 role별 fixture 파일명으로 저장한다.
+- local Next.js base URL뿐 아니라 `.env.local` Supabase origin도 local인지 확인해, 로컬 앱이 원격 Supabase로 로그인하지 못하게 막았다.
+- 비밀번호와 session cookie는 출력하지 않는다.
+- marketplace transaction readiness 안내를 seed/auth 명령 기준으로 갱신했다.
+- 현재 `.env.local`은 원격 Supabase origin이라 브라우저 로그인 전에 안전 실패한다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P60.9 marketplace transaction local runbook이다. 이번 P60.8이 로그인 storage state 생성 스크립트라면, P60.9는 seed/auth/e2e 실행 순서와 막힘 조건을 운영 가능한 문서로 고정하는 작업이다.
+
+검증:
+
+- `node --check scripts/create_marketplace_transaction_storage_states.mjs`
+- `npm run e2e:marketplace-transaction:auth`: 원격 Supabase origin에서 브라우저 로그인 전 안전 실패
+- `npm run e2e:marketplace-transaction:ready`: 원격 Supabase origin, E2E password, fixture env, storage state 누락으로 안전 실패하며 seed/auth 명령 안내 확인
+
+### marketplace transaction seed upsert implementation
+
+- 이전 작업은 marketplace transaction seed runner 골격을 만든 P60.6이고, 이번 작업은 그 골격을 실제 local Supabase fixture upsert 스크립트로 완성한 P60.7이다.
+- `seed_marketplace_transaction_fixture.mjs`가 local Supabase origin, service role key, E2E test password를 확인한 뒤에만 DB 쓰기를 수행한다.
+- requester, forwarder, broker auth user를 생성/업데이트하고 같은 계정의 profile, company, party type, partner preference를 맞춘다.
+- 운송 요청, 통관 의뢰, 요청 상세, partner match, 운송/통관 bid, bid detail을 synthetic fixture ID로 재실행 가능하게 upsert한다.
+- 기존 fixture 요청 ID가 있으면 service request 삭제 cascade로 관련 거래 데이터를 정리한 뒤 다시 넣는다.
+- source snapshot에는 `legalCertainty: false`를 남겨 E2E fixture가 법적 확정 결과처럼 보이지 않게 했다.
+- 현재 `.env.local`은 원격 Supabase origin이라 DB 쓰기 전에 안전 실패한다.
+- secret 값은 출력하지 않고, 출력은 non-secret fixture env export 힌트로 제한했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P60.8 marketplace transaction auth state script이다. 이번 P60.7이 DB fixture upsert라면, P60.8은 seeded requester/forwarder/broker 계정으로 로그인해 Playwright storage state를 만드는 작업이다.
+
+검증:
+
+- `node --check scripts/seed_marketplace_transaction_fixture.mjs`
+- `npx vitest run tests/fixtures/marketplace-transaction.fixture.test.ts`
+- `npm run e2e:marketplace-transaction:seed`: 원격 Supabase origin에서 DB 쓰기 전 안전 실패
+- `npm run typecheck`
+- `npm run lint`
+
+### marketplace transaction seed runner skeleton
+
+- 이전 작업은 marketplace transaction fixture 상수 모듈을 만든 P60.5이고, 이번 작업은 이 상수를 local Supabase에 넣는 guarded seed runner 골격을 만든 P60.6이다.
+- `seed_marketplace_transaction_fixture.mjs`를 추가했다.
+- `e2e:marketplace-transaction:seed` 스크립트를 추가했다.
+- seed runner는 local Supabase origin, service role key, E2E test password를 확인한 뒤에만 다음 단계로 진행한다.
+- 현재는 DB upsert 구현 전 skeleton이라, local guard 통과 후에도 fixture 사용자/회사/env export를 출력하고 다음 구현 단계로 중단하도록 했다.
+- 현재 `.env.local`은 원격 Supabase origin이라 DB 쓰기 전에 안전 실패한다.
+- secret 값은 출력하지 않는다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P60.7 marketplace transaction seed upsert implementation이다. 이번 P60.6이 seed runner 골격이라면, P60.7은 실제 local Supabase에 사용자/회사/역할/요청/입찰 fixture를 upsert하는 작업이다.
+
+검증:
+
+- `node --check scripts/seed_marketplace_transaction_fixture.mjs`
+- `npm run e2e:marketplace-transaction:seed`: 원격 Supabase origin에서 DB 쓰기 전 안전 실패
+
+### marketplace transaction fixture module
+
+- 이전 작업은 marketplace transaction E2E fixture plan을 작성한 P60.4이고, 이번 작업은 seed/e2e/readiness가 공유할 fixture 상수 모듈과 테스트를 만든 P60.5다.
+- `tests/fixtures/marketplace-transaction.fixture.mjs`를 추가했다.
+- TypeScript wrapper와 `.d.mts` 타입 선언을 추가했다.
+- requester, forwarder, broker 사용자/회사, 운송/통관 request/bid ID, storage state 파일명, env key를 한 원본으로 정의했다.
+- `marketplaceTransactionEnvExports`로 readiness에 넣을 env export 힌트를 만들 수 있게 했다.
+- fixture가 synthetic `E2E` 데이터이고 원문성 민감 토큰을 포함하지 않는지 테스트했다.
+- transaction readiness와 E2E skeleton이 이 fixture 모듈을 참조하도록 연결했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P60.6 marketplace transaction seed runner skeleton이다. 이번 P60.5가 fixture 상수라면, P60.6은 이 상수를 local Supabase에 넣는 guarded seed runner 골격을 만드는 작업이다.
+
+검증:
+
+- `npx vitest run tests/fixtures/marketplace-transaction.fixture.test.ts`
+- `node --check scripts/check_marketplace_transaction_e2e_readiness.mjs`
+- `node --check scripts/e2e_marketplace_transaction_flow.mjs`
+- `npm run e2e:marketplace-transaction:ready`: 원격 Supabase origin, fixture env, storage state 누락으로 안전 실패
+- `npm run e2e:marketplace-transaction`: fixture env 누락으로 안전 실패
+
+### marketplace transaction e2e fixture plan
+
+- 이전 작업은 marketplace transaction E2E skeleton을 만든 P60.3이고, 이번 작업은 skeleton이 실제로 통과할 수 있는 local seed/auth fixture 구조를 설계한 P60.4다.
+- `MARKETPLACE_TRANSACTION_E2E_FIXTURE_PLAN.md`를 추가했다.
+- requester, forwarder, broker role별 storage state와 회사/역할/검증 상태를 정의했다.
+- 운송/통관 request/bid fixture env 계약을 정의했다.
+- 원격 Supabase 거부, secret 미출력, 실제 서류 미사용, synthetic 데이터 사용을 guardrail로 정리했다.
+- E2E assertion 범위를 비로그인 보호, requester 상세 접근, partner opportunity 접근, 견적 비교/제출 문구 확인으로 정했다.
+- 다음 구현 단계로 local seed runner와 auth-state script를 분리해 정리했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P60.5 marketplace transaction fixture module이다. 이번 P60.4가 fixture plan 문서라면, P60.5는 seed/e2e/readiness가 공유할 fixture 상수 모듈과 테스트를 만드는 작업이다.
+
+검증:
+
+- fixture plan 문서 작성 및 ROADMAP/WORK_LOG 연결
+
+### marketplace request transaction e2e script skeleton
+
+- 이전 작업은 marketplace transaction E2E readiness를 만든 P60.2이고, 이번 작업은 준비된 role storage state로 운송/통관 거래 화면을 검증하는 guarded E2E skeleton을 만든 P60.3이다.
+- `e2e_marketplace_transaction_flow.mjs`를 추가했다.
+- E2E는 local base URL에서만 실행된다.
+- requester, forwarder, broker storage state가 준비되어 있어야 한다.
+- 운송/통관 request ID와 bid ID env가 준비되어 있어야 한다.
+- 비로그인 요청 상세 접근은 `/login`으로 이동해야 한다.
+- requester는 운송/통관 요청 상세에 접근 가능해야 하고, partner는 각 opportunity 상세에 접근 가능해야 한다.
+- 현재 로컬 fixture env가 없으므로 실행 시 fixture env 누락으로 안전 실패한다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P60.4 marketplace transaction e2e fixture plan이다. 이번 P60.3이 E2E skeleton이라면, P60.4는 이 skeleton이 실제로 통과할 수 있는 local seed/auth fixture 구조를 설계하는 작업이다.
+
+검증:
+
+- `node --check scripts/e2e_marketplace_transaction_flow.mjs`
+- `npm run e2e:marketplace-transaction`: fixture env 누락으로 안전 실패
+
+### marketplace request transaction e2e readiness
+
+- 이전 작업은 core transaction E2E를 다음 병목으로 선택한 P60.1이고, 이번 작업은 화주 요청→파트너 입찰→화주 선정 흐름을 로컬에서 검증할 준비 상태를 점검하는 P60.2다.
+- `check_marketplace_transaction_e2e_readiness.mjs`를 추가했다.
+- readiness는 local Next.js, local Supabase, service-role key, E2E test password, role별 storage state, 운송/통관 request/bid fixture ID를 확인한다.
+- role별 storage state 기준은 requester, forwarder, broker로 잡았다.
+- 원격 Supabase origin에서는 safe-fail한다.
+- secret 값은 출력하지 않는다.
+- 아직 실제 거래 흐름 E2E script는 추가하지 않았고, P60.3에서 추가할 대상으로 남겼다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P60.3 marketplace request transaction e2e script skeleton이다. 이번 P60.2가 준비 상태 점검이라면, P60.3은 준비된 role storage state로 운송/통관 요청 상세, 파트너 입찰, 화주 선정 화면을 확인하는 guarded E2E skeleton을 만드는 작업이다.
+
+검증:
+
+- `node --check scripts/check_marketplace_transaction_e2e_readiness.mjs`
+- `npm run e2e:marketplace-transaction:ready`: 원격 Supabase origin, E2E password, fixture env, storage state 누락으로 안전 실패
+
+### platform next-area selection
+
+- 이전 작업은 운영 사용자 관리 화면 변경 전체를 자체 리뷰한 P59.4이고, 이번 작업은 다음 플랫폼 MVP 병목을 다시 선택한 P60.1이다.
+- 품명 검색 E2E와 완료 리포트/알림 E2E 준비는 있지만, 플랫폼 MVP 핵심 거래 흐름 E2E는 아직 없다.
+- 다음 병목은 화주 요청 생성, 공개, 파트너 입찰, 화주 선정까지 이어지는 core transaction flow를 로컬에서 자동 검증할 수 없는 문제로 정했다.
+- 운송과 통관 흐름을 모두 포함해야 하지만, 우선 fixture/readiness/e2e 골격을 만들어 원격 Supabase에서는 안전 실패하게 하는 것이 선행이다.
+- 다음 구현 영역을 marketplace request transaction E2E readiness로 정했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P60.2 marketplace request transaction e2e readiness다. 이번 P60.1이 다음 병목 선정이라면, P60.2는 로컬 Supabase와 role별 storage state, request/bid fixture ID 준비 여부를 점검하는 guarded readiness를 만드는 작업이다.
+
+검증:
+
+- `rg -n "e2e|storage state|freight request|clearance request|submit_freight_bid|publish_freight|select_service_bid|request flow" scripts tests docs app features server`
+- `scripts/e2e_product_supplement_flow.mjs` 리뷰
+- `rg -n "P60|authenticated e2e|요청.*E2E|marketplace.*E2E|fixture" docs/ROADMAP.md docs/WORK_LOG.md docs/*.md`
+
+### operations users self-review
+
+- 이전 작업은 사용자 상세 내부의 위험 신호와 평소 확인 정보를 분리한 P59.3이고, 이번 작업은 P59 운영 사용자 관리 화면 변경 전체를 자체 리뷰한 P59.4다.
+- `OPERATIONS_USERS_SELF_REVIEW.md`를 추가했다.
+- 대표 판단 기준, 나에게 요청할 문구, 사용자 상세 큐, 위험 작업 접힘 유지, 기존 기능 보존을 fixed 항목으로 정리했다.
+- `/operations/users`의 `requireDeveloperRole` 유지, 기존 developer-only server action 유지, 테스트 로그인/삭제의 위험 작업 접힘 유지, DELETE 확인 유지 여부를 security 항목으로 정리했다.
+- 인증된 developer 브라우저 본문 검증이 아직 storage state 부재로 제한된 점을 remaining risk로 남겼다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P60.1 platform next-area selection이다. 이번 P59.4가 운영 사용자 관리 화면 자체 리뷰라면, P60.1은 다시 다음 플랫폼 MVP 병목을 선택하는 작업이다.
+
+검증:
+
+- `rg -n "대표 판단 기준|나에게 요청할 문구|상세에서 먼저 볼 것|테스트·위험 작업|사용자 삭제|테스트 로그인|DELETE|generateManagedUserTestLoginLinkAction|deleteManagedUserAction" features/operations app/'(app)'/operations/users/page.tsx docs/WORK_LOG.md docs/ROADMAP.md`
+- `rg -n "operations-users|user-management|developer|requireDeveloperRole|/operations/users" app features server docs`
+- `npx vitest run features/operations/operations-users-priority-panel.test.ts features/operations/user-management-panel.test.ts`
+
+### operations users detail density review
+
+- 이전 작업은 사용자 관리 화면 상단의 대표용 우선순위 표면을 추가한 P59.2이고, 이번 작업은 펼쳐진 사용자 상세 내부에서 위험 신호와 평소 확인 정보를 더 분리한 P59.3이다.
+- 사용자 상세 상단에 `상세에서 먼저 볼 것` 큐를 추가했다.
+- 가입 추가정보 미완료, 허용 IP 초과, 운영 권한, 로그인 이력 없음, 회사명 누락을 우선 신호로 표시한다.
+- 평범한 완료 사용자는 `평소 확인만 필요`로 표시해 과도한 위험감을 줄인다.
+- 기존 기본정보 수정, 최근 접속 이력, 테스트 로그인, 삭제 기능은 제거하지 않았다.
+- `buildManagedUserDetailCues` helper와 단위 테스트를 추가했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P59.4 operations users self-review다. 이번 P59.3이 사용자 상세 내부 UX 정리라면, P59.4는 P59 운영 사용자 관리 화면 변경 전체를 자체 리뷰하는 작업이다.
+
+검증:
+
+- `npx vitest run features/operations/user-management-panel.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### operations users owner-mode priority surface
+
+- 이전 작업은 다음 병목을 운영 사용자 관리 화면으로 정한 P59.1이고, 이번 작업은 사용자 관리 화면 상단에 대표가 먼저 볼 우선순위와 안전한 개선 요청 문구를 배치한 P59.2다.
+- `OperationsUsersPriorityPanel`에 `대표 판단 기준` 영역을 추가했다.
+- 역할 신청, 검증 증빙, 상태 이상 업체, 가입 미완료 사용자 순서로 대표가 나에게 요청할 수 있는 문구를 생성한다.
+- 기존 사용자 생성, 수정, 삭제, 테스트 로그인 링크 기능은 제거하지 않았다.
+- `buildOperationsUsersOwnerPrompt` helper를 추가하고 우선순위 회귀 테스트를 붙였다.
+- 개발자 인증 storage state가 없어 브라우저 본문 검증은 제한됐고, 비인증 접근은 `/login`으로 이동해 운영 화면 본문이 노출되지 않음을 확인했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P59.3 operations users detail density review다. 이번 P59.2가 상단 우선순위 표면이라면, P59.3은 펼쳐진 사용자 상세 내부에서 위험 작업과 평소 확인 정보를 더 분리하는 작업이다.
+
+검증:
+
+- `npx vitest run features/operations/operations-users-priority-panel.test.ts`
+- `npm run typecheck`
+- `node -e "... playwright ... /operations/users ..."`: 비인증 상태에서 `/login`으로 이동
+- `npm run lint`
+- `npm run build`
+
+### platform next-area selection
+
+- 이전 작업은 marketplace notification inbox/read-state/read-action 변경을 자체 리뷰한 P58.1이고, 이번 작업은 다음 플랫폼 MVP 병목을 다시 선택한 P59.1이다.
+- 플랫폼 거래 흐름, 파트너 알림, 읽음 처리, 완료 리포트 preview 기반은 1차로 이어졌다.
+- 인증된 알림 E2E는 로컬 fixture가 필요하므로 현재 즉시 진행 가능한 기능 병목은 아니다.
+- 다음 병목은 대표/운영자가 관리 화면을 보고 무엇을 확인하고 무엇을 나에게 맡겨야 하는지 이해하기 어려운 문제로 정했다.
+- 특히 `/operations/users`는 사용자, 회사, 세션, 생성/수정/삭제/테스트 로그인 링크 기능이 한 화면에 모여 있어 대표가 보기 어렵다.
+- 다음 구현 영역을 operations users owner-mode simplification으로 정했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P59.2 operations users owner-mode priority surface다. 이번 P59.1이 다음 병목 선정이라면, P59.2는 실제 사용자 관리 화면 상단에 대표가 먼저 볼 우선순위와 안전한 개선 요청 문구를 배치하는 작업이다.
+
+검증:
+
+- `docs/ROADMAP.md` Platform Execution Rail 리뷰
+- `rg -n "admin|관리|operations|대시보드|partner|verification|company|role|onboarding|fixture|remaining risk|다음 작업|P59" docs features app server`
+- `rg --files app/'(app)' features server | rg '(operations|company|verification|members|partner-preferences|marketplace)'`
+
+### marketplace notification final self-review
+
+- 이전 작업은 인증된 파트너 세션으로 알림 표시/읽음 처리를 검증할 수 있게 한 P57.7이고, 이번 작업은 P57 전체 변경을 보안·UX·운영 관점에서 자체 리뷰한 P58.1이다.
+- `MARKETPLACE_NOTIFICATION_INBOX_SELF_REVIEW.md`를 추가했다.
+- 파트너 read RLS, dashboard read model, read-state RPC, dashboard read action, E2E readiness를 리뷰 범위로 정리했다.
+- 민감정보 미조회, 직접 update 차단, RPC ownership check, audit log 기록을 fixed/security 항목으로 정리했다.
+- 링크와 읽음 버튼 분리, 미확인 건수, 읽음 상태, empty state를 UX 항목으로 정리했다.
+- 원격 Supabase readiness safe-fail과 로컬 fixture 미준비를 operations/remaining risk로 정리했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P59.1 platform next-area selection이다. 이번 P58.1이 알림 inbox 묶음 자체 리뷰라면, P59.1은 다음 플랫폼 MVP 병목을 다시 고르는 작업이다.
+
+검증:
+
+- `rg -n "invoice|file_name|fileName|question|answer|message|metadata|document|download|personal|amount|total_amount|deliveryId|read_at|read_by|marketplace_notification_delivery_read" features/dashboard server/actions server/repositories/marketplace-notification-deliveries.repository.ts scripts/*marketplace_notification* supabase/migrations/20260531012000_platform_marketplace_schema.sql`
+- `rg -n "partner reads own marketplace notification deliveries|mark_marketplace_notification_delivery_read|service role manages marketplace notification deliveries|grant update on public.marketplace_notification_deliveries|marketplace_notification_deliveries_unread_partner_idx" supabase/migrations/20260531012000_platform_marketplace_schema.sql server/repositories/platform-marketplace-governance.test.ts`
+
+### marketplace notification authenticated e2e fixture
+
+- 이전 작업은 대시보드 읽음 처리 버튼을 연결한 P57.6이고, 이번 작업은 인증된 파트너 세션으로 알림 표시/읽음 처리를 브라우저 자동 검증할 수 있게 한 P57.7이다.
+- `e2e:marketplace-notification:ready` 스크립트를 추가했다.
+- readiness는 local Next.js, local Supabase, service-role key, fixture request id, fixture delivery id, 파트너 storage state를 확인한다.
+- `e2e:marketplace-notification` 스크립트를 추가했다.
+- E2E는 파트너 storage state로 `/dashboard`에 접근해 파트너 알림 패널, 읽음 처리 버튼, 읽음 처리 후 상태 표시를 확인한다.
+- 원격 Supabase에서 실수로 fixture/e2e를 실행하지 않도록 local origin guard를 넣었다.
+- readiness 출력에는 secret 값을 표시하지 않는다.
+- 현재 `.env.local`은 원격 Supabase origin이라 readiness는 안전하게 실패하는 상태가 맞다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P58.1 marketplace notification final self-review다. 이번 P57.7이 인증 브라우저 검증 준비라면, P58.1은 P57 전체 알림 inbox/read-state/read-action 변경을 보안·UX·운영 관점에서 자체 리뷰하는 작업이다.
+
+검증:
+
+- `node --check scripts/check_marketplace_notification_e2e_readiness.mjs`
+- `node --check scripts/e2e_marketplace_notification_dashboard.mjs`
+- `npm run e2e:marketplace-notification:ready`: 원격 Supabase origin, fixture env, storage state 누락으로 안전 실패
+
+### marketplace notification read action UI
+
+- 이전 작업은 알림 read-state 기준을 만든 P57.5이고, 이번 작업은 사용자가 대시보드에서 알림을 읽음 처리할 수 있게 한 P57.6이다.
+- `markMarketplaceNotificationReadAction` 서버 액션을 추가했다.
+- 서버 액션은 현재 Supabase 세션으로 `mark_marketplace_notification_delivery_read` RPC를 호출하고 `/dashboard`를 revalidate한다.
+- FormData parser를 별도 helper로 분리해 서버 액션 export 규칙과 테스트 가능성을 분리했다.
+- 대시보드 파트너 알림 항목을 상세 보기 링크와 읽음 처리 버튼으로 나눴다.
+- 읽음 처리 버튼은 미확인 알림에만 보이고, 이미 읽은 알림은 `읽음` 상태로 표시한다.
+- 인증된 대시보드 본문 브라우저 검증은 로컬 로그인 storage state가 없어 제한됐고, 비인증 상태에서는 `/login`으로 이동해 알림/읽음 버튼이 노출되지 않음을 확인했다.
+- 새 migration 파일은 만들지 않았고, P57.5에서 수정한 marketplace migration 초안의 RPC를 사용한다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P57.7 marketplace notification authenticated e2e fixture다. 이번 P57.6이 실제 읽음 버튼 연결이라면, P57.7은 로컬 Supabase에서 인증된 파트너 세션으로 알림 표시/읽음 처리까지 브라우저 자동 검증할 수 있는 fixture를 준비하는 작업이다.
+
+검증:
+
+- `npx vitest run server/actions/marketplace-notification.actions.test.ts server/repositories/marketplace-notification-deliveries.repository.test.ts features/dashboard/marketplace-notification-inbox.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `node -e "... playwright mobile ... /dashboard ..."`: 비인증 상태에서 `/login`으로 이동하고 알림/읽음 버튼은 노출되지 않음
+- `npm run build`
+
+### marketplace notification read-state design
+
+- 이전 작업은 파트너가 대시보드에서 인앱 알림을 확인하게 한 P57.4이고, 이번 작업은 사용자가 본 알림과 아직 확인하지 않은 알림을 구분할 read-state 기준을 만든 P57.5다.
+- `marketplace_notification_deliveries`에 `read_at`, `read_by` 초안을 추가했다.
+- 인앱 알림 미확인 목록 조회를 받을 수 있도록 `marketplace_notification_deliveries_unread_partner_idx` 초안을 추가했다.
+- 직접 update RLS를 열지 않고 `mark_marketplace_notification_delivery_read` RPC로만 읽음 처리하도록 했다.
+- 읽음 RPC는 로그인 사용자, 현재 회사, `in_app` 채널, `claimed/sent` 상태, 자기 회사 delivery만 허용한다.
+- 읽음 처리는 `audit_logs`에 `marketplace_notification_delivery_read`로 남긴다.
+- repository에 `markMarketplaceNotificationDeliveryRead` wrapper와 `readAt` 매핑을 추가했다.
+- 대시보드 알림 패널은 `readAt` 기준으로 미확인 건수와 확인 완료 상태를 표시한다.
+- migration 초안만 수정했고 DB에는 적용하지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P57.6 marketplace notification read action UI다. 이번 P57.5가 읽음 상태 저장 기준이라면, P57.6은 대시보드에서 사용자가 알림을 읽음 처리할 수 있는 서버 액션과 버튼을 붙이는 작업이다.
+
+검증:
+
+- `npx vitest run server/repositories/marketplace-notification-deliveries.repository.test.ts server/repositories/platform-marketplace-governance.test.ts features/dashboard/marketplace-notification-inbox.test.ts`
+- `npx supabase db lint --local`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### marketplace notification inbox UI surface
+
+- 이전 작업은 파트너/운영자가 읽을 알림 목록 read model을 만든 P57.3이고, 이번 작업은 파트너가 대시보드에서 인앱 알림을 실제로 확인하게 한 P57.4다.
+- 대시보드에서 `listMarketplaceNotificationInbox`를 호출해 최근 인앱 알림 5건을 로드한다.
+- `DashboardMarketplaceEntry`의 다음 행동 영역 옆에 `파트너 알림` 패널을 추가했다.
+- 알림 패널은 요청명, 요청 유형, 알림 종류, 알림 상태, 요청 상태, 마감일만 표시한다.
+- 서류, 질문/답변, bid 상세, metadata, 송장 내용은 노출하지 않는다.
+- 운송 알림은 `/requests/freight/opportunities/:requestId`, 통관 알림은 `/requests/clearance/opportunities/:requestId`로 이동한다.
+- dashboard helper를 분리해 링크/라벨 규칙을 테스트 가능하게 만들었다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P57.5 marketplace notification read-state design이다. 이번 P57.4가 알림 노출이라면, P57.5는 사용자가 본 알림과 아직 확인하지 않은 알림을 구분할 수 있는 read-state 설계/스키마 여부를 정하는 작업이다.
+
+검증:
+
+- `npx vitest run features/dashboard/marketplace-notification-inbox.test.ts server/repositories/marketplace-notification-deliveries.repository.test.ts`
+- `npm run typecheck`
+- `node -e "... playwright ... /dashboard ..."`: 비인증 상태에서 `/login`으로 이동하고 대시보드 알림 본문은 노출되지 않음
+- `npm run lint`
+- `npm run build`
+
+### marketplace notification inbox repository
+
+- 이전 작업은 파트너가 자기 회사 알림만 읽을 수 있게 RLS를 추가한 P57.2이고, 이번 작업은 파트너/운영자가 읽을 알림 목록 read model을 만든 P57.3이다.
+- `listMarketplaceNotificationInbox`를 추가했다.
+- 조회 대상은 `channel = in_app`, `status in (claimed, sent)` 알림으로 제한했다.
+- 요청 상세/서류/메시지/metadata가 아니라 목록 표시용 `title`, `request_type`, `status`, `deadline_at`만 join해 반환한다.
+- 반환 타입은 UI가 바로 쓰기 쉬운 camelCase `MarketplaceNotificationInboxItem`으로 분리했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P57.4 marketplace notification inbox UI surface다. 이번 P57.3이 서버 read model이라면, P57.4는 대시보드/파트너 화면에서 이 알림을 실제로 볼 수 있게 노출하는 작업이다.
+
+검증:
+
+- `npx vitest run server/repositories/marketplace-notification-deliveries.repository.test.ts`
+
+### platform marketplace next-area selection
+
+- 이전 작업은 marketplace notification self-review인 P56.1이고, 이번 작업은 다음 플랫폼 MVP 병목을 고른 P57.1이다.
+- worker가 delivery를 claim해도 사용자가 앱 안에서 알림을 보는 inbox UI/read model이 아직 없다는 점을 확인했다.
+- 다음 구현 영역을 marketplace notification inbox로 정했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P57.2 marketplace notification partner read RLS다. 이번 P57.1이 다음 병목 선정이라면, P57.2는 파트너가 자기 회사 알림만 읽을 수 있게 RLS를 추가하는 작업이다.
+
+검증:
+
+- `rg -n "marketplace_notification_deliveries|notification|알림" app features server docs`
+- `server/repositories/marketplace-notification-deliveries.repository.ts` 코드 리뷰
+- `supabase/migrations/20260531012000_platform_marketplace_schema.sql` RLS 리뷰
+
+### marketplace notification partner read RLS
+
+- 이전 작업은 알림 inbox를 다음 병목으로 선정한 P57.1이고, 이번 작업은 파트너가 자기 회사 알림만 읽을 수 있게 RLS를 추가한 P57.2다.
+- `marketplace_notification_deliveries`에 `partner reads own marketplace notification deliveries` select policy를 추가했다.
+- 조건은 `partner_company_id = public.current_company_id()`로 제한했다.
+- staff read policy와 service role manage policy는 유지했다.
+- migration 초안만 수정했고 DB에는 적용하지 않았다.
+- 새 별도 migration 파일은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P57.3 marketplace notification inbox repository다. 이번 P57.2가 RLS 추가라면, P57.3은 파트너/운영자가 읽을 알림 목록 read model을 만드는 작업이다.
+
+검증:
+
+- `rg -n "partner reads own marketplace notification deliveries|staff reads marketplace notification deliveries|service role manages marketplace notification deliveries|partner_company_id = public.current_company_id" supabase/migrations/20260531012000_platform_marketplace_schema.sql`
+- `npx supabase db lint --local`
+
+### marketplace notification final self-review
+
+- 이전 작업은 provider 실패 상태 의미를 runbook에 반영한 P55.2이고, 이번 작업은 marketplace notification readiness/provider/worker 변경 전체를 자체 리뷰한 P56.1이다.
+- `MARKETPLACE_NOTIFICATION_SELF_REVIEW.md`를 추가했다.
+- unsupported provider readiness, claim-only/sent 혼동, sender failure coverage를 fixed 항목으로 정리했다.
+- provider allowlist, `internal_dry_run` no external delivery, metadata sanitizer, provider error normalization을 safety check로 정리했다.
+- 실제 외부 provider 미연결, protected job route의 infra error 반환, production job 미실행을 remaining risk로 정리했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P57.1 platform marketplace next-area selection이다. 이번 P56.1이 알림 자체 리뷰라면, P57.1은 다음 플랫폼 MVP 병목 영역을 다시 선택하는 작업이다.
+
+검증:
+
+- `rg -n "sent|claimedWithoutSenderCount|internal_dry_run|not supported|retryable_failed|provider_" server/jobs/marketplace-notification* server/repositories/marketplace-notification-deliveries.repository.ts docs/MARKETPLACE_NOTIFICATION_RUNBOOK.md`
+- `rg -n "file_name|fileName|question|answer|message|personal|invoice|amount|total_amount" server/jobs/marketplace-notification* server/notifications/marketplace-notification-policy.ts server/repositories/marketplace-notification-deliveries.repository.ts docs/MARKETPLACE_NOTIFICATION_RUNBOOK.md`
+- `npx vitest run server/jobs/marketplace-notification-worker.service.test.ts server/jobs/marketplace-notification-send-readiness.test.ts server/jobs/marketplace-notification-provider.test.ts server/repositories/marketplace-notification-deliveries.repository.test.ts server/notifications/marketplace-notification-policy.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### marketplace notification failure runbook sync
+
+- 이전 작업은 sender 실패 시 실패 기록과 count를 테스트한 P55.1이고, 이번 작업은 provider 실패 상태 의미를 runbook에 반영한 P55.2다.
+- runbook에 `실패 상태 해석` 섹션을 추가했다.
+- sender 실패는 기본적으로 `retryable_failed`로 기록된다고 명시했다.
+- provider 오류 원문은 저장하지 않고 정규화된 provider error code로 저장한다고 명시했다.
+- `failedSendCount`가 증가한 실행을 외부 발송 성공으로 안내하면 안 된다고 명시했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P56.1 marketplace notification final self-review다. 이번 P55.2가 실패 runbook 문서화라면, P56.1은 알림 readiness/provider/worker 변경 전체를 자체 리뷰하는 작업이다.
+
+검증:
+
+- `rg -n "retryable_failed|provider_timeout|provider_rate_limited|provider_auth_error|provider_send_failed|failedSendCount" docs/MARKETPLACE_NOTIFICATION_RUNBOOK.md server/repositories/marketplace-notification-deliveries.repository.ts server/jobs/marketplace-notification-worker.service.test.ts`
+
+### marketplace notification worker send failure review
+
+- 이전 작업은 worker 결과 필드 해석을 runbook에 정리한 P54.2이고, 이번 작업은 sender 실패 시 실패 기록과 count를 테스트한 P55.1이다.
+- sender가 throw하면 `failedSendCount`가 1 증가하는지 확인했다.
+- sender 실패 시 `sentCount`는 증가하지 않는다.
+- sender가 있었기 때문에 `claimedWithoutSenderCount`도 증가하지 않는다.
+- delivery update가 `retryable_failed` 상태와 정규화된 `provider_timeout` error message로 호출되는지 확인했다.
+- raw provider error message를 그대로 저장하지 않는 기존 안전 동작을 테스트로 고정했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P55.2 marketplace notification failure runbook sync다. 이번 P55.1이 sender 실패 테스트라면, P55.2는 provider 실패 시 운영자가 볼 상태와 retryable_failed 의미를 문서화하는 작업이다.
+
+검증:
+
+- `npx vitest run server/jobs/marketplace-notification-worker.service.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### marketplace notification worker result route smoke
+
+- 이전 작업은 worker 결과에 `claimedWithoutSenderCount`를 추가한 P54.1이고, 이번 작업은 route 응답 결과 필드 해석을 runbook에 정리한 P54.2다.
+- API route는 worker result를 그대로 JSON으로 반환하므로 별도 코드 변경은 하지 않았다.
+- runbook에 `결과 필드 해석` 표를 추가했다.
+- `claimedWithoutSenderCount`는 sender 없이 claim만 된 건수이며 외부 발송 완료가 아니라고 명시했다.
+- `sentCount`, `failedSendCount`, `skippedDuplicateCount`의 의미를 함께 정리했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P55.1 marketplace notification worker send failure review다. 이번 P54.2가 결과 필드 문서화라면, P55.1은 sender 실패 시 실패 기록과 count가 정확한지 테스트하는 작업이다.
+
+검증:
+
+- `rg -n "claimedWithoutSenderCount|sentCount|failedSendCount|skippedDuplicateCount|결과 필드 해석" docs/MARKETPLACE_NOTIFICATION_RUNBOOK.md server/jobs/marketplace-notification-worker.service.ts server/jobs/marketplace-notification-worker.service.test.ts`
+
+### marketplace notification worker result clarity
+
+- 이전 작업은 runbook provider 목록을 코드 allowlist 기준과 맞춘 P53.2이고, 이번 작업은 worker 결과에서 claim-only와 sent를 구분한 P54.1이다.
+- `MarketplaceNotificationWorkerResult`에 `claimedWithoutSenderCount`를 추가했다.
+- sender 없이 delivery claim만 된 건은 `claimedWithoutSenderCount`에 집계한다.
+- sender가 있고 sent 처리까지 완료된 건은 기존처럼 `sentCount`에 집계하며 `claimedWithoutSenderCount`는 증가하지 않는다.
+- dry-run에서는 `claimedWithoutSenderCount`가 0이다.
+- runbook에 sender 없이 claim된 건은 외부 발송 완료가 아니라고 명시했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P54.2 marketplace notification worker result route smoke다. 이번 P54.1이 worker result 필드 추가라면, P54.2는 route 응답에서 새 필드가 깨지지 않는지 smoke 기준을 정리하는 작업이다.
+
+검증:
+
+- `npx vitest run server/jobs/marketplace-notification-worker.service.test.ts server/jobs/marketplace-notification-send-readiness.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### marketplace notification send provider docs sync
+
+- 이전 작업은 provider allowlist를 코드에서 중앙화한 P53.1이고, 이번 작업은 runbook provider 목록을 코드 allowlist 기준과 맞춘 P53.2다.
+- runbook에 `지원 provider` 섹션을 추가했다.
+- 현재 지원 provider는 `internal_dry_run`뿐이라고 명시했다.
+- `internal_dry_run`은 외부 발송이 없고 delivery claim 후 provider id 기록만 확인하는 리허설이라고 명시했다.
+- 그 외 provider 값은 발송 준비 완료로 보지 않는다고 명시했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P54.1 marketplace notification worker result clarity다. 이번 P53.2가 provider 문서 정리라면, P54.1은 worker 결과가 claim-only와 sent를 운영자가 혼동하지 않게 필드 의미를 점검하는 작업이다.
+
+검증:
+
+- `rg -n "지원 provider|internal_dry_run|외부 발송 여부|지원하지 않는다|MARKETPLACE_NOTIFICATIONS_PROVIDER" docs/MARKETPLACE_NOTIFICATION_RUNBOOK.md server/jobs/marketplace-notification-provider.ts`
+
+### marketplace notification provider union centralization
+
+- 이전 작업은 unsupported provider runbook 설명을 맞춘 P52.3이고, 이번 작업은 지원 provider 문자열 중복을 줄인 P53.1이다.
+- `marketplaceNotificationProviderNames` allowlist를 provider module에서 export하도록 했다.
+- `MarketplaceNotificationProviderName` 타입은 allowlist에서 파생되도록 했다.
+- send readiness는 별도 문자열 배열을 갖지 않고 provider allowlist를 사용한다.
+- provider 테스트에서 allowlist가 `internal_dry_run`만 포함하는지 확인한다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P53.2 marketplace notification send provider docs sync다. 이번 P53.1이 provider allowlist 중앙화라면, P53.2는 runbook의 provider 목록을 코드 allowlist 기준과 맞추는 작업이다.
+
+검증:
+
+- `npx vitest run server/jobs/marketplace-notification-send-readiness.test.ts server/jobs/marketplace-notification-provider.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### marketplace notification readiness route consistency
+
+- 이전 작업은 send readiness가 지원 provider인지 검증하게 한 P52.2이고, 이번 작업은 route 응답과 runbook의 unsupported provider 설명을 맞춘 P52.3이다.
+- `MARKETPLACE_NOTIFICATIONS_PROVIDER=email` 같은 unsupported provider도 `Marketplace notification sending is not ready.` 응답 안의 readiness reason으로 차단된다고 runbook에 명시했다.
+- 예상 reason `MARKETPLACE_NOTIFICATIONS_PROVIDER is not supported.`를 runbook에 추가했다.
+- `internal_dry_run` 리허설 경로가 외부 발송이 아니라는 기존 주의 문구는 유지했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P53.1 marketplace notification provider union centralization이다. 이번 P52.3이 runbook 정합성이라면, P53.1은 supported provider 목록과 provider factory의 문자열 중복을 줄이는 작업이다.
+
+검증:
+
+- `rg -n "not supported|Marketplace notification sending is not ready|internal_dry_run|MARKETPLACE_NOTIFICATIONS_PROVIDER" docs/MARKETPLACE_NOTIFICATION_RUNBOOK.md server/jobs/marketplace-notification-send-readiness.test.ts server/jobs/marketplace-notification-send-readiness.ts`
+
+### marketplace notification supported provider readiness
+
+- 이전 작업은 완료 리포트 이후 다음 영역을 marketplace notification send readiness로 정한 P52.1이고, 이번 작업은 readiness가 지원 provider인지까지 검증하게 한 P52.2다.
+- `MARKETPLACE_NOTIFICATIONS_PROVIDER`가 설정되어 있어도 지원하지 않는 값이면 ready=false가 되도록 했다.
+- 현재 지원 provider는 `internal_dry_run`뿐이다.
+- `MARKETPLACE_NOTIFICATIONS_PROVIDER=email` 같은 값은 `MARKETPLACE_NOTIFICATIONS_PROVIDER is not supported.` reason을 반환한다.
+- 관련 단위 테스트를 추가했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P52.3 marketplace notification readiness route consistency다. 이번 P52.2가 readiness helper 수정이라면, P52.3은 route 응답과 runbook이 unsupported provider 실패를 일관되게 설명하는지 맞추는 작업이다.
+
+검증:
+
+- `npx vitest run server/jobs/marketplace-notification-send-readiness.test.ts server/jobs/marketplace-notification-provider.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### platform request completion report next-area selection
+
+- 이전 작업은 완료 리포트 preview/e2e/readiness 묶음을 자체 리뷰한 P51.1이고, 이번 작업은 다음으로 이어갈 플랫폼 요청 영역을 정한 P52.1이다.
+- 플랫폼 MVP에서 요청 공개 후 파트너가 알림을 받는 흐름이 다음 병목이라고 판단했다.
+- marketplace notification worker, provider, send readiness, runbook을 확인했다.
+- 현재 실제 외부 이메일/문자/푸시 provider는 연결하지 않고 `internal_dry_run` 리허설 경로만 있다.
+- send readiness가 provider 문자열 존재만 확인하고 지원 provider인지까지는 readiness 단계에서 검증하지 않는 점을 다음 작업으로 잡았다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P52.2 marketplace notification supported provider readiness다. 이번 P52.1이 다음 영역 선정이라면, P52.2는 send readiness가 provider 존재뿐 아니라 지원 provider인지도 검증하게 하는 작업이다.
+
+검증:
+
+- `server/jobs/marketplace-notification-worker.service.ts` 코드 리뷰
+- `server/jobs/marketplace-notification-provider.ts` 코드 리뷰
+- `server/jobs/marketplace-notification-send-readiness.ts` 코드 리뷰
+- `docs/MARKETPLACE_NOTIFICATION_RUNBOOK.md` 문서 리뷰
+
+### completion report final self-review
+
+- 이전 작업은 fallback copy를 helper로 분리하고 테스트한 P50.2이고, 이번 작업은 완료 리포트 preview/e2e/readiness 변경 전체를 자체 리뷰한 P51.1이다.
+- `SERVICE_REQUEST_COMPLETION_REPORT_PREVIEW_FINAL_SELF_REVIEW.md`를 추가했다.
+- route kind/report type mismatch, latest report selection overwrite, printed source URL 누락, schema fallback silent failure를 fixed 항목으로 정리했다.
+- authenticated browser body review가 local Supabase/storage state 부재로 막힌 점을 accepted risk로 정리했다.
+- source/version/date metadata, safety notice, 민감정보 미노출, local-only seed/e2e guard를 safety check로 정리했다.
+- 현재 작업 트리에 local-only platform 변경과 untracked 파일이 많고, 커밋/푸시/DB migration 적용/배포는 하지 않았음을 명시했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P52.1 platform request completion report next-area selection이다. 이번 P51.1이 완료 리포트 preview 자체 리뷰라면, P52.1은 다음으로 이어갈 플랫폼 요청 영역을 정하는 작업이다.
+
+검증:
+
+- `rg -n "guaranteed|confirmed|definitely|확정|보장|요건 없음|requirements absent|download|다운로드|fileName|question|answer|message" features/service-requests scripts tests/fixtures docs/SERVICE_REQUEST_COMPLETION_REPORT*`
+- `rg -n "localhost|127\\.0\\.0\\.1|SUPABASE_SERVICE_ROLE_KEY|secretValues=not-printed|service role|production|remote|원격" scripts/*completion* docs/SERVICE_REQUEST_COMPLETION_REPORT*`
+- `git status --short`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### completion report schema fallback copy extraction
+
+- 이전 작업은 schemaReady false일 때 사용자용 fallback UI를 추가한 P50.1이고, 이번 작업은 그 fallback 문구를 helper로 분리해 테스트 가능하게 만든 P50.2다.
+- `completionReportPreviewUnavailableCopy` helper를 추가했다.
+- preview page는 fallback 문구를 helper에서 가져오도록 수정했다.
+- fallback copy 테스트에서 `schema`, `table`, `SQL`, `DB` 같은 내부 단어가 사용자 문구에 들어가지 않는지 확인한다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P51.1 completion report final self-review다. 이번 P50.2가 fallback copy 테스트라면, P51.1은 완료 리포트 preview/e2e/readiness 변경 전체를 자체 리뷰하고 남은 위험을 정리하는 작업이다.
+
+검증:
+
+- `npx vitest run features/service-requests/service-request-completion-report-fallback-copy.test.ts features/service-requests/service-request-completion-report-preview-route.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### completion report repository schema fallback review
+
+- 이전 작업은 preview page가 단일 request의 report를 명시적으로 선택하게 한 P49.2이고, 이번 작업은 schemaReady false일 때 화면이 조용히 404가 되지 않게 한 P50.1이다.
+- 완료 리포트 저장소 또는 보관 서류 연결 정보를 확인할 수 없을 때 사용자용 안내 화면을 렌더링한다.
+- 내부 DB 오류명이나 schema 이름은 사용자에게 직접 노출하지 않는다.
+- 문구는 잠시 후 재시도와 운영자에게 완료 리포트 미리보기 상태 확인 요청으로 제한했다.
+- report table schemaReady false와 document mapping schemaReady false를 모두 처리한다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P50.2 completion report schema fallback copy extraction이다. 이번 P50.1이 fallback UI 추가라면, P50.2는 fallback 문구를 helper로 분리해 테스트 가능하게 만드는 작업이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### completion report preview single-request selection helper
+
+- 이전 작업은 request별 여러 report를 record로 바꿀 때 최신순 첫 report를 유지하게 한 P49.1이고, 이번 작업은 preview page가 단일 request의 report 선택 기준을 helper로 명시하게 한 P49.2다.
+- `selectCompletionReportForRequest` helper를 추가했다.
+- preview page는 더 이상 `reports.items[0]`을 직접 쓰지 않고 requestId 기준 helper를 사용한다.
+- helper는 `serviceRequestCompletionReportListToRecord`와 같은 기준을 사용해 최신순 첫 report를 선택한다.
+- 없는 requestId는 `undefined`를 반환하도록 테스트했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P50.1 completion report repository schema fallback review다. 이번 P49.2가 report 선택 기준이라면, P50.1은 schemaReady false일 때 사용자/운영자 화면이 어떻게 보이는지 점검하는 작업이다.
+
+검증:
+
+- `npx vitest run server/repositories/service-request-completion-report.repository.test.ts features/service-requests/service-request-completion-report-preview-route.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### completion report preview repository ordering review
+
+- 이전 작업은 mismatched kind URL을 e2e assertion에 추가한 P48.2이고, 이번 작업은 request별 여러 완료 리포트가 있을 때 최신 non-voided report 선택 기준을 점검한 P49.1이다.
+- `listOwnCompletionReportsForRequests`는 `updated_at desc`로 정렬해 최신 리포트를 먼저 가져온다.
+- `serviceRequestCompletionReportListToRecord`가 같은 requestId를 만났을 때 뒤의 오래된 리포트로 덮어쓸 수 있는 문제를 수정했다.
+- 이제 record 변환 시 첫 리포트를 유지하고 이후 같은 requestId는 무시한다.
+- 해당 동작을 repository 단위 테스트로 고정했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P49.2 completion report preview single-request selection helper다. 이번 P49.1이 record 변환 기준이라면, P49.2는 preview page가 단일 request의 report를 명시적으로 고르는 helper를 사용하게 하는 작업이다.
+
+검증:
+
+- `npx vitest run server/repositories/service-request-completion-report.repository.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### completion report preview route guard e2e assertion
+
+- 이전 작업은 route kind와 report request type mismatch를 helper로 차단한 P48.1이고, 이번 작업은 같은 규칙을 e2e assertion에 추가한 P48.2다.
+- `scripts/e2e_completion_report_preview_flow.mjs`에 mismatched kind assertion을 추가했다.
+- developer 세션 기준으로 freight route + clearance request id, clearance route + freight request id 조합에서 preview 본문이 노출되지 않아야 한다.
+- 현재 storage state가 없으므로 본문 e2e는 실행하지 못했고, storage state 없음 상태에서 안전 실패하는 것을 확인했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P49.1 completion report preview repository ordering review다. 이번 P48.2가 route guard e2e assertion이라면, P49.1은 request별 여러 report가 있을 때 최신 non-voided report 선택 기준을 점검하는 작업이다.
+
+검증:
+
+- `npm run e2e:completion-preview` storage state 없음 상태에서 안전 중단 확인
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### completion report preview route kind guard
+
+- 이전 작업은 모바일 비로그인 preview 접근을 브라우저로 확인한 P47.1이고, 이번 작업은 route kind와 report request type이 어긋난 preview 접근을 차단한 P48.1이다.
+- `canShowCompletionReportPreviewForRoute` helper를 추가했다.
+- preview page에서 report가 없거나, voided이거나, route kind와 report request type이 다르면 `notFound()` 처리하도록 했다.
+- `/requests/freight/{clearanceRequestId}/completion-report/preview` 같은 잘못된 kind URL이 route kind 기준으로 잘못 렌더링되는 것을 막았다.
+- route guard 단위 테스트를 추가했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P48.2 completion report preview route guard e2e assertion이다. 이번 P48.1이 route guard helper라면, P48.2는 잘못된 kind URL이 본문을 노출하지 않는지 e2e assertion에 추가하는 작업이다.
+
+검증:
+
+- `npx vitest run features/service-requests/service-request-completion-report-preview-route.test.ts features/service-requests/service-request-completion-report-source-url.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### completion report preview mobile unauth review
+
+- 이전 작업은 unsafe source URL 노출 방지 테스트를 추가한 P46.2이고, 이번 작업은 모바일 폭에서 비로그인 preview 접근 흐름을 확인한 P47.1이다.
+- Playwright viewport `390x844`에서 freight completion preview URL에 접근했다.
+- 모바일 폭에서도 `/login`으로 이동하는 것을 확인했다.
+- 로그인 문구가 표시되는 것을 확인했다.
+- preview 본문인 `완료 리포트 미리보기`가 비로그인 모바일 화면에 표시되지 않는 것을 확인했다.
+- screenshot을 `tmp/browser-review/completion-preview-mobile-login-redirect.png`에 저장했다.
+- 실제 완료 리포트 본문 모바일 레이아웃은 local Supabase/storage state 준비 후 확인해야 하므로 P47.2로 분리했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P47.2 completion report preview authenticated mobile body review다. 이번 P47.1이 모바일 비로그인 redirect라면, P47.2는 storage state 준비 후 실제 완료 리포트 본문 모바일 레이아웃을 확인하는 작업이다.
+
+검증:
+
+- Playwright mobile local browser check: freight preview 비로그인 접근 시 `/login` 이동, login text 표시, preview 본문 미노출 확인
+
+### completion report preview unsafe source URL regression
+
+- 이전 작업은 인쇄본에도 공식 출처 URL이 남게 한 P46.1이고, 이번 작업은 unsafe source URL이 preview 링크/텍스트로 노출되지 않는 규칙을 테스트로 고정한 P46.2다.
+- `service-request-completion-report-source-url.ts`를 추가했다.
+- preview document의 source URL 판정을 `safeCompletionReportSourceHref` helper로 분리했다.
+- `http://`, `https://` source URL은 허용한다.
+- `javascript:`, `data:`, 상대 경로, 빈 값은 `null`로 처리해 링크와 print URL 텍스트에 노출되지 않도록 했다.
+- `service-request-completion-report-source-url.test.ts`를 추가했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P47.1 completion report preview mobile layout review다. 이번 P46.2가 source URL 안전성 테스트라면, P47.1은 preview 문서가 모바일 폭에서 ID/source/checksum 텍스트를 깨지 않게 표시되는지 확인하는 작업이다.
+
+검증:
+
+- `npx vitest run features/service-requests/service-request-completion-report-source-url.test.ts features/service-requests/service-request-completion-report-preview.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### completion report preview print/source UX review
+
+- 이전 작업은 인증 후 브라우저 리뷰를 막는 조건을 정리한 P45.2이고, 이번 작업은 현재 preview 문서의 print/source/safety UI를 코드 기준으로 다시 점검한 P46.1이다.
+- print 모드에서는 `출처 열기` 버튼이 숨겨지지만 공식 출처 URL 텍스트도 남지 않는 문제를 확인했다.
+- source lock metadata 영역에 `출처 URL` 행을 추가해 인쇄본에도 공식 출처 URL이 남도록 수정했다.
+- `http://` 또는 `https://`가 아닌 source URL은 기존처럼 링크로 만들지 않고 `-`로 표시한다.
+- safety notice와 source snapshot version, published_at, checksum 표시는 유지했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P46.2 completion report preview unsafe source URL regression이다. 이번 P46.1이 인쇄 source URL 보강이라면, P46.2는 unsafe source URL이 preview 링크/텍스트로 노출되지 않는 규칙을 테스트로 고정하는 작업이다.
+
+검증:
+
+- `npx vitest run features/service-requests/service-request-completion-report-preview.test.ts features/service-requests/service-request-completion-report-labels.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### completion report authenticated browser review unblock plan
+
+- 이전 작업은 비로그인 preview 접근을 로컬 브라우저로 확인한 P45.1이고, 이번 작업은 로그인 후 본문 preview 화면 확인을 막는 조건을 정리한 P45.2다.
+- `SERVICE_REQUEST_COMPLETION_REPORT_AUTHENTICATED_BROWSER_REVIEW_UNBLOCK.md`를 추가했다.
+- 현재 readiness 결과상 `.env.local`이 원격 Supabase origin을 가리키는 점을 기록했다.
+- `E2E_TEST_PASSWORD`와 role별 storage state가 없는 점을 기록했다.
+- local Supabase, local service role key, 테스트 비밀번호, Next.js 서버 준비 조건을 정리했다.
+- 준비 후 실행 순서를 ready, seed, auth, e2e로 정리했다.
+- 로그인 후 브라우저 리뷰 범위를 requester, selected partner, developer, unmatched partner × freight/clearance로 정리했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P46.1 completion report preview print/source UX review다. 이번 P45.2가 인증 브라우저 unblock 문서라면, P46.1은 현재 구현된 preview 문서 화면의 인쇄/source/safety UI를 코드 기준으로 다시 점검하는 작업이다.
+
+검증:
+
+- `npm run e2e:completion-preview:ready` local Supabase URL, E2E_TEST_PASSWORD, storage state 없음 상태에서 안전 실패 확인
+
+### completion report preview UI browser review
+
+- 이전 작업은 e2e fixture와 runbook의 권한 matrix를 맞춘 P44.3이고, 이번 작업은 실제 로컬 브라우저에서 preview URL의 비로그인 접근 흐름을 확인한 P45.1이다.
+- Playwright로 freight preview URL과 clearance preview URL에 비로그인 상태로 접근했다.
+- 두 URL 모두 `http://localhost:3100/login`으로 이동했다.
+- 로그인 화면의 `로그인` 문구가 표시되는 것을 확인했다.
+- preview 본문인 `완료 리포트 미리보기`가 비로그인 상태에서 표시되지 않는 것을 확인했다.
+- screenshot을 `tmp/browser-review/completion-preview-freight-login-redirect.png`, `tmp/browser-review/completion-preview-clearance-login-redirect.png`에 저장했다.
+- 현재 local Supabase/storage state가 준비되지 않아 로그인 후 본문 preview 화면은 아직 브라우저로 확인하지 못했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P45.2 completion report authenticated browser review unblock plan이다. 이번 P45.1이 비로그인 redirect 확인이라면, P45.2는 local Supabase/storage state 준비 후 본문 화면을 브라우저로 볼 수 있게 막힌 조건을 정리하는 작업이다.
+
+검증:
+
+- Playwright local browser check: freight/clearance preview 비로그인 접근 시 `/login` 이동, login text 표시, preview 본문 미노출 확인
+
+### completion report e2e fixture documentation sync
+
+- 이전 작업은 auth/e2e 스크립트가 공통 fixture의 이메일과 요청 ID를 쓰게 한 P44.2이고, 이번 작업은 실제 권한 matrix를 fixture, e2e, runbook에 같이 반영한 P44.3이다.
+- `completionReportPreviewAccessMatrix`를 fixture에 추가했다.
+- fixture 테스트에서 requester, selectedPartner, developer, unmatchedPartner가 freight/clearance 양쪽에 대해 어떤 접근 결과를 가져야 하는지 확인한다.
+- `scripts/e2e_completion_report_preview_flow.mjs`는 하드코딩된 role별 assertion 대신 fixture access matrix를 순회하도록 수정했다.
+- runbook의 검증 범위를 requester/selected partner/developer/mismatched partner × 운송/통관 기준으로 갱신했다.
+- 현재 storage state가 없으므로 본문 e2e는 실행하지 못했고, storage state 없음 상태에서 안전 실패하는 것을 확인했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P45.1 completion report preview UI browser review다. 이번 P44.3이 e2e fixture 정합성이라면, P45.1은 실제 로컬 브라우저에서 preview/login 흐름의 화면 상태를 확인하는 작업이다.
+
+검증:
+
+- `npx vitest run tests/fixtures/completion-report-preview.fixture.test.ts`
+- `npm run e2e:completion-preview` storage state 없음 상태에서 안전 중단 확인
+- `rg -n "요청자는 운송/통관|선정 파트너는 운송/통관|developer는 운송/통관|미선정 파트너는 운송/통관" docs/SERVICE_REQUEST_COMPLETION_REPORT_PREVIEW_E2E_RUNBOOK.md`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### completion report e2e fixture id reuse in auth/e2e
+
+- 이전 작업은 seed script가 공통 fixture를 사용하게 한 P44.1이고, 이번 작업은 auth storage 생성 스크립트와 e2e 본문 스크립트도 같은 fixture 원본을 보게 한 P44.2다.
+- `scripts/create_completion_report_preview_storage_states.mjs`의 role별 이메일을 `completionReportPreviewFixture`에서 가져오도록 수정했다.
+- `scripts/e2e_completion_report_preview_flow.mjs`의 freight/clearance request id를 `completionReportPreviewFixture`에서 가져오도록 수정했다.
+- auth script는 현재 `E2E_TEST_PASSWORD` 없음 상태에서 안전하게 중단하는 것을 확인했다.
+- e2e script는 현재 storage state 없음 상태에서 auth script를 먼저 실행하라고 안내하는 것을 확인했다.
+- fixture 테스트는 계속 통과한다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P44.3 completion report e2e fixture documentation sync다. 이번 P44.2가 auth/e2e fixture 원본 통일이라면, P44.3은 runbook과 fixture 테스트가 실제 권한 matrix를 빠뜨리지 않게 문서화하는 작업이다.
+
+검증:
+
+- `npm run e2e:completion-preview:auth` E2E_TEST_PASSWORD 없음 상태에서 안전 중단 확인
+- `npm run e2e:completion-preview` storage state 없음 상태에서 안전 중단 확인
+- `npx vitest run tests/fixtures/completion-report-preview.fixture.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### completion report fixture module reuse in seed
+
+- 이전 작업은 e2e env helper 테스트를 추가한 P43.4이고, 이번 작업은 seed script와 테스트 fixture가 같은 ID/이메일/source snapshot 원본을 쓰게 만든 P44.1이다.
+- `tests/fixtures/completion-report-preview.fixture.mjs`를 추가해 completion preview fixture runtime constants를 분리했다.
+- `tests/fixtures/completion-report-preview.fixture.d.mts`를 추가해 TS 테스트에서 `.mjs` fixture를 타입 안전하게 가져오도록 했다.
+- `tests/fixtures/completion-report-preview.fixture.ts`는 `.mjs` fixture를 re-export하는 얇은 wrapper로 바꿨다.
+- `scripts/seed_completion_report_preview_fixture.mjs`는 fixture, companies, users, source snapshot builder를 공통 fixture에서 가져오도록 수정했다.
+- seed script의 source snapshot과 fixture test의 source snapshot이 같은 builder를 사용하게 됐다.
+- 원격 Supabase URL에서는 seed가 실행 전 중단하는 local-only guard가 유지되는 것을 확인했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P44.2 completion report e2e fixture id reuse in auth/e2e다. 이번 P44.1이 seed fixture 중복 제거라면, P44.2는 auth/e2e 스크립트의 이메일과 요청 ID도 같은 fixture 원본을 보게 하는 작업이다.
+
+검증:
+
+- `npx vitest run tests/fixtures/completion-report-preview.fixture.test.ts`
+- `SUPABASE_URL=https://example.supabase.co SUPABASE_SERVICE_ROLE_KEY=test-service-role E2E_TEST_PASSWORD=test-password npm run e2e:completion-preview:seed` 원격 Supabase URL에서 안전 중단 확인
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### completion report e2e env helper tests
+
+- 이전 작업은 e2e env/local guard를 공통 helper로 분리한 P43.3이고, 이번 작업은 그 helper의 핵심 동작을 테스트로 고정한 P43.4다.
+- `scripts/completion_preview_e2e_env.test.mjs`를 추가했다.
+- `.env.local` parsing에서 주석, quote wrapper, 빈 값, invalid line 처리를 확인한다.
+- local URL 판정이 `localhost`, `127.0.0.1`만 허용하는지 확인한다.
+- diagnostic output용 origin이 query/token을 제거하고 origin만 반환하는지 확인한다.
+- process env가 `.env.local`보다 우선하는지 확인한다.
+- file env, process env, explicit override 병합 순서를 확인한다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P44.1 completion report fixture module reuse in seed다. 이번 P43.4가 env helper 테스트라면, P44.1은 seed script의 inline fixture와 기존 fixture module 중복을 줄이는 작업이다.
+
+검증:
+
+- `npx vitest run scripts/completion_preview_e2e_env.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### completion report e2e env duplication review
+
+- 이전 작업은 seed, auth, e2e를 한 번에 실행하는 local runner를 추가한 P43.2이고, 이번 작업은 readiness와 local runner의 env/local guard 중복을 줄인 P43.3이다.
+- `scripts/completion_preview_e2e_env.mjs`를 추가했다.
+- `.env.local` parsing, env 병합, local URL 판정, origin 출력, timeout fetch helper를 공통 모듈로 이동했다.
+- `scripts/check_completion_preview_e2e_readiness.mjs`가 공통 helper를 사용하도록 수정했다.
+- `scripts/run_completion_preview_e2e_local.mjs`가 공통 helper를 사용하도록 수정했다.
+- 리팩터 후에도 현재 원격 Supabase URL과 E2E_TEST_PASSWORD 없음 상태에서 seed 전 안전 중단이 유지되는 것을 확인했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P43.4 completion report e2e env helper tests다. 이번 P43.3이 helper 분리라면, P43.4는 env parsing/local URL 판정을 테스트로 고정하는 작업이다.
+
+검증:
+
+- `npm run e2e:completion-preview:ready` local Supabase URL, E2E_TEST_PASSWORD, storage state 없음 상태에서 안전 실패 확인
+- `npm run e2e:completion-preview:local` 원격 Supabase URL과 E2E_TEST_PASSWORD 없음 상태에서 seed 전 안전 중단 확인
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### completion report local e2e execution gate
+
+- 이전 작업은 e2e 실행 준비 상태를 점검하는 P43.1이고, 이번 작업은 실제 seed, auth, e2e를 한 번에 실행하되 local 조건을 통과하지 못하면 seed 전에 중단하는 P43.2다.
+- `scripts/run_completion_preview_e2e_local.mjs`를 추가했다.
+- `package.json`에 `e2e:completion-preview:local` 스크립트를 추가했다.
+- local runner는 `.env.local`과 process env를 병합하되 process env를 우선한다.
+- local runner는 `E2E_BASE_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `E2E_TEST_PASSWORD`, local `/login`, local Supabase auth health를 preflight로 확인한다.
+- preflight가 통과할 때만 seed, storage state 생성, preview e2e를 순서대로 실행한다.
+- 현재 `.env.local`은 원격 Supabase origin을 가리키므로 seed를 실행하지 않고 안전하게 중단하는 것을 확인했다.
+- 비밀번호와 service role key 값은 출력하지 않는다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P43.3 completion report e2e env duplication review다. 이번 P43.2가 단일 실행 명령 추가라면, P43.3은 e2e 관련 스크립트들의 local/env guard 중복과 누락을 자체 리뷰하는 작업이다.
+
+검증:
+
+- `npm run e2e:completion-preview:local` 원격 Supabase URL과 E2E_TEST_PASSWORD 없음 상태에서 seed 전 안전 중단 확인
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### completion report local e2e readiness check
+
+- 이전 작업은 e2e assertion matrix를 확장한 P42.10이고, 이번 작업은 현재 로컬 환경이 그 e2e를 실제로 실행할 준비가 되었는지 점검하는 P43.1이다.
+- `scripts/check_completion_preview_e2e_readiness.mjs`를 추가했다.
+- `package.json`에 `e2e:completion-preview:ready` 스크립트를 추가했다.
+- readiness script는 `.env.local`, local base URL, local Supabase URL, service role key 존재 여부, 테스트 비밀번호 존재 여부, local `/login`, local Supabase auth health, role별 storage state 파일을 확인한다.
+- 비밀번호와 service role key 값은 출력하지 않고 존재 여부만 표시한다.
+- `SERVICE_REQUEST_COMPLETION_REPORT_PREVIEW_E2E_RUNBOOK.md`에 readiness check를 실행 순서 0번으로 추가했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P43.2 completion report local e2e execution gate다. 이번 P43.1이 준비 상태 점검 도구라면, P43.2는 실제 seed/auth/e2e 실행을 시도하고 막히는 조건을 좁히는 작업이다.
+
+검증:
+
+- `npm run e2e:completion-preview:ready` local Supabase URL, E2E_TEST_PASSWORD, storage state 없음 상태에서 안전 실패 확인
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### completion report e2e assertion matrix
+
+- 이전 작업은 seed/auth/e2e 스크립트를 자체 리뷰한 P42.9이고, 이번 작업은 그 리뷰에서 나온 권한/요청유형 matrix를 실제 e2e assertion에 반영한 P42.10이다.
+- 비로그인 사용자가 freight preview와 clearance preview 모두에서 `/login`으로 이동하는지 확인하도록 확장했다.
+- requester가 freight preview와 clearance preview 모두를 볼 수 있는지 확인하도록 확장했다.
+- selected partner가 freight preview와 clearance preview 모두를 볼 수 있는지 확인하도록 확장했다.
+- developer가 freight preview와 clearance preview 모두를 볼 수 있는지 확인하도록 확장했다.
+- unmatched partner가 freight preview와 clearance preview 모두에서 본문을 볼 수 없는지 확인하도록 확장했다.
+- 기존 source snapshot, published_at, 보관 서류 라벨, 안전 고지, 민감정보 미노출 assertion은 유지했다.
+- 현재 local storage state가 없으므로 실제 본문 e2e는 실행하지 못했고, storage state 없음 상태에서 명확히 실패하는 것만 확인했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P43.1 completion report local e2e readiness check다. 이번 P42.10이 e2e assertion matrix 확장이라면, P43.1은 현재 로컬 환경에서 seed/auth/e2e를 실제로 실행할 수 있는 env와 Supabase 상태를 점검하는 작업이다.
+
+검증:
+
+- `node scripts/e2e_completion_report_preview_flow.mjs` storage state 없음 상태에서 안내 실패 확인
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### completion report e2e script self-review
+
+- 이전 작업은 seed/auth/e2e 실행 순서를 문서화한 P42.8이고, 이번 작업은 seed/auth/e2e 스크립트 자체를 보안/QA 관점에서 리뷰한 P42.9다.
+- `SERVICE_REQUEST_COMPLETION_REPORT_PREVIEW_E2E_SELF_REVIEW.md`를 추가했다.
+- 기존 테스트 사용자가 있으면 seed script가 password를 갱신하지 않아 storage state 생성이 실패할 수 있는 문제를 확인했다.
+- `scripts/seed_completion_report_preview_fixture.mjs`에서 기존 user도 `auth.admin.updateUserById`로 password, email confirmation, metadata를 갱신하도록 수정했다.
+- e2e negative assertion에 영문 `download`만 있고 한글 `다운로드`가 없는 문제를 확인했다.
+- `scripts/e2e_completion_report_preview_flow.mjs` forbidden token에 `다운로드`를 추가했다.
+- local-only service role seed guard는 유지했다.
+- 남은 gap으로 requester/selected partner/developer 각각 freight/clearance 양쪽 preview를 모두 확인하지 않는 점을 정리했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P42.10 completion report e2e assertion matrix다. 이번 P42.9가 자체 리뷰라면, P42.10은 그 리뷰에서 나온 권한/요청유형 matrix를 실제 e2e assertion에 반영하는 작업이다.
+
+검증:
+
+- `node scripts/e2e_completion_report_preview_flow.mjs` storage state 없음 상태에서 안내 실패 확인
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### completion report e2e local runbook
+
+- 이전 작업은 role별 세션으로 preview 본문/권한/민감정보 미노출을 검증하는 P42.7 e2e script이고, 이번 작업은 seed/auth/e2e 실행 순서를 문서화한 P42.8이다.
+- `SERVICE_REQUEST_COMPLETION_REPORT_PREVIEW_E2E_RUNBOOK.md`를 추가했다.
+- local Supabase와 local Next.js 서버 전제 조건을 정리했다.
+- `e2e:completion-preview:seed`, `e2e:completion-preview:auth`, `e2e:completion-preview` 실행 순서를 정리했다.
+- 생성되는 storage state 파일 경로를 정리했다.
+- e2e가 확인하는 권한, 본문, source snapshot, 민감정보 미노출 assertion을 문서화했다.
+- production smoke와 섞지 않는다는 제한을 명시했다.
+- 새 코드, repository, action, migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P42.9 completion report e2e script self-review다. 이번 P42.8이 실행 문서라면, P42.9는 seed/auth/e2e 스크립트가 production에서 실수로 실행될 위험과 검증 누락을 자체 리뷰하는 작업이다.
+
+검증:
+
+- `rg -n "e2e:completion-preview|SUPABASE_SERVICE_ROLE_KEY|E2E_TEST_PASSWORD|tmp/e2e-auth|production|localhost" docs/SERVICE_REQUEST_COMPLETION_REPORT_PREVIEW_E2E_RUNBOOK.md docs/SERVICE_REQUEST_COMPLETION_REPORT_PREVIEW_AUTH_FIXTURE_PLAN.md docs/ROADMAP.md docs/WORK_LOG.md`
+
+### completion report preview e2e script
+
+- 이전 작업은 seeded role 계정으로 Playwright storage state를 만드는 P42.6이고, 이번 작업은 role별 세션으로 preview 본문/권한/민감정보 미노출을 검증하는 P42.7이다.
+- `scripts/e2e_completion_report_preview_flow.mjs`를 추가했다.
+- `package.json`에 `e2e:completion-preview` 스크립트를 추가했다.
+- e2e는 local base URL에서만 실행된다.
+- requester와 selected partner는 freight preview 본문을 볼 수 있어야 한다.
+- developer는 clearance preview 본문을 볼 수 있어야 한다.
+- unmatched partner는 preview 본문을 볼 수 없어야 한다.
+- 비로그인 사용자는 `/login`으로 이동해야 한다.
+- 본문 검증은 title, source snapshot version, request status snapshot, published_at, 보관 서류 한글 라벨, 안전 고지를 확인한다.
+- negative assertion으로 `fileName`, `question`, `answer`, `message`, `download`, 테스트 파일명이 표시되지 않는지 확인한다.
+- 현재 local storage state가 없으므로 실제 본문 e2e는 실행하지 못했고, storage state 없음 상태에서 명확히 실패하는 것만 확인했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P42.8 completion report e2e local runbook이다. 이번 P42.7이 e2e script라면, P42.8은 seed/auth/e2e 실행 순서와 필요한 env를 문서화하는 작업이다.
+
+검증:
+
+- `node scripts/e2e_completion_report_preview_flow.mjs` storage state 없음 상태에서 안내 실패 확인
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### completion report storage state script
+
+- 이전 작업은 local Supabase에 preview fixture를 넣는 P42.5 seed runner이고, 이번 작업은 seeded role 계정으로 로그인해 Playwright storage state를 만드는 P42.6이다.
+- `scripts/create_completion_report_preview_storage_states.mjs`를 추가했다.
+- `package.json`에 `e2e:completion-preview:auth` 스크립트를 추가했다.
+- storage state는 Git 추적 대상이 아닌 `tmp/e2e-auth/`에 저장한다.
+- requester, selected partner, unmatched partner, developer 4개 role의 storage state를 생성하도록 했다.
+- `E2E_BASE_URL`은 기본 `http://localhost:3100`이고 localhost/127.0.0.1에서만 실행된다.
+- `E2E_TEST_PASSWORD`가 없으면 실행을 중단한다.
+- env 없음 상태에서 안전하게 실패하는 것을 확인했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P42.7 completion report preview e2e script다. 이번 P42.6이 role별 storage state 생성이라면, P42.7은 생성된 세션으로 preview 본문/권한/민감정보 미노출을 검증하는 e2e script 작업이다.
+
+검증:
+
+- `node scripts/create_completion_report_preview_storage_states.mjs` env 없음 상태에서 안전 실패 확인
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### completion report seed runner
+
+- 이전 작업은 preview e2e fixture 데이터 원장을 만든 P42.4이고, 이번 작업은 local Supabase에 fixture를 넣는 guarded seed runner를 만든 P42.5다.
+- `scripts/seed_completion_report_preview_fixture.mjs`를 추가했다.
+- `package.json`에 `e2e:completion-preview:seed` 스크립트를 추가했다.
+- seed runner는 `SUPABASE_URL` 또는 `NEXT_PUBLIC_SUPABASE_URL`이 `localhost` 또는 `127.0.0.1`일 때만 실행된다.
+- `SUPABASE_SERVICE_ROLE_KEY`와 `E2E_TEST_PASSWORD`가 없으면 실행을 중단한다.
+- auth admin API로 requester, selected partner, unmatched partner, developer 테스트 사용자를 준비한다.
+- 테스트 회사, profile, completed freight/clearance request, selected bid, request document metadata, completion report, completion report document mapping을 upsert한다.
+- source snapshot에는 `snapshot_version`, `request_status`, `published_at`, safety flags를 포함한다.
+- 실제 local DB seed는 env가 없어 실행하지 않았고, env 없음 상태에서 안전하게 실패하는지만 확인했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P42.6 completion report storage state script다. 이번 P42.5가 DB seed runner라면, P42.6은 seeded role 계정으로 로그인해 Playwright storage state를 만드는 스크립트 작업이다.
+
+검증:
+
+- `node scripts/seed_completion_report_preview_fixture.mjs` env 없음 상태에서 안전 실패 확인
+- `npx vitest run tests/fixtures/completion-report-preview.fixture.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### completion report e2e fixture implementation
+
+- 이전 작업은 preview e2e에 필요한 local seed helper 구조를 설계한 P42.3이고, 이번 작업은 실제 fixture 데이터 원장과 단위 테스트를 만든 P42.4 1차 구현이다.
+- `tests/fixtures/completion-report-preview.fixture.ts`를 추가했다.
+- requester, selected partner, unmatched partner, developer role의 테스트 회사와 사용자 fixture를 정의했다.
+- completed freight/clearance request fixture를 정의했다.
+- locked/operator reviewed completion report fixture를 정의했다.
+- `buildCompletionReportPreviewSourceSnapshot` helper로 `snapshot_version`, `request_status`, `published_at`, safety flags가 있는 source snapshot을 만든다.
+- `tests/fixtures/completion-report-preview.fixture.test.ts`를 추가했다.
+- fixture 테스트는 role 구성, source snapshot 필수 metadata, completed request 연결, 민감 raw term 미포함을 검증한다.
+- 아직 실제 Supabase DB에 seed를 insert하는 runner와 Playwright storage state는 만들지 않았다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P42.5 completion report seed runner다. 이번 P42.4 1차가 fixture 데이터 원장이라면, P42.5는 이 fixture를 service-role local Supabase에 넣는 guarded seed runner 작업이다.
+
+검증:
+
+- `npx vitest run tests/fixtures/completion-report-preview.fixture.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+
+### completion report local seed helper plan
+
+- 이전 작업은 preview 본문 검증을 위한 권한 fixture 계획을 정리한 P42.2이고, 이번 작업은 그 fixture를 실제로 만들기 위한 local seed helper 구조를 설계한 P42.3이다.
+- `SERVICE_REQUEST_COMPLETION_REPORT_PREVIEW_SEED_HELPER_PLAN.md`를 추가했다.
+- requester, selected partner, unmatched partner, developer 사용자와 회사 seed 구성을 정리했다.
+- completed freight/clearance request, selected bid, locked/submitted completion report, document mapping, source snapshot seed 구성을 정의했다.
+- e2e fixture 반환 contract를 `freightRequestId`, `clearanceRequestId`, role별 email 중심으로 정리했다.
+- source snapshot fixture에 `snapshot_version`, `request_status`, `published_at`, safety flags를 포함했다.
+- 요청자/선정 파트너/미선정 파트너/비로그인 negative assertion을 정리했다.
+- 새 코드, repository, action, migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P42.4 completion report e2e fixture implementation이다. 이번 P42.3이 seed helper 계획이라면, P42.4는 실제 테스트 fixture 파일과 role별 storage state 준비 코드를 만드는 작업이다.
+
+검증:
+
+- `rg -n "CompletionReportPreviewFixture|source snapshot|unmatched|P42\\.4|published_at|selected partner" docs/SERVICE_REQUEST_COMPLETION_REPORT_PREVIEW_SEED_HELPER_PLAN.md docs/SERVICE_REQUEST_COMPLETION_REPORT_PREVIEW_AUTH_FIXTURE_PLAN.md docs/ROADMAP.md docs/WORK_LOG.md`
+
+### completion report preview auth fixture plan
+
+- 이전 작업은 로컬 브라우저에서 비로그인 preview route 보호를 확인한 P42.1이고, 이번 작업은 로그인/권한 fixture로 preview 본문을 자동 검증하는 계획을 정리한 P42.2다.
+- `SERVICE_REQUEST_COMPLETION_REPORT_PREVIEW_AUTH_FIXTURE_PLAN.md`를 추가했다.
+- 요청자 회사 구성원, 선정 파트너, 미선정 파트너, 운영자/developer, 비로그인 사용자별 기대 동작을 정리했다.
+- preview e2e에 필요한 최소 seed 데이터를 정의했다.
+- source snapshot fixture에 `snapshot_version`, `request.request_status`, `published_at`을 포함하도록 명시했다.
+- 파일명, 질문·답변 원문, 견적 메시지 원문, 다운로드 링크가 표시되지 않아야 한다는 negative assertion을 정리했다.
+- 다음 구현 우선순위를 P42.3 local seed helper 설계, P42.4 Playwright storage state, P42.5 preview route e2e로 잡았다.
+- 새 코드, repository, action, migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P42.3 completion report local seed helper plan이다. 이번 P42.2가 권한 fixture 계획이라면, P42.3은 e2e를 실제로 가능하게 할 최소 local seed helper 구조를 설계하는 작업이다.
+
+검증:
+
+- `rg -n "requester|selected partner|source snapshot|fileName|P42\\.3|미선정 파트너|다운로드 링크" docs/SERVICE_REQUEST_COMPLETION_REPORT_PREVIEW_AUTH_FIXTURE_PLAN.md docs/SERVICE_REQUEST_COMPLETION_REPORT_PREVIEW.md docs/ROADMAP.md docs/WORK_LOG.md`
+
+### completion report preview UI browser check
+
+- 이전 작업은 freight/clearance preview route의 data mapping을 공통화한 P41.3이고, 이번 작업은 로컬 브라우저와 route 응답으로 preview 접근 보호를 확인한 P42.1이다.
+- 로컬 브라우저에서 `/requests/freight/test-request-id/completion-report/preview`를 열었다.
+- 로컬 브라우저에서 `/requests/clearance/test-request-id/completion-report/preview`를 열었다.
+- 비로그인 상태에서 preview route가 로그인 화면으로 이동하는 것을 응답 HTML의 `로그인`, `이메일`, `HS FINDER` 문구로 확인했다.
+- 사용자 인증 fixture가 없는 상태이므로 실제 완료 리포트 본문 렌더링은 자동 확인하지 못했다.
+- 새 코드, repository, action, migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P42.2 completion report preview auth fixture plan이다. 이번 P42.1이 비로그인 보호 확인이라면, P42.2는 로그인/권한 fixture로 preview 본문까지 자동 확인하는 방법을 정리하는 작업이다.
+
+검증:
+
+- `open http://localhost:3100/requests/freight/test-request-id/completion-report/preview`
+- `open http://localhost:3100/requests/clearance/test-request-id/completion-report/preview`
+- `curl -L -s http://localhost:3100/requests/freight/test-request-id/completion-report/preview | rg -n "로그인|login|이메일|HS FINDER" -i | head -n 20`
+
+### completion report preview route data self-review
+
+- 이전 작업은 preview read model에 source snapshot 필드를 추가한 P41.2이고, 이번 작업은 freight/clearance preview route의 data mapping을 공통화한 P41.3이다.
+- `ServiceRequestCompletionReportPreviewPage` server component를 추가했다.
+- freight preview route와 clearance preview route가 같은 repository 조회, document mapping, `buildCompletionReportPreview` 입력 매핑을 사용하게 했다.
+- 각 route는 이제 title, description, kind, requestId만 전달한다.
+- P41.2에서 추가한 `sourceSnapshotVersion`, `requestStatus`, `publishedAt`은 공통 helper가 `report.sourceSnapshot`에서 읽으므로 route별 누락 가능성을 줄였다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P42.1 completion report preview UI browser check다. 이번 P41.3이 route mapping 공통화라면, P42.1은 로컬 브라우저/route 확인으로 preview 접근 보호와 렌더링 경로를 점검하는 작업이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- 비로그인 상태 `/requests/freight/test-request-id/completion-report/preview`, `/requests/clearance/test-request-id/completion-report/preview` 요청 시 `/login` 307 redirect 확인
+
+### completion report source snapshot coverage
+
+- 이전 작업은 preview/read model 노출 범위를 점검한 P41.1이고, 이번 작업은 누락된 source snapshot 값을 실제 read model과 UI에 반영한 P41.2다.
+- `CompletionReportPreview.sourceSnapshotVersion`을 추가했다.
+- `CompletionReportPreview.requestBasis.requestStatus`를 추가했다.
+- `CompletionReportPreview.sourceLocks[].publishedAt`을 추가했다.
+- preview 문서의 거래 기준 섹션에 출처 snapshot 버전과 요청 상태 snapshot을 표시한다.
+- preview 문서의 출처 잠금 섹션에 공표시각을 표시한다.
+- source lock 테스트에 `published_at`과 `publishedAt` 변환 검증을 추가했다.
+- preview data shape 문서도 새 필드에 맞췄다.
+- 새 repository, action, migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P41.3 completion report preview route data self-review다. 이번 P41.2가 read model 필드 추가라면, P41.3은 실제 preview route가 새 read model에 전달하는 데이터 매핑이 맞는지 점검하는 작업이다.
+
+검증:
+
+- `npx vitest run features/service-requests/service-request-completion-report-preview.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### completion report read model coverage review
+
+- 이전 작업은 preview helper의 source lock 해석 테스트를 보강한 P40.2이고, 이번 작업은 완료 리포트 preview/read model 전체의 노출 범위를 점검한 P41.1이다.
+- `SERVICE_REQUEST_COMPLETION_REPORT_READ_MODEL_REVIEW.md`를 추가했다.
+- 현재 preview에 포함되는 필드와 제외되는 민감 필드를 정리했다.
+- 파일명, 다운로드 링크, 서류 원문, invoice line item 원문, 견적 메시지 원문, 질문·답변 원문, 개인정보, 내부 메모는 계속 제외한다는 기준을 확인했다.
+- source URL은 http/https만 링크로 표시하고 로컬 경로를 링크로 노출하지 않는 기준을 문서화했다.
+- coverage gap으로 `published_at`, `source_snapshot.snapshot_version`, request status 미표시를 확인했다.
+- 다음 코드 작업을 P41.2 source snapshot coverage로 정리했다.
+- 새 코드, repository, action, migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P41.2 completion report source snapshot coverage다. 이번 P41.1이 점검 문서라면, P41.2는 `published_at`, snapshot version, request status를 실제 preview read model과 UI에 반영하는 작업이다.
+
+검증:
+
+- `rg -n "published_at|snapshot version|requestStatus|파일명|질문·답변" docs/SERVICE_REQUEST_COMPLETION_REPORT_READ_MODEL_REVIEW.md docs/SERVICE_REQUEST_COMPLETION_REPORT_PREVIEW.md docs/ROADMAP.md docs/WORK_LOG.md`
+
+### completion report source lock tests
+
+- 이전 작업은 출처 잠금 영역의 UI 표시를 정리한 P40.1이고, 이번 작업은 preview helper의 source lock 해석을 테스트로 보강한 P40.2다.
+- `source_lookup_snapshot.source_locks` 배열에서 snake_case metadata를 읽는 테스트를 추가했다.
+- `source_lookup_snapshot.sources` 배열에서 camelCase metadata를 읽는 테스트를 추가했다.
+- source lock test는 `sourceName`, `sourceUrl`, `sourceVersion`, `effectiveFrom`, `retrievedAt`, `checksum` 변환을 검증한다.
+- 새 UI, repository, action, migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P41.1 completion report read model coverage review다. 이번 P40.2가 source lock 해석 테스트라면, P41.1은 완료 리포트 preview/read model 전체에서 노출 누락과 민감정보 숨김 기준을 점검하는 작업이다.
+
+검증:
+
+- `npx vitest run features/service-requests/service-request-completion-report-preview.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### completion report source lock labels
+
+- 이전 작업은 완료 리포트 보관 서류 role을 한글 라벨로 표시한 P39.2이고, 이번 작업은 preview 출처 잠금 metadata 표시를 정리한 P40.1이다.
+- 출처 잠금 영역에서 자료명, 자료 버전, 수집시각, 적용시작, 적용종료, 체크섬을 별도 필드로 표시한다.
+- 출처 URL은 `http://` 또는 `https://`일 때만 `출처 열기` 링크를 표시한다.
+- `file://` 같은 로컬 경로는 링크로 노출하지 않는다.
+- source lock이 없는 경우의 경고 문구는 유지했다.
+- 새 repository, action, migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P40.2 completion report source lock tests다. 이번 P40.1이 source lock 표시 UI라면, P40.2는 preview helper가 `source_locks`와 `sources` 배열을 안정적으로 해석하는 테스트 보강이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- 비로그인 상태 `/requests/freight/test-request-id/completion-report/preview` 요청 시 `/login` 307 redirect 확인
+
+### operations archive role labels
+
+- 이전 작업은 사용자 preview와 완료 리포트 작성 패널에서 보관 서류 role을 한글 라벨로 표시하는 P39.1이고, 이번 작업은 운영 상세 완료 리포트 매핑도 같은 라벨을 쓰는 P39.2다.
+- 운영 요청 상세의 `최종 보관 서류 매핑`에서 `final_bl_or_awb`, `import_declaration_certificate` 같은 내부 role 대신 공용 한글 라벨을 표시한다.
+- 운영 상세의 파일명, 질문·답변 원문, 견적 메시지 원문 미노출 정책은 유지했다.
+- 새 repository, action, migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P40.1 completion report source lock labels다. 이번 P39.2가 보관 서류명 표시 개선이라면, P40.1은 출처 잠금 영역의 source metadata를 사용자/운영자가 이해하기 쉬운 한국어 필드명으로 정리하는 작업이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- 비로그인 상태 `/operations/requests/test-request-id` 요청 시 `/login` 307 redirect 확인
+
+### completion report archive role labels
+
+- 이전 작업은 preview 화면의 프린트/모바일 레이아웃을 다듬는 P38.6이고, 이번 작업은 완료 리포트 보관 서류 role을 사용자용 한글 라벨로 표시하는 P39.1이다.
+- 기존 완료 리포트 작성 패널에 있던 보관 서류 안내와 role 옵션을 `service-request-completion-report-labels` 공용 모듈로 분리했다.
+- 완료 리포트 작성 패널은 공용 모듈의 `completionReportArchiveGuide`, `completionReportDocumentRoleOptions`, `completionReportDocumentRoleLabel`을 사용한다.
+- 완료 리포트 preview 문서는 `final_bl_or_awb`, `import_declaration_certificate` 같은 내부 role 대신 `최종 B/L 또는 AWB`, `수입신고필증` 같은 라벨을 표시한다.
+- 알 수 없는 role은 그대로 표시해 향후 새 보관 서류 role이 추가되어도 숨기지 않는다.
+- 라벨 매핑 단위 테스트를 추가했다.
+- 새 repository, action, migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P39.2 operations archive role labels다. 이번 P39.1이 사용자 preview와 작성 패널 라벨이라면, P39.2는 운영 상세 완료 리포트 보관 서류 매핑도 같은 한글 라벨로 맞추는 작업이다.
+
+검증:
+
+- `npx vitest run features/service-requests/service-request-completion-report-labels.test.ts features/service-requests/service-request-completion-report-preview.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+### completion report preview print polish
+
+- 이전 작업은 운영 상세에서 완료 리포트 preview로 이동하는 P38.5이고, 이번 작업은 preview 화면 자체의 프린트/모바일 표시를 다듬는 P38.6이다.
+- preview 상단에 잠금 완료, 운영 검토 후 잠금 전, 잠금 전 미리보기 상태별 안내 문구를 추가했다.
+- 긴 요청 ID, 리포트 ID, 선정 견적 ID, 신고번호, B/L 또는 AWB가 모바일에서 넘치지 않도록 줄바꿈 처리를 보강했다.
+- 요청 유형과 수출입 방향은 내부 값 대신 한국어 라벨로 표시한다.
+- 정산 항목, 운송 예외, 통관 세액 요약, 통관 주의사항을 preview 화면에 표시한다.
+- 파일명, 질문·답변 원문, 견적 메시지 원문은 계속 표시하지 않는다.
+- 새 repository, action, migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P39.1 completion report archive role labels다. 이번 P38.6이 화면 레이아웃 polish라면, P39.1은 `final_bl_or_awb` 같은 내부 보관 서류 role을 사용자용 한글 라벨로 바꾸는 작업이다.
+
+검증:
+
+- `npx vitest run features/service-requests/service-request-completion-report-preview.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- 비로그인 상태 `/requests/clearance/test-request-id/completion-report/preview` 요청 시 `/login` 307 redirect 확인
+
+### operations completion report preview link
+
+- 이전 작업은 완료 리포트를 프린트 가능한 화면으로 보여주는 P38.4 route skeleton이고, 이번 작업은 운영 상세에서도 그 preview로 이동할 수 있게 하는 P38.5다.
+- 운영 요청 상세의 완료 리포트 운영 요약 카드에 `미리보기` 링크를 추가했다.
+- 링크는 `/requests/{requestType}/{requestId}/completion-report/preview` 경로를 사용한다.
+- 운영 상세 카드에 preview 모델 기준으로 파일명, 질문·답변 원문, 견적 메시지 원문을 표시하지 않는다는 안내를 추가했다.
+- 새 repository, action, migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P38.6 completion report preview print polish다. 이번 P38.5가 운영 화면의 이동 동선이라면, P38.6은 preview 화면 자체의 프린트/모바일 레이아웃과 잠금 상태 안내를 다듬는 작업이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- 비로그인 상태 `/operations/requests/test-request-id`, `/requests/freight/test-request-id/completion-report/preview` 요청 시 `/login` 307 redirect 확인
+
+### completion report preview UI route skeleton
+
+- 이전 작업은 완료 리포트 row를 안전한 preview 모델로 바꾸는 P38.3이고, 이번 작업은 그 모델을 프린트 가능한 화면으로 보여주는 P38.4 route skeleton이다.
+- `ServiceRequestCompletionReportPreviewDocument`를 추가했다.
+- preview 문서는 header, 거래 기준, 완료 요약, 운송 결과, 통관 결과, 최종 보관 서류, 출처 잠금, 안전 고지 섹션으로 구성했다.
+- 파일명과 다운로드 링크 없이 보관 서류 역할과 필수 여부만 표시한다.
+- 출처 잠금 metadata가 없으면 공식 출처 잠금 metadata가 없다는 경고를 표시한다.
+- 프린트 버튼과 print CSS용 클래스를 추가했다.
+- `/requests/freight/[requestId]/completion-report/preview` route를 추가했다.
+- `/requests/clearance/[requestId]/completion-report/preview` route를 추가했다.
+- 완료 리포트 패널에 미리보기 링크를 추가했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P38.5 operations completion report preview link다. 이번 P38.4가 사용자 요청 상세 preview route라면, P38.5는 운영 상세에서도 민감정보 없는 preview로 이동하는 링크를 추가하는 작업이다.
+
+검증:
+
+- `npx vitest run features/service-requests/service-request-completion-report-preview.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- 비로그인 상태 `/requests/freight/test-request-id/completion-report/preview`, `/requests/clearance/test-request-id/completion-report/preview` 요청 시 `/login` 307 redirect 확인
+
+### completion report preview read model
+
+- 이전 작업은 완료 리포트 PDF/프린트 미리보기 구조를 설계한 P38.2이고, 이번 작업은 실제 완료 리포트 row와 source snapshot을 안전한 preview 모델로 변환하는 P38.3이다.
+- `buildCompletionReportPreview` pure helper를 추가했다.
+- preview helper는 완료 리포트 상태별 watermark를 계산한다.
+- 요청 기준 정보, selected bid 기준 정보, archive document role, settlement item, freight result, clearance result를 preview 모델로 변환한다.
+- `source_snapshot.lookup.source_lookup_snapshot`의 공식 출처 metadata를 source locks로 변환한다.
+- safety notice 기본 문구를 preview 모델에 포함했다.
+- helper 입력은 파일명, 질문 원문, 답변 원문, 견적 메시지 원문을 받지 않는 구조로 만들었다.
+- preview helper 단위 테스트를 추가해 locked preview, source locks, archive documents, 민감 필드 미포함을 검증했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P38.4 completion report preview UI route skeleton이다. 이번 P38.3이 안전한 preview read model이라면, P38.4는 이 모델을 프린트 가능한 화면으로 보여주는 route skeleton 작업이다.
+
+검증:
+
+- `npx vitest run features/service-requests/service-request-completion-report-preview.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- 비로그인 상태 `/reports/preview` 요청 시 `/login` 307 redirect 확인
+
+### completion report print/export preview plan
+
+- 이전 작업은 완료 리포트 저장 시 source snapshot을 구조화한 P38.1이고, 이번 작업은 완료 리포트를 PDF/프린트 리포트로 확장하기 전 미리보기 구조를 설계한 P38.2다.
+- `docs/SERVICE_REQUEST_COMPLETION_REPORT_PREVIEW.md`를 추가했다.
+- preview에 포함할 항목과 제외할 민감정보를 분리했다.
+- preview read model `CompletionReportPreview` 초안을 정의했다.
+- Header, 거래 기준, 완료 요약, 업무 결과, 최종 보관 서류, 출처 잠금, 안전 고지 렌더링 섹션을 정의했다.
+- draft, submitted, acknowledged, operator reviewed, locked, voided 상태별 preview/print 규칙과 워터마크를 정의했다.
+- `source_snapshot.lookup.source_lookup_snapshot`에서 공식 출처 metadata가 있는 경우에만 source locks로 표시한다는 규칙을 잡았다.
+- 법적 확정, 요건 없음 확정, FTA 적용 보장, HSK 확정, 통관 가능 확정 같은 금지 표현을 정리했다.
+- 기존 완료 리포트 계획 문서에서 preview 문서로 연결했다.
+- 새 코드나 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P38.3 completion report preview read model이다. 이번 P38.2가 미리보기 설계 문서라면, P38.3은 완료 리포트 row와 source snapshot을 안전한 preview 모델로 변환하는 pure helper와 테스트를 만드는 코드 작업이다.
+
+검증:
+
+- `rg -n "CompletionReportPreview|P38\\.2|P38\\.3|법적 확정|source locks" docs/SERVICE_REQUEST_COMPLETION_REPORT_PREVIEW.md docs/SERVICE_REQUEST_COMPLETION_REPORT_PLAN.md docs/ROADMAP.md docs/WORK_LOG.md`
+
+### completion report source snapshot summary
+
+- 이전 작업은 운영 상세 화면에서 완료 리포트 상태와 보관 서류 매핑을 민감정보 없이 보여준 P37.2이고, 이번 작업은 완료 리포트 저장 시 source snapshot을 더 구조화하는 P38.1이다.
+- `create_or_update_completion_report` RPC의 기본 `source_snapshot` 구조를 `completion-report-source-v1`로 보강했다.
+- source snapshot에 요청 ID, 요청 유형, 요청 상태, 방향, 기준일, source HS request id, lookup snapshot 존재 여부를 저장한다.
+- source snapshot에 selected bid id, selected partner company id, bid type, bid status, selected at을 저장한다.
+- source snapshot에 기존 요청 생성 시점의 `source_lookup_snapshot`을 `lookup.source_lookup_snapshot` 아래로 유지한다.
+- source snapshot에 `legal_certainty: false`, `hs_classification_final: false`, `requires_staff_review_for_legal_outputs: true` 안전 플래그를 넣어 완료 리포트가 법적 확정 판정처럼 보이지 않게 했다.
+- 사용자가 추가 `sourceSnapshot` payload를 보내도 서버 기본 구조가 최종적으로 덮어쓰도록 했다.
+- 완료 리포트 계획 문서에 MVP 기본 snapshot 구조를 추가했다.
+- governance test를 보강했고 새 migration 파일은 만들지 않고 기존 로컬 marketplace migration 초안에 반영했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P38.2 completion report print/export preview plan이다. 이번 P38.1이 source snapshot 저장 구조라면, P38.2는 완료 리포트를 나중에 PDF/프린트 리포트로 만들기 위한 미리보기 정보 구조를 설계하는 문서 작업이다.
+
+검증:
+
+- `npx vitest run server/repositories/platform-marketplace-governance.test.ts`
+- `supabase db lint --local --fail-on error`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- 비로그인 상태 `/operations/requests/test-request-id` 요청 시 `/login` 307 redirect 확인
+
+### operations request detail completion report section
+
+- 이전 작업은 운영 통계/큐에서 완료 리포트 전이 병목을 보여준 P37.1이고, 이번 작업은 운영 상세 화면에서 특정 요청의 완료 리포트 상태와 보관 서류 매핑을 민감정보 없이 확인하는 P37.2다.
+- 운영 상세 repository에 완료 리포트 요약을 추가했다.
+- 운영 상세 완료 리포트 조회는 상태, 제출일, 잠금일, 요약 존재 여부, 금액 존재 여부, 운송/통관 결과 존재 여부만 반환한다.
+- 완료 리포트 보관 서류 매핑은 역할과 필수 여부만 반환하고 파일명, 신고번호, 정산 원문, 문서 원문은 반환하지 않는다.
+- 운영 상세 페이지에 “완료 리포트 운영 요약” 섹션을 추가했다.
+- 완료 리포트가 없거나 보관 서류 매핑이 없으면 사용자 상세의 완료 리포트/보관 서류 연결 흐름을 확인하라는 안내를 표시한다.
+- 운영 상세 민감정보 select allowlist 테스트를 유지하면서 타입 테스트를 통과시켰다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P38.1 completion report source snapshot summary다. 이번 P37.2가 운영 상세 표시라면, P38.1은 완료 리포트 자체에 요청·선정견적·조회 snapshot 출처 요약을 더 구조화해 source-locked report 기반을 만드는 작업이다.
+
+검증:
+
+- `npx vitest run server/repositories/platform-operations.repository.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- 비로그인 상태 `/operations/requests/test-request-id` 요청 시 `/login` 307 redirect 확인
+
+### operations completion report transition visibility
+
+- 이전 작업은 사용자 상세에서 완료 리포트 전이를 실행하는 P36.5이고, 이번 작업은 운영 화면에서 완료 리포트 전이 병목을 볼 수 있게 한 P37.1이다.
+- 운영 summary에 `completionReportsSubmitted`, `completionReportsAcknowledged`, `completionReportsReadyToLock`, `completionReportsLocked` 지표를 추가했다.
+- 완료 리포트가 없는 완료 요청 다음 우선순위로 제출 후 확인 대기, 확인 후 운영 검토 필요, 운영 검토 후 잠금 대기를 action queue에 올리게 했다.
+- 대표 우선순위 큐에 “리포트 확인 대기”, “운영 검토 필요”, “잠금 대기” 항목을 추가했다.
+- 복사용 운영 개선 요청 문장에 완료 리포트 전이 상태별 건수를 포함했다.
+- 운영 지표 카드에 완료 리포트 확인 대기, 운영 검토 필요, 잠금 대기, 잠금 완료를 추가했다.
+- 운영 통계 단위 테스트를 보강했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P37.2 operations request detail completion report section이다. 이번 P37.1이 운영 통계/큐라면, P37.2는 운영 상세 화면에서 특정 요청의 완료 리포트 상태와 보관 서류 매핑을 민감정보 없이 확인하는 작업이다.
+
+검증:
+
+- `npx vitest run server/repositories/platform-operations.repository.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- 비로그인 상태 `/operations/users` 요청 시 `/login` 307 redirect 확인
+
+### completion report transition actions
+
+- 이전 작업은 DB에 완료 리포트 전이 RPC를 추가한 P36.4이고, 이번 작업은 앱 서버에서 그 RPC들을 호출하고 UI skeleton 버튼과 연결하는 P36.5다.
+- 완료 리포트 transition schema를 추가했다.
+- `transitionServiceRequestCompletionReport` repository를 추가해 `submit_completion_report`, `acknowledge_completion_report`, `review_completion_report`, `lock_completion_report` RPC를 호출한다.
+- `transitionServiceRequestCompletionReportAction` server action을 추가했다.
+- transition action은 요청 유형과 요청 ID를 받아 대시보드, 요청자 상세, 파트너 상세 route를 revalidate한다.
+- 완료 리포트 패널의 제출·화주 확인·파트너 확인·운영 검토·보관 잠금 버튼을 실제 server action form으로 연결했다.
+- requester 화면은 requester 확인, partner opportunity 화면은 partner 확인 역할로 action을 호출한다.
+- staff 전용 운영 검토·잠금 버튼은 viewerRole이 staff일 때만 활성화되도록 경계를 열어뒀다.
+- schema, repository, workflow 단위 테스트를 보강했다.
+- 새 migration 파일은 만들지 않고 P36.4의 로컬 marketplace migration 초안을 사용했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P37.1 operations completion report transition visibility다. 이번 P36.5가 사용자 상세에서 상태 전이를 실행하는 경계라면, P37.1은 운영 화면에서 제출됨·확인됨·운영검토 필요·잠금 대기를 우선순위로 볼 수 있게 하는 관찰성 작업이다.
+
+검증:
+
+- `npx vitest run features/service-requests/service-request-completion-report-schemas.test.ts features/service-requests/service-request-completion-report-workflow.test.ts server/repositories/service-request-completion-report.repository.test.ts server/repositories/platform-marketplace-governance.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `supabase db lint --local --fail-on error`
+- `npm run build`
+- 비로그인 상태 `/requests/clearance/opportunities/test-request-id` 요청 시 `/login` 307 redirect 확인
+
+### completion report transition RPC
+
+- 이전 작업은 완료 리포트 패널에 제출·확인·잠금 흐름을 보여주는 P36.3 UI skeleton이고, 이번 작업은 실제 DB에서 전이를 강제하는 P36.4 RPC 작업이다.
+- `submit_completion_report(uuid)` RPC를 추가했다.
+- 제출 RPC는 초안 상태, 완료된 요청, selected bid와 리포트 파트너 일치, requester/selected partner/staff 권한, 활성 회사, 보관 서류 1건 이상, 최소 완료 내용 입력을 검증한다.
+- `acknowledge_completion_report(uuid, text)` RPC를 추가했다.
+- 확인 RPC는 requester/partner 역할별 권한을 분리하고, 확인 메타데이터를 `source_snapshot.confirmations`에 저장한다.
+- `review_completion_report(uuid)` RPC를 추가했다.
+- 운영 검토 RPC는 staff/admin만 호출할 수 있고 보관 서류 연결을 요구한다.
+- `lock_completion_report(uuid)` RPC를 추가했다.
+- 잠금 RPC는 운영 검토 상태와 보관 서류 연결을 요구하고, “법적 확정”, “요건 없음 확정”, “FTA 적용 보장”, “HSK 확정” 같은 금지 표현을 차단한다.
+- 기존 `create_or_update_completion_report`는 draft가 아닌 리포트 수정을 차단하도록 강화했다.
+- 전이 RPC grant와 governance 회귀 테스트를 추가했다.
+- 새 migration 파일은 만들지 않고 기존 로컬 marketplace migration 초안에 반영했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P36.5 completion report transition actions다. 이번 P36.4가 DB/RPC 경계라면, P36.5는 앱 서버 schema/repository/action에서 이 RPC들을 호출하고 UI skeleton과 연결하는 작업이다.
+
+검증:
+
+- `npx vitest run server/repositories/platform-marketplace-governance.test.ts`
+- `supabase db lint --local --fail-on error`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- 비로그인 상태 `/operations/users` 요청 시 `/login` 307 redirect 확인
+
+### completion report submit UI skeleton
+
+- 이전 작업은 완료 리포트 제출·확인·잠금 상태 전이 규칙을 문서로 고정한 P36.2이고, 이번 작업은 완료 리포트 패널에 그 흐름을 보이는 P36.3 UI skeleton이다.
+- `service-request-completion-report-workflow` helper를 추가해 초안 저장, 리포트 제출, 화주/파트너 확인, 운영 검토, 보관 잠금 단계를 계산한다.
+- 요청자 상세에서는 확인 단계가 “화주 확인”으로, 선정 파트너 상세에서는 “파트너 확인”으로 표시되게 했다.
+- 완료 리포트 패널에 제출·확인 진행 카드를 추가했다.
+- 상태 전이 RPC가 아직 없으므로 CTA 버튼은 비활성 상태 안내로 표시한다.
+- 보관 서류가 없으면 제출 단계가 대기 상태로 보이고, 초안이 없으면 초안 저장 필요로 안내한다.
+- 잠금 후 수정 불가와 통관 결과의 신고 결과 기준/예비 조회 출처 분리 문구를 화면에 고정했다.
+- 워크플로우 helper 단위 테스트를 추가했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P36.4 completion report transition RPC다. 이번 P36.3이 화면 skeleton이라면, P36.4는 실제 DB에서 제출·확인·운영 검토·잠금 전이를 강제하는 RPC와 governance tests를 추가하는 작업이다.
+
+검증:
+
+- `npx vitest run features/service-requests/service-request-completion-report-workflow.test.ts features/service-requests/service-request-completion-report-schemas.test.ts server/repositories/service-request-completion-report.repository.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- 비로그인 상태 `/requests/freight/test-request-id`, `/requests/freight/opportunities/test-request-id` 요청 시 `/login` 307 redirect 확인
+
+### completion report submit/acknowledge transition plan
+
+- 이전 작업은 완료 리포트 패널에서 요청 서류를 최종 보관 역할로 연결하는 P36.1이고, 이번 작업은 완료 리포트를 초안에서 제출·확인·운영 검토·잠금으로 넘기는 상태 전이 계획인 P36.2다.
+- `docs/SERVICE_REQUEST_COMPLETION_REPORT_TRANSITIONS.md`를 추가했다.
+- `draft`, `submitted`, `requester_acknowledged`, `partner_acknowledged`, `operator_reviewed`, `locked`, `voided` 상태의 의미, 수정 가능 여부, 다음 상태를 정리했다.
+- 현재 단일 `status` 컬럼만으로 양측 확인을 완벽히 표현하기 어렵다는 점을 명시하고, MVP에서는 `source_snapshot.confirmations` JSON으로 양측 확인 메타데이터를 보완하는 방향을 잡았다.
+- requester, selected partner, staff/admin/developer, 미선정 파트너, 정지/차단 회사별 허용 작업을 분리했다.
+- `submit_completion_report`, `acknowledge_completion_report`, `review_completion_report`, `lock_completion_report`, `void_completion_report` RPC의 검증 기준과 audit metadata 제한을 정의했다.
+- 잠금 이후 `create_or_update_completion_report`, `attach_completion_report_document`가 거부되어야 한다는 규칙을 고정했다.
+- 완료 리포트 UI 문구에서 금지할 법적 확정 표현과 허용 표현을 정리했다.
+- 기존 완료 리포트 계획 문서에 전이 문서 링크와 P36 레일을 추가했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P36.3 completion report submit UI skeleton이다. 이번 P36.2가 상태 전이 규칙 문서라면, P36.3은 실제 완료 리포트 패널에 제출·확인·운영 검토·잠금 안내 CTA skeleton을 표시하는 UI 작업이다.
+
+검증:
+
+- `rg -n "submit_completion_report|acknowledge_completion_report|lock_completion_report|P36\\.2|P36\\.3" docs/SERVICE_REQUEST_COMPLETION_REPORT_TRANSITIONS.md docs/SERVICE_REQUEST_COMPLETION_REPORT_PLAN.md docs/ROADMAP.md docs/WORK_LOG.md`
+
+### completion report UI archive mapping
+
+- 이전 작업은 운영 화면에서 완료 리포트 누락을 볼 수 있게 한 P35.6이고, 이번 작업은 완료 리포트 패널에서 기존 요청 서류를 최종 보관 역할로 직접 연결하는 P36.1이다.
+- 완료 리포트 패널에 최종 보관 서류 목록과 연결 폼을 추가했다.
+- 요청 서류는 새로 업로드하지 않고 기존 private request document metadata를 선택해 `attach_completion_report_document` RPC로 연결한다.
+- 운송 완료 리포트는 최종 B/L 또는 AWB, 운임 청구서, CI, PL, 인도 확인 자료 역할로 연결할 수 있게 했다.
+- 통관 완료 리포트는 신고필증, 납부영수증, CI, PL, C/O, 제품 사양서 역할로 연결할 수 있게 했다.
+- 요청자 상세과 선정 파트너 상세 페이지가 완료 리포트 문서 매핑을 조회해 패널에 전달한다.
+- 리포트 초안이 없으면 먼저 초안을 저장해야 보관 서류를 연결할 수 있다고 안내한다.
+- 보관 서류 연결 action은 request type을 받아 관련 운송/통관 요청자·파트너 상세 route를 revalidate한다.
+- 리포트별 문서 매핑 record helper와 회귀 테스트를 추가했다.
+- 새 migration은 만들지 않고 P35.5에서 만든 RPC와 table을 사용했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P36.2 completion report submit/acknowledge 상태 전이 계획이다. 이번 P36.1이 서류 연결 UI라면, P36.2는 초안 리포트를 제출·화주 확인·파트너 확인·운영 검토·잠금으로 넘기는 안전한 상태 경계를 정리하는 작업이다.
+
+검증:
+
+- `npx vitest run features/service-requests/service-request-completion-report-schemas.test.ts server/repositories/service-request-completion-report.repository.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- 비로그인 상태 `/requests/freight/test-request-id`, `/requests/clearance/test-request-id` 요청 시 `/login` 307 redirect 확인
+
+### operations completion report visibility
+
+- 이전 작업은 완료 리포트 문서 매핑 경계인 P35.5이고, 이번 작업은 운영 화면에서 완료됐지만 완료 리포트가 없는 요청을 볼 수 있게 한 P35.6이다.
+- 운영 summary에 `completedWithoutReport` 지표를 추가했다.
+- 운영 summary repository가 `service_request_completion_reports`를 조회해 voided가 아닌 완료 리포트 존재 여부를 계산한다.
+- completion report schema가 아직 적용되지 않은 환경에서는 운영 summary가 리포트 없음 지표를 0으로 두고 기존 운영 통계를 계속 계산한다.
+- 대표 우선순위 큐, 복사용 운영 개선 요청, 운영 지표 카드에 “완료 리포트 없음” 항목을 추가했다.
+- 완료 리포트가 없는 완료 요청은 낮은 후기/후기 미제출보다 먼저 정산·보관 서류 흐름 점검 대상으로 올라오게 했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P36.1 completion report UI archive mapping이다. 이번 P35.6이 운영 지표라면, P36.1은 완료 리포트 화면에서 기존 요청 서류를 최종 보관 역할로 연결하는 UI 작업이다.
+
+검증:
+
+- `npx vitest run server/repositories/platform-operations.repository.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/repositories/platform-operations.repository.test.ts server/repositories/platform-marketplace-governance.test.ts server/repositories/service-request-completion-report.repository.test.ts features/service-requests/service-request-completion-report-schemas.test.ts`
+- `npm run build`
+- 비로그인 상태 `/operations/users` 요청 시 `/login` 307 redirect 확인
+
+### completion report document archive mapping
+
+- 이전 작업은 완료 리포트 상태/작성 CTA를 상세 화면에 붙인 P35.4이고, 이번 작업은 기존 요청 서류를 완료 리포트의 최종 보관 역할로 연결하는 P35.5다.
+- `attach_completion_report_document(uuid, uuid, text, boolean)` RPC skeleton을 추가했다.
+- RPC는 report가 voided/locked가 아닌지, 요청 서류가 같은 request에 속하는지, requester/selected partner/staff 권한인지, 해당 서류를 읽을 수 있는지 검증한다.
+- `service_request_completion_report_documents`에 직접 insert/update RLS를 열지 않고 RPC만 execute grant 했다.
+- audit metadata에는 request id, report id, document id, 역할, required flag만 저장하고 파일명이나 문서 원문은 저장하지 않는다.
+- 완료 리포트 문서 매핑 schema, repository, action을 추가했다.
+- 완료 리포트 문서 매핑 조회는 schema 미적용 환경에서 `schemaReady: false`로 복구한다.
+- governance test와 schema/repository tests를 보강했다.
+- 새 migration 파일은 만들지 않고 기존 로컬 marketplace migration 초안에 반영했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P35.6 operations completion report visibility다. 이번 P35.5가 문서 연결 경계라면, P35.6은 운영자가 완료됐지만 리포트가 없는 요청을 볼 수 있게 하는 관찰성 작업이다.
+
+검증:
+
+- `npx vitest run features/service-requests/service-request-completion-report-schemas.test.ts server/repositories/service-request-completion-report.repository.test.ts server/repositories/platform-marketplace-governance.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `supabase db lint --local --fail-on error`
+- `npm run build`
+
+### completed UI skeleton
+
+- 이전 작업은 완료 리포트 repository/action layer인 P35.3이고, 이번 작업은 요청자/선정 파트너 상세의 완료 상태 영역에 완료 리포트 상태와 작성 CTA를 연결한 P35.4다.
+- `ServiceRequestCompletionReportPanel`을 추가했다.
+- 완료 리포트가 없으면 미작성 상태, 있으면 상태·금액·수정일·요약을 표시한다.
+- 완료 리포트 초안 작성/수정 폼은 `saveServiceRequestCompletionReportAction`만 호출하고, 직접 table write는 하지 않는다.
+- 운송/통관 요청자 상세과 선정 파트너 상세에서 완료 리포트를 조회해 완료 상태 패널에 전달한다.
+- 리스트 화면은 기본값을 유지해 기존 compact 카드 동작을 깨지 않게 했다.
+- 통관 완료 리포트 안내는 실제 신고 결과와 예비 조회 출처를 구분해야 한다는 문구를 유지했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P35.5 completion report document archive mapping이다. 이번 P35.4가 리포트 상태/작성 CTA라면, P35.5는 기존 요청 서류를 최종 보관 역할로 연결하는 경계다.
+
+검증:
+
+- `npm run typecheck`
+- `npx vitest run features/service-requests/service-request-completion-report-schemas.test.ts server/repositories/service-request-completion-report.repository.test.ts`
+- `npm run lint`
+- `npx vitest run server/repositories/freight-requests.repository.test.ts server/repositories/platform-marketplace-governance.test.ts server/repositories/service-request-completion-report.repository.test.ts features/service-requests/service-request-completion-report-schemas.test.ts`
+- `npm run build`
+- 비로그인 상태 `/requests/freight/11111111-1111-4111-8111-111111111111`, `/requests/clearance/opportunities/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### completion report repository/action layer
+
+- 이전 작업은 완료 리포트 DB/RLS skeleton인 P35.2이고, 이번 작업은 앱 서버 코드에서 완료 리포트를 읽고 저장하는 P35.3이다.
+- `serviceRequestCompletionReportSchema`를 추가해 request id, 통화, 최종 금액, 요약, JSON 배열/객체 입력을 검증한다.
+- `listOwnCompletionReportsForRequests` repository를 추가해 완료 리포트를 요청 ID 기준으로 읽고 schema 미적용 환경에서는 `schemaReady: false`로 복구한다.
+- `saveServiceRequestCompletionReport` repository를 추가해 직접 table write가 아니라 `create_or_update_completion_report` RPC만 호출한다.
+- `saveServiceRequestCompletionReportAction` server action을 추가해 이후 UI에서 완료 리포트 저장을 연결할 수 있게 했다.
+- 완료 리포트 action은 저장 후 대시보드와 운송/통관 요청자·파트너 상세 route를 revalidate한다.
+- 새 migration은 만들지 않고 P35.2의 로컬 migration skeleton을 사용했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P35.4 completed UI skeleton이다. 이번 P35.3이 서버 저장 경계라면, P35.4는 완료 상태 상세 화면에 리포트 상태와 작성 CTA를 보이는 UI 작업이다.
+
+검증:
+
+- `npx vitest run features/service-requests/service-request-completion-report-schemas.test.ts server/repositories/service-request-completion-report.repository.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run features/service-requests/service-request-completion-report-schemas.test.ts server/repositories/service-request-completion-report.repository.test.ts server/repositories/platform-marketplace-governance.test.ts`
+- `npm run build`
+
+### completion report migration 초안
+
+- 이전 작업은 완료 리포트 모델 문서인 P35.1이고, 이번 작업은 실제 로컬 marketplace migration 초안에 완료 리포트 table, RLS, RPC skeleton을 넣은 P35.2다.
+- `service_request_completion_reports`와 `service_request_completion_report_documents` 테이블 초안을 추가했다.
+- 완료 리포트는 요청 1건당 active report 1개만 허용하도록 partial unique index를 추가했다.
+- 완료 리포트와 완료 리포트 문서 매핑에 RLS를 켰고, requester, selected partner, staff/admin만 읽도록 정책을 추가했다.
+- 미선정 matched partner는 완료 리포트를 읽지 못하도록 read policy가 match table을 참조하지 않게 했다.
+- 직접 insert/update RLS를 열지 않고 `create_or_update_completion_report(uuid, jsonb)` RPC로만 완료 리포트를 저장하도록 했다.
+- RPC는 completed 요청, selected bid, requester/selected partner/staff 권한, 회사 활성 상태, JSON shape, locked report 수정 차단을 검증한다.
+- audit metadata에는 원문 비용·서류명·신고번호를 넣지 않고 count와 역할 중심으로 남긴다.
+- governance test에 완료 리포트 table/RLS/RPC 회귀 검증을 추가했다.
+- 새 migration 파일은 만들지 않고 기존 로컬 marketplace migration 초안에 반영했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P35.3 completion report repository/action layer다. 이번 P35.2가 DB 경계라면, P35.3은 앱 서버 코드에서 이 RPC를 호출하고 결과를 읽는 경계다.
+
+검증:
+
+- `npx vitest run server/repositories/platform-marketplace-governance.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `supabase db lint --local --fail-on error`
+- `npm run build`
+
+### 거래 완료 리포트 실제 모델 초안
+
+- 이전 작업은 해외 파트너 온보딩 보강인 P34.2이고, 이번 작업은 선정·완료 이후 결과 메타데이터와 최종 보관 서류 묶음을 설계한 P35.1이다.
+- `docs/SERVICE_REQUEST_COMPLETION_REPORT_PLAN.md`를 추가했다.
+- 완료 상태 자체와 완료 리포트 원장을 분리하고, `service_request_completion_reports`와 `service_request_completion_report_documents` 초안 필드를 정의했다.
+- 기존 `service_request_documents` 파일을 복제하지 않고 완료 리포트 문서 역할로 매핑하는 구조를 잡았다.
+- requester, selected partner, staff/admin만 읽고 미선정 파트너는 읽지 못하는 RLS 방향을 문서화했다.
+- 직접 update RLS를 열지 않고 생성, 제출, 확인, 잠금을 RPC-only mutation으로 처리하는 원칙을 정했다.
+- 통관 리포트의 HSK/FTA/요건 내용은 예비 조회와 실제 신고 결과 출처를 분리해야 한다고 명시했다.
+- `docs/PLATFORM_SCHEMA_PLAN.md`에서 완료 리포트 계획 문서로 연결했다.
+- 리뷰어 에이전트는 현재 하위 agent thread 한도 때문에 새로 붙이지 못했고, 이번 문서는 자체 RLS/security review로 처리했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P35.2 completion report migration 초안이다. 이번 P35.1이 문서 모델이라면, P35.2는 실제 로컬 migration/RLS/RPC skeleton과 governance test를 작성하는 작업이다.
+
+검증:
+
+- `rg -n "service_request_completion_reports|SERVICE_REQUEST_COMPLETION_REPORT_PLAN|RPC-only|P35\\.1|P35\\.2" docs/SERVICE_REQUEST_COMPLETION_REPORT_PLAN.md docs/PLATFORM_SCHEMA_PLAN.md docs/ROADMAP.md docs/WORK_LOG.md`
+- `sed -n '1,240p' docs/SERVICE_REQUEST_COMPLETION_REPORT_PLAN.md`
+
+### 해외 파트너 온보딩 보강
+
+- 이전 작업은 전체 검증 후 다음 플랫폼 레일을 재정렬한 P34.1이고, 이번 작업은 해외 수출입 파트너가 가입·요청 초안 단계에서 준비해야 할 검증 정보와 서류 기대치를 화면에 보강한 P34.2다.
+- 회원가입 완료 폼과 일반 가입 폼에 해외 수출입 파트너만 선택했을 때 표시되는 검증 안내를 추가했다.
+- 한국 사업자등록번호 없이 가입 가능한 조건은 유지하되, 회사명·국가, 웹사이트 또는 담당자 연락처, 거래 서류 또는 제품 자료가 운영자 확인 자료가 될 수 있음을 표시했다.
+- 운송·통관 요청 초안의 해외 파트너 안내에 검증, 서류, 국가 역할 구분을 카드 형태로 추가했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+- 다음 작업은 P35.1 거래 완료 리포트 실제 모델 초안이다. 이번 P34.2가 가입·요청 전 안내라면, P35.1은 선정·완료 이후 결과 기록과 최종 서류 묶음의 데이터 모델 계획이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run features/auth/schemas.test.ts features/service-requests/marketplace-request-prefill.test.ts`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100`에서 `/login` 200 응답 확인
+- 비로그인 상태 `/requests/freight?direction=import&destinationCountry=KR` 요청 시 `/login` 307 redirect 확인
+
+### 작업 레일 상태 점검·다음 우선순위 재정렬
+
+- 이전 작업은 완료 전 요청에서 피드백 조회가 되살아나지 않도록 헬퍼와 테스트로 고정한 P20.2이고, 이번 작업은 코드 기능 추가가 아니라 다음 작업 묶음의 우선순위를 재정렬한 P21.1이다.
+- P17~P20에서 요청 목록 limit, index, 중복 fetch, next-focus, feedback 조회 조건이 1차로 정리된 것을 기준으로 다음 병목을 다시 잡았다.
+- 다음 작업을 P21.2 요청 상세 feedback map 변환 일관화, P21.3 요청 상세 loader 중복 패턴 정리, P22.1 알림 발송 adapter 경계 분리, P23.1 운영 통계와 거래 신뢰지표 연결 순서로 재배치했다.
+- P21.2는 직전 작업과 달리 "피드백을 언제 조회할지"가 아니라 "조회한 feedback Map을 어떤 형태로 페이지에 넘길지"를 일관화하는 작업으로 정의했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `rg -n "P20\\.2|P21\\.|다음|Phase|플랫폼|요청" docs/ROADMAP.md`
+- `sed -n '44,145p' docs/ROADMAP.md`
+
+### 요청 상세 feedback map 변환 일관화
+
+- 이전 작업은 작업 순서와 남은 병목을 재정렬한 P21.1이고, 이번 작업은 상세 페이지에서 조회한 feedback Map을 페이지마다 다르게 변환하던 반복을 제거한 P21.2다.
+- 운송 요청 상세, 통관 의뢰 상세, 운송 opportunity 상세, 통관 opportunity 상세에서 직접 `Object.fromEntries`를 호출하지 않고 `serviceRequestFeedbackMapToRecord` helper를 사용하게 했다.
+- 목록 페이지와 상세 페이지가 같은 feedback record 변환 규칙을 사용한다.
+- 화면 문구, 조회 조건, RLS, DB schema는 바꾸지 않았다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/repositories/freight-requests.repository.test.ts`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight/11111111-1111-4111-8111-111111111111`, `/requests/clearance/opportunities/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### 요청 상세 loader 중복 패턴 정리
+
+- 이전 작업은 조회된 feedback Map을 record로 변환하는 helper 적용인 P21.2이고, 이번 작업은 상세 페이지 loader가 완료 상태 피드백 조회와 record 변환을 매번 직접 조립하던 반복을 줄인 P21.3이다.
+- `listOwnServiceRequestFeedbackRecordForRequest` repository helper를 추가했다.
+- 완료 상태가 아닌 요청은 helper 내부에서 `{}`를 반환해 피드백 DB 조회를 건너뛴다.
+- 완료 상태 요청은 기존 `listOwnServiceRequestFeedbacks` 조회 결과를 같은 record 형태로 변환한다.
+- 운송 요청 상세, 통관 의뢰 상세, 운송 opportunity 상세, 통관 opportunity 상세의 Promise loader가 feedback record를 바로 받도록 정리했다.
+- 완료 전 요청에서 피드백 조회가 호출되지 않는지, 완료 상태에서는 record가 만들어지는지 단위 테스트로 고정했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/repositories/freight-requests.repository.test.ts`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight/11111111-1111-4111-8111-111111111111`, `/requests/clearance/opportunities/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### 알림 발송 adapter 경계 분리
+
+- 이전 작업은 요청 상세 loader 반복 정리인 P21.3이고, 이번 작업은 요청 상세와 별개로 marketplace 알림 worker가 실제 발송 기능으로 확장될 수 있게 sender adapter 경계를 분리한 P22.1이다.
+- `MarketplaceNotificationSender` 타입과 `MarketplaceNotificationSendInput` 타입을 추가했다.
+- 기존 route는 sender를 주입하지 않으므로 현재 운영 동작은 기존처럼 target 계산과 delivery claim까지만 수행한다.
+- 테스트나 이후 구현에서 sender를 주입하면 claim 이후 provider 발송 결과를 받아 delivery를 `sent`로 마킹한다.
+- sender가 실패하면 delivery를 `retryable_failed` 계열로 마킹하는 기존 repository 함수를 사용하도록 연결했다.
+- dry-run은 claim과 sender를 모두 호출하지 않는 기존 안전 경계를 유지한다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/jobs/marketplace-notification-worker.service.test.ts`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- `/api/jobs/marketplace-notifications?dryRun=1` 로컬 요청 시 service role 환경변수 미설정으로 500 JSON 반환 확인. 로컬 환경 문제이며 route handler는 정상 응답했다.
+
+### 운영 통계와 거래 신뢰지표 연결
+
+- 이전 작업은 알림 worker sender adapter 경계 분리인 P22.1이고, 이번 작업은 운영 화면에서 완료 거래와 후기 품질을 개선 요청으로 연결한 P23.1이다.
+- 운영 요약 repository가 `service_request_feedbacks`에서 점수 컬럼만 조회하도록 추가했다.
+- 후기 코멘트, 서류명, 질문 원문, 견적 금액 원문은 운영 요약에 포함하지 않았다.
+- 운영 통계에 피드백 수, 평균 후기, 낮은 후기, 완료 후 피드백 없음 지표를 추가했다.
+- 낮은 후기가 있으면 대표 우선순위 큐와 복사용 운영 개선 요청에 먼저 표시되도록 했다.
+- 완료됐지만 피드백이 없는 요청도 후기 CTA 개선 대상으로 잡히도록 했다.
+- 운영 패널의 지표 카드와 복사용 프롬프트에 거래 후기/후기 미제출 항목을 추가했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/repositories/platform-operations.repository.test.ts`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/operations/users` 요청 시 `/login` 307 redirect 확인
+
+### 운영 신뢰지표 UX 문구 점검
+
+- 이전 작업은 운영 통계에 후기 품질 지표를 연결한 P23.1이고, 이번 작업은 지표를 더 추가하는 것이 아니라 대표가 그 수치를 보고 무엇을 맡길지 이해하기 쉽게 문구를 다듬은 P23.2다.
+- 운영 패널에 `거래 신뢰지표 해석` 블록을 추가했다.
+- 낮은 후기가 있으면 파트너 비교 기준, 선정 전 안내, 완료 후 후속 관리가 점검 대상임을 표시한다.
+- 완료 후 피드백이 없으면 후기 요청 CTA와 신뢰 데이터 축적 문제로 해석해 보여준다.
+- 신뢰지표 블록은 후기 수, 평균 점수, 미제출 수를 함께 보여주며, 후기 코멘트나 민감 원문은 다루지 않는다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/operations/users` 요청 시 `/login` 307 redirect 확인
+
+### 사용자 요청 시작 흐름 재점검
+
+- 이전 작업은 운영자가 보는 신뢰지표 문구 정리인 P23.2이고, 이번 작업은 실제 화주/해외 파트너가 운송·통관 요청을 시작할 때 흐름을 더 쉽게 이해하도록 정리한 P24.1이다.
+- `RequestStartFlowPanel` 공통 컴포넌트를 추가했다.
+- 운송 견적 요청 화면 상단에 `초안 저장 → 서류 보완 → 공개·비교` 3단계 흐름을 표시했다.
+- 통관 의뢰 요청 화면 상단에 `초안 저장 → 서류 보완 → 공개·선정` 3단계 흐름을 표시했다.
+- 통관 화면 문구는 HS, FTA, 요건 정보가 예비 참고값이며 담당자 검토 흐름으로 이어진다는 안전 문구를 유지했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight`, `/requests/clearance` 요청 시 `/login` 307 redirect 확인
+
+### 요청 시작 화면 접근성·모바일 밀도 점검
+
+- 이전 작업은 요청 시작 흐름 안내 패널 추가인 P24.1이고, 이번 작업은 모바일/좁은 화면에서 긴 폼으로 바로 이동할 수 있게 빠른 이동을 보강한 P24.2다.
+- 요청 시작 흐름 패널에 `초안 작성으로 이동`, `내 요청 보기` anchor 버튼을 추가했다.
+- 운송 견적 요청 초안 카드에 `request-draft-form` anchor를 추가했다.
+- 통관 의뢰 요청 초안 카드에도 같은 `request-draft-form` anchor를 추가했다.
+- 운송/통관 내 요청 목록 카드에 `my-service-requests` anchor를 추가했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight`, `/requests/clearance` 요청 시 `/login` 307 redirect 확인
+
+### 파트너 입찰 시작 흐름 재점검
+
+- 이전 작업은 화주 요청 시작 화면의 빠른 이동 보강인 P24.2이고, 이번 작업은 포워더/관세사무소가 매칭 요청을 보고 입찰을 시작하는 파트너 흐름을 정리한 P25.1이다.
+- `PartnerOpportunityFlowPanel` 공통 컴포넌트를 추가했다.
+- 운송 입찰 가능 요청 카드 상단에 `조건 확인 → 질문 등록 → 견적 제출` 3단계 흐름을 표시했다.
+- 통관 입찰 가능 요청 카드 상단에 `조건 확인 → 질문 등록 → 예비 견적 제출` 3단계 흐름을 표시했다.
+- 파트너 입장에서는 공개 서류와 조건 확인 후 바로 질문 또는 견적 제출로 이어지는 구조를 먼저 볼 수 있다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight`, `/requests/clearance` 요청 시 `/login` 307 redirect 확인
+
+### 파트너 입찰 상세 CTA 점검
+
+- 이전 작업은 파트너 입찰 가능 목록에 작업 흐름 안내를 추가한 P25.1이고, 이번 작업은 입찰 상세 화면에서도 질문·서류·견적 제출 순서를 놓치지 않도록 보강한 P25.2다.
+- 운송 입찰 상세 화면에 `PartnerOpportunityFlowPanel`을 추가했다.
+- 통관 입찰 상세 화면에도 같은 흐름 패널을 추가했다.
+- 기존 다음 작업 바로가기와 anchor는 유지하고, 그 아래에서 조건 확인, 질문 등록, 견적 제출 순서를 다시 안내한다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight/opportunities/11111111-1111-4111-8111-111111111111`, `/requests/clearance/opportunities/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### 요청 상세 화주 CTA 재점검
+
+- 이전 작업은 파트너 입찰 상세 CTA 보강인 P25.2이고, 이번 작업은 화주가 요청 상세에서 서류, 질문 답변, 견적 비교 순서를 놓치지 않도록 보강한 P26.1이다.
+- `RequesterDetailFlowPanel` 공통 컴포넌트를 추가했다.
+- 운송 요청 상세 화면에 `서류 보완 → 질문 답변 → 견적 비교` anchor 흐름을 추가했다.
+- 통관 의뢰 상세 화면에도 같은 구조로 `서류 보완 → 질문 답변 → 견적 비교` 흐름을 추가했다.
+- 통관 문구는 관세사무소 견적, 서류, 담당자 검토 흐름을 전제로 작성했고 법적 확정 표현은 사용하지 않았다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight/11111111-1111-4111-8111-111111111111`, `/requests/clearance/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### 플랫폼 UI 흐름 중복 컴포넌트 점검
+
+- 이전 작업은 화주 요청 상세 CTA 보강인 P26.1이고, 이번 작업은 새 CTA를 더 추가하는 것이 아니라 흐름 패널 3종의 반복 마크업을 공통화한 P27.1이다.
+- `ServiceRequestFlowPanel` 공통 컴포넌트를 추가했다.
+- 요청 시작 흐름, 파트너 입찰 흐름, 화주 상세 흐름 패널이 같은 렌더링 컴포넌트를 사용하게 했다.
+- 요청 시작 패널의 빠른 이동 버튼은 공통 패널의 footer 영역으로 유지했다.
+- 중첩 카드가 생기지 않도록 공통 패널이 footer를 직접 렌더링하게 조정했다.
+- 첫 검증에서 readonly steps 타입 문제를 발견했고, `ReadonlyArray<ServiceRequestFlowStep>`로 수정했다.
+- `typecheck`와 `next build`를 동시에 돌렸을 때 Next 타입 산출물 타이밍 충돌로 1회 실패가 있었고, 빌드 후 `next-env.d.ts`를 원래 dev 타입 경로로 되돌린 뒤 `npm run typecheck`를 단독 재실행해 통과했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run lint`
+- `npm run build`
+- `npm run typecheck` 단독 재실행
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight`, `/requests/freight/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### 로컬 변경 묶음 최종 점검
+
+- 이전 작업은 흐름 패널 공통화인 P27.1이고, 이번 작업은 새 기능 구현이 아니라 지금까지 이어서 수정한 플랫폼 레일의 로컬 상태와 검증 결과를 정리한 P28.1이다.
+- `next-env.d.ts`는 빌드 산출 변경이 남지 않도록 확인했다.
+- 전체 테스트는 107개 파일, 549개 테스트가 통과했다.
+- 현재 로컬 변경 항목은 `git status --short | wc -l` 기준 58개다. 이 숫자에는 이번 연속 작업 이전부터 누적된 로컬 플랫폼 전환 파일과 untracked 파일이 포함된다.
+- 주요 변경 축은 요청 상세 feedback loader 정리, 알림 sender adapter 경계, 운영 신뢰지표 연결, 화주/파트너 요청 흐름 안내, 흐름 패널 공통화다.
+- 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm test`
+- `git status --short`
+- `git diff -- next-env.d.ts`
+- `rg -n "ServiceRequestFlowPanel|RequestStartFlowPanel|PartnerOpportunityFlowPanel|RequesterDetailFlowPanel|listOwnServiceRequestFeedbackRecordForRequest|MarketplaceNotificationSender|averageFeedbackRating" app features server`
+
+### 플랫폼 레일 다음 기능 후보 정리
+
+- 이전 작업은 로컬 변경 묶음 최종 점검인 P28.1이고, 이번 작업은 코드를 추가로 바꾸기 전에 다음 구현 후보를 다시 정렬한 P29.1이다.
+- 다음 후보를 거래 완료 이후 리포트/정산 placeholder, 알림 sender 실제 adapter 준비, 운영 화면 실사용 점검, 요청 상세 서류 handoff 개선, 해외 파트너 온보딩 보강 순서로 정리했다.
+- 다음 코드 작업은 P29.2 거래 완료 이후 리포트/정산 placeholder 점검으로 잡았다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `docs/ROADMAP.md`의 P29 다음 구현 후보 확인
+
+### 거래 완료 이후 리포트/정산 placeholder 점검
+
+- 이전 작업은 다음 구현 후보 정리인 P29.1이고, 이번 작업은 완료 상태에서 사용자가 기대하는 정산·리포트·최종 서류 기능의 최소 placeholder를 추가한 P29.2다.
+- `PostCompletionPlaceholder` 공통 컴포넌트를 추가했다.
+- 운송 완료 상태에는 최종 운임, 운송 상태 이력, B/L 또는 AWB와 최종 보관 서류 묶음이 이후 연결될 예정임을 표시했다.
+- 통관 완료 상태에는 신고·납부 결과, 관세사무소 정산, 신고필증 등 최종 보관 서류 묶음이 이후 연결될 예정임을 표시했다.
+- 실제 정산 금액 입력이나 리포트 생성 기능은 아직 추가하지 않았다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight/11111111-1111-4111-8111-111111111111`, `/requests/clearance/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### 알림 sender 실제 주입 전 운영 조건 점검
+
+- 이전 작업은 완료 이후 정산/리포트 placeholder인 P29.2이고, 이번 작업은 알림 sender를 실제 route에 연결하기 전 운영 조건을 먼저 차단하는 P30.1이다.
+- `getMarketplaceNotificationSendReadiness` helper를 추가했다.
+- 실제 발송은 `MARKETPLACE_NOTIFICATIONS_SEND_ENABLED`와 `MARKETPLACE_NOTIFICATIONS_PROVIDER`가 모두 준비된 경우에만 readiness가 true가 되도록 했다.
+- `/api/jobs/marketplace-notifications` route에 `send=1` guard를 추가했다.
+- `send=1`이 들어와도 readiness가 false이면 worker claim 전에 400 JSON으로 차단한다.
+- readiness가 true여도 아직 sender adapter는 route에 연결하지 않고, “sender adapter is not connected yet”으로 차단한다.
+- 기존 `dryRun`, `limit`, `reminderWindowHours` 흐름은 유지한다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/jobs/marketplace-notification-send-readiness.test.ts server/jobs/marketplace-notification-worker.service.test.ts`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- `/api/jobs/marketplace-notifications?dryRun=1&send=1` 요청 시 실제 발송 없이 readiness false 400 JSON 반환 확인
+
+### 알림 provider adapter skeleton
+
+- 이전 작업은 알림 sender readiness 차단인 P30.1이고, 이번 작업은 실제 provider 구현을 나중에 끼울 수 있는 adapter 파일 구조와 no-op 테스트 경계를 만든 P30.2다.
+- `createMarketplaceNotificationProvider` helper를 추가했다.
+- 현재 provider는 `internal_dry_run`만 지원하며 외부 이메일, 문자, 앱 푸시를 발송하지 않는다.
+- 알 수 없는 provider 이름은 sender를 만들지 않고 `null`을 반환한다.
+- `internal_dry_run` sender는 provider id만 반환해 worker의 sent transition 리허설에 사용할 수 있게 했다.
+- route에는 아직 provider를 연결하지 않았고, 실제 발송은 계속 readiness guard로 차단된다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/jobs/marketplace-notification-provider.test.ts server/jobs/marketplace-notification-send-readiness.test.ts server/jobs/marketplace-notification-worker.service.test.ts`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- `/api/jobs/marketplace-notifications?dryRun=1&send=1` 요청 시 실제 발송 없이 readiness false 400 JSON 반환 확인
+
+### internal dry-run sender route 연결 검토
+
+- 이전 작업은 provider skeleton 추가인 P30.2이고, 이번 작업은 `internal_dry_run` provider를 route에 제한적으로 연결한 P30.3이다.
+- `/api/jobs/marketplace-notifications`에서 `send=1` 요청이 들어온 경우에만 provider를 생성한다.
+- `MARKETPLACE_NOTIFICATIONS_SEND_ENABLED`와 `MARKETPLACE_NOTIFICATIONS_PROVIDER` readiness가 false이면 worker 실행 전에 400으로 차단한다.
+- readiness가 true이고 provider가 `internal_dry_run`이면 worker에 sender를 주입할 수 있게 했다.
+- 알 수 없는 provider는 지원하지 않는 provider로 차단한다.
+- 외부 이메일, 문자, 푸시 발송 provider는 아직 구현하지 않았다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/jobs/marketplace-notification-provider.test.ts server/jobs/marketplace-notification-send-readiness.test.ts server/jobs/marketplace-notification-worker.service.test.ts`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- `/api/jobs/marketplace-notifications?dryRun=1&send=1` 요청 시 기본 env에서는 실제 발송 없이 readiness false 400 JSON 반환 확인
+
+### 알림 운영 리허설 문서화
+
+- 이전 작업은 internal dry-run sender route 연결인 P30.3이고, 이번 작업은 코드가 아니라 운영자가 알림 worker를 어떻게 리허설해야 하는지 정리한 P31.1이다.
+- `docs/MARKETPLACE_NOTIFICATION_RUNBOOK.md`를 추가했다.
+- target 계산 전용 dry-run 호출을 문서화했다.
+- `send=1`이 기본 env에서 차단되어야 하는 예상 결과를 문서화했다.
+- `MARKETPLACE_NOTIFICATIONS_SEND_ENABLED=true`, `MARKETPLACE_NOTIFICATIONS_PROVIDER=internal_dry_run` 조합으로 내부 sender 리허설을 할 수 있음을 적었다.
+- 실제 외부 이메일, 문자, 푸시 provider는 아직 연결하지 않았다고 명시했다.
+- 알림 metadata에 민감 문서명, 질문 원문, 견적 금액 원문, 개인정보를 넣지 않는 주의사항을 남겼다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `docs/MARKETPLACE_NOTIFICATION_RUNBOOK.md` 내용 검토
+
+### 선정 이후 서류 handoff 개선
+
+- 이전 작업은 알림 운영 리허설 문서화인 P31.1이고, 이번 작업은 화주가 업체 선정 후 어떤 서류를 선정 파트너 전용으로 넘겨야 하는지 보강한 P32.1이다.
+- `SelectedPartnerDocumentHandoff` 공통 컴포넌트를 추가했다.
+- 운송 요청 선정 이후 영역에 선정 포워더 전용 공개 서류 수와 추천 handoff 서류를 표시했다.
+- 통관 의뢰 선정 이후 영역에도 선정 관세사무소 전용 공개 서류 수와 추천 handoff 서류를 표시했다.
+- 선정 파트너 전용 서류가 0건이면 공개 범위를 선정 파트너 전용으로 지정하라는 경고를 표시한다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight/11111111-1111-4111-8111-111111111111`, `/requests/clearance/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### 파트너 측 선정 이후 handoff 안내 보강
+
+- 이전 작업은 화주 측 선정 이후 서류 handoff 보강인 P32.1이고, 이번 작업은 선정된 포워더/관세사무소가 본인 화면에서 확인해야 할 서류와 조건을 더 명확히 표시한 P32.2다.
+- 운송 opportunity 상세의 선정 이후 영역에 `SelectedPartnerDocumentHandoff`를 추가했다.
+- 통관 opportunity 상세의 선정 이후 영역에도 같은 handoff 안내를 추가했다.
+- 파트너는 선정 이후 본인이 확인해야 할 선정 파트너 전용 공개 서류 수와 추천 handoff 서류를 볼 수 있다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight/opportunities/11111111-1111-4111-8111-111111111111`, `/requests/clearance/opportunities/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### 전체 플랫폼 변경 최종 재검증
+
+- 이전 작업은 파트너 측 선정 이후 handoff 안내 보강인 P32.2이고, 이번 작업은 새 기능 추가가 아니라 이번 연속 작업 전체를 다시 검증한 P33.1이다.
+- `npm run typecheck` 통과.
+- `npm run lint` 통과.
+- `npm test` 통과: 109개 파일, 554개 테스트.
+- `npm run build` 통과.
+- 로컬 변경 항목은 `git status --short | wc -l` 기준 63개다. 이 숫자에는 이번 연속 작업 이전부터 누적된 로컬 플랫폼 전환 파일과 untracked 파일이 포함된다.
+- `next-env.d.ts`는 빌드 산출 변경이 남지 않도록 원래 dev 타입 경로로 되돌렸다.
+- route 확인:
+  - `/requests/freight/opportunities/11111111-1111-4111-8111-111111111111` 비로그인 307 `/login`
+  - `/requests/clearance/11111111-1111-4111-8111-111111111111` 비로그인 307 `/login`
+  - `/api/jobs/marketplace-notifications?dryRun=1&send=1` 기본 env에서 readiness false JSON 반환
+- 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- route smoke
+- `git diff -- next-env.d.ts`
+
+### 다음 플랫폼 레일 재정렬
+
+- 이전 작업은 전체 플랫폼 변경 재검증인 P33.1이고, 이번 작업은 다음 코드 작업 후보를 다시 우선순위화한 P34.1이다.
+- 다음 후보를 해외 파트너 온보딩 보강, 거래 완료 리포트 실제 모델 초안, 알림 internal dry-run 운영 리허설, 운영 화면 카드 밀도 재점검 순서로 정리했다.
+- 다음 코드 작업은 P34.2 해외 파트너 온보딩 보강으로 잡았다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `docs/ROADMAP.md`의 P34 다음 코드 작업 후보 확인
+
 ## 2026-05-30
 
 ### HS CODE 일괄 조회 입력·보완 UX 보강
@@ -501,6 +3088,44 @@
 - `npm test -- server/repositories/operations-issue.repository.test.ts server/operations/operations-issue-status-message.service.test.ts`
 - `npm run typecheck`
 - `npm run lint`
+- `npm run build`
+
+### 포워더 운송 견적 제출
+
+- 이전 작업은 화주가 공개한 운송 요청을 조건에 맞는 포워더에게 매칭하는 P2.2이고, 이번 작업은 매칭된 포워더가 실제 운송 견적을 제출하는 P2.3이다.
+- `submit_freight_bid` RPC를 추가했다.
+  - 매칭된 포워더만 견적 제출 가능
+  - request row와 match row를 `for update`로 잠그고 상태를 확인
+  - freight 요청만 freight bid 제출 가능
+  - 마감 시간이 지난 요청은 제출 차단
+  - 이미 active bid가 있으면 중복 제출 차단
+  - 견적 총액, 통화, 상세 금액, 리드타임/운송일수, 유효기한을 DB RPC에서도 검증
+  - 제출 시 `service_bids`, `freight_bid_details`를 함께 생성
+  - 요청 상태를 `bids_received`로 갱신
+  - match interest를 `interested`로 갱신
+  - `freight_bid_submitted` audit log에 주요 견적 snapshot을 남김
+- 직접 `service_bids` insert/update와 `freight_bid_details` 직접 write는 bidder에게 열지 않고 RPC-only로 좁혔다.
+- `clearance_bid_details` 직접 write 정책도 bid type이 `clearance`일 때만 가능하도록 보강해 freight bid에 clearance detail을 붙이는 경로를 차단했다.
+- `/requests/freight`에 입찰 가능 운송 요청 목록과 견적 제출 폼을 추가했다.
+- 리뷰어 지적사항을 반영했다.
+  - Critical: clearance request에 freight bid 생성 차단
+  - Critical: 마감 지난 요청 견적 제출 차단
+  - High: direct RPC 호출 시 금액/통화/날짜 검증
+  - Medium: declined match 견적 제출 차단
+  - Medium: request/match row lock 후 상태 검증
+  - Low: audit snapshot 보강
+  - Low: clearance bid detail type guard 추가
+- UI 작업이므로 로컬 서버 `http://localhost:3100/requests/freight`를 브라우저로 열었고, 비로그인 상태에서는 `/login` 307 redirect가 유지됨을 확인했다.
+- `ROADMAP`에서 P2.3을 완료로 갱신했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npx vitest run features/service-requests/freight-bid-schemas.test.ts features/service-requests/freight-request-schemas.test.ts server/repositories/platform-marketplace-governance.test.ts`
+- `supabase db lint --local --fail-on error`
+- `npm run lint`
+- `npm test`
 - `npm run build`
 
 
@@ -1958,3 +4583,1888 @@
 
 - `rg`로 PRODUCT_SPEC, ROADMAP, DECISIONS의 플랫폼 MVP, 운송 견적, 통관 의뢰, 해외 업체 검증, 최저가 방지 용어 반영 확인
 - 코드 변경 없음. 타입체크, 린트, 빌드, 배포는 대상 아님
+
+### 플랫폼 실행 레일과 회사 역할 연결
+
+- 이전 작업은 플랫폼 방향과 MVP 범위를 문서로 재정의한 것이고, 이번 작업은 그 방향을 따라갈 세부 실행 레일과 첫 앱 코드 연결 지점을 만든 것이다.
+- `ROADMAP`에 `Platform Execution Rail`을 추가해 P0.1부터 P6.1까지 작업 단위를 더 작게 나눴다.
+- 각 레일에 이전 작업과의 차이, 완료 조건, 검증 기준을 적어 중간에 이어받아도 다음 작업을 선택할 수 있게 했다.
+- `company-marketplace.repository`를 추가해 기존 기업회원 `business_types`를 새 marketplace `company_party_types`로 매핑한다.
+  - `importer`, `exporter` -> `domestic_shipper`
+  - `forwarder` -> `forwarder`
+  - `customs_broker` -> `customs_broker`
+- 회원가입 완료 후 회사 계정이면 marketplace 역할 동기화를 시도하도록 `authenticateAction`을 연결했다.
+- 아직 marketplace migration을 적용하지 않은 환경에서는 `company_party_types` 테이블 없음 오류를 안전하게 건너뛰어 기존 회원가입이 깨지지 않게 했다.
+- migration 적용 후에는 같은 코드가 `company_party_types`에 역할 row를 upsert한다.
+- marketplace migration에 기존 `companies.business_types`를 `company_party_types`로 옮기는 backfill을 추가했다.
+- 리뷰어 검토 후 `company_party_types` 오류 fallback을 실제 missing-schema 오류로만 좁혔다. RLS/권한 오류는 숨기지 않는다.
+- 회사 admin이 검증 후 marketplace 역할을 직접 추가하지 못하도록 `company_party_types` write policy를 staff/service-role 중심으로 좁혔다.
+- 차단/정지 업체가 match row를 갖고 있어도 요청, 문서, 견적, 질문을 읽지 못하도록 active marketplace helper를 추가했다.
+- 요청 문서 metadata와 storage upload는 요청 소유권과 path의 request id를 함께 확인하도록 보강했다.
+- `platform-marketplace-governance.test`를 추가해 역할 self-escalation, blocked partner read, 문서 소유권, RPC 기반 상태 변경 정책이 다시 깨지지 않도록 migration SQL 회귀 테스트를 고정했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npx vitest run server/repositories/company-marketplace.repository.test.ts features/auth/schemas.test.ts`
+- `npm run lint`
+- `npm test`
+- `npx vitest run server/repositories/platform-marketplace-governance.test.ts server/repositories/company-marketplace.repository.test.ts`
+
+### 회사 검증 증빙 업로드 skeleton
+
+- 이전 작업은 회원가입 업무 유형을 marketplace 회사 역할로 연결하고 RLS 회귀 테스트를 고정한 것이고, 이번 작업은 회사 검증 상태와 증빙 업로드의 첫 backend/UI skeleton을 만든 것이다.
+- `company_verification_documents` storage 접근을 단순 회사 prefix가 아니라 metadata row와 묶도록 migration helper와 policy를 보강했다.
+- 증빙 storage path를 `{company_id}/{document_id}/{random}-{sanitized_file_name}` 구조로 고정했다.
+- 회사 검증 증빙 업로드 schema, repository, server action을 추가했다.
+  - 회사 관리자만 업로드 가능
+  - PDF, JPG, PNG, WEBP만 허용
+  - 10MB 제한, SHA-256 checksum 저장
+  - 원문 파일은 private bucket에 저장
+- `/settings/members`를 회사 검증 화면으로 전환했다.
+  - migration 미적용 환경에서는 업로드 비활성 안내를 표시한다.
+  - 비로그인 접근은 `/login`으로 redirect된다.
+- 운영자 승인 skeleton server action을 추가했다.
+  - 개발자 계정만 승인/반려 가능
+  - 승인 시 회사 `verification_status`를 `operator_approved`로 갱신
+  - audit log에는 문서 ID, 상태, 유형만 남기고 원문이나 storage signed URL은 남기지 않는다.
+- 리뷰어 기준에 따라 P1.2 시작 전 보안 리뷰어를 붙였고, private bucket/RLS/path/audit/generic error 요구사항을 반영했다.
+
+검증:
+
+- `npm run typecheck`
+- `npx vitest run server/repositories/company-verification.repository.test.ts server/repositories/platform-marketplace-governance.test.ts server/repositories/company-marketplace.repository.test.ts`
+- `npx vitest run features/company-verification/schemas.test.ts server/repositories/company-verification.repository.test.ts server/repositories/platform-marketplace-governance.test.ts`
+- `npm run lint`
+- `npm run build`
+- `supabase db lint --local --fail-on error`
+
+### 운송 견적 요청 공개와 포워더 매칭
+
+- 이전 작업은 화주가 운송 견적 요청을 `draft`로 저장하는 P2.1이고, 이번 작업은 저장된 요청을 `open`으로 공개하면서 조건에 맞는 포워더 match row를 생성하는 P2.2다.
+- `publish_freight_request` RPC를 추가했다.
+  - requester 본인 또는 staff만 공개 가능
+  - 회사 프로필이 없는 사용자의 NULL 비교 권한 우회를 차단
+  - 정지/차단 회사는 공개 불가
+  - 공개 마감은 RPC에서도 최대 48시간으로 제한
+  - 공개 전 출발 국가, 도착 국가, 운송 방식 필수
+  - 국가 코드는 ISO 2자리, 운송 방식은 허용값만 통과
+  - 검증 완료·활성 상태·forwarder 역할이 있는 회사만 매칭
+  - 선호 조건의 방향, 국가, 운송 방식, 항구, cargo tag를 기준으로 매칭
+  - 알림 비활성 파트너도 inbox 노출은 가능하게 match row를 만들고 `notification_status = skipped`로 둔다.
+  - 매칭 0건이면 `open`으로 바꾸지 않고 실패시켜 보이지 않는 공개 요청을 만들지 않는다.
+- `service_requests` 직접 update RLS를 staff-only로 좁혀 publish RPC 우회를 막았다.
+- direct insert도 `status = draft`만 허용하도록 제한했다.
+- `freight_request_details`는 requester가 draft 상태에서만 직접 insert/update/delete 가능하도록 좁혔다.
+- draft 생성도 `freight_request_draft_created` audit log를 남기도록 보강했다.
+- `/requests/freight`에 내 요청 목록과 24/48시간 공개 버튼을 추가했다.
+- 리뷰어 지적사항을 반영했다.
+  - Critical: 회사 없는 사용자 publish 권한 우회 차단
+  - Critical: direct RLS update로 match/audit 우회 차단
+  - High: 공개 후 freight detail 변경 차단
+  - High: sparse request 광범위 노출 방지
+  - Medium: RPC 직접 호출 deadline 제한
+  - Medium: 정지/차단 requester 공개 차단
+  - Medium: notification disabled 의미 정리
+  - Medium: 매칭 0건 open 방지
+  - Low: draft 생성 audit 추가
+- UI 작업이므로 로컬 서버 `http://localhost:3100/requests/freight`를 브라우저로 열었고, 비로그인 상태에서는 `/login` 307 redirect가 유지됨을 확인했다.
+- `ROADMAP`에서 P2.2를 완료로 갱신했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npx vitest run features/service-requests/freight-request-schemas.test.ts server/repositories/platform-marketplace-governance.test.ts`
+- `supabase db lint --local --fail-on error`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+
+### 운송 견적 요청 초안 생성
+
+- 이전 작업은 포워더·관세사무소가 받고 싶은 요청 조건을 저장하는 P1.3이고, 이번 작업은 화주가 실제 운송 견적 요청 초안을 저장하는 P2.1이다.
+- `create_freight_request_draft` DB RPC를 추가해 `service_requests`와 `freight_request_details`를 한 트랜잭션에서 생성하도록 했다.
+- RPC는 로그인 사용자와 현재 회사 프로필을 확인하고, 요청 상태를 `draft`로만 생성한다.
+- `freight-request-schemas`와 server action/repository를 추가했다.
+- `/requests/freight` 페이지와 `FreightRequestDraftPanel`을 추가했다.
+  - 수입/수출 방향
+  - 제목과 품목 요약
+  - 출발/도착 국가, 장소, 항구·공항
+  - Incoterms, 운송 방식, 적재 형태
+  - 포장 수량, 중량, CBM, 컨테이너, VIN
+  - 위험물, 온도관리, 중고차 여부
+- 이 단계는 초안 저장까지만 처리하고, 서류 첨부·공개 모집·파트너 매칭은 다음 레일로 분리했다.
+- UI 작업이므로 로컬 서버 `http://localhost:3100/requests/freight`를 브라우저로 열었고, 비로그인 상태에서는 `/login` 307 redirect가 유지됨을 확인했다.
+- `ROADMAP`에서 P2.1을 완료로 갱신했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npx vitest run features/service-requests/freight-request-schemas.test.ts server/repositories/platform-marketplace-governance.test.ts`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- `supabase db lint --local --fail-on error`
+
+### 조회 결과에서 요청 초안 생성 연결
+
+- 이전 작업은 marketplace 알림 worker skeleton이었고, 이번 작업은 HS/품명 조회 결과를 실제 운송 견적 요청 또는 통관 의뢰 요청 초안으로 넘기는 P5.1 전환 흐름이다.
+- `marketplace-request-prefill` 유틸을 추가해 HS 조회 결과의 품명, HSK/HS6, 조회 기준일, 수입/수출 방향, 국가 값을 `/requests/freight`와 `/requests/clearance` query로 전달한다.
+- 품명 AI 후보 카드에 `이 후보로 운송 초안 만들기`, `이 후보로 통관 초안 만들기` CTA를 추가했다.
+  - 후보는 HSK 확정 전 예비값으로만 요청 초안에 전달된다는 안내를 함께 표시한다.
+- 10자리 직접조회 수입 결과 toolbar에 `운송 초안`, `통관 초안` CTA를 추가했다.
+- 수출 직접조회 결과에도 운송/통관 초안 생성 CTA를 추가해 export 조회에서 플랫폼 의뢰로 이어지게 했다.
+- 운송 견적 초안 폼은 HS 조회 query에서 품명, 예비 HS CODE, 기준일, 출발/도착 국가, 요청 방향을 기본값으로 채운다.
+- 통관 의뢰 초안 폼도 같은 값을 기본값으로 채우되, HS 조회에서 넘어온 예비 코드를 `확정 또는 제공받은 HS CODE`로 자동 체크하지 않도록 했다.
+  - HS 조회에서 시작한 통관 의뢰는 `요건 확인 필요`를 기본 체크해 통합공고, 개별법령, 표시·인증·유통규제 검토가 빠지지 않게 했다.
+- UX/UI 리뷰어가 지적한 export CTA 누락, 예비 HS CODE 확정 오해, 검토 범위 기본값 문제, CTA 문구 모호성을 반영했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npx vitest run features/service-requests/marketplace-request-prefill.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- `curl -I -s 'http://localhost:3100/requests/clearance?...'` -> `/login` 307 redirect
+- `curl -I -s 'http://localhost:3100/requests/freight?...'` -> `/login` 307 redirect
+
+### 요청 초안의 조회 출처 표시
+
+- 이전 작업은 HS/품명 조회 결과에서 요청 초안으로 이동하는 CTA와 query prefill을 붙인 P5.1이고, 이번 작업은 요청 초안 화면에서 그 값이 어디서 왔고 어떤 의미인지 헷갈리지 않게 표시하는 P5.2다.
+- `MarketplacePrefillSourcePanel`을 추가해 운송 견적 초안과 통관 의뢰 초안 상단에 HS 조회 출처 패널을 표시한다.
+- 패널은 중복과 과밀을 줄이기 위해 조회 품명, 예비 HSK/HS6, 조회 기준일만 표시한다.
+- 통관 의뢰에서는 원산지·수출국·선적국이 같은 값이라고 오해하지 않도록 `FTA 판단을 위해 원산지·수출국·선적국은 별도 확인이 필요합니다.` 문구를 추가했다.
+- 패널 문구를 HS FINDER 법적 안전 문구에 맞춰 `예비진단 참고값이며, HSK 확정 및 법령·요건 적용 여부는 담당자 검토가 필요합니다.`로 정리했다.
+- UX/UI 리뷰어가 지적한 국가 역할 혼동, 정보 과밀, 파란 패널 중첩 문제를 반영해 중립색/compact strip으로 바꿨다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npx vitest run features/service-requests/marketplace-request-prefill.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- `curl -I -s 'http://localhost:3100/requests/clearance?...'` -> `/login` 307 redirect
+
+### 운영자 검증·차단 화면
+
+- 이전 작업은 조회 결과에서 요청 초안으로 이어지는 P5 레일이고, 이번 작업은 대표/운영자가 marketplace 업체 상태를 직접 관리하는 P6.1 운영 레일이다.
+- `/operations/users`에 `업체 운영 관리` 패널을 추가했다.
+  - 전체, 활성, 숨김/정지, 차단 업체 수를 요약한다.
+  - 회사명, 사업자번호, 국가, 신뢰 점수, 가입일, marketplace 역할을 한 카드에서 확인한다.
+  - 상태 기준을 상단에 고정해 `운영자 승인·추천 파트너`, `숨김/정지`, `차단`, `미검증`의 효과를 바로 볼 수 있게 했다.
+- developer 전용 server action `updateCompanyOperationsStatusAction`을 추가했다.
+  - 상태는 `operator_approved`, `recommended_partner`, `suspended`, `blocked`, `unverified`만 허용한다.
+  - `suspended`와 `blocked`는 기존 marketplace rule의 `is_company_active_for_marketplace` 기준으로 요청 노출과 입찰에서 제외된다.
+- 보안 리뷰어 지적을 반영해 회사 상태 변경과 audit log 삽입을 `update_company_marketplace_status` service-role RPC로 묶었다.
+  - 회사 row를 `for update`로 잠근 뒤 상태를 바꾸고 같은 트랜잭션에서 `audit_logs`를 기록한다.
+  - audit `after_json`에는 변경 후 `verificationStatus`, `trustScore`, `suspendedAt`, `blockedAt`, `verifiedAt`, `verifiedBy`, `note`를 남긴다.
+  - 정지/차단/미검증으로 내려갈 때 stale `verified_at`, `verified_by`, 반대 timestamp, 과도한 trust score를 정리한다.
+- UX 슬롯 제한으로 별도 UX 리뷰어는 못 붙였고, 자체 점검으로 상태 효과 설명과 상태 기준 안내를 추가했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npx vitest run features/company-verification/schemas.test.ts server/repositories/platform-marketplace-governance.test.ts`
+- `npm run typecheck`
+- `supabase db lint --local --fail-on error`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- `curl -I -s http://localhost:3100/operations/users` -> `/login` 307 redirect
+
+### 운영 화면 단순화
+
+- 이전 작업은 업체 운영 상태 변경 기능과 audit RPC를 만든 P6.1이고, 이번 작업은 같은 운영 화면을 대표/운영자가 더 적은 정보로 판단하게 정리한 P6.2다.
+- 업체 운영 관리 패널의 기본 목록을 `먼저 볼 업체`로 바꿨다.
+  - 서류 제출, 이메일 인증, 미검증, 숨김/정지, 차단 업체를 먼저 보게 한다.
+  - 운영자 승인/추천 파트너는 `활성` 필터에서 따로 확인한다.
+- 상태 필터를 추가했다.
+  - `먼저 볼 업체`, `전체`, `활성`, `숨김/정지`, `차단`
+- 상태 변경 폼은 기본 화면에서 접어두고, 필요한 업체만 `상태 변경`을 펼쳐 조작하게 했다.
+- 상단 상태 기준 안내를 추가해 각 상태가 요청 공개/입찰 참여에 어떤 영향을 주는지 바로 확인하게 했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- `curl -I -s http://localhost:3100/operations/users` -> `/login` 307 redirect
+
+### 역할별 대시보드 진입 정리
+
+- 이전 작업은 운영자가 업체를 관리하는 P6 레일이고, 이번 작업은 로그인한 사용자가 바로 플랫폼 핵심 행동으로 이동하게 하는 P7.1 대시보드 레일이다.
+- `/dashboard`에 `플랫폼 업무 시작` 섹션을 추가했다.
+  - `운송 견적 요청`
+  - `통관 의뢰 요청`
+  - `포워더 입찰 확인`
+  - `관세사 입찰 확인`
+- 기존 HS 직접 조회, 해외 HS, 일괄조회, 납세액, 화물추적, 중고차수출, 무역뉴스 링크는 제거하지 않고 그대로 유지했다.
+- 대시보드에서 회사명, 회사 권한, 검증 상태, 신뢰 점수, marketplace 역할을 함께 표시한다.
+- 회사 검증/역할 데이터가 없는 환경에서는 `역할 미설정`, `회사 검증 데이터 준비 필요` 안내를 표시한다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- `curl -I -s http://localhost:3100/dashboard` -> `/login` 307 redirect
+
+### 대시보드 요청 현황 요약
+
+- 이전 작업은 대시보드에 역할별 진입 버튼을 추가한 P7.1이고, 이번 작업은 실제 요청/입찰 상태 숫자를 같은 영역에 붙인 P7.2다.
+- `/dashboard`에서 현재 회사 기준 marketplace 활동 요약을 조회한다.
+  - 임시저장 요청
+  - 진행중 요청
+  - 견적 도착
+  - 입찰 가능
+- 요청 현황은 현재 회사의 `service_requests`와 `service_request_partner_matches`를 기준으로 계산한다.
+- schema 미적용 또는 RLS 조회 실패 시 0건으로 안전하게 표시하고 기존 대시보드 렌더링은 유지한다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- `curl -I -s http://localhost:3100/dashboard` -> `/login` 307 redirect
+
+### 회사 설정에서 플랫폼 역할 관리 정리
+
+- 이전 작업은 대시보드에서 역할별 진입과 현황을 보여준 P7 레일이고, 이번 작업은 회사 설정에서 검증·역할·관심조건을 한 흐름으로 묶은 P8.1이다.
+- `/settings/members` 상단에 `플랫폼 참여 상태` 패널을 추가했다.
+  - 회사 검증 상태와 신뢰 점수
+  - 현재 플랫폼 역할
+  - 파트너 관심 조건 저장 개수
+  - 다음 작업 안내
+- 기존 회사 검증 증빙 제출, 제출 이력, 파트너 관심 조건 설정 기능은 제거하지 않고 아래에 유지했다.
+- 회사 관리자 여부, 검증 상태, 파트너 조건 미저장 여부에 따라 다음 작업 문구가 달라진다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- `curl -I -s http://localhost:3100/settings/members` -> `/login` 307 redirect
+
+### P4.1 알림 정책 skeleton
+
+- 이전 작업은 통관 의뢰 공개와 관세사무소 견적 제출을 만드는 P3.2이고, 이번 작업은 요청 노출과 별개로 알림 피로도를 제어하는 정책 계산층 P4.1이다.
+- `marketplace-notification-policy`를 추가했다.
+  - `buildInitialMarketplaceNotificationTargets`: 공개된 요청에 매칭된 파트너 중 1회 최초 알림 대상 계산
+  - `buildMarketplaceDeadlineReminderTargets`: 마감 전 아직 활성 견적이 없는 파트너 리마인드 대상 계산
+- 알림 대상에서 제외하는 조건을 명확히 했다.
+  - 알림 비활성
+  - digest 사용
+  - 이미 발송됨 또는 실패 상태
+  - declined 관심 상태
+  - 닫힌 요청 또는 마감 지난 요청
+  - 이미 draft/submitted/shortlisted/selected 상태의 활성 견적이 있는 파트너
+- 알림 정책 리뷰어 지적사항을 반영했다.
+  - 알림 종류별 기존 발송 상태(`deliveredNotificationKinds`)를 입력으로 받아 deadline reminder 반복 발송을 막도록 했다.
+  - digest 사용 파트너를 단순 제외하지 않고 `buildMarketplaceDigestTargets`로 별도 digest 대상 그룹을 만들도록 했다.
+  - 마감 전 리마인드는 `viewed/interested` 파트너로 제한해 never-engaged 파트너에게 추가 알림이 가지 않게 했다.
+  - 중복 join row가 들어와도 match/kind 기준으로 한 번만 target을 만들도록 했다.
+  - draft bid는 제출된 견적이 아니므로 deadline reminder를 막지 않게 했다.
+  - reminder window는 0~48시간 범위 밖이면 오류로 처리한다.
+- 아직 실제 이메일/인앱 발송은 연결하지 않았다.
+  - 이번 rail은 정책 계산 skeleton이고, 실제 발송/claim/중복 방지는 다음 알림 worker 단계로 분리한다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npx vitest run server/notifications/marketplace-notification-policy.test.ts`
+- `npx eslint server/notifications/marketplace-notification-policy.ts server/notifications/marketplace-notification-policy.test.ts`
+- 리뷰 반영 후 위 3개 재실행
+- `npm run lint`
+- `npm test`
+- `npm run build`
+
+### P4.4 알림 worker skeleton
+
+- 이전 작업은 DB/RPC claim 경계 P4.3이고, 이번 작업은 알림 target 계산 결과를 실제 claim RPC까지 연결하는 worker skeleton P4.4다.
+- `marketplace-notification-worker.service`를 추가했다.
+  - `service_request_partner_matches`와 연결된 요청을 조회
+  - 기존 bid와 delivery 이력을 함께 조회
+  - P4.1 policy로 최초 알림과 마감 전 리마인드 target 계산
+  - `dryRun`이면 target 수만 반환하고 claim하지 않음
+  - 실제 실행이면 `claimMarketplaceNotificationDelivery`를 통해 DB claim RPC 호출
+- `/api/jobs/marketplace-notifications` route를 추가했다.
+  - `JOB_WORKER_SECRET` 또는 `CRON_SECRET` 인증 방식 사용
+  - `dryRun`, `limit`, `reminderWindowHours` query 지원
+  - service role env가 없으면 명시적 500 환경 오류 반환
+- 아직 이메일/인앱 실제 발송은 연결하지 않았다.
+  - 현재 단계는 target 계산과 claim까지만 검증한다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npx vitest run server/jobs/marketplace-notification-worker.service.test.ts server/repositories/marketplace-notification-deliveries.repository.test.ts server/notifications/marketplace-notification-policy.test.ts`
+- `npx eslint server/jobs/marketplace-notification-worker.service.ts server/jobs/marketplace-notification-worker.service.test.ts app/api/jobs/marketplace-notifications/route.ts`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- `curl -I -s 'http://localhost:3100/api/jobs/marketplace-notifications?dryRun=true'`
+- `curl -s 'http://localhost:3100/api/jobs/marketplace-notifications?dryRun=true'`
+
+### P4.3 알림 claim RPC 원천 검증
+
+- 이전 작업은 delivery 저장소와 repository claim을 만든 P4.2이고, 이번 작업은 DB가 match/request/partner 상태를 직접 확인한 뒤 delivery를 claim하게 만드는 P4.3이다.
+- `claim_marketplace_notification_delivery` RPC를 marketplace migration에 추가했다.
+  - service_role만 실행 가능
+  - `match_id` 기준으로 `service_request_partner_matches`와 `service_requests`를 잠금 조회
+  - 요청 상태가 `open/bids_received`이고 deadline이 남아 있어야 claim 가능
+  - declined 파트너는 claim 불가
+  - 파트너가 검증되고 활성 상태여야 claim 가능
+  - 최초 알림은 `notification_status = pending`일 때만 가능
+  - deadline reminder는 `viewed/interested` 상태일 때만 가능
+  - digest는 partner/window 기준 delivery key 사용
+  - metadata는 requestType/requestCount/matchCount/templateId로 정제
+- repository는 match id가 있는 claim은 직접 insert하지 않고 RPC를 호출하도록 변경했다.
+- sent/failed 전이 검증은 P4.2 repository guard를 유지한다.
+- digest처럼 match id 없이 묶이는 fallback은 남겨두었고, 실제 worker 단계에서 digest claim 모델을 더 좁힐 예정이다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npx vitest run server/repositories/marketplace-notification-deliveries.repository.test.ts server/repositories/platform-marketplace-governance.test.ts server/notifications/marketplace-notification-policy.test.ts`
+- `supabase db lint --local --fail-on error`
+- `npx eslint server/repositories/marketplace-notification-deliveries.repository.ts server/repositories/marketplace-notification-deliveries.repository.test.ts`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+
+### P4.2 알림 delivery claim 저장소
+
+- 이전 작업은 알림 대상 계산 정책 P4.1이고, 이번 작업은 계산된 알림을 실제 발송 전에 중복 claim하고 sent/failed 상태를 기록하는 저장 계층 P4.2다.
+- `marketplace_notification_deliveries` 테이블을 플랫폼 marketplace migration에 추가했다.
+  - `delivery_key` unique로 `match + notification_kind + delivery_window` 중복 claim 차단
+  - `notification_kind`: initial, deadline_reminder, digest
+  - `status`: claimed, sent, skipped, failed
+  - channel, provider id, delivery window, reason, 최소 metadata 저장
+- RLS/권한을 추가했다.
+  - staff/admin은 delivery 이력 조회만 가능
+  - service_role만 delivery insert/update 가능
+  - 일반 authenticated 사용자는 직접 delivery 상태를 만들거나 바꿀 수 없음
+- `marketplace-notification-deliveries.repository`를 추가했다.
+  - `createMarketplaceNotificationDeliveryKey`
+  - `claimMarketplaceNotificationDelivery`
+  - `markMarketplaceNotificationDeliverySent`
+  - `markMarketplaceNotificationDeliveryFailed`
+- 실제 이메일/인앱 발송 worker는 아직 연결하지 않았다.
+  - 다음 단계에서 P4.1 target과 P4.2 claim 저장소를 worker로 연결한다.
+- 보안 리뷰어 지적사항을 반영했다.
+  - digest delivery key를 partner/window 기준으로 정규화했다.
+  - metadata는 `requestType`, `requestCount`, `matchCount`, `templateId`만 저장하도록 allowlist 처리했다.
+  - provider 오류 원문을 저장하지 않고 `provider_timeout`, `provider_rate_limited`, `provider_auth_error`, `provider_send_failed` 같은 범주만 저장한다.
+  - sent/failed 전이는 `.select("id").single()`로 실제 row 전이가 없으면 오류를 내도록 했다.
+  - retryable provider failure를 `retryable_failed`로 구분하고 attempt/retry 컬럼을 추가했다.
+  - DB가 `match_id`, `request_id`, `partner_company_id` 정합성을 직접 검증하는 claim RPC는 P4.3으로 분리했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npx vitest run server/repositories/marketplace-notification-deliveries.repository.test.ts server/repositories/platform-marketplace-governance.test.ts server/notifications/marketplace-notification-policy.test.ts`
+- `supabase db lint --local --fail-on error`
+- 보안 리뷰 반영 후 위 3개 재실행
+- `npm run lint`
+- `npm test`
+- `npm run build`
+
+### P3.2 관세사무소 견적 제출
+
+- 이전 작업은 화주가 통관 의뢰 초안을 만드는 P3.1이고, 이번 작업은 그 요청을 관세사무소에 공개하고 관세사무소가 예비 통관 견적을 제출하는 P3.2다.
+- `clearanceRequestPublishSchema`, `clearanceBidSubmitSchema`를 추가했다.
+  - 공개 마감은 1~48시간으로 제한
+  - 통관 견적은 통화, 총액, 통관 수수료, 유효기한, 리드타임, 예상 통관일수, 추가 요청 서류, 리스크 메모를 검증
+- `publish_clearance_request` RPC를 추가했다.
+  - 통관 의뢰 draft만 공개 가능
+  - 목적국 필수
+  - 검증되고 활성 상태인 관세사무소만 관심 조건에 따라 매칭
+  - 요청자도 운영자 승인 상태여야 공개 가능
+  - 공개 audit log 기록
+- `submit_clearance_bid` RPC를 추가했다.
+  - 매칭된 검증 관세사무소만 견적 제출 가능
+  - 마감 전 `open/bids_received` 요청만 허용
+  - 중복 활성 견적 제출 차단
+  - 견적 제출 시 요청 상태를 `bids_received`로 전환
+  - 추가 요청 서류는 JSON 배열로만 저장
+  - 견적 제출 audit log 기록
+- `/requests/clearance` UI를 P2.7 운송 요청 화면과 같은 workspace 구조로 정리했다.
+  - `내 요청 관리`: 초안 작성, 공개, 견적 비교, 관세사무소 선정
+  - `관세사 입찰`: 공개 요청 확인, 예비 견적 제출
+  - 상단 상태 요약: 초안, 공개중, 견적 도착, 선정 완료, 입찰 가능
+  - 공개 전 확인 패널: 공개 대상, 공개 정보, 비공개 정보
+  - 관세사 견적 문구는 `예비 통관 견적`, `HS/FTA/요건 예비 검토 가능`으로 정리
+- 보안 리뷰어 지적사항을 반영했다.
+  - 선정 이후 비선정 매칭 파트너의 request/detail read를 차단했다.
+  - `matched_partner_after_interest` 문서 공개는 `open/bids_received` 상태로 제한했다.
+  - 선정 이후 문서는 selected bid 회사만 읽을 수 있게 유지했다.
+  - staff/admin도 정지·차단 요청자의 공개를 우회할 수 없게 했다.
+  - 미검증 요청자는 통관/운송 요청 공개를 할 수 없게 했다.
+- UX/UI 리뷰어 지적사항을 반영했다.
+  - 화주 작업과 관세사 작업을 분리
+  - draft -> publish -> bid 흐름을 상태 요약과 다음 작업으로 표시
+  - 공개 액션에 privacy checkpoint 추가
+  - 요건 미검토와 예비 검토 문구를 법적 확정처럼 보이지 않게 수정
+- UI 작업이므로 로컬 서버 `http://localhost:3100/requests/clearance`를 확인했고, 비로그인 상태에서는 `/login` 307 redirect가 유지됨을 확인했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npx vitest run features/service-requests/clearance-bid-schemas.test.ts features/service-requests/clearance-request-schemas.test.ts server/repositories/platform-marketplace-governance.test.ts`
+- `supabase db lint --local --fail-on error`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- `curl -I -s http://localhost:3100/requests/clearance`
+
+### P3.1 통관 의뢰 draft 생성
+
+- 이전 작업은 운송 요청 UX/UI 정리이고, 이번 작업은 같은 공통 요청 모델을 통관 의뢰 업무로 확장한 것이다.
+- `clearance_request_details`와 `create_clearance_request_draft` RPC를 추가해 화주가 수입/수출 통관 의뢰 초안을 저장할 수 있게 했다.
+- 통관 초안에는 HSK 10자리, HS6, HS CODE 보유 여부, FTA 적용 희망, 요건 확인 필요 여부, 예상 신고 건수, 원산지/수출국/선적국/목적국, 모델명, 재질/성분, 용도, 일정 정보를 저장한다.
+- `/requests/clearance` 페이지와 `ClearanceRequestDraftPanel`을 추가했다.
+  - 기본 정보, 품목 및 HS 정보, 국가·원산지·FTA 정보, 일정 및 물류 정보, 검토 요청 범위로 입력을 분리했다.
+  - HS, FTA, 요건 및 인허가 적용 여부는 예비진단이며 담당자 검토가 필요하다는 문구를 상단에 고정했다.
+  - FTA는 선적국만으로 판단하지 않고 원산지, 수출국, 직접운송, 증빙 검토가 필요하다는 안내를 추가했다.
+  - 저장된 초안 카드에 `초안 작성 -> 서류 첨부 -> 검토 항목 확인 -> 관세사무소 공개` 다음 단계를 표시했다.
+- 보안 리뷰어 지적사항을 반영했다.
+  - 매칭 파트너와 입찰자는 숨김/취소/초안 요청을 읽을 수 없도록 `can_read_service_request`의 상태 조건을 좁혔다.
+  - 요청과 통관 detail 조회에 필요한 select grant를 명시하고, 요청 document metadata insert/delete grant를 추가했다.
+  - 정지 또는 차단된 회사는 운송/통관 요청 draft를 만들 수 없게 했다.
+  - 통관 detail RLS를 `request_type = clearance`와 `status = draft`에 묶었다.
+- UX/UI 리뷰어 지적사항을 반영했다.
+  - 통관 화면의 국가/FTA 구분, 예비진단 문구, 요건 검토 미요청 표현, 저장 후 다음 행동, 입력 그룹 구조를 보강했다.
+- UI 작업이므로 로컬 서버 `http://localhost:3100/requests/clearance`를 확인했고, 비로그인 상태에서는 `/login` 307 redirect가 유지됨을 확인했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npx vitest run features/service-requests/clearance-request-schemas.test.ts server/repositories/platform-marketplace-governance.test.ts`
+- `supabase db lint --local --fail-on error`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- `curl -I -s http://localhost:3100/requests/clearance`
+
+### P2.7 운송 요청 UX/UI 정리
+
+- 이전 작업은 요청 질문·답변 기능을 추가한 P2.6이고, 이번 작업은 기능 추가가 아니라 UX/UI 리뷰어가 지적한 `/requests/freight` 화면 흐름을 정리한 P2.7이다.
+- UX/UI 리뷰어를 신규 작업 기준으로 도입했다.
+  - 보안 리뷰어와 별개로 사용자 역할, 정보 위계, 버튼 문구, 모바일 사용성, 업무 흐름을 리뷰한다.
+- `/requests/freight`를 역할별 workspace로 분리했다.
+  - `내 요청 관리`: 초안 작성, 서류 첨부, 포워더 공개, 질문 답변, 견적 비교, 포워더 선정
+  - `입찰 가능 요청`: 매칭 요청 확인, 질문 등록, 운송 견적 제출
+- 내 요청 카드에 진행 단계 표시를 추가했다.
+  - 초안 → 서류 → 공개 → 질문 → 견적 → 선정
+  - 다음 작업 안내 문구 표시
+  - 미답변 질문 badge 표시
+- 공개 필수 조건을 draft form 안에서 별도 그룹으로 분리했다.
+  - 출발 국가
+  - 도착 국가
+  - 운송 방식
+- `모집 공개` 버튼 문구를 `포워더에게 견적 요청 공개`로 바꿨고, 마감 select에 `견적 접수 마감` label을 붙였다.
+- 문서 공개 범위 문구를 더 명확하게 바꿨다.
+  - `나와 운영자만`
+  - `매칭된 포워더에게 공개`
+  - `선정된 포워더에게만 공개`
+  - `운영자만`
+- 질문 섹션을 받은 견적보다 먼저 배치하고, 질문/견적이 없어도 빈 상태 안내가 보이도록 했다.
+- `이 견적 선택` 버튼 문구를 `이 포워더 선정`으로 변경했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npx eslint features/service-requests/freight-request-draft-panel.tsx app/'(app)'/requests/freight/page.tsx`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- `curl -I -s http://localhost:3100/requests/freight`
+
+### P2.6 요청 질문·답변
+
+- 이전 작업은 요청 서류를 private bucket에 첨부하고 공개 범위를 제어하는 P2.5이고, 이번 작업은 포워더가 운송 요청에 질문하고 화주가 답변하는 협의 흐름 P2.6이다.
+- `ask_service_request_question` RPC를 추가했다.
+  - 매칭되고 입찰 가능한 파트너만 질문 가능
+  - 질문 길이 제한과 공백 검증
+  - 직접 insert 정책 제거 후 RPC-only mutation으로 변경
+  - 질문 등록 audit log 기록
+- `answer_service_request_question` RPC를 보강했다.
+  - 요청 소유 회사만 답변 가능
+  - 이미 답변된 질문은 덮어쓰기 불가
+  - `open/bids_received` 상태와 마감 전 요청만 답변 가능
+  - defensive update로 `answered_at is null` 조건을 재확인
+- `/requests/freight`에 질문·답변 UI를 연결했다.
+  - 입찰 가능 요청 카드에서 파트너가 질문 등록
+  - 내 요청 카드에서 질문 목록과 미답변 질문 답변 등록
+- `listOwnFreightRequests`가 RLS visible request 전체가 아니라 `requester_company_id = current_company_id()`인 요청만 가져오도록 명시 필터링했다.
+- 보안 리뷰어가 지적한 답변 overwrite/종료 요청 답변/요청자 목록 혼선 문제를 반영했다.
+- UX/UI 리뷰어를 새로 도입했고, 이번 `/requests/freight` 페이지 리뷰를 별도 P2.7 작업으로 받도록 등록했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npx vitest run features/service-requests/freight-request-question-schemas.test.ts server/repositories/platform-marketplace-governance.test.ts`
+- `supabase db lint --local --fail-on error`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- `curl -I -s http://localhost:3100/requests/freight`
+
+### P2.5 요청 서류 첨부·공개 범위
+
+- 이전 작업은 화주가 받은 견적을 비교하고 하나를 선택하는 P2.4이고, 이번 작업은 운송 견적 요청에 CI/PL/B/L 등 private 서류를 첨부하고 공개 범위를 제어하는 P2.5다.
+- `service_request_documents`를 `/requests/freight`에 연결했다.
+  - 내 요청별 첨부 서류 목록 표시
+  - 서류 유형, 파일명, 용량, 생성일, 공개 범위 표시
+  - 요청별 파일 업로드 form 추가
+- `uploadFreightRequestDocumentAction`과 repository helper를 추가했다.
+  - `service-request-documents` private bucket 사용
+  - storage path는 `{company_id}/{request_id}/{uuid}-{sanitized_file_name}`
+  - SHA-256 checksum 계산
+  - 업로드 실패 시 storage object와 metadata cleanup 시도
+  - audit log에는 문서 유형, 파일명, request id, bucket만 남기고 원문 경로나 signed URL은 남기지 않는다.
+- 공개 범위는 `화주만`, `관심 표시 파트너`, `선정 파트너`, `운영자만`으로 제한했다.
+- 보안 리뷰어 지적사항을 반영했다.
+  - `matched_partner_after_interest`는 `viewed`가 아니라 `interested` 상태 파트너에게만 공개
+  - MIME이 비어 있어도 허용 확장자가 아니면 업로드 거부
+  - request document metadata 직접 update/delete 정책 제거
+  - storage upload 정책을 metadata row와 request status에 묶음
+  - 업로드 가능 요청 상태를 `draft/open/bids_received/partner_selected`로 제한
+- `freight-request-document-schemas` test와 `freight-requests.repository` helper test를 추가했다.
+- UI 작업이므로 로컬 서버 `http://localhost:3100/requests/freight`를 확인했고, 비로그인 상태에서는 `/login` 307 redirect가 유지됨을 확인했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npx vitest run features/service-requests/freight-request-document-schemas.test.ts features/service-requests/freight-bid-schemas.test.ts server/repositories/freight-requests.repository.test.ts server/repositories/platform-marketplace-governance.test.ts`
+- `supabase db lint --local --fail-on error`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- `curl -I -s http://localhost:3100/requests/freight`
+
+### P2.4 화주 견적 비교·선택
+
+- 이전 작업은 포워더가 매칭된 운송 요청에 견적을 제출하는 P2.3이고, 이번 작업은 화주가 받은 견적을 비교하고 하나를 선택하는 P2.4 거래 전환 단계다.
+- `/requests/freight`에서 내 운송 요청별 받은 견적을 조회해 총액, 운임, 로컬 비용, 부대비용, 유효기한, 리드타임, 운송일수, 메모를 표시하도록 연결했다.
+- `selectFreightBidAction`과 `selectFreightBid` repository를 추가해 기존 `select_service_bid` RPC를 화면에서 호출할 수 있게 했다.
+- `select_service_bid` RPC를 보강했다.
+  - 요청 row와 bid row를 잠그고 요청자 회사만 선택 가능하게 유지
+  - 요청 상태가 `open`, `bids_received`일 때만 선택 가능
+  - 선택한 견적은 `selected`, 나머지 제출/검토중 견적은 `rejected`, 요청은 `partner_selected`로 전환
+  - 정지/차단된 요청자는 견적 선택 불가
+  - 선택 audit log 기록
+- 보안 리뷰어가 지적한 숨김 견적 노출 문제를 반영했다.
+  - `can_read_service_bid`에서 `hidden` bid는 staff/admin만 읽을 수 있게 제한
+  - 받은 견적 조회 repository에서도 `hidden` 상태를 제외
+- `freightBidSelectSchema`와 governance test를 추가해 선택 입력값과 RPC 상태전이/권한 조건을 회귀 검증한다.
+- UI 작업이므로 로컬 서버 `http://localhost:3100/requests/freight`를 확인했고, 비로그인 상태에서는 `/login` 307 redirect가 유지됨을 확인했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npx vitest run features/service-requests/freight-bid-schemas.test.ts features/service-requests/freight-request-schemas.test.ts server/repositories/platform-marketplace-governance.test.ts`
+- `supabase db lint --local --fail-on error`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- `curl -I -s http://localhost:3100/requests/freight`
+
+### 파트너 관심 조건 설정
+
+- 이전 작업은 운영자가 회사 검증 증빙을 승인/반려하는 큐이고, 이번 작업은 포워더·관세사무소가 어떤 요청을 받고 싶은지 저장하는 P1.3 조건 설정이다.
+- `partner_service_preferences`를 앱에서 읽고 저장하는 repository와 server action을 추가했다.
+- `/settings/members`에 `PartnerPreferencesPanel`을 추가했다.
+  - 포워더는 운송 견적 관심 조건을 설정
+  - 관세사무소는 통관 의뢰 관심 조건을 설정
+  - 수입/수출 방향, 국가 코드, 운송 방식, 항구·공항·지역, 화물 태그, 긴급 대응, 알림/digest 설정 저장
+- 회사 관리자만 저장 가능하고, 회사 역할이 `forwarder` 또는 `customs_broker`인 경우에만 해당 서비스 조건이 표시된다.
+- RLS도 회사 admin 여부만 보지 않고, `freight`는 `forwarder`, `clearance`는 `customs_broker` 역할을 가진 회사만 관리할 수 있게 좁혔다.
+- `partner-preferences` schema test와 marketplace governance test를 추가해 방향 필수값과 partner role 제한을 회귀 검증한다.
+- UI 작업이므로 로컬 서버 `http://localhost:3100/settings/members`를 브라우저로 열었고, 비로그인 상태에서는 `/login` 307 redirect가 유지됨을 확인했다.
+- `ROADMAP`에서 P1.1, P1.2, P1.3을 완료로 갱신했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npx vitest run features/partner-preferences/schemas.test.ts server/repositories/platform-marketplace-governance.test.ts`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- `supabase db lint --local --fail-on error`
+
+### 회사 검증 운영 검토 큐 연결
+
+- 이전 작업은 회사 검증 업로드 경로의 보안/RLS 문제를 막은 것이고, 이번 작업은 운영자가 제출된 증빙을 실제로 검토할 수 있게 `/operations/users`에 큐를 연결한 것이다.
+- `company-verification-review.repository`를 추가해 service-role로 최근 회사 검증 증빙 50건을 불러오고, private bucket 원문은 10분 signed URL로만 제공한다.
+- `/operations/users`에서 사용자 목록과 회사 검증 증빙 큐를 병렬 로드하도록 바꿨다.
+- `CompanyVerificationReviewPanel`을 추가했다.
+  - 제출 대기 건수 표시
+  - 회사명, 사업자번호, 검증 상태, 신뢰 점수, 파일 정보, checksum 표시
+  - 원문 열람 링크는 signed URL만 사용
+  - 승인/반려 버튼은 기존 developer-only server action과 연결
+- migration 미적용 환경에서는 운영 큐도 schema 미적용 안내를 표시한다.
+- UI 작업이므로 로컬 서버 `http://localhost:3100/operations/users`를 브라우저로 열었고, 비로그인 상태에서는 `/login` 307 redirect가 유지됨을 확인했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npx vitest run server/repositories/platform-marketplace-governance.test.ts server/repositories/company-verification.repository.test.ts features/company-verification/schemas.test.ts`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- `supabase db lint --local --fail-on error`
+
+### 플랫폼 역할 신청 UX
+
+- 이전 작업은 회사 설정에서 현재 검증·역할·관심조건을 요약한 P8.1이고, 이번 작업은 회사 관리자가 필요한 플랫폼 역할을 직접 신청하는 P8.2다.
+- `/settings/members`에 `CompanyRoleRequestPanel`을 추가했다.
+  - 국내 수출입 화주, 해외 수출입 파트너, 포워더, 관세사무소, 기타 실무 파트너 역할 신청
+  - 신청 사유 입력
+  - 최근 신청 이력과 검토 대기/승인/반려/취소 상태 표시
+  - 신청만으로 입찰·요청 권한이 바로 부여되지 않는다는 안내 문구 표시
+- `company_party_type_requests` 테이블과 RLS를 추가했다.
+  - 회사 admin은 자기 회사 요청만 읽고 제출 가능
+  - staff/admin만 검토 상태를 업데이트 가능
+  - insert RLS에서 `status = submitted`, `review_note/reviewed_by/reviewed_at is null`을 강제해 사용자가 `approved` 요청을 위조하지 못하게 했다.
+- 기존 `companies.business_types` 백필에서 포워더/관세사무소를 실권한 `company_party_types`로 자동 부여하지 않도록 막았다. 기존 사업자 유형은 역할 신청·운영자 검토 흐름과 분리한다.
+- 역할 신청 접수 시 `company_party_type_request_submitted` audit log를 남긴다.
+- 보안 리뷰어가 지적한 High 항목 2건을 반영했다.
+  - 사용자의 직접 insert로 승인 상태를 위조할 수 있던 RLS 누락 수정
+  - self-declared business type이 바로 포워더/관세사 입찰 권한이 되는 백필 제거
+- UI 자체 점검 결과, 문구는 `신청`과 `권한 부여`를 분리해 표현하고 모바일에서는 역할 카드가 1열로 접히도록 유지했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npx vitest run features/company-verification/company-role-request-schemas.test.ts server/repositories/platform-marketplace-governance.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `supabase db lint --local --fail-on error`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100/settings/members` 열기
+- 비로그인 상태 `/settings/members` 요청 시 `/login` 307 redirect 확인
+
+### 운영자 역할 신청 검토 큐
+
+- 이전 작업은 회사 관리자가 플랫폼 역할을 신청하는 P8.2이고, 이번 작업은 운영자가 그 신청을 승인·반려해 실제 `company_party_types`에 반영하는 P8.3이다.
+- `/operations/users` 상단에 `CompanyRoleRequestReviewPanel`을 추가했다.
+  - 검토 대기/전체/승인/반려 필터
+  - 회사명, 사업자번호, 회사 검증 상태, 신청자, 신청 역할, 신청 사유 표시
+  - 승인 및 역할 반영, 반려 버튼 제공
+- `review_company_party_type_request` RPC를 추가했다.
+  - service-role 외 직접 실행 차단
+  - `p_actor_id`가 실제 developer 프로필인지 DB 내부에서 검증
+  - 신청 row와 회사 row를 `for update`로 잠그고 처리
+  - 승인 시 `company_party_types`에 역할 추가, 중복은 `on conflict do nothing`
+  - 정지/차단 회사 승인 차단
+  - 포워더/관세사무소 역할은 회사 검증 상태가 `operator_approved`, `recommended_partner`, `trade_history` 중 하나일 때만 승인
+  - 신청 상태 변경과 audit log를 같은 RPC에서 처리
+- 직접 RLS 관리 정책을 기존 broad staff 기준에서 developer 기준으로 좁혔다. 일반 회사 admin은 신청 제출만 가능하고 실제 역할 부여는 RPC 검토 흐름으로만 처리된다.
+- 보안 리뷰어 지적을 반영했다.
+  - RPC가 service-role뿐 아니라 실제 검토자 권한을 확인하도록 보강
+  - 승인 대상 회사의 정지/차단 및 검증 상태를 DB 경계에서 확인
+  - 직접 `company_party_types` 관리 RLS를 developer 기준으로 축소
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npx vitest run features/company-verification/company-role-request-schemas.test.ts server/repositories/platform-marketplace-governance.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `supabase db lint --local --fail-on error`
+- `npm test`
+- `npm run build`
+- 비로그인 상태 `/operations/users`, `/settings/members` 요청 시 `/login` 307 redirect 확인
+
+### 운영 화면 정보 구조 정리
+
+- 이전 작업은 운영자가 플랫폼 역할 신청을 승인·반려하는 P8.3 기능이고, 이번 작업은 운영 페이지가 너무 많은 정보를 한 번에 보여주는 문제를 줄이는 P8.4 UX 정리다.
+- `/operations/users` 상단에 `OperationsUsersPriorityPanel`을 추가했다.
+  - 역할 신청 대기
+  - 회사 검증 증빙 대기
+  - 먼저 볼 업체 상태
+  - 사용자 상세 관리
+  를 한 줄 요약으로 보여주고 각 섹션으로 이동할 수 있게 했다.
+- 페이지 설명을 “먼저 처리할 큐 → 업체 상태 → 사용자 상세” 순서로 바꿨다.
+- 사용자 상세 관리는 기본 접힘으로 내려서, 평소에는 권한 변경·삭제·테스트 로그인 같은 위험 작업이 바로 노출되지 않게 했다.
+- 역할 신청, 검증 증빙, 업체 상태 섹션에 anchor를 추가해 상단 요약에서 바로 이동할 수 있게 했다.
+- UI 자체 점검 결과, 운영자가 처음 봐야 하는 대기 건과 처리 순서가 상단에 분리되어 있고, 사용자 상세는 문의 대응 시에만 펼치는 구조로 정리됐다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- 비로그인 상태 `/operations/users` 요청 시 `/login` 307 redirect 확인
+
+### 해외 파트너 가입·검증 안내 정리
+
+- 이전 작업은 운영자 내부 화면을 정리한 P8.4이고, 이번 작업은 해외 수출입 파트너가 가입·역할 신청 흐름에서 막히지 않게 하는 P9.1이다.
+- 가입 업무 유형에 `해외 수출입 파트너`를 추가했다.
+- 해외 수출입 파트너만 선택한 기업회원은 한국 사업자등록번호 없이 가입할 수 있게 했다.
+  - auth schema에서 `foreign_shipper`만 선택한 경우 사업자등록번호 필수 검증을 제외
+  - server action의 사업자등록 상태 확인도 국내 사업자 유형이 있을 때만 수행
+  - `ensure_client_profile` RPC도 같은 기준으로 한국 사업자등록번호 필수 조건을 완화
+- 국내 수입기업·수출기업·포워더·관세사무소를 함께 선택하면 기존처럼 한국 사업자등록번호 10자리를 요구한다.
+- 가입 화면과 이메일 인증 후 가입정보 입력 화면에 해외 파트너의 한국 사업자등록번호 선택 입력 안내를 추가했다.
+- 역할 신청 화면에 해외 파트너는 회사명, 국가, 담당자 정보, 거래 서류 등으로 운영자가 보류·승인 여부를 확인한다는 안내를 추가했다.
+- 기존 가입 업무 유형에서 포워더/관세사무소를 선택해도 실제 `company_party_types` 권한이 자동 부여되지 않도록 `company-marketplace` 동기화를 수정했다. 포워더/관세사무소 권한은 역할 신청과 운영자 검토 큐를 통해서만 반영한다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npx vitest run features/auth/schemas.test.ts server/repositories/company-marketplace.repository.test.ts server/repositories/platform-marketplace-governance.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `supabase db lint --local --fail-on error`
+- `npm test`
+- `npm run build`
+- `/login?mode=signup` 200 OK
+- 비로그인 상태 `/auth/complete-signup` 요청 시 `/login?mode=signup` 307 redirect 확인
+
+### 해외 파트너 요청 진입 CTA
+
+- 이전 작업은 해외 파트너가 가입하고 검증 대기 상태를 이해하게 하는 P9.1이고, 이번 작업은 가입 후 대시보드에서 한국 운송·통관 연결 요청으로 바로 들어가게 하는 P9.2다.
+- 대시보드 `플랫폼 업무 시작` 카드에서 `foreign_shipper` 역할이 있으면 해외 파트너용 CTA를 먼저 보여준다.
+  - `한국 운송 연결 요청`
+  - `한국 통관 연결 요청`
+- 해외 파트너 CTA는 일반 국내 화주 문구가 아니라 한국으로 보내거나 한국에서 받을 화물, 한국 통관이 필요한 품목과 서류 범위를 정리하도록 설명한다.
+- 해외 파트너는 한국 사업자등록번호 없이도 연결 요청을 시작할 수 있다는 안내를 회사 상태 줄에 추가했다.
+- 기존 일반 화주, 포워더, 관세사 CTA는 유지하되 최대 4개 카드만 보여 화면 밀도를 유지했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npx vitest run features/auth/schemas.test.ts server/repositories/company-marketplace.repository.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- 비로그인 상태 `/dashboard` 요청 시 `/login` 307 redirect 확인
+
+### 해외 파트너 문구 다국어 준비
+
+- 이전 작업은 대시보드에 해외 파트너용 CTA를 추가한 P9.2이고, 이번 작업은 그 문구를 컴포넌트 하드코딩에서 dashboard i18n dictionary로 분리한 P9.3이다.
+- `lib/i18n/dashboard.ts`에 marketplace dictionary를 추가했다.
+  - 해외 파트너 안내 문구
+  - marketplace 상태 라벨
+  - marketplace 역할 라벨
+  - 해외 파트너용 한국 운송 연결/통관 연결 CTA 제목과 설명
+- 한국어, 영어, 중국어 dictionary에 동일 키를 채웠다.
+- `DashboardMarketplaceEntry`는 해외 파트너 CTA와 역할/상태 라벨을 dictionary에서 읽고, 알 수 없는 값만 기존 fallback 라벨을 사용한다.
+- 영어 문구도 법적 확정 표현 없이 연결 요청과 준비 단계로 표현했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npx vitest run lib/i18n/dashboard.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+
+### 요청 생성 페이지의 해외 파트너 prefill 정리
+
+- 이전 작업은 해외 파트너 CTA 문구를 다국어 dictionary로 분리한 P9.3이고, 이번 작업은 그 CTA가 실제 요청 draft 페이지에 올바른 query를 전달하게 하는 P10.1이다.
+- 해외 파트너 대시보드 CTA href를 draft parser가 읽는 정식 query 이름으로 바꿨다.
+  - `destinationCountryCode=KR`
+  - `direction=import`
+- `marketplaceRequestPrefillFromSearchParams`가 `destinationCountry`, `originCountry` alias도 읽어 ISO2 코드로 정규화하도록 보강했다.
+- 해외 파트너 CTA 또는 향후 다른 화면이 legacy query name을 보내도 draft form의 목적국/출발국 prefill이 비는 문제를 줄였다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npx vitest run features/service-requests/marketplace-request-prefill.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- 비로그인 상태 `/requests/freight?direction=import&destinationCountryCode=KR`, `/requests/clearance?direction=import&destinationCountryCode=KR` 요청 시 `/login` 307 redirect 확인
+
+### 해외 파트너용 요청 초안 안내
+
+- 이전 작업은 해외 파트너 CTA query가 draft 페이지에 올바르게 들어오도록 정규화한 P10.1이고, 이번 작업은 그 prefill 상태를 사용자가 이해하고 보완할 수 있게 draft 화면 안내를 추가한 P10.2다.
+- `OverseasPartnerRequestHint`를 추가해 `direction=import`, `destinationCountryCode=KR`인 요청 초안에서만 해외 파트너용 안내를 표시한다.
+- 운송 견적 초안에는 한국 도착 운송 연결 요청임을 설명하고 출발국, 출발지, 품목, 수량, 희망 일정, 보유 서류를 보완하도록 안내한다.
+- 통관 의뢰 초안에는 한국 통관 연결 요청임을 설명하고 HS 코드가 없어도 품명·용도·재질·거래 서류로 초안을 만들 수 있음을 안내한다.
+- 한국 사업자등록번호가 없어도 초안 작성은 가능하되, 업체 매칭·공개 범위는 회사 정보와 서류 검증 상태에 따라 제한될 수 있음을 명확히 표시했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npx vitest run features/service-requests/marketplace-request-prefill.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- 비로그인 상태 `/requests/freight?direction=import&destinationCountryCode=KR`, `/requests/clearance?direction=import&destinationCountryCode=KR` 요청 시 `/login` 307 redirect 확인
+
+### 요청 초안 필수값·빈 상태 정리
+
+- 이전 작업은 해외 파트너용 안내 문구를 draft 화면에 추가한 P10.2이고, 이번 작업은 운송/통관 초안 작성 중 실제로 비어 있는 값과 보완하면 좋은 값을 사용자에게 바로 보여주는 P10.3이다.
+- `RequestDraftReadinessPanel`을 추가해 초안 저장 필수값과 공개 전 보완값을 한 패널에서 구분해 표시한다.
+- 운송 견적 초안은 요청 제목·방향은 저장 필수로, 출발 국가·도착 국가·운송 방식은 포워더 공개 전 필수 보완값으로 표시한다.
+- 통관 의뢰 초안은 요청 제목·통관 방향은 저장 필수로, 목적국·품목 요약·HS 정보·용도·원산지·신고 예정일 등을 관세사무소 공개 전 보완값으로 표시한다.
+- 입력 변경 시 패널이 즉시 갱신되도록 폼 값을 읽어 상태에 반영한다.
+- readiness 계산 로직을 순수 함수로 분리하고 단위 테스트를 추가했다.
+- UX 자체 리뷰 결과, 저장 필수값과 공개 전 보완값을 분리해 “왜 저장은 되는데 공개가 막히는지”를 설명하는 데 도움이 되며, 모바일에서는 패널이 세로 흐름으로 접혀 기존 폼 구조를 크게 해치지 않는다.
+- UX/UI 리뷰어 에이전트를 붙이려 했으나 현재 서브에이전트 도구가 모델 해석 오류로 생성되지 않아 자체 리뷰로 대체했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npx vitest run features/service-requests/request-draft-readiness.test.ts features/service-requests/marketplace-request-prefill.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- 비로그인 상태 `/requests/freight?direction=import&destinationCountryCode=KR`, `/requests/clearance?direction=import&destinationCountryCode=KR` 요청 시 `/login` 307 redirect 확인
+
+### 통관 의뢰 서류 첨부 parity
+
+- 이전 작업은 초안 작성 중 비어 있는 값과 보완값을 보여주는 P10.3이고, 이번 작업은 통관 의뢰에도 요청 서류를 private bucket에 첨부하고 관세사무소 공개 범위를 관리하는 P10.4다.
+- `clearanceRequestDocumentUploadSchema`와 action state를 추가했다.
+- `uploadClearanceRequestDocumentAction`을 추가해 통관 의뢰 서류 업로드, audit log, `/requests/clearance`/`/dashboard` revalidate를 연결했다.
+- `uploadClearanceRequestDocument` repository를 추가했다.
+  - 기존 공통 `service_request_documents`와 `service-request-documents` private bucket을 재사용
+  - DB에서 `request_type = clearance`와 요청 상태를 다시 확인
+  - 파일 형식, 10MB 제한, checksum, storage path 구조는 운송 요청과 동일하게 유지
+  - storage upload 실패 시 object와 metadata cleanup을 수행
+- `/requests/clearance`에서 내 통관 의뢰별 첨부 서류 목록과 업로드 폼을 표시한다.
+- 매칭된 관세사무소 입찰 가능 카드에도 RLS로 읽을 수 있는 공개 서류 메타데이터를 표시한다.
+- 새 migration은 만들지 않았다. 기존 공통 문서 테이블과 metadata-backed storage RLS를 재사용했고, Supabase local lint로 정책 오류 없음을 확인했다.
+- 보안 자체 리뷰 결과, 직접 storage path만으로 읽는 경로가 아니라 `service_request_documents` metadata와 `can_read_service_request_document`를 통과해야 하며, repository에서도 통관 요청 타입을 재확인한다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npx vitest run features/service-requests/clearance-request-document-schemas.test.ts server/repositories/freight-requests.repository.test.ts server/repositories/platform-marketplace-governance.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `supabase db lint --local --fail-on error`
+- `npm run build`
+- 비로그인 상태 `/requests/clearance?direction=import&destinationCountryCode=KR`, `/requests/freight?direction=import&destinationCountryCode=KR` 요청 시 `/login` 307 redirect 확인
+
+### 통관 견적 비교·선택
+
+- 이전 작업은 통관 의뢰 서류를 첨부하고 관세사무소에 공개 서류 메타데이터를 보여주는 P10.4이고, 이번 작업은 제출된 통관 견적을 화주가 비교하고 하나를 선택하는 P10.5다.
+- `clearanceBidSelectSchema`와 action state를 추가했다.
+- `listReceivedClearanceBids` repository를 추가해 `bid_type = clearance`인 견적만 조회하고, `clearance_bid_details`의 통관 수수료, 예상 통관일수, 추가 요청 서류, 리스크 메모를 함께 묶어 반환한다.
+- `selectClearanceBidAction`과 `selectClearanceBid` repository를 추가했다.
+  - 기존 `select_service_bid` RPC를 재사용해 요청 소유권, 요청 상태, bid 상태, 선택/미선정 상태 전이를 DB에서 처리
+  - RPC 호출 전 repository에서 `bid_type = clearance`를 재확인해 통관 선택 action으로 다른 서비스 bid를 선택하지 못하게 했다.
+- `/requests/clearance`의 내 통관 의뢰 카드에 도착한 통관 견적 비교 영역을 추가했다.
+  - 총액, 통관 수수료, 유효기한, 리드타임, 예상 통관일수, 추가 요청 서류, 리스크 메모, 관세사무소 선정 버튼 표시
+  - 선정 시 다른 제출/검토중 견적은 DB RPC에 의해 미선정 처리된다.
+- 보안 자체 리뷰 결과, 숨김 bid는 조회에서 제외하고, 선택은 RLS로 읽히는 bid 중 통관 bid만 RPC로 전달한다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npx vitest run features/service-requests/clearance-bid-schemas.test.ts server/repositories/platform-marketplace-governance.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `supabase db lint --local --fail-on error`
+- `npm run build`
+- 비로그인 상태 `/requests/clearance?direction=import&destinationCountryCode=KR`, `/requests/freight?direction=import&destinationCountryCode=KR` 요청 시 `/login` 307 redirect 확인
+
+### 통관 의뢰 질문·답변 parity
+
+- 이전 작업은 화주가 통관 견적을 비교하고 관세사무소를 선택하는 P10.5이고, 이번 작업은 견적 제출 전 관세사무소가 질문하고 화주가 답변하는 P10.6 협의 흐름이다.
+- `clearanceRequestQuestionAskSchema`, `clearanceRequestQuestionAnswerSchema`와 action state를 추가했다.
+- `listClearanceRequestQuestions`, `askClearanceRequestQuestion`, `answerClearanceRequestQuestion` repository를 추가했다.
+  - 기존 공통 `service_request_questions` 테이블과 RPC를 재사용
+  - 질문 등록 전 `request_type = clearance`를 확인
+  - 답변 전 question의 request가 통관 의뢰인지 재확인
+- `askClearanceRequestQuestionAction`, `answerClearanceRequestQuestionAction`을 추가했다.
+- `/requests/clearance`의 내 통관 의뢰 카드에 관세사무소 질문과 답변 폼을 표시한다.
+- 관세사무소 입찰 가능 카드에도 질문·답변 이력과 질문 등록 폼을 표시한다.
+- 진행 단계의 다음 작업 문구는 미답변 질문이 있으면 `관세사무소 질문 답변 필요`로 먼저 표시한다.
+- 새 migration은 만들지 않았다. 기존 RPC/RLS를 재사용했고, Supabase local lint로 정책 오류 없음을 확인했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npx vitest run features/service-requests/clearance-request-question-schemas.test.ts server/repositories/platform-marketplace-governance.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `supabase db lint --local --fail-on error`
+- `npm run build`
+- 비로그인 상태 `/requests/clearance?direction=import&destinationCountryCode=KR`, `/requests/freight?direction=import&destinationCountryCode=KR` 요청 시 `/login` 307 redirect 확인
+
+### 플랫폼 요청 운영 통계 정리
+
+- 이전 작업은 통관 의뢰 질문·답변 기능을 붙인 P10.6이고, 이번 작업은 대표/운영자가 플랫폼 요청 상태를 보고 바로 다음 개선 작업을 맡길 수 있게 하는 P10.7 운영 통계다.
+- `platform-operations.repository`를 추가했다.
+  - 요청 전체, 운송/통관 요청 수
+  - 공개중/견적도착/선정완료 수
+  - 미답변 질문
+  - 공개됐지만 견적이 없는 요청
+  - 3일 이상 방치된 초안
+  - 마감 시간이 지난 공개 요청
+  를 요약한다.
+- 통계를 해석하지 않아도 바로 사용할 수 있는 `actionRequest` 문장을 생성한다.
+- `/operations/users` 상단에 `PlatformRequestOperationsPanel`을 추가했다.
+  - “플랫폼 요청 운영 상태” 카드
+  - 병목 지표 카드
+  - “다음에 바로 요청할 작업” 문장
+- 새 migration은 만들지 않았다. 기존 staff/developer read 경계에서 요청, bid, question을 읽어 요약한다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npx vitest run server/repositories/platform-operations.repository.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `supabase db lint --local --fail-on error`
+- `npm run build`
+- 비로그인 상태 `/operations/users`, `/requests/clearance?direction=import&destinationCountryCode=KR` 요청 시 `/login` 307 redirect 확인
+
+### 요청 업무 UI 밀도 정리
+
+- 이전 작업은 대표/운영자가 플랫폼 요청 병목을 볼 수 있는 P10.7 운영 통계이고, 이번 작업은 운송/통관 요청 카드가 길어진 문제를 줄이는 P10.8 UI 정리다.
+- 운송 요청 카드에서 서류 목록과 상태는 계속 보이게 두고, 서류 업로드 입력 폼은 `서류 추가하기` 접힘 영역으로 옮겼다.
+- 통관 의뢰 카드도 서류 목록과 상태는 유지하고, 서류 업로드 입력 폼은 `서류 추가하기` 접힘 영역으로 옮겼다.
+- 통관 의뢰 공개 설정 폼도 기본 접힘으로 내려, 요청 카드에서 먼저 보이는 정보가 진행 상태, 다음 작업, 서류/질문/견적 상태가 되도록 정리했다.
+- UX 자체 리뷰 결과, 목록·상태·다음 작업은 유지하면서 반복 입력 폼만 접어 모바일과 데스크톱 모두에서 요청 카드 첫 화면의 정보 밀도가 낮아졌다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- 비로그인 상태 `/requests/clearance?direction=import&destinationCountryCode=KR`, `/requests/freight?direction=import&destinationCountryCode=KR` 요청 시 `/login` 307 redirect 확인
+
+### 요청 상세 페이지 분리
+
+- 이전 작업은 운송/통관 요청 카드 안의 보조 입력 폼을 접어 목록 화면 밀도를 낮춘 P10.8이고, 이번 작업은 요청 목록과 요청별 상세 작업 공간을 분리하는 P11.1이다.
+- `/requests/freight/[requestId]` 상세 route를 추가했다.
+  - 해당 운송 요청 1건만 조회
+  - 연결된 서류, 질문, 받은 견적을 함께 조회
+  - 기존 검증된 운송 요청 작업 카드를 재사용
+- `/requests/clearance/[requestId]` 상세 route를 추가했다.
+  - 해당 통관 의뢰 1건만 조회
+  - 연결된 서류, 질문, 받은 통관 견적을 함께 조회
+  - 기존 검증된 통관 의뢰 작업 카드를 재사용
+- 운송/통관 목록 카드에 `상세 작업` 링크를 추가했다.
+- repository에 `getOwnFreightRequest`, `getOwnClearanceRequest`를 추가해 현재 회사의 요청만 상세 조회할 수 있게 했다.
+- 상세 route도 비로그인 상태에서는 `/login`으로 redirect된다.
+- 새 migration은 만들지 않았다. 기존 요청/서류/질문/bid RLS를 재사용한다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npx vitest run server/repositories/platform-operations.repository.test.ts features/service-requests/clearance-bid-schemas.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `supabase db lint --local --fail-on error`
+- `npm run build`
+- 비로그인 상태 `/requests/freight/11111111-1111-4111-8111-111111111111`, `/requests/clearance/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### 요청 상세 direct action anchor
+
+- 이전 작업은 운송/통관 요청 상세 route를 만든 P11.1이고, 이번 작업은 상세 화면 안에서 바로 처리해야 할 위치로 이동하는 P11.2다.
+- 운송 상세 화면에 `다음 작업 바로가기` 바를 추가했다.
+  - 미답변 질문이 있으면 질문 섹션 우선
+  - 견적이 있으면 견적 비교 우선
+  - 서류가 없으면 서류 첨부 우선
+- 통관 상세 화면에도 동일한 바로가기 바를 추가했다.
+  - 미답변 질문, 견적 비교, 서류 첨부, draft 상태의 공개 설정을 상태에 따라 우선 안내
+- 운송/통관 요청 카드 주요 섹션에 상세 전용 anchor id를 추가했다.
+  - `request-documents`
+  - `request-questions`
+  - `request-bids`
+  - 통관 draft 공개 설정: `request-publish`
+- 목록 화면에서는 anchor id를 만들지 않도록 `anchorPrefix`를 상세 화면에서만 넘긴다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- 비로그인 상태 `/requests/freight/11111111-1111-4111-8111-111111111111#request-documents`, `/requests/clearance/11111111-1111-4111-8111-111111111111#request-questions` 요청 시 `/login` 307 redirect 확인
+
+### 목록 화면 compact mode
+
+- 이전 작업은 상세 화면 안에서 다음 작업 위치로 이동하는 P11.2이고, 이번 작업은 목록 화면 자체를 가볍게 만드는 P11.3이다.
+- 운송 요청 목록에서는 공개 설정, 서류 첨부, 질문 답변, 견적 비교 블록을 숨기고 요청 요약과 `상세 작업` 링크를 우선 표시한다.
+- 통관 요청 목록도 동일하게 목록에서는 서류/질문/견적 요약만 표시하고, 실제 첨부·답변·견적 비교·공개 설정은 상세 작업 페이지로 이동하도록 정리했다.
+- 상세 페이지에서는 기존 작업 블록을 그대로 유지하고 `anchorPrefix`를 통해 바로가기 anchor만 상세 화면에서 활성화한다.
+- 새 migration은 만들지 않았다. 기존 요청/서류/질문/bid RLS를 재사용한다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `supabase db lint --local --fail-on error`
+- `npm run build`
+
+### 파트너 기회 화면 작업 분리
+
+- 이전 작업은 화주가 보는 내 요청 목록을 compact하게 만든 P11.3이고, 이번 작업은 포워더/관세사무소가 보는 입찰 가능 건도 목록과 상세 작업으로 분리하는 P11.4다.
+- `/requests/freight/opportunities/[requestId]` 상세 route를 추가했다.
+  - 현재 회사에 매칭된 공개 운송 요청만 조회
+  - 공개 서류, 질문·답변, 운송 견적 제출 폼을 상세 화면에서 처리
+- `/requests/clearance/opportunities/[requestId]` 상세 route를 추가했다.
+  - 현재 회사에 매칭된 공개 통관 의뢰만 조회
+  - 공개 서류, 질문·답변, 통관 견적 제출 폼을 상세 화면에서 처리
+- 운송/통관 입찰 가능 목록은 공개 서류 수, 질문 수, `입찰 작업` 링크만 우선 표시하도록 compact mode를 적용했다.
+- repository에 `getMatchedFreightOpportunity`, `getMatchedClearanceOpportunity`를 추가해 기존 match RLS를 그대로 사용한다.
+- 운송 입찰 가능 목록도 통관과 동일하게 공개 서류/질문 수를 계산할 수 있도록 visible request id 조회 범위를 보강했다.
+- 새 migration은 만들지 않았다. 기존 match/request/document/question/bid RLS를 재사용한다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `supabase db lint --local --fail-on error`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight/opportunities/11111111-1111-4111-8111-111111111111`, `/requests/clearance/opportunities/11111111-1111-4111-8111-111111111111`, `/requests/freight` 요청 시 `/login` 307 redirect 확인
+
+### 대시보드/운영 화면 상세 연결
+
+- 이전 작업은 포워더/관세사무소 입찰 상세 route를 만든 P11.4이고, 이번 작업은 대시보드에서 해당 작업 공간으로 바로 진입하는 P11.5다.
+- 운송 요청 화면은 `workspace=forwarder` 쿼리가 있으면 포워더 입찰 탭으로 바로 열린다.
+- 통관 요청 화면은 `workspace=broker` 쿼리가 있으면 관세사 입찰 탭으로 바로 열린다.
+- 대시보드의 `포워더 입찰 확인`, `관세사 입찰 확인` 카드가 각각 입찰 탭으로 직접 연결되도록 수정했다.
+- 플랫폼 업무 시작 카드 하단에 내 운송 요청, 내 통관 의뢰, 운송 입찰 가능, 통관 입찰 가능 바로가기 링크를 추가했다.
+- 새 migration은 만들지 않았다. 인증/권한은 기존 route middleware와 request page RLS를 그대로 사용한다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight?workspace=forwarder`, `/requests/clearance?workspace=broker`, `/dashboard` 요청 시 `/login` 307 redirect 확인
+
+### 운영 통계 액션 가이드 보강
+
+- 이전 작업은 대시보드에서 요청/입찰 작업 공간으로 바로 들어가는 P11.5이고, 이번 작업은 운영 통계 숫자를 보고 무엇을 요청해야 하는지 알 수 있게 만든 P12.1이다.
+- 플랫폼 요청 운영 summary에 `actionItems`를 추가했다.
+  - 미답변 질문이 있으면 질문 확인 샘플을 우선 표시
+  - 견적 도착 요청이 있으면 견적 비교 샘플을 표시
+  - 공개됐지만 견적이 없는 요청이 있으면 매칭·알림 점검 샘플을 표시
+  - 오래된 초안이나 마감 지난 공개 요청도 샘플로 표시
+- 운영 패널에 `우선 확인 샘플` 블록을 추가해 요청 유형, 짧은 요청 ID, 확인 이유를 표시한다.
+- 자체 리뷰에서 운영자 화면의 샘플이 고객 회사 소유 요청 상세 route로 직접 이동하면 RLS/소유권 경계와 충돌할 수 있음을 확인했다.
+- 그래서 P12.1에서는 샘플을 운영 패널 anchor로 연결하고, staff-only 요청 상세 검토 화면은 P12.2로 분리했다.
+- 새 migration은 만들지 않았다. 기존 운영 summary 조회 경계를 유지한다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/repositories/platform-operations.repository.test.ts`
+- `npm test`
+- `supabase db lint --local --fail-on error`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/operations/users#platform-request-operations` 요청 시 `/login` 307 redirect 확인
+
+### 운영 샘플 상세 검토 화면
+
+- 이전 작업은 운영 통계에 우선 확인 샘플 ID를 표시한 P12.1이고, 이번 작업은 그 샘플을 developer 전용 읽기 화면에서 열 수 있게 만든 P12.2다.
+- `/operations/requests/[requestId]` route를 추가했다.
+  - `requireDeveloperRole`을 통과한 developer만 접근
+  - 요청 기본 정보, 운송/통관 detail, 서류 메타데이터, 질문·답변, 견적 요약을 읽기 전용으로 표시
+  - 원문 서류 다운로드, signed URL 발급, 상태 변경, 견적 선택 같은 mutation은 제공하지 않음
+- `getPlatformRequestOperationsDetail` repository를 추가했다.
+  - 운영 summary와 같은 Supabase/RLS 경계에서 요청 상세 메타데이터를 조회
+  - marketplace schema가 없으면 schemaReady false로 안전하게 반환
+  - 요청이 없으면 route에서 404 처리
+- P12.1의 `actionItems` 링크를 `/operations/requests/{requestId}`로 연결했다.
+- 자체 보안 리뷰:
+  - 고객 회사 소유 요청 상세 route(`/requests/...`)를 운영자 샘플 링크로 재사용하지 않음
+  - 운영 상세는 developer-only route guard를 먼저 통과해야 함
+  - 원문 서류 내용, storage signed URL, 다운로드 액션을 만들지 않음
+  - 상태 변경/승인/입찰 선택 mutation을 만들지 않음
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/repositories/platform-operations.repository.test.ts`
+- `npm test`
+- `supabase db lint --local --fail-on error`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/operations/requests/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### 운영 상세에서 개선 요청 문구 자동화
+
+- 이전 작업은 developer 전용 운영 상세 화면을 만든 P12.2이고, 이번 작업은 그 상세 화면에서 바로 사용할 개선 요청 문구를 자동 생성하는 P12.3이다.
+- `buildPlatformRequestImprovementPrompt`를 추가했다.
+  - 미답변 질문이 있으면 질문 답변 흐름 개선 문구 생성
+  - 견적 도착 요청이면 견적 비교·선택 전환 개선 문구 생성
+  - 마감 지난 공개 요청이면 마감 이후 후속 안내 개선 문구 생성
+  - 공개됐지만 견적이 없으면 매칭·알림 점검 문구 생성
+  - 초안이면 공개까지 이어지는 다음 행동 안내 개선 문구 생성
+  - 그 외에는 요청 상세 흐름 표본 점검 문구 생성
+- 운영 상세 route에 개선 요청 문구 카드를 추가했다.
+- 민감정보 보호를 위해 프롬프트에는 요청 ID, 요청 유형, 상태, 서류/질문/견적 건수만 포함한다.
+- 회귀 테스트에서 파일명, 품목 설명, 요청 제목이 프롬프트에 포함되지 않음을 검증했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/repositories/platform-operations.repository.test.ts`
+- `npm test`
+- `supabase db lint --local --fail-on error`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/operations/requests/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### 선정 이후 후속 안내 정리
+
+- 이전 작업은 운영 상세에서 개선 요청 문구를 자동 생성한 P12.3이고, 이번 작업은 화주가 업체 선정 후 다음 업무를 놓치지 않게 하는 P13.1이다.
+- 운송 요청이 `partner_selected` 상태일 때 `포워더 선정 후 다음 업무` 안내를 표시한다.
+  - 선정 견적 금액, 리드타임, 운송일수 요약
+  - 최종 선적 일정·비용 범위 확인
+  - CI/PL/B/L/AWB 등 선정 포워더 공개 범위 서류 첨부 안내
+  - 위험물·온도관리·중고차 등 특수 조건 확인 안내
+- 통관 의뢰가 `partner_selected` 상태일 때 `관세사무소 선정 후 다음 업무` 안내를 표시한다.
+  - 선정 견적 금액, 통관 수수료, 예상 통관일수 요약
+  - CI/PL/C/O/사양서 등 선정 관세사무소 공개 범위 서류 첨부 안내
+  - HSK/FTA/요건은 담당자 검토 필요 표현 유지
+  - 세관장확인대상이 아니더라도 통합공고, 개별법령, 표시·인증·유통규제 의무가 있을 수 있다는 주의 문구 유지
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `supabase db lint --local --fail-on error`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight/11111111-1111-4111-8111-111111111111`, `/requests/clearance/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### 선정된 파트너 후속 안내
+
+- 이전 작업은 화주가 업체 선정 후 다음 업무를 보게 하는 P13.1이고, 이번 작업은 선정된 포워더/관세사무소가 본인이 선정된 요청에서 다음 처리 업무를 확인하는 P13.2다.
+- 운송/통관 파트너 opportunity 조회에 `partner_selected` 상태를 포함했다.
+  - 실제 노출은 기존 RLS가 선정된 bid를 가진 파트너만 읽도록 제한한다.
+- 운송 입찰 상세에서 `partner_selected` 상태이면 새 견적 제출 폼 대신 `선정된 운송 요청` 안내를 표시한다.
+  - 선적 일정 확정
+  - 선정 포워더 공개 범위 서류 확인
+  - 위험물·온도관리·중고차 특수 조건 확인
+- 통관 입찰 상세에서 `partner_selected` 상태이면 새 견적 제출 폼 대신 `선정된 통관 의뢰` 안내를 표시한다.
+  - 신고 예정일과 서류 수령 일정 확정
+  - 선정 관세사무소 공개 범위 서류 확인
+  - HSK/FTA/요건은 담당자 검토 필요 표현 유지
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `supabase db lint --local --fail-on error`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight/opportunities/11111111-1111-4111-8111-111111111111`, `/requests/clearance/opportunities/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### 거래 후속 상태 모델 계획
+
+- 이전 작업은 선정된 파트너가 후속 업무 안내를 보게 한 P13.2이고, 이번 작업은 선정 이후 상태 전이를 안전하게 넣기 위한 P13.3 계획이다.
+- `docs/PLATFORM_REQUEST_LIFECYCLE.md`를 추가했다.
+- 현재 구현 상태와 후속 상태를 분리했다.
+  - 현재 구현: `draft`, `open`, `bids_received`, `partner_selected`
+  - 후속 계획: `in_progress`, `completed`
+- `partner_selected -> in_progress`, `in_progress -> completed` 전이 규칙을 정의했다.
+- requester, selected partner, staff/admin만 전이할 수 있게 RPC-only로 계획했다.
+- audit event를 정의했다.
+  - `service_request_started`
+  - `service_request_completed`
+- audit metadata에는 내부 UUID와 역할만 남기고 파일명, invoice 내용, 개인정보는 남기지 않는 원칙을 명시했다.
+- broad `service_requests` update RLS를 열지 않고 RPC로만 쓰기 처리한다는 원칙을 고정했다.
+- 새 migration은 만들지 않았다. P13.4에서 로컬 migration/RPC skeleton으로 이어간다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `rg`로 `in_progress`, `completed`, `service_request_started`, `service_request_completed`, `PLATFORM_REQUEST_LIFECYCLE` 문서 반영 확인
+
+### 회사 검증 증빙 업로드 보안 리뷰 반영
+
+- 이전 작업은 회사 검증 증빙 업로드 skeleton을 만든 것이고, 이번 작업은 리뷰어가 지적한 권한 상승/RLS/정합성 문제를 막은 것이다.
+- broad profile self-update 정책을 draft marketplace migration에서 제거하고, 일반 사용자가 직접 수정 가능한 profile 컬럼을 `full_name`, `preferred_locale`로 제한했다.
+- 운영자 검증 문서 리뷰 정책을 서버 액션과 동일하게 developer-only로 맞췄다.
+- storage path UUID 캐스팅 전에 `is_uuid_text` 가드를 거치도록 해 malformed path가 RLS 평가 중 오류를 만들지 않게 했다.
+- 검증 문서 storage upload 실패 시 storage object remove와 metadata delete를 모두 시도하고, 정리 실패도 오류로 처리하도록 보강했다.
+- 회사 검증 상태 변경과 audit insert 오류를 더 이상 조용히 무시하지 않도록 company verification action에서 오류를 확인한다.
+- 사용자에게 노출되는 Supabase 설정 오류 문구를 일반 업로드 환경 오류 문구로 바꿨다.
+- governance test에 profile self-update 제거, developer-only review policy, UUID path guard 회귀 검증을 추가했다.
+- repository test에 upload 실패 시 storage/object와 metadata cleanup이 호출되는 검증을 추가했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npx vitest run server/repositories/platform-marketplace-governance.test.ts server/repositories/company-verification.repository.test.ts features/company-verification/schemas.test.ts`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- `supabase db lint --local --fail-on error`
+
+### 거래 후속 상태 RPC skeleton
+
+- 이전 작업은 `in_progress`, `completed` 상태 모델을 문서로 계획한 P13.3이고, 이번 작업은 실제 로컬 migration/RPC, repository, server action, UI 버튼을 연결한 P13.4다.
+- `start_selected_service_request(p_request_id uuid)` RPC를 추가했다.
+  - `partner_selected` 상태와 selected bid 존재 여부를 확인한다.
+  - requester, selected partner, staff/admin만 진행 시작할 수 있다.
+  - 상태를 `in_progress`로 바꾸고 `service_request_started` audit log를 남긴다.
+- `complete_selected_service_request(p_request_id uuid, p_completion_note text)` RPC를 추가했다.
+  - `in_progress` 상태와 selected bid 존재 여부를 확인한다.
+  - requester, selected partner, staff/admin만 완료 처리할 수 있다.
+  - 상태를 `completed`로 바꾸고 `service_request_completed` audit log를 남긴다.
+  - audit metadata에는 완료 메모 원문을 저장하지 않고 `has_completion_note`만 저장한다.
+- 운송/통관 repository와 server action에 진행 시작/완료 처리 호출을 추가했다.
+- 운송/통관 요청자 화면과 선정된 파트너 opportunity 화면에 상태별 버튼을 붙였다.
+  - `partner_selected`: 진행 시작
+  - `in_progress`: 완료 처리
+  - `completed`: 읽기 전용 완료 안내
+- governance test에 lifecycle RPC, audit event, execute grant, direct update policy 미사용 검증을 추가했다.
+- lifecycle schema test를 추가했다.
+- 새 migration 파일은 만들지 않고 기존 로컬 marketplace migration 초안에 반영했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run features/service-requests/service-request-lifecycle-schemas.test.ts server/repositories/platform-marketplace-governance.test.ts`
+- `npm test`
+- `supabase db lint --local --fail-on error`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight`, `/requests/clearance`, `/requests/freight/opportunities/11111111-1111-4111-8111-111111111111`, `/requests/clearance/opportunities/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### 후속 상태 운영 관찰성
+
+- 이전 작업은 요청 상태를 `partner_selected -> in_progress -> completed`로 바꾸는 P13.4이고, 이번 작업은 운영자가 그 후속 상태가 막히는지 볼 수 있게 하는 P13.5다.
+- 운영 통계 summary에 후속 상태 지표를 추가했다.
+  - `inProgress`
+  - `completed`
+  - `staleInProgress`
+- 운영 화면 `플랫폼 요청 운영 상태`에 `선정 후 진행`, `오래 진행중` 카드를 추가했다.
+- `in_progress` 요청이 7일 이상 멈춘 경우 우선 확인 샘플과 개선 요청 문구를 생성한다.
+- 진행중 요청 상세 개선 프롬프트는 민감 품목 설명, 요청 제목, 서류 파일명을 포함하지 않는다.
+- 운영 상세 화면의 상태 배지를 `in_progress`, `completed`까지 성공 톤으로 표시하도록 맞췄다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/repositories/platform-operations.repository.test.ts`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/operations/users`, `/operations/requests/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### 완료 이후 피드백 골격
+
+- 이전 작업은 운영자가 진행중/완료 병목을 보는 P13.5이고, 이번 작업은 완료된 거래의 신뢰 지표를 쌓는 P13.6이다.
+- `service_request_feedbacks` 테이블을 로컬 marketplace migration 초안에 추가했다.
+  - 요청 ID, 평가 회사, 평가 대상 회사, 평가자 역할
+  - 전체 평점, 응답 속도, 소통, 서류 품질
+  - 500자 제한 메모
+  - 같은 요청/평가자/평가대상/역할 조합 중복 방지
+- 직접 insert/update 정책은 열지 않고 `submit_service_request_feedback(...)` RPC로만 제출하게 했다.
+- RPC는 완료된 요청, selected bid, requester 또는 selected partner 권한을 확인한다.
+- audit log에는 평점과 `has_comment`만 남기고 피드백 메모 원문은 저장하지 않는다.
+- 운송/통관 완료 상태 화면에 `완료 요청 피드백` 폼을 추가했다.
+- feedback schema와 governance test를 추가했다.
+- 새 migration 파일은 만들지 않고 기존 로컬 marketplace migration 초안에 반영했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run features/service-requests/service-request-feedback-schemas.test.ts server/repositories/platform-marketplace-governance.test.ts`
+- `supabase db lint --local --fail-on error`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight/11111111-1111-4111-8111-111111111111`, `/requests/clearance/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### 파트너 신뢰 지표 조회
+
+- 이전 작업은 완료된 요청에 피드백을 제출할 수 있게 한 P13.6이고, 이번 작업은 그 피드백을 견적 비교 화면에서 집계 신뢰 지표로 활용하는 P14.1이다.
+- raw 피드백 row와 코멘트 원문을 견적 비교 화면에 노출하지 않도록 `get_partner_feedback_summaries(uuid[])` aggregate RPC를 추가했다.
+- aggregate RPC는 회사별 후기 건수와 평균 평점, 응답 속도, 소통, 서류 품질 평균만 반환한다.
+- 운송/통관 견적 조회 repository가 bidder 회사 ID별 feedback summary를 붙인다.
+- 운송/통관 견적 카드에 `거래 후기 n건 / 평균 x.x점` 배지를 표시한다.
+- governance test에 aggregate RPC, execute grant, raw direct write 미사용 검증을 추가했다.
+- 새 migration 파일은 만들지 않고 기존 로컬 marketplace migration 초안에 반영했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/repositories/platform-marketplace-governance.test.ts features/service-requests/service-request-feedback-schemas.test.ts`
+- `supabase db lint --local --fail-on error`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight`, `/requests/clearance` 요청 시 `/login` 307 redirect 확인
+
+### 견적 비교 기준 정리
+
+- 이전 작업은 완료 거래 피드백을 견적 카드에 집계 지표로 표시한 P14.1이고, 이번 작업은 화주가 최저가만 보지 않도록 비교 기준을 압축 안내하는 P14.2다.
+- 운송 견적 목록 위에 비교 기준 카드를 추가했다.
+  - 최저 총액
+  - 선적 가능일과 운송일수
+  - 후기 보유 업체 수
+  - 포함·제외 비용, free time, 특수화물 조건
+- 통관 견적 목록 위에 비교 기준 카드를 추가했다.
+  - 최저 총액
+  - 예상 통관일수와 시작 가능일
+  - 후기 보유 업체 수
+  - 요청 서류, 예비 검토 가능 여부, 리스크 메모
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/repositories/platform-marketplace-governance.test.ts`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight`, `/requests/clearance` 요청 시 `/login` 307 redirect 확인
+
+### 파트너 검증 배지 노출
+
+- 이전 작업은 견적 비교 기준을 안내한 P14.2이고, 이번 작업은 견적 제출 업체의 운영 검증/추천 상태를 비교 정보로 표시하는 P14.3이다.
+- raw 회사 테이블을 직접 읽지 않고 `get_partner_trust_summaries(uuid[])` aggregate RPC를 추가했다.
+- aggregate RPC는 회사 ID, 검증 상태, 신뢰 점수만 반환하고 `suspended`, `blocked` 회사는 제외한다.
+- 운송/통관 견적 조회 repository에 `partnerTrust`를 붙였다.
+- 견적 카드에 다음 배지를 표시한다.
+  - 추천 파트너
+  - 운영 검증
+  - 거래 이력
+  - 신뢰 점수
+- feedback aggregate와 함께 표시해 화주가 가격만이 아니라 검증 상태와 거래 후기까지 함께 볼 수 있게 했다.
+- 새 migration 파일은 만들지 않고 기존 로컬 marketplace migration 초안에 반영했다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/repositories/platform-marketplace-governance.test.ts`
+- `supabase db lint --local --fail-on error`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight`, `/requests/clearance` 요청 시 `/login` 307 redirect 확인
+
+### 선정 전 확인 체크리스트
+
+- 이전 작업은 견적 카드에 검증/후기 배지를 표시한 P14.3이고, 이번 작업은 화주가 선정 버튼을 누르기 전에 누락 조건을 확인하게 하는 P14.4다.
+- 운송 견적 카드에 `선정 전 확인` 체크리스트를 추가했다.
+  - 총액
+  - 일정
+  - 검증
+  - 후기
+  - 조건
+- 통관 견적 카드에 `선정 전 확인` 체크리스트를 추가했다.
+  - 금액
+  - 일정
+  - 검증
+  - 후기
+  - 검토조건
+- 선택 RPC와 권한 흐름은 변경하지 않았다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight`, `/requests/clearance` 요청 시 `/login` 307 redirect 확인
+
+### 완료 피드백 제출 상태 표시
+
+- 이전 작업은 업체 선정 전 체크리스트를 붙인 P14.4이고, 이번 작업은 완료 후 내가 이미 피드백을 남겼는지 화면에서 구분하는 P14.5다.
+- 현재 회사가 제출한 완료 피드백을 요청 ID별로 읽는 `listOwnServiceRequestFeedbacks` repository를 추가했다.
+- 운송/통관 요청 목록, 요청 상세, 파트너 opportunity 목록, opportunity 상세에서 피드백 제출 상태를 전달한다.
+- 완료 상태에서 이미 제출한 피드백이 있으면 폼 대신 `완료 요청 피드백 제출됨` 안내를 표시한다.
+- 같은 요청에는 회사별로 한 번만 피드백을 남길 수 있다는 문구를 추가했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run features/service-requests/service-request-feedback-schemas.test.ts`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight`, `/requests/clearance`, `/requests/freight/opportunities/11111111-1111-4111-8111-111111111111`, `/requests/clearance/opportunities/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### 대시보드 거래 흐름 요약 보강
+
+- 이전 작업은 완료된 요청 화면에서 피드백 제출 여부를 표시한 P14.5이고, 이번 작업은 홈 대시보드에서 전체 거래 흐름을 한눈에 보게 하는 P15.1이다.
+- 대시보드 marketplace 요약에 `진행중 요청`, `업무 진행`, `완료`, `피드백 대기` 지표를 추가했다.
+- 완료된 요청 중 현재 회사가 아직 피드백을 제출하지 않은 건수를 `listOwnServiceRequestFeedbacks`로 계산해 표시한다.
+- 기존 요청/입찰 상세 기능, 상태 전환 RPC, 피드백 제출 RPC는 변경하지 않았다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/dashboard` 요청 시 `/login` 307 redirect 확인
+
+### 대시보드 다음 행동 우선순위 CTA
+
+- 이전 작업은 홈 대시보드에 요청·입찰·진행·완료 숫자 요약을 추가한 P15.1이고, 이번 작업은 그 숫자를 보고 바로 눌러야 할 다음 행동을 제시하는 P15.2다.
+- `다음 행동` 영역을 추가해 운송 화주 업무, 통관 화주 업무, 운송 파트너 입찰, 통관 파트너 입찰을 우선순위 카드로 보여준다.
+- 자체 UX 리뷰에서 합산 숫자가 운송 화면으로만 연결되는 혼동을 발견해, 액션 카드용 카운트를 운송/통관/파트너 업무별로 분리했다.
+- 대시보드 하단의 상태 숫자 요약은 유지해 운영 흐름 전체도 계속 볼 수 있게 했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/dashboard` 요청 시 `/login` 307 redirect 확인
+
+### 대시보드 역할별 빈 상태 정리
+
+- 이전 작업은 처리할 업무가 있을 때 우선순위 CTA를 보여준 P15.2이고, 이번 작업은 요청·입찰 데이터가 없을 때 사용자가 무엇부터 시작해야 하는지 안내하는 P15.3이다.
+- 처리할 업무가 없는 경우 `다음 행동` 문구를 빈 상태 안내로 바꾸고, 역할 설정과 회사 검증 상태 확인을 먼저 노출한다.
+- 역할이 없으면 회사 설정으로 이동하게 하고, 운영자 승인 전 상태이면 검증 확인 경로를 보여준다.
+- 운송/통관 첫 요청 생성 CTA는 유지해, 검증 또는 역할 정리 후 바로 요청을 시작할 수 있게 했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/dashboard` 요청 시 `/login` 307 redirect 확인
+
+### 대표용 운영 홈 우선순위 정리
+
+- 이전 작업은 고객 대시보드의 빈 상태를 정리한 P15.3이고, 이번 작업은 대표/운영자가 운영 화면에서 무엇을 먼저 고쳐달라고 해야 하는지 보는 P16.1이다.
+- 플랫폼 요청 운영 패널 상단에 `대표 우선순위 큐`를 추가했다.
+- 미답변 질문, 견적 도착, 오래 진행중, 견적 없는 공개, 오래된 초안, 마감 지난 공개를 병목 순서로 정리한다.
+- 각 항목은 `무엇을 맡길지`와 `왜 중요한지`를 함께 보여줘 운영자가 통계를 해석하지 않아도 수정 요청을 만들 수 있게 했다.
+- 기존 운영 지표, 샘플 상세 링크, DB/RLS 로직은 변경하지 않았다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/repositories/platform-operations.repository.test.ts`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/operations/users` 요청 시 `/login` 307 redirect 확인
+
+### 운영 개선 요청 복사 UX
+
+- 이전 작업은 대표 우선순위 큐를 보여준 P16.1이고, 이번 작업은 그 내용을 나에게 바로 붙여넣을 수 있는 복사용 문장으로 만드는 P16.2다.
+- 운영 요청 패널의 `다음에 바로 요청할 작업` 영역에 클립보드 복사 버튼을 추가했다.
+- 복사 문장에는 전체 건수, 주요 병목, 샘플 요청 ID, 상태만 포함한다.
+- 서류 원문, 파일명, 단가 원문, 개인정보는 복사 문장에 포함하지 말라는 주의 문구를 함께 넣었다.
+- 복사될 내용을 화면에서 미리 확인할 수 있도록 `pre` 블록을 추가했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/repositories/platform-operations.repository.test.ts`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/operations/users` 요청 시 `/login` 307 redirect 확인
+
+### 운영 요청 상세 민감정보 노출 점검
+
+- 이전 작업은 운영 패널에서 복사용 개선 요청 문장을 만든 P16.2이고, 이번 작업은 운영 샘플 상세 화면에서 민감 원문이 보이지 않도록 정리한 P16.3이다.
+- 운영 상세 카드 제목에서 고객 요청 제목 대신 요청 ID 축약값을 표시한다.
+- 품목 설명 원문을 화면에서 제거하고, 서류 파일명도 표시하지 않는다.
+- 질문·답변 원문 대신 답변 여부와 날짜만 보여준다.
+- 견적 금액과 메시지 원문 대신 상태, 통화, 리드타임, 제출일, 선정일만 보여준다.
+- 화면 상단에 이 상세 화면은 개선 판단용 요약만 표시한다는 안전 안내를 추가했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/repositories/platform-operations.repository.test.ts`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/operations/requests/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### 운영 상세 민감 데이터 조회 축소
+
+- 이전 작업은 운영 상세 화면에서 민감 원문을 숨긴 P16.3이고, 이번 작업은 repository 단계에서 원문성 컬럼을 덜 조회하도록 줄인 P16.4다.
+- 운영 상세 요청 조회에서 `title`, `product_summary`를 제거했다.
+- 서류 조회에서 `file_name`을 제거했다.
+- 질문 조회에서 `question`, `answer` 원문을 제거하고 답변 여부는 `answered_at`으로 판단한다.
+- 견적 조회에서 `total_amount`, `message`를 제거했다.
+- 반환 객체에는 기존 UI 타입 호환을 위해 빈 문자열, `null`, `[redacted]` placeholder만 채운다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/repositories/platform-operations.repository.test.ts`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/operations/requests/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### 운영 상세 redaction 회귀 테스트
+
+- 이전 작업은 운영 상세 repository가 민감 원문성 컬럼을 덜 조회하도록 줄인 P16.4이고, 이번 작업은 그 경계를 테스트로 고정한 P16.5다.
+- 운영 상세 select 컬럼 목록을 `platformRequestOperationsDetailSelects` 상수로 분리했다.
+- 회귀 테스트에서 `title`, `product_summary`, `file_name`, `question`, `answer`, `message`, `total_amount`가 운영 상세 select에 들어오지 않는지 검사한다.
+- 이후 운영 상세를 수정하다가 원문성 컬럼을 다시 조회하면 테스트가 실패한다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/repositories/platform-operations.repository.test.ts`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/operations/requests/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### 요청 목록 성능·쿼리 경계 점검
+
+- 이전 작업은 운영 상세 redaction 회귀 테스트를 추가한 P16.5이고, 이번 작업은 화주/파트너 요청 목록이 커졌을 때 조회 범위를 정리한 P17.1이다.
+- 운송/통관 요청자 목록 limit을 `serviceRequestListLimit = 20` 상수로 고정했다.
+- 파트너 opportunity 목록은 운송/통관 타입 필터 전 매칭 스캔 범위를 `serviceRequestOpportunityScanLimit = 60`으로 넓혔다.
+- 운송 opportunity 상세 조회는 실제 표시 가능한 요청 ID가 없으면 바로 빈 결과를 반환하고, 표시 가능한 요청 ID에 대해서만 detail을 조회한다.
+- 통관 opportunity 목록도 동일한 스캔 limit 상수를 사용하도록 정리했다.
+- 기존 schema와 RLS는 변경하지 않았다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/repositories/freight-requests.repository.test.ts server/repositories/platform-operations.repository.test.ts`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight`, `/requests/clearance` 요청 시 `/login` 307 redirect 확인
+
+### 요청 목록 limit 회귀 테스트
+
+- 이전 작업은 요청/기회 목록 limit과 매칭 스캔 범위를 정리한 P17.1이고, 이번 작업은 그 경계를 테스트로 고정한 P17.2다.
+- 운송 요청 repository의 `serviceRequestListLimit`, `serviceRequestOpportunityScanLimit`을 export했다.
+- 통관 요청 repository의 `clearanceServiceRequestListLimit`, `clearanceServiceRequestOpportunityScanLimit`을 export했다.
+- 회귀 테스트에서 요청자 목록 limit이 20건으로 유지되는지 확인한다.
+- 파트너 opportunity 스캔 limit은 요청자 목록 limit보다 커야 한다는 조건을 테스트로 고정했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/repositories/freight-requests.repository.test.ts`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight/opportunities/11111111-1111-4111-8111-111111111111`, `/requests/clearance/opportunities/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### 요청 목록 index 보강 검토
+
+- 이전 작업은 요청 목록 limit이 무제한으로 돌아가지 않게 테스트로 고정한 P17.2이고, 이번 작업은 실제 DB index가 목록/상세/입찰 조회 패턴을 받치는지 점검한 P17.3이다.
+- 요청자 목록 패턴을 위해 `service_requests(requester_company_id, request_type, created_at desc)` index를 추가했다.
+- 파트너 상세 매칭 조회를 위해 `service_request_partner_matches(request_id, partner_company_id)` index를 추가했다.
+- 견적 비교 정렬을 위해 `service_bids(request_id, bid_type, total_amount, created_at)` index를 추가했다.
+- 질문 목록 조회를 위해 `service_request_questions(request_id, created_at)` index를 추가했다.
+- 완료 피드백 상태 조회를 위해 `service_request_feedbacks(reviewer_company_id, request_id, created_at desc)` index를 추가했다.
+- governance test에서 위 index들이 migration에 유지되는지 확인한다.
+- 로컬 migration 초안만 수정했고 DB migration 적용, 커밋, 푸시, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/repositories/platform-marketplace-governance.test.ts server/repositories/freight-requests.repository.test.ts`
+- `supabase db lint --local --fail-on error`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight`, `/requests/clearance/opportunities/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### 요청 상세 데이터 로딩 중복 점검
+
+- 이전 작업은 DB index를 보강한 P17.3이고, 이번 작업은 요청 목록 페이지의 서버 데이터 로딩 대기 구조를 줄인 P18.1이다.
+- 운송 요청 목록에서 견적, 서류, 질문, 피드백 조회를 순차 await에서 `Promise.all` 병렬 로딩으로 변경했다.
+- 통관 의뢰 목록에서도 서류, 질문, 견적, 피드백 조회를 `Promise.all`로 병렬화했다.
+- 상세 페이지들은 이미 필요한 보조 데이터를 병렬 로딩하고 있어 추가 변경하지 않았다.
+- 화면 표시 데이터와 RLS 경계는 변경하지 않았다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/repositories/freight-requests.repository.test.ts server/repositories/platform-marketplace-governance.test.ts`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight`, `/requests/clearance` 요청 시 `/login` 307 redirect 확인
+
+### 요청 목록 데이터 조립 헬퍼 분리
+
+- 이전 작업은 운송/통관 목록의 보조 데이터 조회를 병렬화한 P18.1이고, 이번 작업은 목록 페이지의 반복 데이터 조립 코드를 줄인 P18.2다.
+- `server/repositories/service-request-list-view.ts`를 추가했다.
+- `uniqueServiceRequestIds`로 요청자 목록과 파트너 기회 목록의 요청 ID dedupe를 공통화했다.
+- `groupServiceRequestItemsByRequestId`로 견적, 서류, 질문 배열을 requestId 기준으로 묶는 반복 reduce를 제거했다.
+- `serviceRequestFeedbackMapToRecord`로 feedback Map 변환을 공통화했다.
+- 운송/통관 목록 페이지 모두 같은 헬퍼를 사용하도록 정리했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/repositories/freight-requests.repository.test.ts server/repositories/platform-marketplace-governance.test.ts`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight`, `/requests/clearance` 요청 시 `/login` 307 redirect 확인
+
+### 요청 상세 next-focus 계산 헬퍼 분리
+
+- 이전 작업은 운송/통관 목록 페이지의 데이터 조립 반복을 줄인 P18.2이고, 이번 작업은 요청자 상세 페이지의 다음 작업 계산 반복을 줄인 P18.3이다.
+- `buildRequesterServiceRequestNextFocus` 헬퍼를 추가했다.
+- 운송 요청 상세와 통관 의뢰 상세에서 미답변 질문, 견적 도착, 서류 없음, 초안 공개, 견적 대기 우선순위 계산을 공통 헬퍼로 이동했다.
+- 통관 의뢰 상세의 `#request-publish` 예외는 헬퍼 옵션으로 유지했다.
+- 화면 문구와 이동 anchor는 기존 동작을 유지했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/repositories/freight-requests.repository.test.ts server/repositories/platform-marketplace-governance.test.ts`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight/11111111-1111-4111-8111-111111111111`, `/requests/clearance/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### next-focus 헬퍼 단위 테스트
+
+- 이전 작업은 요청자 상세 페이지의 next-focus 계산을 헬퍼로 분리한 P18.3이고, 이번 작업은 그 우선순위를 테스트로 고정한 P18.4다.
+- 목록 헬퍼의 request id dedupe, requestId별 grouping, feedback Map 변환을 테스트했다.
+- next-focus 헬퍼가 미답변 질문을 견적 비교보다 우선하는지 확인했다.
+- 견적이 있으면 견적 비교로 이동하는지 확인했다.
+- 서류가 없으면 초안 공개보다 서류 첨부가 먼저 나오는지 확인했다.
+- 서류가 있고 초안 상태이면 공개 설정으로 이동하는지 확인했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/repositories/freight-requests.repository.test.ts`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight/11111111-1111-4111-8111-111111111111`, `/requests/clearance/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### 파트너 opportunity 상세 next-focus 헬퍼 분리
+
+- 이전 작업은 요청자 상세 next-focus 우선순위를 테스트로 고정한 P18.4이고, 이번 작업은 파트너 입찰 상세의 질문 확인·견적 제출 우선순위를 공통화한 P19.1이다.
+- `buildPartnerOpportunityNextFocus` 헬퍼를 추가했다.
+- 운송 opportunity 상세와 통관 opportunity 상세에서 같은 질문 확인/견적 제출 계산을 헬퍼로 이동했다.
+- 미답변 질문이 있으면 질문 확인을 먼저 보여주고, 없으면 견적 제출로 이동하는 우선순위를 테스트로 고정했다.
+- 화면 문구와 anchor는 기존 동작을 유지했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/repositories/freight-requests.repository.test.ts`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight/opportunities/11111111-1111-4111-8111-111111111111`, `/requests/clearance/opportunities/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### 파트너 opportunity 상세 피드백 조회 필요성 점검
+
+- 이전 작업은 파트너 opportunity 상세의 next-focus 계산을 공통화한 P19.1이고, 이번 작업은 상세 페이지에서 불필요한 완료 피드백 조회를 줄인 P19.2다.
+- 운송 opportunity 상세에서 요청 상태가 `completed`일 때만 `listOwnServiceRequestFeedbacks`를 호출하도록 변경했다.
+- 통관 opportunity 상세도 동일하게 완료 상태일 때만 피드백을 조회한다.
+- 현재 opportunity 상세 조회는 공개, 견적 도착, 선정 상태 중심이므로 대부분의 경우 피드백 조회를 건너뛴다.
+- 화면 구조와 feedback form 전달 타입은 유지했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/repositories/freight-requests.repository.test.ts`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight/opportunities/11111111-1111-4111-8111-111111111111`, `/requests/clearance/opportunities/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### 파트너 opportunity 목록 feedback 조회 범위 점검
+
+- 이전 작업은 파트너 opportunity 상세에서 완료 상태일 때만 피드백을 조회하게 한 P19.2이고, 이번 작업은 목록 화면의 피드백 조회 대상도 완료 요청으로 줄인 P19.3이다.
+- `completedServiceRequestIds` 헬퍼를 추가했다.
+- 운송 요청 목록에서 완료 상태 요청 ID만 `listOwnServiceRequestFeedbacks`에 전달한다.
+- 통관 의뢰 목록도 동일하게 완료 요청 ID만 피드백 조회 대상으로 전달한다.
+- 완료 전 요청에서는 피드백 폼이 노출되지 않으므로 불필요한 feedback 조회를 줄였다.
+- 완료 ID dedupe 동작을 단위 테스트로 고정했다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/repositories/freight-requests.repository.test.ts`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight`, `/requests/clearance` 요청 시 `/login` 307 redirect 확인
+
+### 요청 상세 feedback 조회 helper 적용 범위 검토
+
+- 이전 작업은 목록 화면의 피드백 조회 대상을 완료 요청으로 줄인 P19.3이고, 이번 작업은 요청자 상세 화면에도 같은 기준을 적용한 P20.1이다.
+- 운송 요청자 상세에서 요청 상태가 `completed`일 때만 `listOwnServiceRequestFeedbacks`를 호출한다.
+- 통관 요청자 상세도 동일하게 완료 상태일 때만 피드백 제출 여부를 조회한다.
+- 완료 전 상태에서는 피드백 폼이 노출되지 않으므로 불필요한 feedback 조회를 건너뛴다.
+- 파트너 상세, 목록, 요청자 상세 모두 완료 상태 중심으로 feedback 조회 기준이 맞춰졌다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/repositories/freight-requests.repository.test.ts`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight/11111111-1111-4111-8111-111111111111`, `/requests/clearance/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인
+
+### 피드백 조회 gating 회귀 테스트 보강
+
+- 이전 작업은 요청자 상세에도 완료 상태 피드백 조회 기준을 적용한 P20.1이고, 이번 작업은 완료 전 요청에는 피드백 조회가 필요 없다는 규칙을 헬퍼와 테스트로 고정한 P20.2다.
+- `shouldLoadServiceRequestFeedback` 헬퍼를 추가했다.
+- 요청자 상세, 파트너 상세 모두 직접 `status === "completed"`를 비교하지 않고 공통 헬퍼를 사용한다.
+- 단위 테스트에서 `completed`만 피드백 조회 대상으로 보고, `in_progress`, `partner_selected`는 조회하지 않는 규칙을 확인한다.
+- 새 migration은 만들지 않았다.
+- 로컬 파일만 수정했고 커밋, 푸시, DB migration 적용, 배포는 하지 않았다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run server/repositories/freight-requests.repository.test.ts`
+- `npm test`
+- `npm run build`
+- 로컬 서버 `http://localhost:3100` 실행
+- 비로그인 상태 `/requests/freight/11111111-1111-4111-8111-111111111111`, `/requests/clearance/opportunities/11111111-1111-4111-8111-111111111111` 요청 시 `/login` 307 redirect 확인

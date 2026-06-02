@@ -1,9 +1,10 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { Building2, Lock, User, UserPlus, type LucideIcon } from "lucide-react";
+import { Building2, Globe2, Lock, User, UserPlus, type LucideIcon } from "lucide-react";
 import { authenticateAction } from "@/server/actions/auth.actions";
 import { AccountTypeSelector, type SignupAccountType } from "@/features/auth/account-type-selector";
+import { OverseasPartnerSignupNotice } from "@/features/auth/overseas-partner-signup-notice";
 import type { AuthActionState } from "@/features/auth/schemas";
 
 const initialAuthState: AuthActionState = {
@@ -12,11 +13,16 @@ const initialAuthState: AuthActionState = {
 };
 
 const businessTypeOptions = [
+  { value: "foreign_shipper", label: "해외 수출입 파트너" },
   { value: "customs_broker", label: "관세사무소" },
   { value: "forwarder", label: "포워더" },
   { value: "exporter", label: "수출기업" },
   { value: "importer", label: "수입기업" }
 ];
+
+function requiresKoreanBusinessNo(businessTypes: string[]) {
+  return businessTypes.some((businessType) => businessType !== "foreign_shipper");
+}
 
 export function SignupCompletionForm({
   email,
@@ -45,6 +51,8 @@ export function SignupCompletionForm({
   const isPasswordStrong = Object.values(passwordChecks).every(Boolean);
   const isPasswordConfirmValid = password.length > 0 && password === passwordConfirm;
   const isCompanySignup = accountType === "company";
+  const needsKoreanBusinessNo = isCompanySignup && requiresKoreanBusinessNo(selectedBusinessTypes);
+  const isOverseasPartnerOnly = isCompanySignup && selectedBusinessTypes.length === 1 && selectedBusinessTypes[0] === "foreign_shipper";
   const isBusinessNoValid = businessNo.replace(/\D/g, "").length === 10;
   const canSubmit =
     accountType !== null &&
@@ -52,7 +60,7 @@ export function SignupCompletionForm({
     isPasswordConfirmValid &&
     fullName.trim().length > 0 &&
     termsAccepted &&
-    (!isCompanySignup || (companyName.trim().length > 0 && isBusinessNoValid && selectedBusinessTypes.length > 0)) &&
+    (!isCompanySignup || (companyName.trim().length > 0 && (!needsKoreanBusinessNo || isBusinessNoValid) && selectedBusinessTypes.length > 0)) &&
     !authPending;
 
   return (
@@ -108,22 +116,23 @@ export function SignupCompletionForm({
           {isCompanySignup ? (
             <>
               <CompanyNameInput companyName={companyName} disabled={authPending} onValueChange={setCompanyName} />
+              <BusinessTypeCheckboxes disabled={authPending} selectedValues={selectedBusinessTypes} onChange={setSelectedBusinessTypes} />
               <AuthInput
                 autoComplete="off"
                 disabled={authPending}
-                icon={Building2}
+                icon={needsKoreanBusinessNo ? Building2 : Globe2}
                 inputMode="numeric"
-                label="사업자등록번호"
+                label={needsKoreanBusinessNo ? "사업자등록번호" : "한국 사업자등록번호"}
                 maxLength={12}
                 name="businessNo"
                 onChange={(value) => setBusinessNo(formatBusinessNo(value))}
-                placeholder="000-00-00000"
+                placeholder={needsKoreanBusinessNo ? "000-00-00000" : "해외 파트너는 선택 입력"}
                 value={businessNo}
               />
               <p className="-mt-3 text-xs leading-5 text-slate-500">
-                현재는 숫자 10자리 형식만 확인합니다. 사업자 상태 검증은 운영 연동 단계에서 추가됩니다.
+                해외 수출입 파트너만 선택한 경우 한국 사업자등록번호 없이 가입할 수 있습니다. 역할과 검증 상태는 운영자 확인 후 반영됩니다.
               </p>
-              <BusinessTypeCheckboxes disabled={authPending} selectedValues={selectedBusinessTypes} onChange={setSelectedBusinessTypes} />
+              {isOverseasPartnerOnly ? <OverseasPartnerSignupNotice /> : null}
             </>
           ) : null}
           <TermsCheckbox checked={termsAccepted} disabled={authPending} onChange={setTermsAccepted} />

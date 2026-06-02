@@ -38,8 +38,14 @@ begin
   v_business_types := case when v_account_type = 'personal' then '{}'::text[] else coalesce(p_business_types, '{}'::text[]) end;
   v_business_no := case when v_account_type = 'company' then nullif(regexp_replace(coalesce(p_business_no, ''), '\D', '', 'g'), '') else null end;
 
-  if v_account_type = 'company' and (v_business_no is null or length(v_business_no) <> 10) then
-    raise exception '사업자등록번호 10자리를 입력해 주세요.';
+  if v_account_type = 'company'
+    and exists (
+      select 1
+      from unnest(v_business_types) as business_type(value)
+      where business_type.value <> 'foreign_shipper'
+    )
+    and (v_business_no is null or length(v_business_no) <> 10) then
+    raise exception '국내 사업자 유형은 사업자등록번호 10자리를 입력해 주세요.';
   end if;
 
   select company_id

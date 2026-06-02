@@ -58,11 +58,12 @@ export async function recordAuditLog(input: {
   targetId?: string | null;
   before?: unknown;
   after?: unknown;
+  throwOnError?: boolean;
 }) {
   if (!hasSupabaseServiceRoleEnv()) return;
 
   const supabase = createSupabaseServiceRoleClient();
-  await supabase.from("audit_logs").insert({
+  const { error } = await supabase.from("audit_logs").insert({
     actor_id: input.actorId || null,
     company_id: input.companyId || null,
     action: input.action,
@@ -71,4 +72,8 @@ export async function recordAuditLog(input: {
     before_json: input.before ?? null,
     after_json: input.after ?? null
   });
+
+  if (error && input.throwOnError) {
+    throw error;
+  }
 }

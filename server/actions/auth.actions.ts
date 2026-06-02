@@ -27,6 +27,11 @@ import {
   clearActiveUserSessionCookie
 } from "@/server/auth/session-policy";
 import { checkBusinessRegistrationStatus } from "@/server/integrations/business-registration/status-api";
+import {
+  mapSignupBusinessTypesToMarketplacePartyTypes,
+  syncCompanyMarketplacePartyTypes,
+  type CompanyMarketplaceRoleSyncResult
+} from "@/server/repositories/company-marketplace.repository";
 
 function stringValue(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -51,6 +56,10 @@ function arrayValue(formData: FormData, key: string) {
 
 function normalizeBusinessNo(value?: string) {
   return value ? value.replace(/\D/g, "") : undefined;
+}
+
+function requiresKoreanBusinessNo(businessTypes: readonly string[] | null | undefined) {
+  return (businessTypes ?? []).some((businessType) => businessType !== "foreign_shipper");
 }
 
 async function ensureClientProfile(
@@ -174,7 +183,7 @@ export async function authenticateAction(
   const supabase = await createSupabaseServerClient({ rememberSession: parsed.data.rememberSession ?? true });
 
   if (parsed.data.mode === "signup") {
-    if (parsed.data.accountType === "company") {
+    if (parsed.data.accountType === "company" && requiresKoreanBusinessNo(parsed.data.businessTypes)) {
       const businessStatus = await checkBusinessRegistrationStatus(parsed.data.businessNo ?? "");
       if (!businessStatus.validFormat) {
         return {
@@ -220,17 +229,42 @@ export async function authenticateAction(
       parsed.data.businessTypes,
       normalizeBusinessNo(parsed.data.businessNo)
     );
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+    let marketplaceRoleSync: CompanyMarketplaceRoleSyncResult & { errorMessage?: string } = {
+      partyTypes: [],
+      skipped: false
+    };
+    if (parsed.data.accountType === "company") {
+      try {
+        marketplaceRoleSync = await syncCompanyMarketplacePartyTypes(
+          hasSupabaseServiceRoleEnv() ? createSupabaseServiceRoleClient() : supabase,
+          {
+            businessTypes: parsed.data.businessTypes,
+            companyId,
+            createdBy: user?.id
+          }
+        );
+      } catch (error) {
+        marketplaceRoleSync = {
+          errorMessage: error instanceof Error ? error.message : "marketplace role sync failed",
+          partyTypes: mapSignupBusinessTypesToMarketplacePartyTypes(parsed.data.businessTypes),
+          skipped: true
+        };
+      }
+    }
     await recordAccountAccessEvent({
       eventType: "signup_completed",
       email: parsed.data.email,
       companyId,
       metadata: {
-        accountType: parsed.data.accountType ?? "personal"
+        accountType: parsed.data.accountType ?? "personal",
+        marketplaceRoleSyncError: marketplaceRoleSync.errorMessage,
+        marketplacePartyTypes: marketplaceRoleSync.partyTypes,
+        marketplaceRoleSyncSkipped: marketplaceRoleSync.skipped
       }
     });
-    const {
-      data: { user }
-    } = await supabase.auth.getUser();
     if (user) {
       await activateUserSession({
         accountType: parsed.data.accountType ?? "personal",
