@@ -269,7 +269,9 @@
 | P67.2 dashboard role-aware action cards | 완료 | 역할 의도 배지 표시가 아니라 대시보드 시작 카드를 화주/포워더/관세사 역할에 맞게 줄인다 | role-aware dashboard actions | browser, typecheck, lint |
 | P67.3 dashboard role-aware action route assertion | 완료 | 카드 노출 로직이 아니라 route smoke에서 역할별 카드 노출/미노출을 회귀 검증한다 | route smoke role-aware action assertions | browser, typecheck, lint |
 | P67.4 dashboard role-aware action final verification | 완료 | route smoke assertion이 아니라 대시보드 역할별 카드 변경 전체를 최종 검증한다 | final verification | unit, smoke, typecheck, lint, build |
-| P68.1 next non-DB platform work selection | 예정 | 대시보드 역할별 카드 최종 검증이 아니라 DB 적용 없이 이어갈 다음 제품 작업을 고른다 | next work selection | roadmap review |
+| P68.1 next non-DB platform work selection | 완료 | 대시보드 역할별 카드 최종 검증이 아니라 DB 적용 없이 이어갈 다음 제품 작업을 고른다 | marketplace notification local rehearsal selected | roadmap review |
+| P68.2 marketplace notification local rehearsal | 완료 | 인박스 읽음 처리가 아니라 운영자가 worker route의 target 계산, send 차단, claim-only 동작을 로컬에서 확인한다 | notification rehearsal script | node check, rehearsal, unit, typecheck, lint |
+| P68.3 operator visibility simplification | 예정 | 알림 worker 리허설이 아니라 대표/운영자가 다음 조치만 빠르게 보도록 운영 화면 노이즈를 줄인다 | admin operations surface review | browser, typecheck, lint |
 
 #### P34 다음 코드 작업 후보
 

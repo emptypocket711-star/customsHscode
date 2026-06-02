@@ -28,6 +28,15 @@
 
 ## 리허설 순서
 
+로컬 Supabase와 로컬 Next.js 서버가 준비되어 있으면 아래 명령으로 target 계산, `send=1` 차단, claim-only 동작을 한 번에 확인할 수 있다. 이 명령은 외부 발송을 하지 않고 synthetic delivery를 정리한다.
+
+```bash
+E2E_BASE_URL=http://127.0.0.1:3100 \
+SUPABASE_URL=http://127.0.0.1:54321 \
+SUPABASE_SERVICE_ROLE_KEY=... \
+npm run ops:marketplace-notifications:rehearse-local
+```
+
 1. Target 계산만 확인한다.
 
 ```bash
