@@ -8,6 +8,7 @@ Purpose: extend the current marketplace transaction E2E from page reachability/r
 2. partner submits a clearance bid through the UI
 3. requester selects the submitted bid through the UI
 4. request state changes are visible to requester and selected partner
+5. requester starts the selected request, completes it, submits feedback, and sees completion-report handoff guidance
 
 ## Current Harness Boundary
 
@@ -20,12 +21,15 @@ Already available:
 - one-command local runner
 - fixture IDs shared across seed/readiness/e2e
 
-Not yet covered:
+Covered by the local runner:
 
 - bid form submission through browser input
 - selected bid transition through browser click
-- post-selection state visibility
-- mutation idempotency/reset after repeated E2E runs
+- selected-partner visibility immediately after selection
+- requester lifecycle transition from `partner_selected` to `in_progress` to `completed`
+- requester feedback submission after completion
+- completion report next-action guidance, archive document area, and draft save CTA after completion
+- mutation fixture reset after repeated local E2E runs
 
 ## Mutation Fixture Strategy
 
@@ -50,6 +54,8 @@ Before each mutation run:
 6. browser verifies requester sees the newly submitted bids
 7. browser selects bids
 8. browser verifies request state is `partner_selected`
+9. browser starts and completes the selected request
+10. browser verifies feedback and completion-report handoff CTAs
 
 ## Required Assertions
 
@@ -82,6 +88,13 @@ Before each mutation run:
 - page shows selected-partner next-step guidance
 - no file download controls or real document contents are required for this E2E
 
+### Post-Selection Lifecycle
+
+- requester starts the selected freight and clearance requests
+- detail page shows the completed state after requester completion
+- detail page shows `완료 요청 피드백`, `완료 후 다음 행동`, `최종 보관 서류`, and `초안 저장`
+- requester submits feedback and sees the submitted-feedback state
+
 ## RLS And Safety Review Points
 
 - bid submit must go through audited RPC, not direct table insert from client
@@ -97,10 +110,14 @@ Before each mutation run:
 
 1. Extend `marketplace-transaction.fixture.mjs` with mutation request/bid IDs and env keys.
 2. Update seed runner to seed static rendering fixture and mutation-open fixture separately.
-3. Add mutation E2E script or mutation section in the existing E2E script.
-4. Keep the existing rendering assertions first so route regressions fail before mutation steps.
-5. Add safe-fail checks for missing mutation fixture env/storage states.
-6. Run only through the local runner after local Supabase is ready.
+3. Add mutation E2E script or mutation section in the existing E2E script. Done in `scripts/e2e_marketplace_transaction_mutation_flow.mjs`.
+4. Keep the existing rendering assertions first so route regressions fail before mutation steps. Done in `scripts/run_marketplace_transaction_e2e_local.mjs`.
+5. Add safe-fail checks for missing mutation fixture env/storage states. Done.
+6. Run only through the local runner after local Supabase is ready. Current command:
+
+```bash
+npm run e2e:marketplace-transaction:local
+```
 
 ## Deferral
 
