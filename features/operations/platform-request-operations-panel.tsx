@@ -283,6 +283,8 @@ export function PlatformRequestOperationsPanel({
   summary: PlatformRequestOperationsSummary;
 }) {
   const ownerActionQueue = buildOwnerActionQueue(summary);
+  const primaryOwnerAction = ownerActionQueue[0];
+  const secondaryOwnerActions = ownerActionQueue.slice(1);
   const copyReadyRequest = buildCopyReadyOperationsRequest(summary, ownerActionQueue);
   const trustMetricGuidance = buildTrustMetricGuidance(summary);
   const { diagnosticMetrics, primaryMetrics } = buildPlatformRequestOperationsMetricGroups(summary);
@@ -306,27 +308,44 @@ export function PlatformRequestOperationsPanel({
               <div>
                 <p className="text-sm font-semibold text-slate-950">대표 우선순위 큐</p>
                 <p className="mt-1 text-xs leading-5 text-slate-600">
-                  먼저 맡길 개선 작업 3가지만 병목 순서로 보여줍니다.
+                  지금 바로 맡길 1순위만 먼저 보여주고, 다음 후보는 접어둡니다.
                 </p>
               </div>
-              <Badge tone={ownerActionQueue[0]?.tone ?? "neutral"}>{ownerActionQueue[0]?.value ?? "확인"}</Badge>
+              <Badge tone={primaryOwnerAction?.tone ?? "neutral"}>{primaryOwnerAction?.value ?? "확인"}</Badge>
             </div>
-            <div className="mt-3 grid gap-2 lg:grid-cols-3">
-              {ownerActionQueue.map((item) => (
-                <div className="rounded-md border border-slate-200 bg-slate-50 p-3" key={item.label}>
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-slate-950">{item.label}</p>
-                    <Badge tone={item.tone}>{item.value}</Badge>
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-slate-700">담당 {item.owner}</span>
-                    <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-slate-700">이유 {item.reason}</span>
-                  </div>
-                  <p className="mt-2 text-xs font-semibold leading-5 text-slate-800">{item.action}</p>
-                  <p className="mt-1 text-xs leading-5 text-slate-600">{item.detail}</p>
+            {primaryOwnerAction ? (
+              <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-slate-950">{primaryOwnerAction.label}</p>
+                  <Badge tone={primaryOwnerAction.tone}>{primaryOwnerAction.value}</Badge>
                 </div>
-              ))}
-            </div>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-slate-700">담당 {primaryOwnerAction.owner}</span>
+                  <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-slate-700">이유 {primaryOwnerAction.reason}</span>
+                </div>
+                <p className="mt-2 text-xs font-semibold leading-5 text-slate-800">{primaryOwnerAction.action}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-600">{primaryOwnerAction.detail}</p>
+              </div>
+            ) : null}
+            {secondaryOwnerActions.length > 0 ? (
+              <details className="mt-3 rounded-md border border-slate-200 bg-white">
+                <summary className="cursor-pointer list-none px-3 py-2 text-xs font-semibold text-slate-700">
+                  다음 후보 {secondaryOwnerActions.length}개 보기
+                </summary>
+                <div className="grid gap-2 border-t border-slate-200 p-3 lg:grid-cols-2">
+                  {secondaryOwnerActions.map((item) => (
+                    <div className="rounded-md bg-slate-50 p-3" key={item.label}>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-semibold text-slate-950">{item.label}</p>
+                        <Badge tone={item.tone}>{item.value}</Badge>
+                      </div>
+                      <p className="mt-2 text-xs font-semibold leading-5 text-slate-800">담당 {item.owner} · 이유 {item.reason}</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-600">{item.action}</p>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            ) : null}
             {summary.actionItems.length > 0 ? (
               <div className="mt-3 rounded-md border border-blue-100 bg-blue-50 p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">

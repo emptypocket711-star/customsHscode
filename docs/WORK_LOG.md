@@ -40,6 +40,23 @@
 - Playwright requester check: `/requests/freight/00000000-0000-4000-8000-000000000101#completion-report-summary`, `/requests/clearance/00000000-0000-4000-8000-000000000201#completion-report-summary`
 - `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
 
+### owner operations density refinement
+
+- 이전 작업은 P82 완료 리포트 대표 행동 요약이고, 이번 작업은 P83 대표/운영자 화면의 우선순위 큐 밀도를 줄이는 UX 보강이다.
+- 기존 대표 우선순위 큐는 최대 3개 병목을 모두 카드로 펼쳤지만, 대표가 첫 작업만 바로 이해하도록 1순위 카드만 기본 노출하게 했다.
+- 2~3순위는 `다음 후보 ...개 보기` details 안으로 옮겨 필요할 때만 펼치게 했다.
+- 기존 담당 주체, 우선 이유, 복사용 운영 개선 요청문, 상세 진단 지표, 운영 샘플 링크는 유지했다.
+- 권한/RLS, 운영 통계 집계, 민감정보 노출 범위, DB schema는 변경하지 않았다.
+- 다음 작업은 P84 운영 상세 또는 요청 상세에서 대표가 복사한 개선 요청을 실제 작업으로 연결하는 흐름을 더 줄일지 점검하는 것이다. 이번 P83이 운영 목록 밀도 조정이라면, P84는 상세 화면에서 복사 후 확인 위치까지 이어지는 흐름 점검이다.
+
+검증:
+
+- `npx vitest run features/operations/platform-request-operations-panel.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- Playwright developer check: `/operations/users#platform-request-operations`
+- `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
+
 ## 2026-06-02
 
 ### local login review smoke

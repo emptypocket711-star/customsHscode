@@ -75,7 +75,7 @@ describe("platform request operations panel", () => {
     expect(groups.diagnosticMetrics.map((metric) => metric.label)).toContain("견적 없는 공개");
   });
 
-  it("renders prioritized sample links before the collapsed diagnostics", () => {
+  it("renders one primary owner action and collapses the next candidates", () => {
     const html = renderToStaticMarkup(
       createElement(PlatformRequestOperationsPanel, {
         summary: summaryFixture({
@@ -89,11 +89,15 @@ describe("platform request operations panel", () => {
           }],
           actionRequest: "견적이 도착한 요청 1건의 비교·선택 전환 UX를 점검해줘.",
           bidsReceived: 1,
+          completedWithoutReport: 1,
+          unansweredQuestions: 1,
           total: 1
         })
       })
     );
 
+    expect(html).toContain("지금 바로 맡길 1순위만 먼저 보여주고");
+    expect(html).toContain("다음 후보 2개 보기");
     expect(html).toContain("바로 확인할 운영 샘플");
     expect(html).toContain("/operations/requests/req-1#request-bids");
     expect(html).toContain("담당 개발자");

@@ -336,7 +336,11 @@
 | P82.2 completion report primary next action | 완료 | 완료 리포트 모델 검토가 아니라 과밀한 완료 리포트 패널에서 현재 대표 행동을 먼저 보여준다 | completion report UX | unit, browser, typecheck, lint |
 | P82.3 completion report route smoke | 완료 | 대표 행동 요약 보강이 아니라 변경 후 marketplace 주요 route가 계속 정상 렌더링되는지 확인한다 | role route smoke | browser, typecheck, lint |
 | P82.4 completion report work log sync | 완료 | route smoke가 아니라 완료 리포트 대표 행동 요약 보강과 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
-| P83.1 operations density selection | 예정 | 완료 리포트 상세가 아니라 대표/운영자 화면의 우선순위 카드 밀도와 다음 행동 이해도를 다시 점검한다 | operations density rail | UX/code review |
+| P83.1 operations density selection | 완료 | 완료 리포트 상세가 아니라 대표/운영자 화면의 우선순위 카드 밀도와 다음 행동 이해도를 다시 점검한다 | owner action density selected | UX/code review |
+| P83.2 owner queue single primary action | 완료 | 담당/이유 표시가 아니라 대표 우선순위 큐에서 1순위만 기본 노출하고 다음 후보는 접어둔다 | operations density UX | unit, browser, typecheck, lint |
+| P83.3 operations density route smoke | 완료 | 우선순위 큐 밀도 조정이 아니라 변경 후 화주·포워더·관세사 주요 route가 계속 정상 렌더링되는지 확인한다 | role route smoke | browser, typecheck, lint |
+| P83.4 operations density work log sync | 완료 | route smoke가 아니라 운영 우선순위 큐 밀도 조정과 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
+| P84.1 operations detail handoff selection | 예정 | 운영 목록 밀도 조정이 아니라 복사한 개선 요청이 운영 상세의 실제 확인 위치로 이어지는 흐름을 다시 점검한다 | operations detail handoff rail | UX/code review |
 
 #### P34 다음 코드 작업 후보
 
