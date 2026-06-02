@@ -679,6 +679,26 @@
 - `psql postgresql://postgres:postgres@127.0.0.1:54322/postgres -v ON_ERROR_STOP=1 -f supabase/migrations/20260603001000_marketplace_notification_preferences.sql`
 - `supabase db lint --local`
 
+### marketplace email notification settings UI
+
+- 이전 작업은 P118 email opt-in schema/RLS/resolver gate이고, 이번 작업은 P119 사용자가 로그인 상태에서 실제 email 수신 설정을 켜고 끄는 UI/서버 액션 작업이다.
+- `marketplace-notification-preferences.repository`를 추가해 로그인 사용자의 `initial`, `deadline_reminder` email preference를 조회·저장한다.
+- preference row가 없으면 email 미수신으로 표시한다.
+- `updateMarketplaceEmailNotificationPreferencesAction`을 추가해 로그인 사용자가 자기 preference row만 upsert한다.
+- `/settings/members`에 `내 이메일 알림 수신 설정` 카드를 추가했다.
+- 새 카드는 `파트너 관심 조건`과 분리되어 회사 단위 매칭 preference와 사용자 email opt-in을 혼동하지 않게 했다.
+- 화면에 인앱 알림은 계속 표시되고, email은 직접 켠 항목만 발송된다는 문구를 넣었다.
+- 포워더 테스트 계정 storage state로 `/settings/members`를 브라우저 확인했고, `이메일 수신 설정 저장` 후 성공 문구가 표시되는 것을 확인했다.
+- 이번 P119는 P118처럼 schema와 resolver gate를 만든 작업이 아니다. 실제 사용자가 opt-in 상태를 바꿀 수 있게 만든 설정 UI 작업이다.
+- 다음 작업은 P120 marketplace email opt-in rehearsal이다. 이번 P119가 설정 UI라면, P120은 실제 notification worker/provider rehearsal에서 opt-in row가 수신자 선택을 제어하는지 운영 실행 관점으로 확인하는 작업이다.
+
+검증:
+
+- `npx vitest run server/repositories/marketplace-notification-preferences.repository.test.ts server/actions/marketplace-notification-preferences.actions.test.ts features/marketplace-notification-preferences/marketplace-email-notification-preferences-panel.test.ts server/jobs/marketplace-notification-recipients.test.ts server/jobs/marketplace-notification-provider.test.ts server/repositories/platform-marketplace-governance.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- Playwright forwarder check: `/settings/members`, email preference card render and save success
+
 ## 2026-06-02
 
 ### local login review smoke

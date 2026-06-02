@@ -407,7 +407,8 @@
 | P116.1 marketplace transactional email provider self-review | 완료 | email provider skeleton 구현이 아니라 민감정보, recipient missing, readiness, 운영 runbook 차단 조건을 자체 리뷰한다 | email provider safety review | tests, docs, route rehearsal |
 | P117.1 marketplace notification preference and unsubscribe planning | 완료 | email provider 안전 리뷰가 아니라 파트너 사용자별 알림 수신 설정과 거부 기준을 어떻게 둘지 정한다 | notification preference policy selected | product/security review |
 | P118.1 marketplace email notification preference schema | 완료 | 수신 설정 정책 문서화가 아니라 실제 사용자별 email opt-in 저장 schema와 resolver gate를 추가한다 | email preference schema | migration, RLS, unit |
-| P119.1 marketplace email notification settings UI | 예정 | schema/resolver gate가 아니라 사용자가 로그인 상태에서 marketplace email 수신 설정을 직접 켜고 끄게 한다 | email preference settings UI | server action, UX, browser |
+| P119.1 marketplace email notification settings UI | 완료 | schema/resolver gate가 아니라 사용자가 로그인 상태에서 marketplace email 수신 설정을 직접 켜고 끄게 한다 | email preference settings UI | server action, UX, browser |
+| P120.1 marketplace email opt-in rehearsal | 예정 | 설정 UI가 아니라 opt-in preference가 실제 notification worker/provider rehearsal에서 수신자 선택을 제어하는지 확인한다 | opt-in send rehearsal | local ops rehearsal, unit |
 
 #### P109 다음 병목 선정
 
@@ -569,6 +570,21 @@ P118에서 marketplace email notification preference를 실제 schema와 resolve
 7. resolver는 opt-in 필터 전 후보를 넉넉히 조회한 뒤 최종 limit을 적용한다.
 
 다음 작업은 P119 marketplace email notification settings UI다. P118이 DB/RLS/resolver gate라면, P119는 사용자가 로그인 상태에서 실제로 `initial`, `deadline_reminder` email 수신 설정을 켜고 끄는 서버 액션과 설정 화면을 붙이는 작업이다.
+
+#### P119 email notification settings UI
+
+P119에서 `/settings/members`에 사용자별 email notification preference 설정을 추가했다.
+
+구현 기준:
+
+1. `getMarketplaceEmailNotificationPreferencesDashboard`로 로그인 사용자의 email preference를 조회한다.
+2. preference row가 없으면 `initial`, `deadline_reminder` 모두 email 미수신으로 표시한다.
+3. `updateMarketplaceEmailNotificationPreferencesAction`으로 로그인 사용자가 자기 preference만 저장한다.
+4. `내 이메일 알림 수신 설정` 카드는 `파트너 관심 조건`과 분리해 회사 단위 매칭 preference와 사용자 email opt-in을 혼동하지 않게 했다.
+5. 설정 화면에는 인앱 알림은 유지되고, email만 직접 켠 항목에 발송된다는 문구를 표시했다.
+6. 브라우저에서 포워더 테스트 계정으로 `/settings/members` 렌더링과 저장 성공 문구를 확인했다.
+
+다음 작업은 P120 marketplace email opt-in rehearsal이다. P119가 사용자가 설정을 켜고 끄는 UI라면, P120은 실제 notification worker/provider rehearsal에서 opt-in row가 수신자 선택을 제어하는지 운영 실행 관점으로 확인하는 작업이다.
 
 #### P34 다음 코드 작업 후보
 
