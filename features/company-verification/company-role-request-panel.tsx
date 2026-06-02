@@ -43,6 +43,18 @@ const roleOptions = [
   }
 ];
 
+const overseasVerificationChecklist = [
+  "회사명과 실제 사업 국가",
+  "담당자 이메일 또는 웹사이트",
+  "거래 서류, 제품 자료, 선적 예정 정보"
+];
+
+const overseasPendingReasons = [
+  "국가·회사 정보가 부족한 경우",
+  "담당자 연락처 검증이 어려운 경우",
+  "요청 공개 전 민감 서류 확인이 필요한 경우"
+];
+
 const statusLabels: Record<string, { label: string; tone: "neutral" | "warning" | "info" | "success" }> = {
   approved: { label: "승인", tone: "success" },
   cancelled: { label: "취소", tone: "neutral" },
@@ -146,6 +158,24 @@ export function CompanyRoleRequestPanel({
             <p>
               해외 수출입 파트너는 한국 사업자등록번호가 없어도 신청할 수 있습니다. 회사명, 국가, 담당자 정보, 거래 서류 등으로 운영자가 보류·승인 여부를 확인합니다.
             </p>
+            <div className="grid gap-2 md:grid-cols-2">
+              <div className="rounded-md bg-white p-3">
+                <p className="text-xs font-semibold text-blue-900">해외 파트너 확인 자료</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {overseasVerificationChecklist.map((item) => (
+                    <span className="rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-800" key={item}>{item}</span>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-md bg-white p-3">
+                <p className="text-xs font-semibold text-blue-900">보류될 수 있는 경우</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {overseasPendingReasons.map((item) => (
+                    <span className="rounded-md bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800" key={item}>{item}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
 
           <button
