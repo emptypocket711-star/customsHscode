@@ -754,6 +754,24 @@
 - `rg -n "MARKETPLACE_PRODUCTION_EMAIL_REHEARSAL_GATE|P122.1|P123.1|production email rehearsal|실제 provider 리허설|MARKETPLACE_NOTIFICATIONS_SEND_ENABLED" docs/MARKETPLACE_PRODUCTION_EMAIL_REHEARSAL_GATE.md docs/MARKETPLACE_NOTIFICATION_RUNBOOK.md docs/ROADMAP.md docs/WORK_LOG.md`
 - `git diff --check`
 
+### marketplace email provider final readiness review
+
+- 이전 작업은 P122 실제 `transactional_email` provider 리허설 gate를 정한 작업이고, 이번 작업은 P123 P113-P122 email provider 준비 상태 전체를 최종 리뷰한 작업이다.
+- `MARKETPLACE_EMAIL_PROVIDER_FINAL_READINESS_REVIEW.md`를 추가했다.
+- provider readiness, recipient resolver, `transactional_email` skeleton, readiness guard가 준비된 상태라고 정리했다.
+- 사용자별 email opt-in schema/RLS/repository/action/UI가 준비된 상태라고 정리했다.
+- resolver가 notification kind별 opt-in을 요구하고, local opt-in rehearsal과 기존 worker rehearsal이 통과한 것을 정리했다.
+- MVP에서는 다중 fanout을 보류하고 관리자 우선 1명 발송을 유지한다고 정리했다.
+- 실제 provider rehearsal은 gate 조건이 충족될 때까지 보류한다고 정리했다.
+- 남은 위험은 sender-domain production rehearsal 미실행, 공개 unsubscribe 미구현, per-user email delivery 미구현, branded template 미구현, provider failure/notification fatigue telemetry 부족으로 정리했다.
+- 이번 P123은 P122처럼 실제 provider 리허설 조건을 정한 작업이 아니다. email provider 준비 흐름을 닫고 다음 병목을 다시 선택한 리뷰 작업이다.
+- 다음 작업은 P124 marketplace no-response notification operations selection이다. 이번 P123이 email provider 준비 상태를 닫는 리뷰라면, P124는 알림 이후에도 응답 없는 파트너를 운영자가 어떻게 발견하고 조치할지 다음 병목을 정하는 작업이다.
+
+검증:
+
+- `rg -n "P123.1|P124.1|MARKETPLACE_EMAIL_PROVIDER_FINAL_READINESS_REVIEW|Remaining Risks|no-response" docs/MARKETPLACE_EMAIL_PROVIDER_FINAL_READINESS_REVIEW.md docs/ROADMAP.md docs/WORK_LOG.md`
+- `git diff --check`
+
 ## 2026-06-02
 
 ### local login review smoke
