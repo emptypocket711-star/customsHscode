@@ -201,6 +201,20 @@ function FreightPreSelectChecklist({ bid }: { bid: ReceivedFreightBidItem }) {
   );
 }
 
+function freightBidComparisonBadges(bid: ReceivedFreightBidItem, bids: ReceivedFreightBidItem[]) {
+  const pricedBids = bids.filter((item) => item.totalAmount !== null);
+  const leadTimeBids = bids.filter((item) => item.leadTimeDays !== null);
+  const lowestAmount = pricedBids.length > 0 ? Math.min(...pricedBids.map((item) => item.totalAmount ?? Infinity)) : null;
+  const shortestLeadTime = leadTimeBids.length > 0 ? Math.min(...leadTimeBids.map((item) => item.leadTimeDays ?? Infinity)) : null;
+  const badges = [];
+
+  if (bid.totalAmount !== null && bid.totalAmount === lowestAmount) badges.push({ label: "최저 총액", tone: "success" as const });
+  if (bid.leadTimeDays !== null && bid.leadTimeDays === shortestLeadTime) badges.push({ label: "최단 리드타임", tone: "info" as const });
+  if (bid.partnerFeedback && bid.partnerFeedback.feedbackCount > 0) badges.push({ label: "후기 보유", tone: "info" as const });
+
+  return badges;
+}
+
 function statusLabel(status: string) {
   if (status === "draft") return "임시저장";
   if (status === "open") return "모집중";
@@ -385,14 +399,17 @@ function requestStatusCounts(requests: FreightRequestListItem[], opportunities: 
 
 function ReceivedFreightBidRow({
   bid,
+  bids,
   requestStatus
 }: {
   bid: ReceivedFreightBidItem;
+  bids: ReceivedFreightBidItem[];
   requestStatus: string;
 }) {
   const router = useRouter();
   const [state, action, pending] = useActionState(selectFreightBidAction, selectBidInitialState);
   const canSelect = requestStatus !== "partner_selected" && (bid.status === "submitted" || bid.status === "shortlisted");
+  const comparisonBadges = freightBidComparisonBadges(bid, bids);
 
   useEffect(() => {
     if (state.status !== "idle") {
@@ -415,6 +432,9 @@ function ReceivedFreightBidRow({
             <Badge tone="neutral">업체 {bid.bidderCompanyId.slice(0, 8)}</Badge>
             <Badge tone={bid.partnerTrust?.verificationStatus === "recommended_partner" ? "success" : bid.partnerTrust ? "info" : "neutral"}>{partnerTrustLabel(bid.partnerTrust)}</Badge>
             <Badge tone={bid.partnerFeedback ? "info" : "neutral"}>{partnerFeedbackLabel(bid.partnerFeedback)}</Badge>
+            {comparisonBadges.map((badge) => (
+              <Badge key={badge.label} tone={badge.tone}>{badge.label}</Badge>
+            ))}
           </div>
           <p className="mt-1 text-xs text-slate-500">
             유효기한 {bid.validUntil ?? "-"} / 리드타임 {bid.leadTimeDays ?? "-"}일 / 운송 {bid.transitTimeDays ?? "-"}일
@@ -784,7 +804,7 @@ export function FreightRequestRow({
           <div className="grid gap-2">
             <FreightBidComparisonGuide bids={bids} />
             {bids.map((bid) => (
-              <ReceivedFreightBidRow key={bid.bidId} bid={bid} requestStatus={request.status} />
+              <ReceivedFreightBidRow key={bid.bidId} bid={bid} bids={bids} requestStatus={request.status} />
             ))}
           </div>
         </div>
