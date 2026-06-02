@@ -231,13 +231,13 @@ function nextClearanceActionLabel(
   if (request.status === "draft" && !request.destinationCountryCode) return "목적국 입력 후 공개 가능";
   if (request.status === "draft" && documents.length === 0) return "CI/PL/사양서 등 서류 첨부 권장";
   if (request.status === "draft") return "검증 관세사무소에 견적 요청 공개 가능";
+  if (request.status === "partner_selected") return "선정 관세사무소와 진행 시작";
+  if (request.status === "in_progress") return "통관 완료 처리와 리포트 준비";
+  if (request.status === "completed") return "완료 리포트·후기 확인";
   if (questions.some((question) => !question.answer)) return "관세사무소 질문 답변 필요";
   if (request.status === "open") return "마감 전 통관 견적 대기";
   if (request.status === "bids_received" && bids.length > 0) return "견적 비교 후 관세사무소 선정";
   if (request.status === "bids_received") return "견적 도착 상태 확인 필요";
-  if (request.status === "partner_selected") return "진행 시작 대기";
-  if (request.status === "in_progress") return "통관 진행 후 완료 처리";
-  if (request.status === "completed") return "완료됨";
   return "상태 확인 필요";
 }
 

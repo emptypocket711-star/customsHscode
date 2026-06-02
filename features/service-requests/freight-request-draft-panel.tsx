@@ -230,12 +230,12 @@ function nextActionLabel(input: {
 }) {
   if (input.status === "draft" && !input.hasPublishFields) return "공개 필수 조건 입력 필요";
   if (input.status === "draft") return "포워더에게 견적 요청 공개 가능";
+  if (input.status === "partner_selected") return "선정 포워더와 진행 시작";
+  if (input.status === "in_progress") return "운송 완료 처리와 리포트 준비";
+  if (input.status === "completed") return "완료 리포트·후기 확인";
   if (input.questions.some((question) => !question.answer)) return "포워더 질문 답변 필요";
   if (input.status === "bids_received" && input.bids.length > 0) return "견적 비교 후 포워더 선정";
   if (input.status === "open") return "마감 전 질문·견적 대기";
-  if (input.status === "partner_selected") return "진행 시작 대기";
-  if (input.status === "in_progress") return "운송 진행 후 완료 처리";
-  if (input.status === "completed") return "완료됨";
   return "상태 확인 필요";
 }
 
