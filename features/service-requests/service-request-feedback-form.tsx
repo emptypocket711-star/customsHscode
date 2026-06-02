@@ -51,7 +51,7 @@ export function ServiceRequestFeedbackForm({
       <div className="grid gap-1">
         <p className="text-sm font-semibold text-slate-950">완료 요청 피드백</p>
         <p className="text-xs leading-5 text-slate-600">
-          거래 품질 지표를 쌓기 위한 최소 피드백입니다. 민감 서류 내용, 단가 원문, 개인정보는 입력하지 마세요.
+          거래 품질 지표를 쌓기 위한 최소 피드백입니다. 이 평점은 다음 견적 비교에서 파트너 신뢰 지표로 활용됩니다. 민감 서류 내용, 단가 원문, 개인정보는 입력하지 마세요.
         </p>
       </div>
       <form action={action} className="grid gap-3 md:grid-cols-4">

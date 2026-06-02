@@ -123,6 +123,21 @@
 - Playwright forwarder check: `/requests/freight/opportunities/75000000-0000-4000-8000-000000000001#opportunity-bid`
 - `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
 
+### feedback trust metric context
+
+- 이전 작업은 P87 포워더 운송 견적 form 안내 보강이고, 이번 작업은 P88 완료 후 피드백 CTA의 맥락 보강이다.
+- 피드백 form은 이미 최소 입력과 민감정보 제외 안내가 있었으므로 새 입력 항목을 추가하지 않았다.
+- 대신 사용자가 남긴 평점이 다음 견적 비교에서 파트너 신뢰 지표로 활용된다는 문구를 추가했다.
+- 기존 company별 1회 제출 제한, 민감정보 제외 안내, 제출 action, RLS, DB schema는 변경하지 않았다.
+- 다음 작업은 P89 운영 통계/복사용 개선 요청 문구가 실제 개발 작업으로 넘기기에 충분히 짧고 명확한지 다시 점검하는 것이다. 이번 P88이 완료 후 사용자 피드백 CTA라면, P89는 운영자가 보는 개선 요청 문구 품질이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- Playwright requester check: `/requests/clearance/00000000-0000-4000-8000-000000000201#request-completion`
+- `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
+
 ## 2026-06-02
 
 ### local login review smoke

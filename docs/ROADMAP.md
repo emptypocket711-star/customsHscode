@@ -356,7 +356,11 @@
 | P87.2 freight bid form guidance | 완료 | 통관 견적 안전 문구가 아니라 포워더 운송 견적 form에도 입력 전 확인 안내와 제안 성격 문구를 추가한다 | freight bid form UX | browser, typecheck, lint |
 | P87.3 partner bid form route smoke | 완료 | 운송 견적 form 안내 보강이 아니라 변경 후 화주·포워더·관세사 주요 route가 계속 정상 렌더링되는지 확인한다 | role route smoke | browser, typecheck, lint |
 | P87.4 partner bid form work log sync | 완료 | route smoke가 아니라 포워더 운송 견적 form 안내 보강과 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
-| P88.1 completion feedback CTA selection | 예정 | 파트너 견적 form이 아니라 완료 후 화주/파트너 피드백 CTA가 적절한지 점검한다 | completion feedback rail | UX/code review |
+| P88.1 completion feedback CTA selection | 완료 | 파트너 견적 form이 아니라 완료 후 화주/파트너 피드백 CTA가 적절한지 점검한다 | trust metric context selected | UX/code review |
+| P88.2 feedback trust metric context | 완료 | 피드백 입력 form 추가가 아니라 제출한 평점이 파트너 신뢰 지표에 쓰인다는 맥락을 명확히 한다 | feedback CTA UX | browser, typecheck, lint |
+| P88.3 feedback CTA route smoke | 완료 | 피드백 문구 보강이 아니라 변경 후 화주·포워더·관세사 주요 route가 계속 정상 렌더링되는지 확인한다 | role route smoke | browser, typecheck, lint |
+| P88.4 feedback CTA work log sync | 완료 | route smoke가 아니라 피드백 신뢰 지표 맥락 보강과 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
+| P89.1 operations prompt quality selection | 예정 | 완료 후 사용자 피드백 CTA가 아니라 운영자가 복사하는 개선 요청 문구의 길이와 명확성을 점검한다 | operations prompt quality rail | UX/code review |
 
 #### P34 다음 코드 작업 후보
 
