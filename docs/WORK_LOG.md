@@ -90,6 +90,23 @@
 - Playwright requester check: `/requests/freight/75000000-0000-4000-8000-000000000001`, `/requests/clearance/75000000-0000-4000-8000-000000000002`
 - `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
 
+### partner next-focus regression coverage
+
+- 이전 작업은 P85 화주 상세 next-action anchor이고, 이번 작업은 P86 포워더·관세사무소 opportunity 상세의 다음 행동 우선순위 점검이다.
+- 파트너 opportunity 상세에는 이미 `다음 작업 바로가기`가 있으므로 새 UI를 중복 추가하지 않았다.
+- 대신 `buildPartnerOpportunityNextFocus` 테스트를 보강해 질문 확인, 기본 견적 제출, 진행중 완료 처리 우선순위를 고정했다.
+- 포워더/관세사무소 opportunity 상세에서 서류, 질문, 견적 anchor가 실제 DOM에 존재하는지 브라우저로 확인했다.
+- 권한/RLS, 견적 제출 action, 질문 등록 action, DB schema는 변경하지 않았다.
+- 다음 작업은 P87 파트너 견적 제출 전 안내와 필수 확인 흐름이 과하지 않은지 점검하는 것이다. 이번 P86이 next-action anchor 검증이라면, P87은 견적 제출 form 자체의 입력 전 안내와 안전 문구 점검이다.
+
+검증:
+
+- `npx vitest run server/repositories/service-request-list-view.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- Playwright partner check: `/requests/freight/opportunities/75000000-0000-4000-8000-000000000001`, `/requests/clearance/opportunities/75000000-0000-4000-8000-000000000002`
+- `npm run review:local-routes`: shipper, forwarder, customs_broker 주요 route `result=ready`
+
 ## 2026-06-02
 
 ### local login review smoke

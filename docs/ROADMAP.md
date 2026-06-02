@@ -348,7 +348,11 @@
 | P85.2 requester publish next-action anchor | 완료 | 기존 다음 작업 바로가기 표시가 아니라 운송/통관 초안 공개 CTA가 실제 공개 form anchor로 이동하게 한다 | requester next-action UX | unit, browser, typecheck, lint |
 | P85.3 requester next-action route smoke | 완료 | 공개 anchor 보강이 아니라 변경 후 화주·포워더·관세사 주요 route가 계속 정상 렌더링되는지 확인한다 | role route smoke | browser, typecheck, lint |
 | P85.4 requester next-action work log sync | 완료 | route smoke가 아니라 화주 상세 next-action anchor 보강과 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
-| P86.1 partner next-action selection | 예정 | 화주 상세 next-action이 아니라 포워더·관세사무소 opportunity 상세의 다음 행동 바로가기를 다시 점검한다 | partner next-action rail | UX/code review |
+| P86.1 partner next-action selection | 완료 | 화주 상세 next-action이 아니라 포워더·관세사무소 opportunity 상세의 다음 행동 바로가기를 다시 점검한다 | partner next-focus test gap selected | UX/code review |
+| P86.2 partner next-focus regression tests | 완료 | 파트너 상세 UI 추가가 아니라 질문 확인, 견적 제출, 완료 처리 우선순위를 테스트로 고정한다 | partner next-action tests | unit, browser, typecheck, lint |
+| P86.3 partner next-action route smoke | 완료 | 파트너 next-focus 테스트가 아니라 변경 후 화주·포워더·관세사 주요 route가 계속 정상 렌더링되는지 확인한다 | role route smoke | browser, typecheck, lint |
+| P86.4 partner next-action work log sync | 완료 | route smoke가 아니라 파트너 next-focus 테스트 보강과 검증 결과를 작업 로그에 남긴다 | work log sync | docs, diff check |
+| P87.1 partner bid form guidance selection | 예정 | 파트너 next-action이 아니라 포워더·관세사무소 견적 제출 form의 입력 전 안내와 안전 문구를 점검한다 | partner bid form rail | UX/code review |
 
 #### P34 다음 코드 작업 후보
 

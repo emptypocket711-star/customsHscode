@@ -79,6 +79,46 @@ describe("service request list view", () => {
     });
   });
 
+  it("routes partner opportunity questions before bid submission", () => {
+    expect(buildPartnerOpportunityNextFocus({
+      bidAnchor: "#opportunity-bid",
+      questionAnchor: "#opportunity-questions",
+      unansweredQuestionCount: 2
+    })).toEqual({
+      href: "#opportunity-questions",
+      label: "질문 답변 확인",
+      tone: "warning",
+      value: "2건"
+    });
+  });
+
+  it("routes partner opportunities to bid submission when no earlier action is pending", () => {
+    expect(buildPartnerOpportunityNextFocus({
+      bidAnchor: "#opportunity-bid",
+      questionAnchor: "#opportunity-questions",
+      unansweredQuestionCount: 0
+    })).toEqual({
+      href: "#opportunity-bid",
+      label: "견적 제출",
+      tone: "info",
+      value: "작성"
+    });
+  });
+
+  it("routes in-progress partner opportunities to completion controls", () => {
+    expect(buildPartnerOpportunityNextFocus({
+      bidAnchor: "#opportunity-bid",
+      questionAnchor: "#opportunity-questions",
+      requestStatus: "in_progress",
+      unansweredQuestionCount: 3
+    })).toEqual({
+      href: "#request-lifecycle",
+      label: "완료 처리",
+      tone: "info",
+      value: "진행중"
+    });
+  });
+
   it("routes completed partner opportunities to the completion report and feedback section", () => {
     expect(buildPartnerOpportunityNextFocus({
       bidAnchor: "#opportunity-bid",
