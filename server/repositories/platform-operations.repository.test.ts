@@ -235,6 +235,68 @@ describe("platform request operations summary", () => {
     });
   });
 
+  it("prioritizes ready-to-lock completion reports when no earlier report handoff remains", () => {
+    const summary = summarizePlatformRequestOperations({
+      bids: [],
+      completionReports: [
+        { id: "report-1", request_id: "req-1", status: "operator_reviewed" },
+        { id: "report-2", request_id: "req-2", status: "locked" }
+      ],
+      feedbacks: [],
+      now: new Date("2026-06-10T00:00:00.000Z"),
+      questions: [],
+      requests: [
+        { created_at: "2026-06-01T00:00:00.000Z", deadline_at: null, id: "req-1", request_type: "freight", status: "completed", updated_at: "2026-06-09T00:00:00.000Z" },
+        { created_at: "2026-06-02T00:00:00.000Z", deadline_at: null, id: "req-2", request_type: "clearance", status: "completed", updated_at: "2026-06-09T00:00:00.000Z" }
+      ]
+    });
+
+    expect(summary.completionReportsReadyToLock).toBe(1);
+    expect(summary.completedWithoutFeedback).toBe(2);
+    expect(summary.actionRequest).toContain("운영 검토 후 잠금 대기 중인 완료 리포트 1건");
+    expect(summary.actionItems[0]).toMatchObject({
+      href: "/operations/requests/req-1",
+      label: "보관 잠금 대기",
+      requestId: "req-1",
+      requestType: "freight"
+    });
+  });
+
+  it("uses feedback follow-up when completed requests have reports and no report transition backlog", () => {
+    const summary = summarizePlatformRequestOperations({
+      bids: [],
+      completionReports: [
+        { id: "report-1", request_id: "req-1", status: "locked" },
+        { id: "report-2", request_id: "req-2", status: "locked" }
+      ],
+      feedbacks: [{
+        communication_score: 5,
+        document_quality_score: 5,
+        id: "feedback-1",
+        rating: 5,
+        request_id: "req-1",
+        response_speed_score: 5
+      }],
+      now: new Date("2026-06-10T00:00:00.000Z"),
+      questions: [],
+      requests: [
+        { created_at: "2026-06-01T00:00:00.000Z", deadline_at: null, id: "req-1", request_type: "freight", status: "completed", updated_at: "2026-06-09T00:00:00.000Z" },
+        { created_at: "2026-06-02T00:00:00.000Z", deadline_at: null, id: "req-2", request_type: "clearance", status: "completed", updated_at: "2026-06-09T00:00:00.000Z" }
+      ]
+    });
+
+    expect(summary.lowFeedbacks).toBe(0);
+    expect(summary.completedWithoutReport).toBe(0);
+    expect(summary.completedWithoutFeedback).toBe(1);
+    expect(summary.actionRequest).toContain("완료됐지만 피드백이 없는 요청 1건");
+    expect(summary.actionItems[0]).toMatchObject({
+      href: "/operations/requests/req-2",
+      label: "후기 미제출 확인",
+      requestId: "req-2",
+      requestType: "clearance"
+    });
+  });
+
   it("builds copy-ready improvement prompts without document file names", () => {
     const detail: PlatformRequestOperationsDetail = {
       bids: [],
