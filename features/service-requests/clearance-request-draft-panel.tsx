@@ -273,10 +273,10 @@ function ClearanceLifecycleControls({
 
   if (status === "completed") {
     return (
-      <div className="grid gap-3">
-      <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
-        통관 의뢰가 완료 처리되었습니다. 정산과 리포트 흐름은 다음 단계에서 연결하고, 거래 품질 피드백은 아래에서 남길 수 있습니다.
-      </p>
+      <div className="grid scroll-mt-6 gap-3" id="request-completion">
+        <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+          통관 의뢰가 완료 처리되었습니다. 완료 리포트와 보관 서류를 확인하고, 거래 품질 피드백을 남길 수 있습니다.
+        </p>
         <ServiceRequestCompletionReportPanel documents={documents} kind="clearance" report={completionReport} reportDocuments={completionReportDocuments} requestId={requestId} viewerRole={viewerRole} />
         <ServiceRequestFeedbackForm existingFeedback={existingFeedback} requestId={requestId} />
       </div>
@@ -285,7 +285,7 @@ function ClearanceLifecycleControls({
 
   if (status === "partner_selected") {
     return (
-      <form action={startAction} className="flex flex-wrap items-center gap-3">
+      <form action={startAction} className="flex scroll-mt-6 flex-wrap items-center gap-3" id="request-lifecycle">
         <input name="requestId" type="hidden" value={requestId} />
         <button className="focus-ring inline-flex h-10 items-center justify-center rounded-md bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-500" disabled={startPending} type="submit">
           {startPending ? "처리 중" : "통관 진행 시작"}
@@ -301,7 +301,7 @@ function ClearanceLifecycleControls({
 
   if (status === "in_progress") {
     return (
-      <form action={completeAction} className="grid gap-2 md:grid-cols-[1fr_auto]">
+      <form action={completeAction} className="grid scroll-mt-6 gap-2 md:grid-cols-[1fr_auto]" id="request-lifecycle">
         <input name="requestId" type="hidden" value={requestId} />
         <input className="focus-ring h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950" disabled={completePending} name="completionNote" placeholder="완료 메모(선택, 민감정보 제외)" />
         <button className="focus-ring inline-flex h-10 items-center justify-center rounded-md bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-500" disabled={completePending} type="submit">

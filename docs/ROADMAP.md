@@ -284,7 +284,8 @@
 | P70.3 operations sensitive-field regression guard | 완료 | 운영 상세 표시 보강이 아니라 완료/피드백 조회가 코멘트·금액·원문 같은 민감 필드를 다시 가져오지 못하게 테스트로 고정한다 | repository select guard | unit, typecheck, lint |
 | P70.4 operations bottleneck action rail | 완료 | 운영 상세의 단건 확인이 아니라 운영 통계 화면에서 완료 리포트·피드백·오래 진행중 병목을 바로 다음 행동으로 고르는 흐름을 정리한다 | operations dashboard action review | browser, unit, typecheck, lint |
 | P70.5 operations bottleneck priority refinement | 완료 | 운영 통계 화면 링크 노출이 아니라 서버 요약이 완료 리포트·피드백 병목을 올바른 순서로 샘플링하는지 보강한다 | operations summary priority tests | unit, typecheck, lint |
-| P71.1 requester transaction status clarity | 예정 | 운영자 병목 관리가 아니라 화주 대시보드와 상세에서 선정·진행·완료 상태의 다음 행동 문구가 충분히 명확한지 보강한다 | requester status UX review | browser, unit, typecheck, lint |
+| P71.1 requester transaction status clarity | 완료 | 운영자 병목 관리가 아니라 화주 대시보드와 상세에서 선정·진행·완료 상태의 다음 행동 문구가 충분히 명확한지 보강한다 | requester status UX review | browser, unit, typecheck, lint |
+| P71.2 partner transaction status clarity | 예정 | 화주 상세 상태 안내가 아니라 포워더·관세사 입찰 상세에서 선정 이후 다음 행동과 완료 리포트·피드백 위치를 명확히 한다 | partner status UX review | browser, unit, typecheck, lint |
 
 #### P34 다음 코드 작업 후보
 
