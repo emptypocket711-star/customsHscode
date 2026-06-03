@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:local": "node scripts/run_local_dev.mjs",
+    "dev:local:env": "node scripts/run_local_dev.mjs --print-env",
     "build": "next build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",

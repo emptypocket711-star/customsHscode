@@ -2,6 +2,22 @@
 
 This folder contains helper scripts for local data preparation and operational maintenance.
 
+## Local dev server
+
+Use `npm run dev:local` when testing UI or E2E flows on the local Supabase stack.
+It overrides `.env.local` Supabase values with local defaults and uses mock AI by
+default, so route checks are faster and do not accidentally depend on the remote
+project.
+
+```bash
+npm run dev:local
+npm run dev:local:env
+```
+
+To test the real GPT product-name flow against local Supabase, pass
+`LOCAL_AI_PROVIDER=openai` and keep `OPENAI_API_KEY` in the shell or `.env.local`.
+The script prints only origins and provider names, never secret values.
+
 ## Production schema health check
 
 `check-production-schema.mjs` compares the current migration files with the

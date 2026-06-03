@@ -4,6 +4,23 @@
 
 ## 2026-06-03
 
+### local dev environment split
+
+- 이전 작업은 P167 품명 AI 검색의 HSK 10자리 후보 품질 보강이고, 이번 작업은 로컬 브라우저 검증이 원격 `.env.local` 설정에 흔들리지 않도록 개발 서버 실행 환경을 분리한 P168이다.
+- `scripts/run_local_dev.mjs`를 추가해 `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_URL`, `DATABASE_URL`, Supabase local key, `AI_PROVIDER`를 로컬 기본값으로 고정해 Next dev 서버를 띄울 수 있게 했다.
+- `npm run dev:local`과 `npm run dev:local:env`를 추가했다.
+- `dev:local:env`는 base URL, Supabase origin, DB host, AI provider만 출력하고 secret 값은 출력하지 않는다.
+- 기본은 `AI_PROVIDER=mock`이라 UI/E2E route 확인이 빠르고, 실제 GPT 품명 흐름이 필요하면 `LOCAL_AI_PROVIDER=openai`로 전환할 수 있게 문서화했다.
+- `.env.local` 파일 자체는 수정하지 않았고, 원격 푸시나 배포도 하지 않았다.
+- 다음 작업은 P169 로컬 E2E 실행 경로 일관화다. 이번 P168이 서버 실행 환경 분리라면, P169는 기존 E2E/리뷰 스크립트가 이 로컬 환경을 더 안정적으로 사용하도록 연결·문서화하는 작업이다.
+
+검증:
+
+- `npm run dev:local:env`
+- `node --check scripts/run_local_dev.mjs`
+- `npm run typecheck`
+- `npm run lint`
+
 ### product name search HSK10 expansion
 
 - 이전 작업은 운영/대시보드/거래 상태 화면 회귀 검증이고, 이번 작업은 품명 AI 검색에서 GPT가 넓은 HS4/HS6만 주는 경우에도 사용자 화면에는 HSK 10자리 후보를 먼저 보여주도록 보강한 것이다.
