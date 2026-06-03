@@ -7957,3 +7957,19 @@
 - Playwright requester/forwarder/broker `/dashboard` 승인 역할 회귀 확인
 - `npm run typecheck`
 - `npm run lint`
+
+### dashboard marketplace regression
+
+- 이전 작업은 역할 미승인/미설정 상태의 대시보드 action guard를 추가한 P157.1이고, 이번 작업은 P151-P157 대시보드·알림 변경 묶음이 역할별로 계속 정상 동작하는지 확인한 P158.1이다.
+- dashboard next action anchor, notification href helper, role guard render 테스트를 함께 실행했다.
+- requester/forwarder/broker 대시보드 브라우저 smoke에서 역할별 필수 문구와 비노출 문구를 확인했다.
+- 각 역할의 다음 행동 링크가 `#request-bids`, `#opportunity-bid`, `#request-lifecycle`, `#request-completion` 계열 섹션 앵커를 포함하는지 확인했다.
+- 새 코드 변경은 없고, 문서 상태만 완료로 갱신했다.
+- 로컬 파일만 수정했고 원격 푸시, 배포는 하지 않았다.
+
+검증:
+
+- `npx vitest run features/dashboard/dashboard-home.test.ts features/dashboard/marketplace-notification-inbox.test.ts`
+- Playwright requester/forwarder/broker `/dashboard` role regression smoke
+- `npm run typecheck`
+- `npm run lint`

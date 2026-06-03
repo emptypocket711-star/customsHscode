@@ -446,6 +446,7 @@
 | P155.1 dashboard request counter label clarity | 완료 | 알림 E2E fixture가 아니라 대시보드 하단 카운터에서 공개 요청과 실제 진행중 업무가 혼동되지 않게 문구를 분리한다 | dashboard counter copy | browser, typecheck, lint |
 | P156.1 role-aware dashboard counters and links | 완료 | 카운터 문구 수정이 아니라 화주/포워더/관세사 역할별로 관련 카운터와 workspace 링크만 노출한다 | role-aware dashboard footer | browser, typecheck, lint |
 | P157.1 unapproved role dashboard guard | 완료 | 승인된 역할별 카운터가 아니라 역할 미승인/미설정 상태에서 요청 생성·입찰 링크 대신 역할 설정/승인 확인을 먼저 보여준다 | unapproved role dashboard guard | unit render, browser, typecheck, lint |
+| P158.1 dashboard marketplace regression | 완료 | 역할 미승인 guard 코드 변경이 아니라 P151-P157 대시보드·알림 변경 묶음이 역할별로 계속 정상 동작하는지 확인한다 | dashboard marketplace regression | unit, browser, typecheck, lint |
 
 #### P109 다음 병목 선정
 
