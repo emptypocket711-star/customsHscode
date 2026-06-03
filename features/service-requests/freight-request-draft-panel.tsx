@@ -13,6 +13,7 @@ import {
 } from "@/features/service-requests/marketplace-request-prefill";
 import { MarketplacePrefillSourcePanel } from "@/features/service-requests/marketplace-prefill-source-panel";
 import { OverseasPartnerRequestHint } from "@/features/service-requests/overseas-partner-request-hint";
+import { partnerOpportunityEmptyCopy } from "@/features/service-requests/partner-opportunity-empty-copy";
 import { PartnerOpportunityFlowPanel } from "@/features/service-requests/partner-opportunity-flow-panel";
 import { RequestDraftReadinessPanel } from "@/features/service-requests/request-draft-readiness-panel";
 import { SelectedPartnerDocumentHandoff } from "@/features/service-requests/selected-partner-document-handoff";
@@ -1565,7 +1566,7 @@ export function FreightRequestDraftPanel({
             ) : null}
             {schemaReady && opportunities.length === 0 ? (
               <p className="rounded-md border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                현재 입찰 가능한 운송 요청이 없습니다.
+                {partnerOpportunityEmptyCopy.freight}
               </p>
             ) : null}
             {schemaReady && opportunities.length > 0 && filteredOpportunities.length === 0 ? (

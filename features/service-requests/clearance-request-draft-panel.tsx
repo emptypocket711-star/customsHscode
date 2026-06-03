@@ -13,6 +13,7 @@ import {
 } from "@/features/service-requests/marketplace-request-prefill";
 import { MarketplacePrefillSourcePanel } from "@/features/service-requests/marketplace-prefill-source-panel";
 import { OverseasPartnerRequestHint } from "@/features/service-requests/overseas-partner-request-hint";
+import { partnerOpportunityEmptyCopy } from "@/features/service-requests/partner-opportunity-empty-copy";
 import { PartnerOpportunityFlowPanel } from "@/features/service-requests/partner-opportunity-flow-panel";
 import { RequestDraftReadinessPanel } from "@/features/service-requests/request-draft-readiness-panel";
 import { SelectedPartnerDocumentHandoff } from "@/features/service-requests/selected-partner-document-handoff";
@@ -1513,7 +1514,7 @@ export function ClearanceRequestDraftPanel({
           ) : null}
           {schemaReady && opportunities.length === 0 ? (
             <p className="rounded-md border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-              관심 조건과 회사 검증 상태에 맞는 공개 요청이 생기면 표시됩니다.
+              {partnerOpportunityEmptyCopy.clearance}
             </p>
           ) : null}
           {schemaReady && opportunities.length > 0 && filteredOpportunities.length === 0 ? (
