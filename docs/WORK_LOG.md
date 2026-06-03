@@ -4,6 +4,18 @@
 
 ## 2026-06-03
 
+### marketplace owner operations brief
+
+- 이전 작업은 P216 staging suite와 E2E 진단 안정화였고, 이번 작업은 P217 대표 1인 운영자가 관리 통계를 해석하지 않아도 기본 화면에서 오늘 볼 것만 먼저 보게 하는 UI 단순화 작업이다.
+- `PlatformRequestOperationsPanel` 상단에 `오늘 맡길 1순위`, `직접 확인 샘플`, `전체 운영 상태` 3개 요약을 추가했다.
+- 기존 17개 진단 지표는 유지하되 기본 판단 이후에 펼쳐보는 상세 진단으로 남겼다.
+- `buildOwnerOperationsBrief`를 분리해 운영 패널이 다시 지표 나열 화면으로 회귀하지 않도록 단위 테스트를 추가했다.
+- 다음 작업은 P218 operations home action rail이다. 이번 P217이 운영 패널 내부의 기본 정보량을 줄인 작업이라면, P218은 운영 관리 홈 첫 화면에서 역할 신청, 회사 검증, 플랫폼 병목 중 오늘 먼저 볼 레일을 더 선명하게 만드는 작업이다.
+
+검증:
+
+- `npx vitest run features/operations/platform-request-operations-panel.test.ts`: 7개 통과
+
 ### staging suite result hardening
 
 - 이전 작업은 P215 schema/route/transaction/completion/notification 검증을 한 명령으로 묶은 것이고, 이번 작업은 P216 suite 실패 시 어느 단계가 왜 실패했는지 운영자가 바로 볼 수 있게 결과 출력을 강화한 작업이다.

@@ -252,6 +252,44 @@ function buildTrustMetricGuidance(summary: PlatformRequestOperationsSummary) {
   };
 }
 
+export function buildOwnerOperationsBrief(
+  summary: PlatformRequestOperationsSummary,
+  ownerActionQueue = buildOwnerActionQueue(summary)
+): OperationsMetricCard[] {
+  const primaryAction = ownerActionQueue[0];
+  const directSampleTone = summary.actionItems.length > 0 ? "info" as const : "success" as const;
+  const operationsTone = !summary.schemaReady
+    ? "warning" as const
+    : summary.total > 0
+      ? "info" as const
+      : "success" as const;
+
+  return [
+    {
+      detail: primaryAction?.action ?? "새 병목이 생길 때까지 다음 MVP 기능 구현을 계속 진행합니다.",
+      label: "오늘 맡길 1순위",
+      tone: primaryAction?.tone ?? "success",
+      value: primaryAction?.label ?? "정상"
+    },
+    {
+      detail: summary.actionItems.length > 0
+        ? "아래 운영 샘플만 열어 현재 병목이 실제 화면에서 어떻게 보이는지 확인하면 됩니다."
+        : "직접 열어볼 문제 샘플이 없으면 통계 해석보다 다음 MVP 작업을 이어갑니다.",
+      label: "직접 확인 샘플",
+      tone: directSampleTone,
+      value: `${summary.actionItems.length}건`
+    },
+    {
+      detail: summary.schemaReady
+        ? "요청, 입찰, 선정, 완료 흐름의 누적 상태입니다. 세부 원인은 필요할 때만 아래 진단을 펼칩니다."
+        : "운영 통계보다 Preview DB schema 적용 여부를 먼저 확인해야 합니다.",
+      label: "전체 운영 상태",
+      tone: operationsTone,
+      value: summary.schemaReady ? `${summary.total}건` : "DB 확인"
+    }
+  ];
+}
+
 type OperationsMetricCard = {
   detail: string;
   label: string;
@@ -303,6 +341,7 @@ export function PlatformRequestOperationsPanel({
   const copyReadyRequest = buildCopyReadyOperationsRequest(summary, ownerActionQueue);
   const trustMetricGuidance = buildTrustMetricGuidance(summary);
   const { diagnosticMetrics, primaryMetrics } = buildPlatformRequestOperationsMetricGroups(summary);
+  const ownerBrief = buildOwnerOperationsBrief(summary, ownerActionQueue);
 
   return (
     <div id="platform-request-operations" className="scroll-mt-6">
@@ -323,6 +362,17 @@ export function PlatformRequestOperationsPanel({
               </Link>
             </div>
           ) : null}
+          <div className="grid gap-3 md:grid-cols-3">
+            {ownerBrief.map((item) => (
+              <div className="rounded-md border border-slate-200 bg-slate-50 p-3" key={item.label}>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-slate-950">{item.label}</p>
+                  <Badge tone={item.tone}>{item.value}</Badge>
+                </div>
+                <p className="mt-2 text-xs leading-5 text-slate-600">{item.detail}</p>
+              </div>
+            ))}
+          </div>
           <div className="rounded-md border border-slate-200 bg-white p-4">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
               <div>

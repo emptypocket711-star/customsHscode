@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { buildPlatformRequestOperationsMetricGroups, PlatformRequestOperationsPanel } from "@/features/operations/platform-request-operations-panel";
+import {
+  buildOwnerOperationsBrief,
+  buildPlatformRequestOperationsMetricGroups,
+  PlatformRequestOperationsPanel
+} from "@/features/operations/platform-request-operations-panel";
 import type { PlatformRequestOperationsSummary } from "@/server/repositories/platform-operations.repository";
 
 function summaryFixture(overrides: Partial<PlatformRequestOperationsSummary> = {}): PlatformRequestOperationsSummary {
@@ -43,6 +47,30 @@ function summaryFixture(overrides: Partial<PlatformRequestOperationsSummary> = {
 }
 
 describe("platform request operations panel", () => {
+  it("summarizes the owner-facing operations view into three immediate checks", () => {
+    const brief = buildOwnerOperationsBrief(summaryFixture({
+      actionItems: [{
+        detail: "운송 요청의 견적 비교·선택 위치를 확인합니다.",
+        href: "/operations/requests/req-1#request-bids",
+        label: "견적 비교 확인",
+        requestId: "req-1",
+        requestType: "freight",
+        status: "bids_received"
+      }],
+      bidsReceived: 2,
+      total: 5
+    }));
+
+    expect(brief.map((item) => item.label)).toEqual([
+      "오늘 맡길 1순위",
+      "직접 확인 샘플",
+      "전체 운영 상태"
+    ]);
+    expect(brief[0]?.value).toBe("견적 도착");
+    expect(brief[1]?.value).toBe("1건");
+    expect(brief[2]?.value).toBe("5건");
+  });
+
   it("keeps the default operations view focused on four primary metrics", () => {
     const groups = buildPlatformRequestOperationsMetricGroups(summaryFixture({
       bidsReceived: 2,
@@ -109,6 +137,9 @@ describe("platform request operations panel", () => {
       })
     );
 
+    expect(html).toContain("오늘 맡길 1순위");
+    expect(html).toContain("직접 확인 샘플");
+    expect(html).toContain("전체 운영 상태");
     expect(html).toContain("지금 바로 맡길 1순위만 먼저 보여주고");
     expect(html).toContain("다음 후보 2개 보기");
     expect(html).toContain("바로 확인할 운영 샘플");
