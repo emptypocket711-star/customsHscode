@@ -4,6 +4,22 @@
 
 ## 2026-06-03
 
+### marketplace DB/RLS negative harness
+
+- 이전 작업은 P253에서 P254-P280을 백엔드 보안/무결성 레일로 다시 고정한 것이고, 이번 작업은 그 계획을 실제 실행 가능한 DB/RLS negative 하네스로 바꾼 작업이다.
+- `smoke:marketplace-rls-negative` script와 `scripts/check_marketplace_rls_negative.mjs`를 추가했다.
+- 하네스는 marketplace fixture 계정으로 로그인해 requester 직접 `service_requests` status update, 포워더의 통관 preference 생성, 관세사의 운송 preference 생성, requester의 파트너 알림 delivery 읽기, authenticated 사용자의 service-role notification claim RPC 호출이 모두 막히는지 확인한다.
+- Preview DB에서 fixture seed 후 5개 negative check가 모두 통과했다.
+- 다음 작업은 P255 publish RPC nullable company guard다. 이번 P254가 “우회 테스트를 실행할 수 있는 기준선”이라면, P255는 그 기준선에 회사 없는 인증 사용자의 공개 RPC 우회를 추가하고 실제 RPC를 고치는 작업이다.
+
+검증:
+
+- `node --check scripts/check_marketplace_rls_negative.mjs`
+- `vercel env run -e preview -- sh -c 'E2E_ALLOW_REMOTE_MARKETPLACE_TRANSACTION=true node scripts/seed_marketplace_transaction_fixture.mjs && E2E_ALLOW_REMOTE_MARKETPLACE_RLS_NEGATIVE=true npm run smoke:marketplace-rls-negative'`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
 ### P280 backend hardening runway sync
 
 - 이전 작업은 P251 파트너 입찰 빈 상태에서 관심 조건 설정으로 이동하는 링크를 추가하고 P252 최신 프리뷰 suite 전체를 통과시킨 것이고, 이번 작업은 P254-P280을 단순 UI 추가가 아니라 직접 호출 우회, RLS, 상태 전이, 알림 중복 방지 중심의 백엔드 완성 레일로 다시 고정한 작업이다.

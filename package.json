@@ -14,6 +14,7 @@
     "review:local-routes": "node scripts/local_review_routes.mjs",
     "smoke:local-login": "node scripts/smoke_local_login.mjs",
     "smoke:marketplace-schema": "node scripts/check_marketplace_schema_visibility.mjs",
+    "smoke:marketplace-rls-negative": "node scripts/check_marketplace_rls_negative.mjs",
     "smoke:operations:guard": "node scripts/check_operations_route_guard.mjs",
     "smoke:operations:prepare": "node scripts/prepare_operations_smoke_account.mjs",
     "smoke:production": "node scripts/smoke_production_routes.mjs",

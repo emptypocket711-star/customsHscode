@@ -514,7 +514,7 @@
 | P223.1 broker dashboard primary actions | 완료 | 포워더 대시보드가 아니라 관세사 대시보드에서 통관 의뢰 기회, 제출 견적, 선정 건, 완료 건을 기본 행동으로 정리한다 | broker dashboard UX | broker actions, unit test |
 | P224.1 request list status filters | 예정 | 역할별 대시보드가 아니라 요청 목록에서 임시저장, 모집중, 견적도착, 진행중, 완료 상태 필터와 문구를 정리한다 | request list UX | status filters, unit/browser check |
 | P253.1 P280 backend hardening runway sync | 완료 | 파트너 빈 상태 링크가 아니라 P254-P280을 직접 호출 우회, RLS, 상태 전이, 알림 중복 방지 중심으로 다시 고정한다 | roadmap/work log sync | docs diff check |
-| P254.1 marketplace DB/RLS negative harness | 예정 | 문서 정리가 아니라 requester/forwarder/broker/staff/service-role 우회 시나리오를 실행 가능한 DB/RLS 테스트 하네스로 만든다 | executable RLS matrix | DB/RLS negative harness, no secrets |
+| P254.1 marketplace DB/RLS negative harness | 완료 | 문서 정리가 아니라 requester/forwarder/broker/staff/service-role 우회 시나리오를 실행 가능한 DB/RLS 테스트 하네스로 만든다 | executable RLS matrix | DB/RLS negative harness, no secrets |
 | P255.1 publish RPC nullable company guard | 예정 | 테스트 하네스가 아니라 회사 없는 인증 사용자가 운송 요청 공개 RPC를 직접 호출해 권한 검사를 우회하지 못하게 한다 | publish auth guard | migration governance, RLS negative test, typecheck, lint, build |
 | P256.1 requester direct status update lock | 예정 | 공개 RPC guard가 아니라 requester가 `service_requests`를 직접 `open`으로 바꿔 매칭/audit을 우회하지 못하게 한다 | status transition RPC-only | migration governance, RLS negative test |
 | P257.1 freight detail draft-only mutation | 예정 | request status 잠금이 아니라 공개 후 운송 상세 조건을 직접 바꿔 기존 매칭과 어긋나지 않게 한다 | detail edit boundary | migration governance, unit/RLS |
