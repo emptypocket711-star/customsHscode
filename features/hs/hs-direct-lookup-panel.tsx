@@ -1019,8 +1019,8 @@ function productSearchPresentationState(candidates: HsCandidateRecommendation[],
 
   return {
     tone: "info" as const,
-    badge: "가장 유력",
-    title: "가장 유력한 HS CODE입니다",
+    badge: "우선 검토",
+    title: "우선 검토할 HS 후보입니다",
     description: "입력 품명 기준으로 우선 검토할 HS 방향을 하나로 정리했습니다. 실제 재질, 용도, 구성 확인 후 하위 세번을 검토하세요.",
     questions
   };
@@ -1036,7 +1036,7 @@ function ProductClassificationFlowPanel({
   const hasCandidates = candidates.length > 0;
   const primary = candidates[0];
   const summaryText = primary
-    ? `"${productName}" 기준 가장 가까운 코드: ${formatHsCode(primary.hskCode)} ${primary.koreanName}`
+    ? `"${productName}" 기준 우선 검토 후보: ${formatHsCode(primary.hskCode)} ${primary.koreanName}`
     : `"${productName}" 기준 보완정보가 더 필요합니다.`;
 
   return (
