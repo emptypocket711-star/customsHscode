@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, FileText, ListChecks, Ship } from "lucide-react";
+import { ArrowRight, Building2, FileText, ListChecks, Ship } from "lucide-react";
 import { PageHeading } from "@/components/page-heading";
 import { Badge } from "@/components/ui/badge";
 
@@ -73,26 +73,49 @@ export default function RequestsPage() {
         })}
       </section>
       <section className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <span className="flex min-w-0 gap-3">
-            <span className="grid size-10 shrink-0 place-items-center rounded-md bg-white text-slate-700 ring-1 ring-slate-200">
-              <ListChecks aria-hidden="true" size={19} />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-sm font-semibold text-slate-950">이미 저장한 요청 확인</span>
-              <span className="mt-1 block text-xs leading-5 text-slate-600">
-                초안, 공개, 입찰, 선정, 완료 상태는 각 요청 관리 화면에서 이어서 처리합니다.
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <span className="flex min-w-0 gap-3">
+              <span className="grid size-10 shrink-0 place-items-center rounded-md bg-white text-slate-700 ring-1 ring-slate-200">
+                <ListChecks aria-hidden="true" size={19} />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-slate-950">이미 저장한 요청 확인</span>
+                <span className="mt-1 block text-xs leading-5 text-slate-600">
+                  초안, 공개, 입찰, 선정, 완료 상태는 각 요청 관리 화면에서 이어서 처리합니다.
+                </span>
               </span>
             </span>
-          </span>
-          <span className="flex flex-wrap gap-2">
-            <Link className="focus-ring inline-flex h-9 items-center rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50" href="/requests/freight?workspace=requester">
-              내 운송 요청
-            </Link>
-            <Link className="focus-ring inline-flex h-9 items-center rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50" href="/requests/clearance?workspace=requester">
-              내 통관 의뢰
-            </Link>
-          </span>
+            <span className="flex flex-wrap gap-2">
+              <Link className="focus-ring inline-flex h-9 items-center rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50" href="/requests/freight?workspace=requester">
+                내 운송 요청
+              </Link>
+              <Link className="focus-ring inline-flex h-9 items-center rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50" href="/requests/clearance?workspace=requester">
+                내 통관 의뢰
+              </Link>
+            </span>
+          </div>
+          <div className="flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
+            <span className="flex min-w-0 gap-3">
+              <span className="grid size-10 shrink-0 place-items-center rounded-md bg-white text-slate-700 ring-1 ring-slate-200">
+                <Building2 aria-hidden="true" size={19} />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-slate-950">파트너 입찰 업무</span>
+                <span className="mt-1 block text-xs leading-5 text-slate-600">
+                  포워더와 관세사무소는 공개된 요청과 선정 후 진행 상태를 역할별 화면에서 확인합니다.
+                </span>
+              </span>
+            </span>
+            <span className="flex flex-wrap gap-2">
+              <Link className="focus-ring inline-flex h-9 items-center rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50" href="/requests/freight?workspace=forwarder">
+                포워더 입찰
+              </Link>
+              <Link className="focus-ring inline-flex h-9 items-center rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50" href="/requests/clearance?workspace=broker">
+                관세사 입찰
+              </Link>
+            </span>
+          </div>
         </div>
       </section>
     </div>

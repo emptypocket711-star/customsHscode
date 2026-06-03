@@ -19,5 +19,10 @@ describe("requests page", () => {
     expect(html).toContain("내 통관 의뢰");
     expect(html).toContain("/requests/freight?workspace=requester");
     expect(html).toContain("/requests/clearance?workspace=requester");
+    expect(html).toContain("파트너 입찰 업무");
+    expect(html).toContain("포워더 입찰");
+    expect(html).toContain("관세사 입찰");
+    expect(html).toContain("/requests/freight?workspace=forwarder");
+    expect(html).toContain("/requests/clearance?workspace=broker");
   });
 });
