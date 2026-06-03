@@ -355,6 +355,10 @@ export function buildMarketplaceNextActions(
   const status = summary?.verificationStatus ?? "unverified";
   const partyTypes = summary?.partyTypes ?? [];
   const roleIntents = summary?.roleIntents ?? [];
+  const canUseMarketplace = isVerifiedMarketplaceStatus(status);
+  const canStartRequesterRequest = canUseMarketplace && (partyTypes.includes("domestic_shipper") || partyTypes.includes("foreign_shipper"));
+  const canCheckForwarderWorkspace = canUseMarketplace && partyTypes.includes("forwarder");
+  const canCheckBrokerWorkspace = canUseMarketplace && partyTypes.includes("customs_broker");
   const actions: Array<{
     count: number;
     description: string;
@@ -425,22 +429,30 @@ export function buildMarketplaceNextActions(
         title: "회사 검증 상태 확인"
       }
     ] : []),
-    {
+    ...(canStartRequesterRequest ? [{
       count: 0,
-      description: "운송 조건을 정리하고 검증 포워더에게 견적을 요청합니다.",
-      href: "/requests/freight",
+      description: "운송 견적과 통관 의뢰 중 맞는 요청을 선택하고 초안 저장으로 시작합니다.",
+      href: "/requests",
       label: "요청 시작",
       priority: 1,
-      title: "운송 견적 요청 생성"
-    },
-    {
+      title: "운송·통관 요청 시작"
+    }] : []),
+    ...(canCheckForwarderWorkspace ? [{
       count: 0,
-      description: "HSK, FTA, 요건 검토 범위를 정리하고 관세사무소 견적을 요청합니다.",
-      href: "/requests/clearance",
-      label: "의뢰 시작",
+      description: "입찰 가능한 운송 요청을 확인하고 견적 제출을 준비합니다.",
+      href: "/requests/freight?workspace=forwarder",
+      label: "입찰 확인",
       priority: 1,
-      title: "통관 의뢰 요청 생성"
-    }
+      title: "운송 입찰 가능 요청"
+    }] : []),
+    ...(canCheckBrokerWorkspace ? [{
+      count: 0,
+      description: "입찰 가능한 통관 의뢰를 확인하고 수수료와 필요서류 제안을 준비합니다.",
+      href: "/requests/clearance?workspace=broker",
+      label: "입찰 확인",
+      priority: 1,
+      title: "통관 입찰 가능 요청"
+    }] : [])
   ];
 }
 
@@ -448,7 +460,7 @@ export function buildRequesterDashboardMilestones(activity: DashboardMarketplace
   return [
     {
       description: "운송·통관 요청 초안을 만들거나 임시저장 요청을 이어서 작성합니다.",
-      href: "/requests/freight?workspace=requester",
+      href: "/requests",
       label: "요청하기",
       value: `${activity?.draftRequests ?? 0}건`
     },
@@ -589,16 +601,10 @@ function DashboardMarketplaceEntry({
       }
     ] : []),
     ...(canSeeRequesterActions ? [{
-      description: "화물 조건을 정리하고 검증 포워더에게 운송 견적을 요청합니다.",
-      href: "/requests/freight",
+      description: "운송 견적과 통관 의뢰 중 맞는 요청을 선택하고 초안 저장으로 시작합니다.",
+      href: "/requests",
       icon: Ship,
-      title: "운송 견적 요청"
-    },
-    {
-      description: "HSK, FTA, 요건 검토 범위를 정리하고 관세사무소 견적을 요청합니다.",
-      href: "/requests/clearance",
-      icon: FileText,
-      title: "통관 의뢰 요청"
+      title: "운송·통관 요청 시작"
     }] : []),
     ...(canSeeForwarderActions ? [{
       description: "포워더는 매칭된 화주 요청을 확인하고 운송 견적을 제출합니다.",

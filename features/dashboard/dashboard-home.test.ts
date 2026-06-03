@@ -110,7 +110,7 @@ describe("dashboard marketplace next actions", () => {
       "진행중",
       "완료 대기"
     ]);
-    expect(milestones[0]).toMatchObject({ href: "/requests/freight?workspace=requester", value: "3건" });
+    expect(milestones[0]).toMatchObject({ href: "/requests", value: "3건" });
     expect(milestones[1]).toMatchObject({ href: "/requests/freight/freight-bids-1#request-bids", value: "2건" });
     expect(milestones[2]).toMatchObject({ href: "/requests/clearance/clearance-progress-1#request-lifecycle", value: "2건" });
     expect(milestones[3]).toMatchObject({ value: "2건" });
@@ -223,7 +223,19 @@ describe("dashboard marketplace next actions", () => {
     expect(html).toContain("플랫폼 역할 설정");
     expect(html).not.toContain("운송 견적 요청</span>");
     expect(html).not.toContain("통관 의뢰 요청</span>");
+    expect(html).not.toContain("운송·통관 요청 시작");
     expect(html).not.toContain("내 운송 요청");
     expect(html).not.toContain("운송 입찰 가능");
+  });
+
+  it("routes new requester creation to the combined request hub", () => {
+    const actions = buildMarketplaceNextActions(activityFixture(), summaryFixture);
+
+    expect(actions).toHaveLength(1);
+    expect(actions[0]).toMatchObject({
+      href: "/requests",
+      label: "요청 시작",
+      title: "운송·통관 요청 시작"
+    });
   });
 });
