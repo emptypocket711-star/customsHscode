@@ -4,6 +4,24 @@
 
 ## 2026-06-03
 
+### product candidate clipboard score
+
+- 이전 작업은 P187 품명 AI 결과 화면 전체 문구 회귀 점검이고, 이번 작업은 P188 품명 AI 결과 복사문 점수 보강이다.
+- 화면에는 `점수 N점`이 보였지만 복사문에는 후보별 GPT 점수가 빠져 있어, 외부 전달 시 후보 비교 근거가 약했다.
+- 한국어/영어/중국어 복사문 라벨에 GPT 점수 항목을 추가하고, 후보별 `confidenceScore`를 `GPT 점수 : N점` 형식으로 넣었다.
+- staging에서 품명 `사탕` 결과의 클립보드 복사문을 직접 읽어 `GPT 점수 : N점`, 예비 안내, 수입요건 섹션이 포함되는지 확인했다.
+- 복사문에 `가장 유력`, `가장 가까운 코드`, `확정 HS`, `확정값` 같은 위험 표현이 남지 않았는지 확인했다.
+- 최신 staging preview는 `https://customs-hscode-29ky5h9n6-koo-apps.vercel.app`다.
+- 다음 작업은 P189 품명 AI 상세조회 진입 배너 문구 점검이다. 이번 P188이 복사문이라면, P189는 후보를 눌러 10자리 상세조회로 들어간 뒤 상단 출처/예비값 배너가 확정 분류처럼 보이지 않는지 보는 작업이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- Playwright staging browser clipboard: 품명 `사탕` 복사문에 `GPT 점수 : N점`, 예비 안내, 수입요건 섹션 포함 및 위험 표현 미포함 확인
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-29ky5h9n6-koo-apps.vercel.app`: 9/9 통과
+
 ### product classification flow copy regression
 
 - 이전 작업은 P186 질문별 답변 영역 하단 재조회 버튼 보강이고, 이번 작업은 P187 품명 AI 결과 화면 전체 문구 회귀 점검이다.
