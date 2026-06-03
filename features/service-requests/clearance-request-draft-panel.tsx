@@ -1436,10 +1436,9 @@ export function ClearanceRequestDraftPanel({
         />
         <CardBody className="grid gap-3">
           {!schemaReady ? (
-            <div className="grid gap-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
-              <p>현재 이 환경에서는 플랫폼 요청 목록 데이터가 준비되지 않아 내 통관 의뢰를 불러올 수 없습니다. 계정 문제는 아니며, HS 조회와 일반 대시보드는 사용할 수 있습니다.</p>
-              <RoleRequestSettingsLink />
-            </div>
+            <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
+              현재 이 환경에서는 플랫폼 요청 목록 데이터가 준비되지 않아 내 통관 의뢰를 불러올 수 없습니다. 계정 문제는 아니며, HS 조회와 일반 대시보드는 사용할 수 있습니다.
+            </p>
           ) : null}
           {schemaReady && requests.length === 0 ? (
             <p className="rounded-md border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
