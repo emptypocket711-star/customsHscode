@@ -4,6 +4,23 @@
 
 ## 2026-06-03
 
+### draft save error settings CTA
+
+- 이전 작업은 P193 회사 설정의 화주 역할/회사 정보 진입 UX 점검이고, 이번 작업은 P194 요청 초안 저장 실패 상태의 직접 이동 CTA 보강이다.
+- 운송/통관 초안 저장 오류 메시지 박스에 `회사 설정 확인` 링크를 추가했다.
+- 오류 메시지가 회사 설정에서 화주 역할과 회사 정보를 확인하라고 안내할 때, 사용자가 바로 `/settings/members`로 이동할 수 있게 했다.
+- staging에서 운송 초안 저장 실패 상태를 만들고 `회사 설정 확인` 링크가 보이는지, 클릭 시 회사 설정 화면으로 이동하는지 확인했다.
+- 최신 staging preview는 `https://customs-hscode-gd4bhpbc9-koo-apps.vercel.app`다.
+- 다음 작업은 P195 회사 설정 역할 신청 폼의 비활성 상태 안내 점검이다. 이번 P194가 오류 CTA라면, P195는 이동 후 역할 신청이 비활성일 때 사용자가 왜 막혔고 무엇을 해야 하는지 이해할 수 있는지 보는 작업이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- Playwright staging browser: 운송 초안 저장 실패, `회사 설정 확인` CTA 표시 및 `/settings/members` 이동 확인
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-gd4bhpbc9-koo-apps.vercel.app`: 9/9 통과
+
 ### company settings role guidance
 
 - 이전 작업은 P192 초안 저장 액션 성공/실패 메시지 점검이고, 이번 작업은 P193 회사 설정의 화주 역할/회사 정보 진입 UX 점검이다.
