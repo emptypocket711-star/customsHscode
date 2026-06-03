@@ -105,7 +105,7 @@ describe("dashboard marketplace next actions", () => {
     }));
 
     expect(milestones.map((item) => item.label)).toEqual([
-      "요청하기",
+      "요청 관리",
       "견적 도착",
       "진행중",
       "완료 대기"
@@ -223,7 +223,7 @@ describe("dashboard marketplace next actions", () => {
     expect(html).toContain("플랫폼 역할 설정");
     expect(html).not.toContain("운송 견적 요청</span>");
     expect(html).not.toContain("통관 의뢰 요청</span>");
-    expect(html).not.toContain("운송·통관 요청 시작");
+    expect(html).not.toContain("운송·통관 요청 시작·관리");
     expect(html).not.toContain("내 운송 요청");
     expect(html).not.toContain("운송 입찰 가능");
   });
@@ -234,8 +234,8 @@ describe("dashboard marketplace next actions", () => {
     expect(actions).toHaveLength(1);
     expect(actions[0]).toMatchObject({
       href: "/requests",
-      label: "요청 시작",
-      title: "운송·통관 요청 시작"
+      label: "요청 관리",
+      title: "운송·통관 요청 시작·관리"
     });
   });
 });

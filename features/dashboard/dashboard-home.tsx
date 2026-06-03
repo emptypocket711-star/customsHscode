@@ -431,11 +431,11 @@ export function buildMarketplaceNextActions(
     ] : []),
     ...(canStartRequesterRequest ? [{
       count: 0,
-      description: "운송 견적과 통관 의뢰 중 맞는 요청을 선택하고 초안 저장으로 시작합니다.",
+      description: "운송 견적과 통관 의뢰를 새로 시작하거나 저장된 요청을 이어서 처리합니다.",
       href: "/requests",
-      label: "요청 시작",
+      label: "요청 관리",
       priority: 1,
-      title: "운송·통관 요청 시작"
+      title: "운송·통관 요청 시작·관리"
     }] : []),
     ...(canCheckForwarderWorkspace ? [{
       count: 0,
@@ -459,9 +459,9 @@ export function buildMarketplaceNextActions(
 export function buildRequesterDashboardMilestones(activity: DashboardMarketplaceActivitySummary | null) {
   return [
     {
-      description: "운송·통관 요청 초안을 만들거나 임시저장 요청을 이어서 작성합니다.",
+      description: "운송·통관 요청 초안을 만들거나 저장된 요청과 입찰 상태를 이어서 확인합니다.",
       href: "/requests",
-      label: "요청하기",
+      label: "요청 관리",
       value: `${activity?.draftRequests ?? 0}건`
     },
     {
@@ -601,10 +601,10 @@ function DashboardMarketplaceEntry({
       }
     ] : []),
     ...(canSeeRequesterActions ? [{
-      description: "운송 견적과 통관 의뢰 중 맞는 요청을 선택하고 초안 저장으로 시작합니다.",
+      description: "운송 견적과 통관 의뢰를 새로 시작하거나 저장된 요청을 이어서 처리합니다.",
       href: "/requests",
       icon: Ship,
-      title: "운송·통관 요청 시작"
+      title: "운송·통관 요청 시작·관리"
     }] : []),
     ...(canSeeForwarderActions ? [{
       description: "포워더는 매칭된 화주 요청을 확인하고 운송 견적을 제출합니다.",
