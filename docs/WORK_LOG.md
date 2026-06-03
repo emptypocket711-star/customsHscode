@@ -4,6 +4,19 @@
 
 ## 2026-06-03
 
+### operations smoke workflow docs
+
+- 이전 작업은 P205 smoke 실행 결과에 운영자 env 진단을 추가한 것이고, 이번 작업은 P206 운영 smoke를 실제로 켜는 절차를 scripts 문서에 정리한 작업이다.
+- `scripts/README.md`에 `Staging operations smoke` 섹션을 추가했다.
+- `smoke:operations:ready`, `smoke:operations:prepare`, `smoke:production`, `smoke:operations:guard` 실행 순서를 문서화했다.
+- service role, 운영자 비밀번호, Vercel bypass secret은 shell 또는 secret store에만 두고 `tmp/test-accounts.json`에 커밋하지 말라고 명시했다.
+- smoke 출력의 `operationsEmailPresent`, `operationsPasswordPresent`, `operationsSkipReason` 의미를 문서화했다.
+- 다음 작업은 P207 operations smoke prepare schema fallback이다. 이번 P206이 실행 절차 문서화라면, P207은 준비 스크립트가 오래된 profile schema에서도 최소 developer role 보강을 시도하게 만드는 코드 보강이다.
+
+검증:
+
+- `rg -n "smoke:operations:(ready|prepare|guard)|smoke:production|Staging operations smoke|operationsSkipReason" package.json scripts/README.md scripts/*.mjs`
+
 ### operations smoke diagnostics
 
 - 이전 작업은 P204 운영자 smoke가 켜졌을 때 각 운영 화면의 고유 본문 marker를 확인하도록 강화한 것이고, 이번 작업은 P205 운영자 env가 없어 `operationsRoutes=false`가 나올 때 원인을 smoke 출력만 보고 알 수 있게 한 작업이다.
