@@ -4,6 +4,22 @@
 
 ## 2026-06-03
 
+### requirement candidate copy text
+
+- 이전 작업은 P181 복사 안내문의 수입요건 빈 결과 문구 개선이고, 이번 작업은 P182 요건 후보가 있는 복사 안내문 개선이다.
+- 요건 후보가 있을 때도 짧은 복사문, 상세 복사문, 품명 후보 복사문, 목적국 복사문에 `수입요건 해당 여부와 제출서류는 제품 상세자료 확인 후 검토가 필요합니다.` 문구가 함께 들어가게 했다.
+- 기존 상세 복사문에서만 보이던 검토 문구를 짧은 복사문에도 유지해 후보 목록이 확정 요건처럼 전달되지 않게 했다.
+- 최신 staging preview는 `https://customs-hscode-73okemyvc-koo-apps.vercel.app`다.
+- 다음 작업은 P183 HS 직접조회 안전 문구 체계 회귀 점검이다. 이번 P182가 요건 후보 복사문 개별 수정이라면, P183은 상단 카드·기본정보·복사문이 같은 표현 원칙을 지키는지 묶어서 확인하는 작업이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- Playwright staging browser clipboard: `3304.99-1000` 짧은/상세 복사문에 수입요건 후보와 `제품 상세자료 확인 후 검토` 문구 확인
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-73okemyvc-koo-apps.vercel.app`: 9/9 통과
+
 ### requirement empty copy text
 
 - 이전 작업은 P180 상세 복사 안내문의 FTA 세율 문구 개선이고, 이번 작업은 P181 복사 안내문의 수입요건 빈 결과 문구 개선이다.
