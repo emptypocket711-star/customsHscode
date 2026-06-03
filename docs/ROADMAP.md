@@ -497,6 +497,7 @@
 | P206.1 operations smoke workflow docs | 완료 | smoke 로그 개선이 아니라 운영 smoke 준비, 계정 보강, 본문 smoke, guard smoke 실행 순서를 scripts 문서에 남긴다 | operations smoke workflow docs | script reference check |
 | P207.1 operations smoke prepare schema fallback | 완료 | 운영 smoke 절차 문서화가 아니라 준비 스크립트가 profile 확장 컬럼이 없는 schema에서도 최소 developer role 보강을 시도한다 | operations smoke prepare schema fallback | node check, missing-env check, typecheck, lint, build, staging smoke |
 | P208.1 operations guard diagnostics | 완료 | 운영자 준비 스크립트가 아니라 일반 계정 운영 차단 guard가 어떤 계정 파일과 역할을 검사했는지 명확히 출력한다 | operations guard diagnostics | browser guard, typecheck, lint, build, staging smoke |
+| P209.1 completion report dual acknowledgement review gate | 완료 | 운영 smoke 보강이 아니라 완료 리포트 운영 검토 전 화주와 파트너 양측 확인을 모두 요구한다 | dual acknowledgement review gate | unit, governance, typecheck, lint, build, staging smoke |
 
 #### P109 다음 병목 선정
 
