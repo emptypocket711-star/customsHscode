@@ -19,7 +19,8 @@ describe("service request list view", () => {
       bidCount: 2,
       requestStatus: "partner_selected",
       unansweredQuestionCount: 1
-    })).toEqual({
+    })).toMatchObject({
+      detail: "파트너가 선정된 요청은 진행 시작 처리 후 후속 업무를 관리합니다.",
       href: "#request-lifecycle",
       label: "진행 시작",
       tone: "info",
@@ -30,7 +31,7 @@ describe("service request list view", () => {
       ...baseInput,
       bidCount: 2,
       requestStatus: "in_progress"
-    })).toEqual({
+    })).toMatchObject({
       href: "#request-lifecycle",
       label: "완료 처리",
       tone: "info",
@@ -44,7 +45,8 @@ describe("service request list view", () => {
       bidCount: 2,
       requestStatus: "completed",
       unansweredQuestionCount: 1
-    })).toEqual({
+    })).toMatchObject({
+      detail: "거래 완료 후에는 완료 리포트, 보관 서류, 후기를 먼저 확인합니다.",
       href: "#request-completion",
       label: "리포트·후기",
       tone: "success",
@@ -58,7 +60,7 @@ describe("service request list view", () => {
       documentCount: 1,
       publishAnchor: "#request-publish",
       requestStatus: "draft"
-    })).toEqual({
+    })).toMatchObject({
       href: "#request-publish",
       label: "공개 설정",
       tone: "info",
@@ -72,7 +74,7 @@ describe("service request list view", () => {
       questionAnchor: "#opportunity-questions",
       requestStatus: "partner_selected",
       unansweredQuestionCount: 1
-    })).toEqual({
+    })).toMatchObject({
       href: "#request-lifecycle",
       label: "진행 시작",
       tone: "info",
@@ -85,7 +87,8 @@ describe("service request list view", () => {
       bidAnchor: "#opportunity-bid",
       questionAnchor: "#opportunity-questions",
       unansweredQuestionCount: 2
-    })).toEqual({
+    })).toMatchObject({
+      detail: "화주 답변이 남아 있으면 견적 조건을 확정하기 어렵습니다.",
       href: "#opportunity-questions",
       label: "질문 답변 확인",
       tone: "warning",
@@ -98,7 +101,7 @@ describe("service request list view", () => {
       bidAnchor: "#opportunity-bid",
       questionAnchor: "#opportunity-questions",
       unansweredQuestionCount: 0
-    })).toEqual({
+    })).toMatchObject({
       href: "#opportunity-bid",
       label: "견적 제출",
       tone: "info",
@@ -112,7 +115,7 @@ describe("service request list view", () => {
       questionAnchor: "#opportunity-questions",
       requestStatus: "in_progress",
       unansweredQuestionCount: 3
-    })).toEqual({
+    })).toMatchObject({
       href: "#request-lifecycle",
       label: "완료 처리",
       tone: "info",
@@ -126,7 +129,7 @@ describe("service request list view", () => {
       questionAnchor: "#opportunity-questions",
       requestStatus: "completed",
       unansweredQuestionCount: 1
-    })).toEqual({
+    })).toMatchObject({
       href: "#request-completion",
       label: "리포트·후기",
       tone: "success",

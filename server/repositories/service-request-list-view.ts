@@ -22,6 +22,7 @@ export function serviceRequestFeedbackMapToRecord<T>(feedbackByRequestId: Map<st
 }
 
 export type ServiceRequestNextFocus = {
+  detail: string;
   href: string;
   label: string;
   tone: "info" | "neutral" | "success" | "warning";
@@ -46,6 +47,7 @@ export function buildRequesterServiceRequestNextFocus(input: {
 }): ServiceRequestNextFocus {
   if (input.requestStatus === "completed") {
     return {
+      detail: "거래 완료 후에는 완료 리포트, 보관 서류, 후기를 먼저 확인합니다.",
       href: "#request-completion",
       label: "리포트·후기",
       tone: "success",
@@ -55,6 +57,7 @@ export function buildRequesterServiceRequestNextFocus(input: {
 
   if (input.requestStatus === "in_progress") {
     return {
+      detail: "진행 중인 요청은 완료 처리와 리포트 제출 준비가 다음 단계입니다.",
       href: "#request-lifecycle",
       label: "완료 처리",
       tone: "info",
@@ -64,6 +67,7 @@ export function buildRequesterServiceRequestNextFocus(input: {
 
   if (input.requestStatus === "partner_selected") {
     return {
+      detail: "파트너가 선정된 요청은 진행 시작 처리 후 후속 업무를 관리합니다.",
       href: "#request-lifecycle",
       label: "진행 시작",
       tone: "info",
@@ -73,6 +77,7 @@ export function buildRequesterServiceRequestNextFocus(input: {
 
   if (input.unansweredQuestionCount > 0) {
     return {
+      detail: "파트너 질문이 남아 있으면 견적 비교나 진행 전 먼저 답변해야 합니다.",
       href: input.questionAnchor,
       label: "미답변 질문",
       tone: "warning",
@@ -82,6 +87,7 @@ export function buildRequesterServiceRequestNextFocus(input: {
 
   if (input.bidCount > 0) {
     return {
+      detail: "도착한 견적을 비교하고 조건이 맞는 파트너를 선정합니다.",
       href: "#request-bids",
       label: "견적 비교",
       tone: "info",
@@ -91,6 +97,7 @@ export function buildRequesterServiceRequestNextFocus(input: {
 
   if (input.documentCount === 0) {
     return {
+      detail: "서류가 없으면 파트너가 비용과 리드타임을 판단하기 어렵습니다.",
       href: "#request-documents",
       label: "서류 첨부",
       tone: "warning",
@@ -100,6 +107,7 @@ export function buildRequesterServiceRequestNextFocus(input: {
 
   if (input.requestStatus === "draft" && input.publishAnchor) {
     return {
+      detail: "기본 서류가 있으면 검증된 파트너에게 요청을 공개할 수 있습니다.",
       href: input.publishAnchor,
       label: "공개 설정",
       tone: "info",
@@ -108,6 +116,7 @@ export function buildRequesterServiceRequestNextFocus(input: {
   }
 
   return {
+    detail: "공개된 요청은 파트너 견적 도착 여부를 확인합니다.",
     href: "#request-bids",
     label: "견적 대기",
     tone: "neutral",
@@ -123,6 +132,7 @@ export function buildPartnerOpportunityNextFocus(input: {
 }): ServiceRequestNextFocus {
   if (input.requestStatus === "completed") {
     return {
+      detail: "거래 완료 후에는 완료 리포트, 보관 서류, 후기를 먼저 확인합니다.",
       href: "#request-completion",
       label: "리포트·후기",
       tone: "success",
@@ -132,6 +142,7 @@ export function buildPartnerOpportunityNextFocus(input: {
 
   if (input.requestStatus === "in_progress") {
     return {
+      detail: "진행 중인 요청은 완료 처리와 리포트 제출 준비가 다음 단계입니다.",
       href: "#request-lifecycle",
       label: "완료 처리",
       tone: "info",
@@ -141,6 +152,7 @@ export function buildPartnerOpportunityNextFocus(input: {
 
   if (input.requestStatus === "partner_selected") {
     return {
+      detail: "선정된 요청은 진행 시작 처리 후 후속 업무를 관리합니다.",
       href: "#request-lifecycle",
       label: "진행 시작",
       tone: "info",
@@ -150,6 +162,7 @@ export function buildPartnerOpportunityNextFocus(input: {
 
   if (input.unansweredQuestionCount > 0) {
     return {
+      detail: "화주 답변이 남아 있으면 견적 조건을 확정하기 어렵습니다.",
       href: input.questionAnchor,
       label: "질문 답변 확인",
       tone: "warning",
@@ -158,6 +171,7 @@ export function buildPartnerOpportunityNextFocus(input: {
   }
 
   return {
+    detail: "검토 가능한 요청이면 조건을 확인하고 견적을 제출합니다.",
     href: input.bidAnchor,
     label: "견적 제출",
     tone: "info",

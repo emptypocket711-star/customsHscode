@@ -81,7 +81,7 @@ export default async function FreightRequestDetailPage({
       <div className="grid gap-3 rounded-md border border-slate-200 bg-white p-3 md:grid-cols-[1fr_auto] md:items-center">
         <div>
           <p className="text-sm font-semibold text-slate-950">다음 작업 바로가기</p>
-          <p className="mt-1 text-xs leading-5 text-slate-600">상세 화면에서 처리할 위치로 바로 이동합니다.</p>
+          <p className="mt-1 text-xs leading-5 text-slate-600">{nextFocus.detail}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <a className="focus-ring inline-flex h-9 items-center gap-2 rounded-md bg-slate-950 px-3 text-xs font-semibold text-white" href={nextFocus.href}>
