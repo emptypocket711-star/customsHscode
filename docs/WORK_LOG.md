@@ -4,6 +4,20 @@
 
 ## 2026-06-03
 
+### product candidate detail handoff regression
+
+- 이전 작업은 P169 로컬 품명 보완 E2E runner 안정화이고, 이번 작업은 품명 검색 10자리 후보를 눌러 직접조회로 이동할 때 검색 맥락이 유지되는지 확인한 P170이다.
+- 브라우저에서 `사탕` 품명검색 결과의 `이 코드로 조회`를 클릭해 `/hs/direct?...&source=product_search&sourceProductName=사탕&sourceCandidateRank=1`로 이동하는지 확인했다.
+- 상세 화면에서 품명, 후보 순위, 조회기준일, 간략 정보가 유지되는지 확인했다.
+- 상세 배너 문구를 `품명검색에서 선택한 AI 추천 HS CODE입니다.`에서 `품명검색에서 선택한 HS CODE입니다.`로 바꿔 AI가 확정한 듯한 표현을 줄였다.
+- 다음 작업은 P171 HS 직접조회 상세 표시 밀도 점검이다. 이번 P170이 품명 후보에서 상세조회로 넘어가는 handoff라면, P171은 10자리 직접조회 화면 자체의 간략 정보와 네비게이터 표시가 사용자에게 과밀하지 않은지 확인하는 작업이다.
+
+검증:
+
+- Playwright storage-state check: `사탕` 품명검색 -> `이 코드로 조회` 클릭 -> source banner, product name, basis date, brief info 확인
+- `npm run typecheck`
+- `npm run lint`
+
 ### local product supplement e2e runner
 
 - 이전 작업은 P168 로컬 dev 서버 실행 환경 분리이고, 이번 작업은 품명 보완 E2E가 로컬 서버·storage state·local Supabase를 일관되게 사용하도록 감싼 P169다.

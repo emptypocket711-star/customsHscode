@@ -1502,7 +1502,7 @@ function ProductSearchSourceBanner({
     <section className="mt-4 rounded-md border border-blue-200 bg-blue-50 px-3 py-3 text-sm leading-6 text-blue-950">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="font-semibold">품명검색에서 선택한 AI 추천 HS CODE입니다.</p>
+          <p className="font-semibold">품명검색에서 선택한 HS CODE입니다.</p>
           <p className="mt-1 text-xs leading-5 text-blue-900">
             입력 품명 `{productName}` 기준으로 추천된 HS CODE를 상세 조회하고 있습니다. 아래 관세율, FTA, 수입요건, 원산지표시는 이 HS CODE 기준 조회입니다.
           </p>
