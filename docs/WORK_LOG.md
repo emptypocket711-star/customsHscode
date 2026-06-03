@@ -4,6 +4,22 @@
 
 ## 2026-06-03
 
+### publish RPC nullable company guard regression
+
+- 이전 작업은 P254에서 marketplace DB/RLS negative 하네스를 만든 것이고, 이번 작업은 그 하네스에 회사 없는 인증 사용자의 `publish_freight_request` 직접 호출 차단을 추가한 작업이다.
+- `marketplace-rls-no-company@example.test` 전용 인증 사용자를 service role로 준비하고 profile `company_id`를 null로 고정한다.
+- 이 사용자가 운송 요청 공개 RPC를 직접 호출하면 `회사 프로필을 확인할 수 없습니다.` 메시지로 차단되는지 확인한다.
+- migration에는 이미 `v_actor_company_id is null` guard와 `is distinct from` ownership 비교가 적용되어 있어 추가 SQL 수정 없이 regression check로 고정했다.
+- 다음 작업은 P256 requester direct status update lock이다. 이번 P255가 publish RPC 내부의 NULL company guard라면, P256은 requester가 table update를 직접 호출해 status/deadline/published_at을 바꾸는 경로가 계속 닫혀 있는지 더 넓게 고정하는 작업이다.
+
+검증:
+
+- `node --check scripts/check_marketplace_rls_negative.mjs`
+- `vercel env run -e preview -- sh -c 'E2E_ALLOW_REMOTE_MARKETPLACE_TRANSACTION=true node scripts/seed_marketplace_transaction_fixture.mjs && E2E_ALLOW_REMOTE_MARKETPLACE_RLS_NEGATIVE=true npm run smoke:marketplace-rls-negative'`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
 ### marketplace DB/RLS negative harness
 
 - 이전 작업은 P253에서 P254-P280을 백엔드 보안/무결성 레일로 다시 고정한 것이고, 이번 작업은 그 계획을 실제 실행 가능한 DB/RLS negative 하네스로 바꾼 작업이다.

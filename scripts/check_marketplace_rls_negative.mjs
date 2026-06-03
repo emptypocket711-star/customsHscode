@@ -11,6 +11,10 @@ import {
 import { marketplaceTransactionFixture as fixture } from "../tests/fixtures/marketplace-transaction.fixture.mjs";
 
 const scope = "MARKETPLACE_RLS_NEGATIVE";
+const noCompanyUser = {
+  email: "marketplace-rls-no-company@example.test",
+  fullName: "marketplace rls no company"
+};
 
 function assert(condition, message, details = {}) {
   if (condition) return;
@@ -52,6 +56,58 @@ async function cleanupUnexpectedPreferenceRows(serviceRoleClient) {
     .eq("service_type", "freight");
 }
 
+async function findUserByEmail(client, email) {
+  let page = 1;
+  const perPage = 1000;
+
+  while (true) {
+    const { data, error } = await client.auth.admin.listUsers({ page, perPage });
+    if (error) throw new Error(`auth user list failed: ${error.message}`);
+
+    const found = data.users.find((user) => user.email?.toLowerCase() === email.toLowerCase());
+    if (found) return found;
+    if (data.users.length < perPage) return null;
+    page += 1;
+  }
+}
+
+async function ensureNoCompanyUser(client, testPassword) {
+  const existing = await findUserByEmail(client, noCompanyUser.email);
+  const user = existing
+    ? await client.auth.admin.updateUserById(existing.id, {
+      email_confirm: true,
+      password: testPassword,
+      user_metadata: {
+        full_name: noCompanyUser.fullName
+      }
+    })
+    : await client.auth.admin.createUser({
+      email: noCompanyUser.email,
+      email_confirm: true,
+      password: testPassword,
+      user_metadata: {
+        full_name: noCompanyUser.fullName
+      }
+    });
+
+  if (user.error) throw new Error(`auth no-company user prepare failed: ${user.error.message}`);
+
+  const { error } = await client
+    .from("profiles")
+    .upsert({
+      company_id: null,
+      company_role: "member",
+      email: noCompanyUser.email,
+      full_name: noCompanyUser.fullName,
+      id: user.data.user.id,
+      preferred_locale: "ko-KR",
+      role: "client"
+    }, { onConflict: "id" });
+
+  if (error) throw new Error(`no-company profile prepare failed: ${error.message}`);
+  return user.data.user;
+}
+
 async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPassword }) {
   const serviceRoleClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: {
@@ -60,6 +116,7 @@ async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPas
     }
   });
   await cleanupUnexpectedPreferenceRows(serviceRoleClient);
+  await ensureNoCompanyUser(serviceRoleClient, testPassword);
 
   const requester = await signedClient({
     anonKey,
@@ -79,8 +136,24 @@ async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPas
     password: testPassword,
     supabaseUrl
   });
+  const noCompany = await signedClient({
+    anonKey,
+    email: noCompanyUser.email,
+    password: testPassword,
+    supabaseUrl
+  });
 
   const checks = [];
+
+  const noCompanyPublish = await noCompany.rpc("publish_freight_request", {
+    p_deadline_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    p_request_id: fixture.mutation.requests.freight.id
+  });
+  checks.push({
+    label: "no-company-user-cannot-publish-freight-request",
+    ok: Boolean(noCompanyPublish.error?.message?.includes("회사 프로필을 확인할 수 없습니다")),
+    reason: noCompanyPublish.error?.message ?? "rpc returned without error"
+  });
 
   const statusUpdate = await requester
     .from("service_requests")
