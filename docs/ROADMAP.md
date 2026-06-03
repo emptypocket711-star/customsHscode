@@ -462,6 +462,7 @@
 | P171.1 hs direct detail density review | 완료 | 품명 후보 handoff가 아니라 HS 10자리 직접조회 상세 화면의 간략 정보와 네비게이터 표시 밀도가 적절한지 점검한다 | hs detail density | unit, browser, typecheck, lint, build, staging smoke |
 | P172.1 staging development baseline | 완료 | 로컬 DB 복구가 아니라 작업 브랜치와 Vercel preview를 기준으로 staging 개발·검증 흐름을 만든다 | staging branch, preview deploy, smoke bypass support | push, preview build, typecheck, lint, smoke blocked by Vercel protection |
 | P173.1 staging authenticated smoke | 완료 | staging 배포 생성이 아니라 보호 우회와 테스트 계정 로그인 후 핵심 보호 화면 본문이 렌더링되는지 확인한다 | staging login, authenticated smoke, timeout calibration | browser login, smoke, typecheck, lint |
+| P174.1 import tariff label clarity | 완료 | 세율표 노출량 조정이 아니라 `관세율구분 R/FEF1` 같은 원시 코드 라벨을 사용자용 협정·특혜 관세명으로 바꾼다 | EFTA/LDC/North Korea labels | unit, browser, typecheck, lint, build, staging smoke |
 
 #### P109 다음 병목 선정
 

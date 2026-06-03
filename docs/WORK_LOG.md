@@ -4,6 +4,25 @@
 
 ## 2026-06-03
 
+### import tariff label clarity
+
+- 이전 작업은 P171 HS 직접조회 상세 세율표 밀도 개선이고, 이번 작업은 P174 세율표 라벨 품질 개선이다.
+- `관세율구분 R`, `관세율구분 U`, `관세율구분 FEF1`처럼 DB 원시 코드 fallback이 화면에 남는 문제를 확인했다.
+- `R`은 `최빈개발도상국 특혜관세`, `U`는 `북한산 관세율`로 표시되게 보강했다.
+- `FEF` 계열은 `한-EFTA FTA 관세율`로 표시되게 하고 스위스, 노르웨이, 아이슬란드, 리히텐슈타인 alias를 추가했다.
+- 최신 staging preview는 `https://customs-hscode-6zb049hlk-koo-apps.vercel.app`다.
+- 다음 작업은 P175 HS 직접조회 수입국 필터 기본값/안내 점검이다. 이번 P174가 세율 행 이름을 읽기 쉽게 만든 작업이라면, P175는 `ALL` 상태와 특정 수입국 선택 시 사용자가 FTA/특혜 세율 의미를 혼동하지 않는지 점검하는 작업이다.
+
+검증:
+
+- `npx vitest run features/hs/import-tariff-display.test.ts features/hs/import-tariff-country-filter.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- Playwright staging browser: `1704.90-9000`에서 `최빈개발도상국 특혜관세`, `한-EFTA FTA 관세율`, `북한산 관세율` 확인
+- Playwright staging browser: `관세율구분 R`, `관세율구분 FEF1` 미노출 확인
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-6zb049hlk-koo-apps.vercel.app`: 9/9 통과
+
 ### hs direct detail density review
 
 - 이전 작업은 P173 staging 인증 스모크이고, 이번 작업은 원래 대기 중이던 P171 HS 10자리 직접조회 상세 화면 밀도 점검이다.
