@@ -4,6 +4,22 @@
 
 ## 2026-06-03
 
+### requirement empty copy text
+
+- 이전 작업은 P180 상세 복사 안내문의 FTA 세율 문구 개선이고, 이번 작업은 P181 복사 안내문의 수입요건 빈 결과 문구 개선이다.
+- 빈 수입요건 문구를 `세관장확인대상 수입요건은 조회되지 않았습니다.`에서 `세관장확인 조회 결과 없음`으로 바꿨다.
+- 짧은 복사문, 상세 복사문, 품명 후보 복사문, 목적국 복사문에서 세관장확인 빈 결과가 나올 때 통합공고·개별법령·표시·인증·유통규제 주의 문구가 항상 함께 들어가게 했다.
+- 최신 staging preview는 `https://customs-hscode-mgj4yhxva-koo-apps.vercel.app`다.
+- 다음 작업은 P182 수입요건 후보가 있는 복사 안내문 점검이다. 이번 P181이 빈 결과 문구라면, P182는 요건 후보가 있을 때도 해당 여부와 제출서류가 상세자료 기준 검토라는 문구가 짧은/상세 복사문에 균형 있게 들어가는지 보는 작업이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- Playwright staging browser clipboard: `6109.10-1000` 짧은/상세 복사문에 `세관장확인 조회 결과 없음`, `통합공고, 개별법령, 표시·인증·유통규제` 주의 문구 확인
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-mgj4yhxva-koo-apps.vercel.app`: 9/9 통과
+
 ### FTA copy text
 
 - 이전 작업은 P179 복사 안내문 상세 버전의 원산지표시 문구 개선이고, 이번 작업은 P180 상세 복사 안내문의 FTA 세율 문구 개선이다.
