@@ -15,6 +15,7 @@
     "smoke:local-login": "node scripts/smoke_local_login.mjs",
     "smoke:marketplace-schema": "node scripts/check_marketplace_schema_visibility.mjs",
     "smoke:production": "node scripts/smoke_production_routes.mjs",
+    "smoke:operations:ready": "node scripts/check_operations_smoke_readiness.mjs",
     "e2e:product-supplement": "node scripts/e2e_product_supplement_flow.mjs",
     "e2e:product-supplement:local": "node scripts/run_product_supplement_e2e_local.mjs",
     "e2e:completion-preview:ready": "node scripts/check_completion_preview_e2e_readiness.mjs",
