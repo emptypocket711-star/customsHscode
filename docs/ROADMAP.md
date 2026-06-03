@@ -471,6 +471,7 @@
 | P180.1 FTA copy text | 완료 | 원산지표시 복사문이 아니라 상세 복사 안내문의 FTA 세율 행이 자동 적용처럼 보이지 않게 협정 요건 확인 문구를 붙인다 | copied FTA review note | browser clipboard, typecheck, lint, build, staging smoke |
 | P181.1 requirement empty copy text | 완료 | FTA 복사문이 아니라 짧은/상세 복사 안내문에서 세관장확인 빈 결과가 요건 부재처럼 전달되지 않게 통합공고·개별법 주의 문구를 항상 붙인다 | copied requirement empty caution | browser clipboard, typecheck, lint, build, staging smoke |
 | P182.1 requirement candidate copy text | 완료 | 빈 수입요건 복사문이 아니라 요건 후보가 있는 짧은/상세 복사문에도 해당 여부·제출서류는 상세자료 검토 필요라는 문구를 유지한다 | copied requirement candidate review note | browser clipboard, typecheck, lint, build, staging smoke |
+| P183.1 HS direct safety copy regression | 완료 | 개별 복사문 수정이 아니라 HS 직접조회 상단 카드·기본정보·짧은/상세 복사문 안전 표현이 일관적인지 최신 staging에서 묶어 검증한다 | HS direct safety copy regression | browser regression, source grep, staging smoke |
 
 #### P109 다음 병목 선정
 

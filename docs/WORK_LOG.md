@@ -4,6 +4,21 @@
 
 ## 2026-06-03
 
+### HS direct safety copy regression
+
+- 이전 작업은 P182 요건 후보가 있는 복사 안내문 개선이고, 이번 작업은 P183 HS 직접조회 안전 문구 체계 회귀 점검이다.
+- 최신 staging에서 `3304.99-1000`, `1704.90-9000`, `6109.10-1000`을 대상으로 상단 FTA/특혜 카드, 수입요건 카드, 원산지표시 기본정보, 짧은/상세 복사문을 묶어 확인했다.
+- `ALL` 상태의 FTA 문구, 중국 선택 시 FTA 조건부 문구, 요건 후보/빈 결과 문구, 원산지표시 문구, FTA/요건/원산지 복사문 주의 문구가 일관되게 렌더링되는 것을 확인했다.
+- 소스 검색에서 HS 화면 쪽 `요건 없음`, `보장`, `confirmed`, `guaranteed` 같은 위험 단정 문구가 남아 있지 않은지 확인했다. 남은 `확정` 문구는 `확정 아님`, `예비값`, `staff_confirmed` 내부 상태 등 허용 맥락이다.
+- 최신 staging preview는 `https://customs-hscode-lch0o2qhm-koo-apps.vercel.app`다.
+- 다음 작업은 P184 품명 AI 결과 화면 안전 문구/복사문 회귀 점검이다. 이번 P183이 HS 직접조회 상세 화면의 묶음 회귀라면, P184는 품명 검색 결과 화면의 후보/점수/보완질문/상세조회 진입 문구가 같은 원칙을 지키는지 보는 작업이다.
+
+검증:
+
+- `rg -n "확정|보장|요건 없음|requirements absent|definitely applicable|guaranteed|confirmed" features/hs lib/i18n/hs-direct.ts server/rules server/repositories -S`
+- Playwright staging browser regression: `3304.99-1000`, `1704.90-9000?destinationCountry=CHN`, `6109.10-1000` 화면 및 클립보드 문구 확인
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-lch0o2qhm-koo-apps.vercel.app`: 9/9 통과
+
 ### requirement candidate copy text
 
 - 이전 작업은 P181 복사 안내문의 수입요건 빈 결과 문구 개선이고, 이번 작업은 P182 요건 후보가 있는 복사 안내문 개선이다.
