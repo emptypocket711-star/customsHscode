@@ -8004,3 +8004,20 @@
 - source check: 기존 `사용자 관리 화면을 대표용으로 더 단순화` 문구 비존재, 새 `공지 관리 화면을 대표용으로 더 단순화` 문구 존재 확인
 - `npm run typecheck`
 - `npm run lint`
+
+### notice delete danger guard
+
+- 이전 작업은 운영 점검의 다음 작업 fallback 문구를 공지 관리로 갱신한 P160.1이고, 이번 작업은 공지 관리에서 삭제 폼을 위험 작업 접힘 영역으로 분리한 P161.1이다.
+- 공지를 펼쳐 수정할 때도 `공지 삭제` 버튼이 바로 보이지 않게 했다.
+- 삭제는 `위험 작업`을 한 번 더 펼친 뒤, 삭제 확인값을 입력해야 접근할 수 있다.
+- 숨김 처리로 충분한 공지는 삭제하지 않는다는 운영 기준 문구를 삭제 form 앞에 표시했다.
+- 새 migration, RLS 변경은 없다.
+- 로컬 파일만 수정했고 원격 푸시, 배포는 하지 않았다.
+
+검증:
+
+- Playwright developer `/operations/notices`에서 기본 상태의 `공지 삭제` 버튼 비노출 확인
+- Playwright developer `/operations/notices`에서 공지 수정 영역을 펼친 후에도 `위험 작업`을 열기 전 `공지 삭제` 버튼 비노출 확인
+- Playwright developer `/operations/notices`에서 `위험 작업`을 펼친 뒤 `공지 삭제` 버튼 노출 확인
+- `npm run typecheck`
+- `npm run lint`

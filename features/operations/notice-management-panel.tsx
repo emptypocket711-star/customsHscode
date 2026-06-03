@@ -264,31 +264,38 @@ export function NoticeManagementPanel({ notices }: { notices: AppNotice[] }) {
                   </button>
                 </form>
 
-                <form
-                  action={deleteAction}
-                  className="grid gap-3 rounded-md border border-red-200 bg-red-50 p-3"
-                  onSubmit={(event) => {
-                    if (!window.confirm(`${notice.title} 공지사항을 삭제할까요?`)) {
-                      event.preventDefault();
-                    }
-                  }}
-                >
-                  <input name="id" type="hidden" value={notice.id} />
-                  <div className="grid gap-2 md:grid-cols-[1fr_auto] md:items-end">
-                    <label className="grid gap-1 text-sm font-medium text-red-900">
-                      삭제 확인
-                      <input className="focus-ring rounded-md border border-red-200 bg-white px-3 py-2 text-slate-950" name="confirmation" placeholder="DELETE 입력" />
-                    </label>
-                    <button
-                      className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-md bg-red-700 px-4 text-sm font-semibold text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:bg-slate-500"
-                      disabled={deletePending}
-                      type="submit"
-                    >
-                      <Trash2 aria-hidden="true" size={16} />
-                      공지 삭제
-                    </button>
-                  </div>
-                </form>
+                <details className="rounded-md border border-red-200 bg-red-50">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-semibold text-red-900">
+                    <span>위험 작업</span>
+                    <Badge tone="warning">삭제</Badge>
+                  </summary>
+                  <form
+                    action={deleteAction}
+                    className="grid gap-3 border-t border-red-200 p-3"
+                    onSubmit={(event) => {
+                      if (!window.confirm(`${notice.title} 공지사항을 삭제할까요?`)) {
+                        event.preventDefault();
+                      }
+                    }}
+                  >
+                    <input name="id" type="hidden" value={notice.id} />
+                    <p className="text-xs leading-5 text-red-900">숨김 처리로 충분한 공지는 삭제하지 않습니다. 잘못 등록한 공지만 삭제 확인값을 입력한 뒤 처리합니다.</p>
+                    <div className="grid gap-2 md:grid-cols-[1fr_auto] md:items-end">
+                      <label className="grid gap-1 text-sm font-medium text-red-900">
+                        삭제 확인
+                        <input className="focus-ring rounded-md border border-red-200 bg-white px-3 py-2 text-slate-950" name="confirmation" placeholder="DELETE 입력" />
+                      </label>
+                      <button
+                        className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-md bg-red-700 px-4 text-sm font-semibold text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:bg-slate-500"
+                        disabled={deletePending}
+                        type="submit"
+                      >
+                        <Trash2 aria-hidden="true" size={16} />
+                        공지 삭제
+                      </button>
+                    </div>
+                  </form>
+                </details>
               </div>
             </details>
           </Card>

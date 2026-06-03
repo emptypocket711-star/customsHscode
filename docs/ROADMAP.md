@@ -449,6 +449,7 @@
 | P158.1 dashboard marketplace regression | 완료 | 역할 미승인 guard 코드 변경이 아니라 P151-P157 대시보드·알림 변경 묶음이 역할별로 계속 정상 동작하는지 확인한다 | dashboard marketplace regression | unit, browser, typecheck, lint |
 | P159.1 operations users default detail reduction | 완료 | 대시보드 회귀 검증이 아니라 운영 관리 홈에서 역할 신청·검증·업체 상태 세부 패널을 한 번에 모두 펼치지 않고 우선순위 1개만 보여준다 | operations users detail reduction | browser, typecheck, lint |
 | P160.1 operations health fallback next request refresh | 완료 | 운영 사용자 화면 단순화가 아니라 운영 점검 정상 fallback의 다음 작업 문구가 이미 끝난 사용자 관리가 아닌 공지 관리로 이어지게 한다 | operations fallback copy | source check, typecheck, lint |
+| P161.1 notice delete danger guard | 완료 | 운영 점검 fallback 문구가 아니라 공지 관리에서 삭제 폼을 위험 작업 접힘 영역으로 분리해 평소 수정 흐름과 구분한다 | notice danger guard | browser, typecheck, lint |
 
 #### P109 다음 병목 선정
 
