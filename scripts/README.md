@@ -163,9 +163,11 @@ secret when Preview protection is enabled.
 
 Use this when a Preview deployment should be checked end-to-end before wider
 manual review. The suite runs DB schema health, marketplace schema visibility,
-marketplace fixture seed, authenticated route smoke, operations guard,
-marketplace transaction E2E, completion report E2E, notification dashboard E2E,
-and notification worker rehearsal in that order.
+marketplace fixture seed, grouped RLS negative checks, operations developer
+preparation, authenticated route smoke, operations guard, marketplace
+transaction E2E, partner preference anchor smoke, marketplace route performance
+smoke, completion report E2E, notification dashboard E2E, and notification
+worker rehearsal in that order.
 
 ```bash
 vercel env run -e preview -- npm run smoke:staging:suite -- https://your-preview-url.vercel.app

@@ -11,6 +11,10 @@ describe("staging smoke suite", () => {
     const labels = steps.map((step) => step.label);
 
     expect(labels.indexOf("marketplace-fixture-seed")).toBeLessThan(labels.indexOf("route-smoke"));
+    expect(labels.indexOf("marketplace-fixture-seed")).toBeLessThan(labels.indexOf("marketplace-rls-negative"));
+    expect(labels.indexOf("operations-developer-prepare")).toBeLessThan(labels.indexOf("route-smoke"));
+    expect(labels.indexOf("marketplace-transaction")).toBeLessThan(labels.indexOf("partner-preference-anchor"));
+    expect(labels.indexOf("marketplace-transaction")).toBeLessThan(labels.indexOf("marketplace-route-performance"));
     expect(steps.find((step) => step.label === "route-smoke")?.args).toEqual([
       "run",
       "smoke:production",

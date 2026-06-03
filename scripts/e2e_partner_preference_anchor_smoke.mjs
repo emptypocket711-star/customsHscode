@@ -115,16 +115,16 @@ async function prepareEmptyForwarder(client, password) {
   const { error: preferenceError } = await client
     .from("partner_service_preferences")
     .upsert({
-      cargo_tags: [],
+      cargo_tags: ["p275-empty-anchor-only"],
       company_id: emptyForwarder.companyId,
-      destination_country_codes: [],
+      destination_country_codes: ["ZZ"],
       digest_enabled: false,
-      directions: ["import", "export"],
+      directions: ["export"],
       notification_enabled: true,
-      origin_country_codes: [],
-      ports: [],
+      origin_country_codes: ["ZZ"],
+      ports: ["ZZZZZ"],
       service_type: "freight",
-      transport_modes: [],
+      transport_modes: ["rail"],
       urgent_available: true
     }, { onConflict: "company_id,service_type" });
   if (preferenceError) throw new Error(`empty forwarder preference prepare failed: ${preferenceError.message}`);

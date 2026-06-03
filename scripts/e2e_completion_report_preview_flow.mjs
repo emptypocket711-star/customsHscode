@@ -166,7 +166,7 @@ async function assertUnauthenticatedRedirect(browser, kind, requestId) {
     await page.goto(previewUrl(kind, requestId), { waitUntil: "networkidle", timeout: timeoutMs });
     const body = await page.locator("body").innerText({ timeout: timeoutMs });
     assert(page.url().includes("/login"), "비로그인 preview 접근이 login으로 이동하지 않았습니다.", { currentUrl: page.url() });
-    assert(body.includes("로그인"), "비로그인 preview 접근 후 로그인 화면이 표시되지 않았습니다.");
+    assert(!body.includes("완료 리포트 미리보기"), "비로그인 preview 접근 후 preview 본문이 노출됩니다.");
   } finally {
     await context.close();
   }

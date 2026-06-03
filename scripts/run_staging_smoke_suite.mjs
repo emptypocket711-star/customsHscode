@@ -36,6 +36,22 @@ export function createStagingSmokeSteps(targetBaseUrl = baseUrl) {
         "Check SUPABASE_SERVICE_ROLE_KEY, E2E_TEST_PASSWORD, and remote marketplace E2E allow-list env."
     },
     {
+      label: "marketplace-rls-negative",
+      command: "npm",
+      args: ["run", "smoke:marketplace-rls-negative"],
+      purpose: "Direct-call, requester, partner, service-role, notification, and role-review bypass checks remain blocked.",
+      failureHint:
+        "Treat this as a security regression. Check the grouped failed check, recent RLS/RPC migrations, and docs/MARKETPLACE_SECURITY_RUNBOOK.md."
+    },
+    {
+      label: "operations-developer-prepare",
+      command: "node",
+      args: ["scripts/prepare_operations_smoke_account.mjs"],
+      purpose: "The designated developer account is prepared before operations route content smoke and performance checks.",
+      failureHint:
+        "Check SUPABASE_SERVICE_ROLE_KEY, SMOKE_OPERATIONS_PASSWORD, and the designated operations developer email."
+    },
+    {
       label: "route-smoke",
       command: "npm",
       args: ["run", "smoke:production", "--", targetBaseUrl],
@@ -58,6 +74,22 @@ export function createStagingSmokeSteps(targetBaseUrl = baseUrl) {
       purpose: "Requester and partner marketplace request, bid, selection, completion, and feedback mutations work in Preview.",
       failureHint:
         "Check fixture seed output, role storage states under tmp/e2e-auth-staging, and marketplace RPC/table policy errors."
+    },
+    {
+      label: "partner-preference-anchor",
+      command: "npm",
+      args: ["run", "e2e:partner-preference-anchor"],
+      purpose: "Partner empty-state settings CTA lands on the partner preference section without breaking route anchors.",
+      failureHint:
+        "Check empty forwarder fixture preparation, /requests/freight?workspace=forwarder empty state copy, and /settings/members#partner-preferences."
+    },
+    {
+      label: "marketplace-route-performance",
+      command: "npm",
+      args: ["run", "smoke:marketplace-routes:perf", "--", targetBaseUrl],
+      purpose: "Key requester and operations marketplace routes respond within the staging latency budget with stable markers.",
+      failureHint:
+        "Check the failed route marker first; if markers are present, inspect deployment logs and route data-loading latency."
     },
     {
       label: "completion-report",
@@ -178,11 +210,17 @@ function main() {
     return;
   }
 
+  const accountDefaults = loadShipperAccountDefaults();
+  const e2ePassword = accountDefaults.E2E_TEST_PASSWORD || process.env.E2E_TEST_PASSWORD || "";
   const env = {
     ...process.env,
-    ...loadShipperAccountDefaults(),
+    ...accountDefaults,
     E2E_ALLOW_REMOTE_MARKETPLACE_TRANSACTION: "true",
+    E2E_ALLOW_REMOTE_MARKETPLACE_RLS_NEGATIVE: "true",
+    E2E_BASE_URL: baseUrl,
     OPERATIONS_GUARD_ACCOUNT_SOURCE: "marketplace_fixture",
+    SMOKE_OPERATIONS_EMAIL: process.env.SMOKE_OPERATIONS_EMAIL || process.env.OPERATIONS_DEVELOPER_EMAIL || "emptypocket711@gmail.com",
+    SMOKE_OPERATIONS_PASSWORD: process.env.SMOKE_OPERATIONS_PASSWORD || process.env.OPERATIONS_DEVELOPER_PASSWORD || e2ePassword,
     SMOKE_REQUIRE_AUTHENTICATED: "true"
   };
 

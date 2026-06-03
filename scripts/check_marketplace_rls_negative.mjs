@@ -46,6 +46,7 @@ const unverifiedRoleApprovalRequest = {
 const blockedRoleApprovalRequest = {
   id: "75000000-0000-4000-8000-000000000409"
 };
+const partnerAnchorSmokeCompanyId = "75000000-0000-4000-8000-000000000510";
 const checkGroups = new Map([
   ["no-company-user-cannot-publish-freight-request", "requester-auth-boundary"],
   ["requester-direct-service-request-workflow-update", "requester-state-transition"],
@@ -178,6 +179,18 @@ async function cleanupRoleApprovalRequests(serviceRoleClient) {
     .delete()
     .eq("company_id", fixture.companies.requester.id)
     .in("party_type", ["forwarder", "customs_broker"]);
+}
+
+async function cleanupPartnerAnchorSmokeArtifacts(serviceRoleClient) {
+  await serviceRoleClient
+    .from("service_request_partner_matches")
+    .delete()
+    .eq("partner_company_id", partnerAnchorSmokeCompanyId);
+
+  await serviceRoleClient
+    .from("partner_service_preferences")
+    .delete()
+    .eq("company_id", partnerAnchorSmokeCompanyId);
 }
 
 async function cleanupInvalidPublishDraft(serviceRoleClient) {
@@ -753,6 +766,7 @@ async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPas
   await cleanupUnexpectedPreferenceRows(serviceRoleClient);
   await cleanupWrongBidDetailRows(serviceRoleClient);
   await cleanupRoleApprovalRequests(serviceRoleClient);
+  await cleanupPartnerAnchorSmokeArtifacts(serviceRoleClient);
   await restoreForwarderFreightPreference(serviceRoleClient);
   await ensureNoCompanyUser(serviceRoleClient, testPassword);
   const roleReviewDeveloper = await ensureRoleReviewDeveloperUser(serviceRoleClient, testPassword);
@@ -1276,6 +1290,7 @@ async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPas
   await cleanupUnexpectedPreferenceRows(serviceRoleClient);
   await cleanupWrongBidDetailRows(serviceRoleClient);
   await cleanupRoleApprovalRequests(serviceRoleClient);
+  await cleanupPartnerAnchorSmokeArtifacts(serviceRoleClient);
   await restoreForwarderFreightPreference(serviceRoleClient);
   await cleanupInvalidPublishDraft(serviceRoleClient);
   return checks;

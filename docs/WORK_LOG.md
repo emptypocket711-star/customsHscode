@@ -4,6 +4,26 @@
 
 ## 2026-06-03
 
+### P254-P278 staging regression suite
+
+- 이전 작업은 P278에서 marketplace 주요 route 성능 smoke를 만든 것이고, 이번 작업은 개별 smoke가 아니라 P254-P278에서 만든 보안/운영/성능 검증을 full staging suite에 포함해 회귀 실행한 작업이다.
+- `smoke:staging:suite`에 `marketplace-rls-negative`, `operations-developer-prepare`, `partner-preference-anchor`, `marketplace-route-performance` 단계를 추가했다.
+- suite env에 `E2E_BASE_URL`, `E2E_ALLOW_REMOTE_MARKETPLACE_RLS_NEGATIVE`, `SMOKE_OPERATIONS_EMAIL`, `SMOKE_OPERATIONS_PASSWORD` 기본값을 보강했다.
+- P275 빈 포워더 smoke fixture가 다른 zero-match 테스트에 간섭하지 않도록 비매칭 preference를 저장하게 했고, RLS negative suite cleanup에서 해당 테스트 회사 match/preference를 제거하게 했다.
+- completion preview 비로그인 검증은 로그인 페이지 본문 문구 대신 preview 본문 미노출과 `/login` redirect를 확인하도록 보정했다.
+- Preview full suite는 13단계 모두 통과했다: health-db, marketplace-schema, fixture seed, RLS negative 21 checks, operations developer prepare, route smoke 13 routes, operations guard 9 checks, marketplace transaction, partner preference anchor, route performance 5 routes, completion report, notification dashboard, notification worker.
+- 다음 작업은 P280 marketplace MVP release readiness review다. 이번 P279가 자동 regression 통과 확인이라면, P280은 출시 전 수동 보류 조건과 남은 리스크를 대표/운영자 관점으로 정리하는 작업이다.
+
+검증:
+
+- `node --check scripts/run_staging_smoke_suite.mjs`
+- `node --check scripts/e2e_completion_report_preview_flow.mjs`
+- `node --check scripts/e2e_partner_preference_anchor_smoke.mjs && node --check scripts/check_marketplace_rls_negative.mjs`
+- `npm run test -- features/service-requests/partner-opportunity-empty-copy.test.ts scripts/run_staging_smoke_suite.test.ts`
+- `vercel env run -e preview -- sh -c 'E2E_ALLOW_REMOTE_MARKETPLACE_TRANSACTION=true node scripts/seed_marketplace_transaction_fixture.mjs && E2E_ALLOW_REMOTE_MARKETPLACE_RLS_NEGATIVE=true npm run smoke:marketplace-rls-negative'`
+- `vercel env run -e preview -- npm run e2e:completion-preview:staging -- https://customs-hscode-dn0ayaj4k-koo-apps.vercel.app`
+- `E2E_TEST_PASSWORD=... VERCEL_AUTOMATION_BYPASS_SECRET=... vercel env run -e preview -- npm run smoke:staging:suite -- https://customs-hscode-dn0ayaj4k-koo-apps.vercel.app`
+
 ### marketplace route performance smoke
 
 - 이전 작업은 P277에서 marketplace 권한/RLS 사고 대응 runbook을 만든 것이고, 이번 작업은 보안 문서가 아니라 주요 marketplace route의 응답 시간과 핵심 marker를 staging에서 계측하는 smoke를 만든 작업이다.
