@@ -101,6 +101,12 @@ function textItemValue(record: Record<string, unknown> | undefined, key: string)
   return typeof value === "string" ? value : "";
 }
 
+function hasCompletionReportConfirmation(report: ServiceRequestCompletionReport | undefined, role: "partner" | "requester") {
+  const confirmations = report?.sourceSnapshot.confirmations;
+  if (!confirmations || typeof confirmations !== "object" || Array.isArray(confirmations)) return false;
+  return Boolean((confirmations as Record<string, unknown>)[role]);
+}
+
 export function ServiceRequestCompletionReportPanel({
   documents = [],
   kind,
@@ -130,7 +136,9 @@ export function ServiceRequestCompletionReportPanel({
   const workflowSteps = buildCompletionReportWorkflow({
     hasReport: Boolean(activeReportId),
     linkedDocumentCount: reportDocuments.length,
+    partnerAcknowledged: hasCompletionReportConfirmation(report, "partner"),
     requiredDocumentCount,
+    requesterAcknowledged: hasCompletionReportConfirmation(report, "requester"),
     status: currentStatus,
     viewerRole
   });

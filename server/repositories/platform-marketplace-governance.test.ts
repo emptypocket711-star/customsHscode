@@ -5,6 +5,8 @@ import { describe, expect, it } from "vitest";
 const marketplaceMigrationPath = "supabase/migrations/20260531012000_platform_marketplace_schema.sql";
 const marketplaceNotificationPreferencesMigrationPath =
   "supabase/migrations/20260603001000_marketplace_notification_preferences.sql";
+const completionReportDualAckMigrationPath =
+  "supabase/migrations/20260603002000_completion_report_dual_ack_review.sql";
 
 function readMarketplaceMigration() {
   return readFileSync(join(process.cwd(), marketplaceMigrationPath), "utf8");
@@ -12,6 +14,10 @@ function readMarketplaceMigration() {
 
 function readMarketplaceNotificationPreferencesMigration() {
   return readFileSync(join(process.cwd(), marketplaceNotificationPreferencesMigrationPath), "utf8");
+}
+
+function readCompletionReportDualAckMigration() {
+  return readFileSync(join(process.cwd(), completionReportDualAckMigrationPath), "utf8");
 }
 
 function policyBlock(sql: string, policyName: string) {
@@ -629,6 +635,18 @@ describe("platform marketplace migration governance", () => {
     expect(sql).toContain("grant execute on function public.acknowledge_completion_report(uuid, text) to authenticated");
     expect(sql).toContain("grant execute on function public.review_completion_report(uuid) to authenticated");
     expect(sql).toContain("grant execute on function public.lock_completion_report(uuid) to authenticated");
+  });
+
+  it("requires both requester and partner acknowledgement before completion report operator review", () => {
+    const sql = readCompletionReportDualAckMigration();
+
+    expect(sql).toContain("create or replace function public.review_completion_report");
+    expect(sql).toContain("v_confirmations := coalesce(v_report.source_snapshot->'confirmations', '{}'::jsonb)");
+    expect(sql).toContain("v_confirmations ? 'requester' and v_confirmations ? 'partner'");
+    expect(sql).toContain("운영 검토 전 화주와 파트너 확인을 모두 완료해 주세요.");
+    expect(sql).toContain("'requester_acknowledged', v_confirmations ? 'requester'");
+    expect(sql).toContain("'partner_acknowledged', v_confirmations ? 'partner'");
+    expect(sql).toContain("grant execute on function public.review_completion_report(uuid) to authenticated");
   });
 
   it("attaches completion report documents through an audited RPC without exposing direct writes", () => {

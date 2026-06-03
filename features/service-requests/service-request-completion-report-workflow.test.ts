@@ -15,7 +15,7 @@ describe("completion report workflow", () => {
       ["초안 저장", "current", "아래 초안 저장을 먼저 완료하세요"],
       ["리포트 제출", "blocked", "초안 저장 후 제출할 수 있습니다"],
       ["화주 확인", "pending", "리포트 제출 후 확인할 수 있습니다"],
-      ["운영 검토", "pending", "화주 또는 파트너 확인 후 운영 검토가 가능합니다"],
+      ["운영 검토", "pending", "화주와 파트너 확인을 모두 완료한 뒤 운영 검토가 가능합니다"],
       ["보관 잠금", "pending", "운영 검토 완료 후 잠금할 수 있습니다"]
     ]);
   });
@@ -63,6 +63,35 @@ describe("completion report workflow", () => {
       ["화주 확인", "done"],
       ["운영 검토", "done"],
       ["보관 잠금", "current"]
+    ]);
+  });
+
+  it("blocks operator review until requester and partner both acknowledge", () => {
+    expect(buildCompletionReportWorkflow({
+      hasReport: true,
+      linkedDocumentCount: 2,
+      partnerAcknowledged: false,
+      requesterAcknowledged: true,
+      requiredDocumentCount: 1,
+      status: "requester_acknowledged",
+      viewerRole: "requester"
+    }).map((step) => [step.label, step.state, step.disabledReason])).toContainEqual([
+      "운영 검토",
+      "blocked",
+      "화주와 파트너 확인을 모두 완료한 뒤 운영 검토가 가능합니다"
+    ]);
+
+    expect(buildCompletionReportWorkflow({
+      hasReport: true,
+      linkedDocumentCount: 2,
+      partnerAcknowledged: true,
+      requesterAcknowledged: true,
+      requiredDocumentCount: 1,
+      status: "partner_acknowledged",
+      viewerRole: "staff"
+    }).map((step) => [step.label, step.state])).toContainEqual([
+      "운영 검토",
+      "current"
     ]);
   });
 

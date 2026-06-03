@@ -5,7 +5,9 @@ export type CompletionReportViewerRole = "partner" | "requester" | "staff";
 export type CompletionReportWorkflowInput = {
   hasReport: boolean;
   linkedDocumentCount: number;
+  partnerAcknowledged?: boolean;
   requiredDocumentCount: number;
+  requesterAcknowledged?: boolean;
   status?: ServiceRequestCompletionReportStatus;
   viewerRole: CompletionReportViewerRole;
 };
@@ -23,6 +25,10 @@ export function buildCompletionReportWorkflow(input: CompletionReportWorkflowInp
   const reportExists = input.hasReport && Boolean(status);
   const submittedOrLater = status !== undefined && status !== "draft" && status !== "voided";
   const reviewedOrLocked = status === "operator_reviewed" || status === "locked";
+  const requesterAcknowledged = reviewedOrLocked || input.requesterAcknowledged || status === "requester_acknowledged";
+  const partnerAcknowledged = reviewedOrLocked || input.partnerAcknowledged || status === "partner_acknowledged";
+  const currentViewerAcknowledged = input.viewerRole === "partner" ? partnerAcknowledged : requesterAcknowledged;
+  const bothPartiesAcknowledged = requesterAcknowledged && partnerAcknowledged;
 
   return [
     {
@@ -41,13 +47,13 @@ export function buildCompletionReportWorkflow(input: CompletionReportWorkflowInp
       description: input.viewerRole === "partner" ? "선정 파트너가 제출된 완료 리포트를 확인합니다." : "화주가 제출된 완료 리포트를 확인합니다.",
       disabledReason: submittedOrLater ? undefined : "리포트 제출 후 확인할 수 있습니다",
       label: input.viewerRole === "partner" ? "파트너 확인" : "화주 확인",
-      state: status === "requester_acknowledged" || status === "partner_acknowledged" || reviewedOrLocked ? "done" : submittedOrLater ? "current" : "pending"
+      state: currentViewerAcknowledged ? "done" : submittedOrLater ? "current" : "pending"
     },
     {
-      description: "운영자가 민감정보, 서류 연결, 분쟁 가능성을 점검합니다.",
-      disabledReason: reviewedOrLocked ? undefined : "화주 또는 파트너 확인 후 운영 검토가 가능합니다",
+      description: "운영자가 양측 확인, 민감정보, 서류 연결, 분쟁 가능성을 점검합니다.",
+      disabledReason: reviewedOrLocked || bothPartiesAcknowledged ? undefined : "화주와 파트너 확인을 모두 완료한 뒤 운영 검토가 가능합니다",
       label: "운영 검토",
-      state: reviewedOrLocked ? "done" : status === "requester_acknowledged" || status === "partner_acknowledged" ? "current" : "pending"
+      state: reviewedOrLocked ? "done" : bothPartiesAcknowledged ? "current" : submittedOrLater ? "blocked" : "pending"
     },
     {
       description: "잠금 후 완료 리포트와 보관 서류 연결은 수정할 수 없습니다.",
