@@ -4,6 +4,24 @@
 
 ## 2026-06-03
 
+### origin marking copy text
+
+- 이전 작업은 P178 HS 직접조회 기본정보의 `원산지 표시` 행 문구 개선이고, 이번 작업은 P179 복사 안내문 상세 버전의 원산지표시 문구 개선이다.
+- 상세 복사문에서 원산지표시 대상 문구를 `원산지표시대상(Y)`에서 `표시대상 조회됨(Y)`으로 바꿨다.
+- 상세 복사문에 `표시방법과 예외는 물품 상태, 포장, 거래조건 기준으로 확인이 필요합니다.` 문구를 추가했다.
+- 영어/중국어 상세 복사문도 같은 의미로 보강했다.
+- 최신 staging preview는 `https://customs-hscode-h8m1p8wov-koo-apps.vercel.app`다.
+- 다음 작업은 P180 HS 직접조회 복사 안내문에서 `FTA 관세율` 문구가 자동 적용처럼 보이지 않는지 점검하는 작업이다. 이번 P179가 원산지표시 복사문이라면, P180은 FTA/특혜 세율 복사문이다.
+
+검증:
+
+- `npx vitest run features/hs/origin-marking-summary.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- Playwright staging browser clipboard: `3304.99-1000` 상세 복사문에 `원산지 표시`, `표시대상 조회됨(Y)`, `표시방법과 예외는 물품 상태, 포장, 거래조건 기준` 문구 확인
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-h8m1p8wov-koo-apps.vercel.app`: 9/9 통과
+
 ### origin marking summary copy
 
 - 이전 작업은 P177 상단 `수입요건` 요약 카드 문구 개선이고, 이번 작업은 P178 HS 직접조회 기본정보의 `원산지 표시` 행 문구 개선이다.
