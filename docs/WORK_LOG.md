@@ -4,6 +4,24 @@
 
 ## 2026-06-03
 
+### product supplement question rerun action
+
+- 이전 작업은 P185 품명 AI 간단 보완사항 재조회 흐름 검증이고, 이번 작업은 P186 질문별 답변 영역 하단 재조회 버튼 보강이다.
+- 접힌 `질문별로 답변하기` 영역 안에서 답변을 입력한 뒤 다시 상단 버튼으로 이동하지 않아도 재조회할 수 있게 하단 버튼을 추가했다.
+- 버튼 스타일과 비활성/활성 조건은 기존 `보완사항 적용하여 재조회` 버튼과 동일하게 유지했다.
+- staging에서 품명 `사탕` 결과 화면의 질문별 답변 영역을 열고, 답변 전에는 하단 버튼이 비활성이고 답변 입력 후 활성화되는지 확인했다.
+- 하단 버튼 클릭 후 URL에 `보완정보`가 반영되고, 결과 화면에 `이번 재조회에 반영된 보완사항`과 질문 답변이 표시되는 것을 확인했다.
+- 최신 staging preview는 `https://customs-hscode-dj46hl6gw-koo-apps.vercel.app`다.
+- 다음 작업은 P187 품명 AI 결과 화면 전체 회귀 점검이다. 이번 P186이 질문별 답변 버튼 UI라면, P187은 후보 카드, 점수, 보완 질문, 재조회, 상세 조회 진입을 한 흐름으로 다시 확인하는 작업이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- Playwright staging browser: 품명 `사탕` 질문별 답변 하단 버튼 비활성/활성, 재조회 URL, 반영된 보완사항 표시 확인
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-dj46hl6gw-koo-apps.vercel.app`: 9/9 통과
+
 ### product supplement rerun flow
 
 - 이전 작업은 P184 품명 AI 결과 카드 문구 개선이고, 이번 작업은 P185 품명 AI 보완사항 입력 후 재조회 흐름 검증이다.
