@@ -32,6 +32,51 @@ The local runner requires a reachable local Next.js server, local Supabase healt
 and `tmp/e2e-auth/local-developer.json`. It rejects non-local base URLs and does
 not print secrets.
 
+## Staging operations smoke
+
+Use this sequence when staging or production smoke needs to include developer-only
+operations pages. Keep all credentials in the shell or platform secret store;
+do not commit them to `tmp/test-accounts.json`.
+
+First check whether operations smoke can run:
+
+```bash
+npm run smoke:operations:ready
+```
+
+If no developer smoke credentials are available, prepare the designated developer
+account with service-role credentials and a temporary password. This updates or
+creates the Auth user and ensures the profile has `role=developer` and
+`company_role=admin`.
+
+```bash
+export NEXT_PUBLIC_SUPABASE_URL='...'
+export SUPABASE_SERVICE_ROLE_KEY='...'
+export SMOKE_OPERATIONS_PASSWORD='...'
+npm run smoke:operations:prepare
+```
+
+Then run the normal production smoke with operations credentials enabled:
+
+```bash
+export SMOKE_OPERATIONS_EMAIL='emptypocket711@gmail.com'
+export SMOKE_OPERATIONS_PASSWORD='...'
+npm run smoke:production -- https://your-preview-url.vercel.app
+```
+
+When Vercel deployment protection is enabled, also pass the bypass secret through
+`VERCEL_AUTOMATION_BYPASS_SECRET` or `VERCEL_PROTECTION_BYPASS_SECRET`. The smoke
+output includes `operationsEmailPresent`, `operationsPasswordPresent`, and
+`operationsSkipReason` so missing or partial configuration is visible without
+printing secret values.
+
+Run the guard smoke separately to confirm non-developer accounts cannot see
+operations page bodies:
+
+```bash
+npm run smoke:operations:guard -- https://your-preview-url.vercel.app
+```
+
 ## Production schema health check
 
 `check-production-schema.mjs` compares the current migration files with the
