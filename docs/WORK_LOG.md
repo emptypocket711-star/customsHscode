@@ -8070,3 +8070,18 @@
 - Playwright developer `/operations/requests/75000000-0000-4000-8000-000000000002`
 - `npm run typecheck`
 - `npm run lint`
+
+### operations full smoke regression
+
+- 이전 작업은 운송·통관 운영 요청 상세 개별 검증인 P164.1이고, 이번 작업은 운영 사용자·점검·공지·운송 상세·통관 상세 화면 전체가 함께 정상 렌더링되는지 확인한 P165.1이다.
+- developer 계정으로 `/operations/users`, `/operations/health`, `/operations/notices`를 확인했다.
+- developer 계정으로 운송 운영 상세와 통관 운영 상세 fixture를 확인했다.
+- 각 화면의 대표 heading과 핵심 운영 문구가 표시되는지 확인했다.
+- 새 코드 변경은 없고, 문서 상태만 완료로 갱신했다.
+- 로컬 파일만 수정했고 원격 푸시, 배포는 하지 않았다.
+
+검증:
+
+- Playwright developer operations full smoke 5 routes
+- `npm run typecheck`
+- `npm run lint`
