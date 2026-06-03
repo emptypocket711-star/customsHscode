@@ -17,6 +17,7 @@ import { destinationAgreementRateDisplayItems, destinationDisplayAgreementRates,
 import { DestinationAgreementRateDialog } from "@/features/hs/destination-agreement-rate-dialog";
 import { displayImportTariffLabel, filterImportTariffsForCountry, importTariffApplicationPriority, isCommonImportTariff } from "@/features/hs/import-tariff-display";
 import { ImportTariffCountryFilter } from "@/features/hs/import-tariff-country-filter";
+import { importRequirementSummaryText } from "@/features/hs/import-requirement-summary";
 import { preferentialDutySummaryText } from "@/features/hs/preferential-duty-summary";
 import { DestinationAdditionalTariffDialog } from "@/features/hs/destination-additional-tariff-dialog";
 import { DestinationImportRequirementDialog } from "@/features/hs/destination-import-requirement-dialog";
@@ -4100,9 +4101,7 @@ export async function HsDirectLookupPanel({
                   ? tariffSummaryText(estimatorPreferentialTariff, selectedDestinationCountry)
                   : undefined
               });
-              const requirementSummary = groupedRequirements.length
-                ? `${groupedRequirements.length}개 요건 가능성`
-                : "세관장확인 조회 없음";
+              const requirementSummary = importRequirementSummaryText(groupedRequirements.length);
 
               return (
               <article className="overflow-hidden rounded-md border border-slate-200" key={result.hskCode}>
@@ -4210,7 +4209,8 @@ export async function HsDirectLookupPanel({
                         </div>
                         <div className="rounded-md border border-blue-100 bg-white px-3 py-2">
                           <p className="text-xs font-semibold text-slate-500">수입요건</p>
-                          <p className="mt-1 text-sm font-semibold text-slate-950">{requirementSummary}</p>
+                          <p className="mt-1 text-sm font-semibold text-slate-950">{requirementSummary.summary}</p>
+                          <p className="mt-1 text-xs leading-5 text-slate-500">{requirementSummary.note}</p>
                         </div>
                       </div>
                     </div>
