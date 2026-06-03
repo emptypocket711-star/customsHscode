@@ -4,6 +4,18 @@
 
 ## 2026-06-03
 
+### operations request detail priority view
+
+- 이전 작업은 P219 운영 통계 카드 라벨을 다음 행동 중심으로 바꾼 것이고, 이번 작업은 P220 운영 요청 상세 상단에서 완료 리포트, 피드백, 파트너 응답 위험을 먼저 보이게 한 작업이다.
+- `buildPlatformRequestDetailPrioritySignals`를 추가해 완료 거래의 리포트 없음, 피드백 없음/낮은 점수, 알림 후 견적 무응답을 별도 신호로 계산한다.
+- `/operations/requests/[requestId]`의 기존 `운영 확인 순서` 카드를 `운영 우선 판정`으로 바꾸고, 3개 위험 신호를 먼저 렌더하게 했다.
+- 원문 서류, 파일명, 견적 메시지, 질문·답변 원문을 노출하지 않는 기존 운영 상세 원칙은 유지했다.
+- 다음 작업은 P221 shipper dashboard primary actions다. 이번 P220이 운영자 상세 화면의 우선 판정을 정리한 작업이라면, P221은 화주 대시보드에서 요청하기, 진행중, 견적 도착, 완료 대기를 기본 행동으로 정리하는 작업이다.
+
+검증:
+
+- `npx vitest run features/operations/platform-request-detail-priority.test.ts`: 3개 통과
+
 ### operations metrics action labels
 
 - 이전 작업은 P218 운영 홈 첫 화면 액션 레일에 플랫폼 병목을 포함한 것이고, 이번 작업은 P219 운영 통계 카드 자체의 라벨과 설명을 다음 행동 중심으로 바꾼 작업이다.

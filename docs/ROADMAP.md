@@ -508,7 +508,8 @@
 | P217.1 marketplace owner operations brief | 완료 | 스테이징 검증 도구가 아니라 개발자/대표 1인 운영자가 이해할 수 있게 운영 패널 기본 화면을 오늘 맡길 일, 직접 확인 샘플, 전체 운영 상태로 요약한다 | admin UX simplification | owner brief cards, unit test |
 | P218.1 operations home action rail | 완료 | 운영 패널 내부 요약이 아니라 운영 관리 홈 첫 화면에서 역할 신청, 회사 검증, 플랫폼 병목 중 오늘 먼저 볼 레일을 더 선명하게 만든다 | operations home simplification | platform bottleneck rail, unit test |
 | P219.1 operations metrics action labels | 완료 | 운영 홈 액션 레일이 아니라 운영 통계 카드 숫자가 무엇을 의미하고 다음 행동이 무엇인지 더 직접적으로 표시한다 | operations metrics simplification | metric labels, copy regression |
-| P220.1 operations request detail priority view | 예정 | 운영 통계 라벨이 아니라 운영 요청 상세에서 완료 리포트, 피드백, 분쟁 위험, 다음 조치를 먼저 보이게 한다 | operations request detail | detail priority layout, unit/browser check |
+| P220.1 operations request detail priority view | 완료 | 운영 통계 라벨이 아니라 운영 요청 상세에서 완료 리포트, 피드백, 파트너 응답 위험, 다음 조치를 먼저 보이게 한다 | operations request detail | detail priority layout, unit test |
+| P221.1 shipper dashboard primary actions | 예정 | 운영 요청 상세가 아니라 화주 대시보드에서 요청하기, 진행중, 견적 도착, 완료 대기를 기본 행동으로 정리한다 | shipper dashboard UX | dashboard actions, unit/browser check |
 
 #### P109 다음 병목 선정
 

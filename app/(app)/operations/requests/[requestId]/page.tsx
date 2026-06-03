@@ -5,6 +5,7 @@ import { PageHeading } from "@/components/page-heading";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { CopyOperationsRequestButton } from "@/features/operations/copy-operations-request-button";
+import { buildPlatformRequestDetailPrioritySignals } from "@/features/operations/platform-request-detail-priority";
 import { completionReportDocumentRoleLabel } from "@/features/service-requests/service-request-completion-report-labels";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireDeveloperRole } from "@/server/auth/role-guard";
@@ -129,6 +130,7 @@ export default async function OperationsRequestDetailPage({
   const request = detail.request;
   const improvementPrompt = buildPlatformRequestImprovementPrompt(detail);
   const improvementTarget = improvementPrompt ? improvementPromptTarget(improvementPrompt.category) : null;
+  const prioritySignals = buildPlatformRequestDetailPrioritySignals(detail);
 
   return (
     <div className="grid gap-5">
@@ -186,10 +188,21 @@ export default async function OperationsRequestDetailPage({
       <Card>
         <CardHeader
           action={<Badge tone={improvementPrompt ? "warning" : "success"}>{improvementPrompt ? "확인 필요" : "정상 범위"}</Badge>}
-          description="원문을 열지 않고 운영자가 먼저 볼 카드 순서입니다."
-          title="운영 확인 순서"
+          description="완료 리포트, 피드백, 파트너 응답 중 오늘 먼저 볼 위험 신호입니다."
+          title="운영 우선 판정"
         />
-        <CardBody>
+        <CardBody className="grid gap-3">
+          <div className="grid gap-3 md:grid-cols-3">
+            {prioritySignals.map((signal) => (
+              <div className="rounded-md border border-slate-200 bg-slate-50 p-3" key={signal.label}>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-slate-950">{signal.label}</p>
+                  <Badge tone={signal.tone}>{signal.value}</Badge>
+                </div>
+                <p className="mt-2 text-xs leading-5 text-slate-600">{signal.detail}</p>
+              </div>
+            ))}
+          </div>
           <div className="grid gap-2 md:grid-cols-3">
             <a className="focus-ring rounded-md border border-slate-200 bg-slate-50 px-3 py-3 text-sm transition hover:border-blue-200 hover:bg-blue-50" href={improvementTarget?.href ?? "#request-matches"}>
               <span className="block text-xs font-semibold text-slate-500">1단계</span>
