@@ -473,6 +473,7 @@
 | P182.1 requirement candidate copy text | 완료 | 빈 수입요건 복사문이 아니라 요건 후보가 있는 짧은/상세 복사문에도 해당 여부·제출서류는 상세자료 검토 필요라는 문구를 유지한다 | copied requirement candidate review note | browser clipboard, typecheck, lint, build, staging smoke |
 | P183.1 HS direct safety copy regression | 완료 | 개별 복사문 수정이 아니라 HS 직접조회 상단 카드·기본정보·짧은/상세 복사문 안전 표현이 일관적인지 최신 staging에서 묶어 검증한다 | HS direct safety copy regression | browser regression, source grep, staging smoke |
 | P184.1 product candidate result copy | 완료 | HS 직접조회 상세가 아니라 품명 AI 결과 카드의 후보 문구가 확정값처럼 보이지 않게 `우선 검토 후보`, `이 후보로 상세 조회`로 조정한다 | product candidate provisional copy | browser, typecheck, lint, build, staging smoke |
+| P185.1 product supplement rerun flow | 완료 | 품명 후보 카드 문구가 아니라 보완사항 입력 후 재조회 버튼이 실제 URL과 결과 화면에 보완 답변을 반영하는지 staging에서 검증한다 | supplement rerun browser flow | browser, staging smoke |
 
 #### P109 다음 병목 선정
 

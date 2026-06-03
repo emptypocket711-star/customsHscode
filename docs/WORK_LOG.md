@@ -4,6 +4,20 @@
 
 ## 2026-06-03
 
+### product supplement rerun flow
+
+- 이전 작업은 P184 품명 AI 결과 카드 문구 개선이고, 이번 작업은 P185 품명 AI 보완사항 입력 후 재조회 흐름 검증이다.
+- staging에서 품명 `사탕` 결과 화면의 `보완사항 입력` 영역을 열고, 버튼이 초기에는 비활성 상태인지 확인했다.
+- 간단 보완사항에 `코코아 미함유, 소매포장된 설탕 과자입니다.`를 입력하자 버튼이 활성화되고, 클릭 후 URL에 `보완정보`가 반영되는지 확인했다.
+- 재조회 결과 화면에 `이번 재조회에 반영된 보완사항`과 입력 답변이 표시되는 것을 확인했다.
+- 최신 staging preview는 `https://customs-hscode-2do527uqr-koo-apps.vercel.app`다.
+- 다음 작업은 P186 보완 질문별 답변 UI 점검이다. 이번 P185가 간단 보완사항 재조회 흐름이라면, P186은 접힌 `질문별로 답변하기` UI의 모바일/접근성/버튼 활성화 흐름을 보는 작업이다.
+
+검증:
+
+- Playwright staging browser: 품명 `사탕` 보완사항 입력, 버튼 활성화, 재조회 URL, 반영된 보완사항 표시 확인
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-2do527uqr-koo-apps.vercel.app`: 9/9 통과
+
 ### product candidate result copy
 
 - 이전 작업은 P183 HS 직접조회 안전 문구 체계 회귀 점검이고, 이번 작업은 P184 품명 AI 결과 카드 문구 개선이다.
