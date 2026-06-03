@@ -191,6 +191,13 @@ the last passed step, and a targeted `nextAction` hint. Treat
 `operations-guard` failures as access-control issues until the role/RLS path is
 checked.
 
+## Marketplace security incident runbook
+
+When a direct-call bypass, RLS error, privilege escalation, or operations route
+exposure is suspected, follow `docs/MARKETPLACE_SECURITY_RUNBOOK.md`. Start with
+DB health, marketplace schema smoke, the grouped negative suite, and operations
+guard before changing data or writing a follow-up migration.
+
 ## Production schema health check
 
 `check-production-schema.mjs` compares the current migration files with the

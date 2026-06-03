@@ -4,6 +4,20 @@
 
 ## 2026-06-03
 
+### marketplace security incident runbook
+
+- 이전 작업은 P276에서 Preview DB migration dry-run/apply/health 순서를 고정한 것이고, 이번 작업은 migration 절차가 아니라 marketplace 권한/RLS 사고 의심 시 운영자가 조치할 순서를 남긴 작업이다.
+- `docs/MARKETPLACE_SECURITY_RUNBOOK.md`를 추가했다.
+- runbook은 incident intake, immediate triage, symptom classification, containment, evidence query, fix path, 금지 행동을 분리한다.
+- 대응 순서는 `health:db`, `smoke:marketplace-schema`, grouped RLS negative suite, operations guard, 필요 시 staging suite로 이어지게 정리했다.
+- 삭제나 직접 rollback보다 증거 보존, 회사/계정 차단, secret rotation, 후속 migration 수정 원칙을 명시했다.
+- 다음 작업은 P278 marketplace route performance smoke다. 이번 P277이 권한 사고 대응 문서라면, P278은 주요 marketplace route의 응답 시간과 병목을 staging에서 계측하는 작업이다.
+
+검증:
+
+- docs review
+- `rg -n "MARKETPLACE_SECURITY_RUNBOOK|smoke:marketplace-rls-negative|operations:guard|health:db" docs scripts/README.md`
+
 ### preview migration application runbook
 
 - 이전 작업은 P275에서 파트너 빈 상태의 관심 조건 링크를 브라우저 smoke로 고정한 것이고, 이번 작업은 UI가 아니라 Preview DB migration 적용 순서를 실수 없이 반복하게 하는 runbook 작업이다.
