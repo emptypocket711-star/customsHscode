@@ -4,6 +4,22 @@
 
 ## 2026-06-03
 
+### bid submission audit snapshot
+
+- 이전 작업은 P264에서 bid detail 타입 무결성을 DB trigger로 막은 것이고, 이번 작업은 제출된 견적의 운영/분쟁 검토용 요약을 audit에 구조화해 남긴 작업이다.
+- `20260603004000_bid_submission_audit_snapshot.sql`을 추가해 freight/clearance bid detail insert 후 deferred trigger가 `audit_logs.after_json.submission_snapshot`을 보강하게 했다.
+- snapshot에는 `schema_version`, request/bid type, currency, total amount, valid until, lead time, detail summary만 남기고 message, free time note, carrier note, risk note, additional document text 같은 자유기입/민감 가능 텍스트는 제외했다.
+- Preview DB에서 migration dry-run 후 실제 적용했고, 유효한 freight bid 제출 뒤 audit row에 `submission_snapshot`이 붙는 것을 확인했다.
+- 다음 작업은 P266 notification per-kind idempotency다. 이번 P265가 bid 제출 audit 증거라면, P266은 초기 알림과 마감 알림이 job 반복 실행 때 중복 claim/send되지 않게 알림 종류별 중복 방지를 고정하는 작업이다.
+
+검증:
+
+- `node --check scripts/check_marketplace_rls_negative.mjs`
+- `npx vitest run server/repositories/platform-marketplace-governance.test.ts`
+- `vercel env run -e preview -- sh -c 'psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "begin;" -f supabase/migrations/20260603004000_bid_submission_audit_snapshot.sql -c "rollback;"'`
+- `vercel env run -e preview -- sh -c 'psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260603004000_bid_submission_audit_snapshot.sql'`
+- `vercel env run -e preview -- sh -c 'E2E_ALLOW_REMOTE_MARKETPLACE_TRANSACTION=true node scripts/seed_marketplace_transaction_fixture.mjs && E2E_ALLOW_REMOTE_MARKETPLACE_RLS_NEGATIVE=true npm run smoke:marketplace-rls-negative'`
+
 ### bid detail type guard migration
 
 - 이전 작업은 P263에서 freight bid 값 검증을 SQL에서 차단하는지 확인한 것이고, 이번 작업은 bid detail 테이블이 잘못된 bid type에 연결되지 않도록 DB 타입 경계를 추가한 작업이다.

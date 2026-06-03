@@ -9,6 +9,8 @@ const completionReportDualAckMigrationPath =
   "supabase/migrations/20260603002000_completion_report_dual_ack_review.sql";
 const bidDetailTypeGuardMigrationPath =
   "supabase/migrations/20260603003000_bid_detail_type_guard.sql";
+const bidSubmissionAuditSnapshotMigrationPath =
+  "supabase/migrations/20260603004000_bid_submission_audit_snapshot.sql";
 
 function readMarketplaceMigration() {
   return readFileSync(join(process.cwd(), marketplaceMigrationPath), "utf8");
@@ -24,6 +26,10 @@ function readCompletionReportDualAckMigration() {
 
 function readBidDetailTypeGuardMigration() {
   return readFileSync(join(process.cwd(), bidDetailTypeGuardMigrationPath), "utf8");
+}
+
+function readBidSubmissionAuditSnapshotMigration() {
+  return readFileSync(join(process.cwd(), bidSubmissionAuditSnapshotMigrationPath), "utf8");
 }
 
 function policyBlock(sql: string, policyName: string) {
@@ -432,6 +438,23 @@ describe("platform marketplace migration governance", () => {
     expect(sql).toContain("create trigger enforce_clearance_bid_detail_type");
     expect(sql).toContain("create or replace function public.enforce_service_bid_type_detail_consistency");
     expect(sql).toContain("create trigger enforce_service_bid_type_detail_consistency");
+  });
+
+  it("adds structured bid submission audit snapshots without free-text notes", () => {
+    const sql = readBidSubmissionAuditSnapshotMigration();
+
+    expect(sql).toContain("create or replace function public.append_bid_submission_audit_snapshot");
+    expect(sql).toContain("'submission_snapshot'");
+    expect(sql).toContain("'schema_version', 1");
+    expect(sql).toContain("'detail_summary'");
+    expect(sql).toContain("create constraint trigger append_freight_bid_submission_audit_snapshot");
+    expect(sql).toContain("create constraint trigger append_clearance_bid_submission_audit_snapshot");
+    expect(sql).toContain("deferrable initially deferred");
+    expect(sql).not.toContain("message");
+    expect(sql).not.toContain("free_time_note");
+    expect(sql).not.toContain("carrier_note");
+    expect(sql).not.toContain("risk_note");
+    expect(sql).not.toContain("additional_documents_required");
   });
 
   it("publishes clearance requests by matching verified active customs brokers from preferences", () => {

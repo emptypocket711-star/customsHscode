@@ -30,6 +30,9 @@ const notificationDisabledPublishDraft = {
 const expiredFreightBidRequest = {
   id: "75000000-0000-4000-8000-000000000405"
 };
+const auditSnapshotFreightBidRequest = {
+  id: "75000000-0000-4000-8000-000000000406"
+};
 
 function assert(condition, message, details = {}) {
   if (condition) return;
@@ -113,7 +116,8 @@ async function cleanupInvalidPublishDraft(serviceRoleClient) {
       blockedCompanyPublishDraft.id,
       zeroMatchPublishDraft.id,
       notificationDisabledPublishDraft.id,
-      expiredFreightBidRequest.id
+      expiredFreightBidRequest.id,
+      auditSnapshotFreightBidRequest.id
     ]);
 
   await serviceRoleClient
@@ -488,6 +492,67 @@ async function seedExpiredFreightBidRequest(serviceRoleClient) {
   if (detailError) throw new Error(`expired freight detail insert failed: ${detailError.message}`);
 }
 
+async function seedAuditSnapshotFreightBidRequest(serviceRoleClient) {
+  const profile = await requesterProfile(serviceRoleClient);
+  const now = new Date().toISOString();
+  const deadlineAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+  const { error: requestError } = await serviceRoleClient
+    .from("service_requests")
+    .insert({
+      created_at: now,
+      created_by: profile.id,
+      deadline_at: deadlineAt,
+      destination_country_code: "KR",
+      direction: "import",
+      id: auditSnapshotFreightBidRequest.id,
+      missing_information: [],
+      origin_country_code: "CN",
+      product_summary: "P265 audit snapshot freight bid request",
+      requester_company_id: profile.company_id,
+      request_type: "freight",
+      source_lookup_snapshot: {
+        generatedAt: now,
+        source: "p265 bid audit snapshot check"
+      },
+      status: "open",
+      title: "P265 견적 감사 스냅샷 운송 요청",
+      updated_at: now,
+      visibility: "matched_partners"
+    });
+
+  if (requestError) throw new Error(`audit snapshot freight request insert failed: ${requestError.message}`);
+
+  const { error: detailError } = await serviceRoleClient
+    .from("freight_request_details")
+    .insert({
+      destination_port: "KRPUS",
+      hazardous: false,
+      origin_port: "CNSHA",
+      request_id: auditSnapshotFreightBidRequest.id,
+      temperature_controlled: false,
+      transport_mode: "sea",
+      used_car: false
+    });
+
+  if (detailError) throw new Error(`audit snapshot freight detail insert failed: ${detailError.message}`);
+
+  const { error: matchError } = await serviceRoleClient
+    .from("service_request_partner_matches")
+    .insert({
+      interest_status: "none",
+      match_reason: {
+        source: "p265 audit snapshot check"
+      },
+      matched_by: "preference",
+      notification_status: "skipped",
+      partner_company_id: fixture.companies.forwarder.id,
+      request_id: auditSnapshotFreightBidRequest.id
+    });
+
+  if (matchError) throw new Error(`audit snapshot freight match insert failed: ${matchError.message}`);
+}
+
 async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPassword }) {
   const serviceRoleClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: {
@@ -761,6 +826,46 @@ async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPas
     })
   });
   await cleanupWrongBidDetailRows(serviceRoleClient);
+
+  await seedAuditSnapshotFreightBidRequest(serviceRoleClient);
+  const auditSnapshotBid = await forwarder.rpc(
+    "submit_freight_bid",
+    freightBidInput(auditSnapshotFreightBidRequest.id)
+  );
+  const auditSnapshotBidId = typeof auditSnapshotBid.data?.bid_id === "string"
+    ? auditSnapshotBid.data.bid_id
+    : null;
+  const auditSnapshotRow = auditSnapshotBidId
+    ? await serviceRoleClient
+      .from("audit_logs")
+      .select("after_json")
+      .eq("action", "freight_bid_submitted")
+      .eq("target_id", auditSnapshotBidId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+    : { data: null, error: { message: "bid missing" } };
+  const auditSnapshotAfterJson = Array.isArray(auditSnapshotRow.data)
+    ? auditSnapshotRow.data[0]?.after_json
+    : null;
+  const submissionSnapshot = auditSnapshotAfterJson?.submission_snapshot;
+  checks.push({
+    label: "freight-bid-submission-audit-includes-structured-summary",
+    ok: !auditSnapshotBid.error
+      && submissionSnapshot?.schema_version === 1
+      && submissionSnapshot?.request_id === auditSnapshotFreightBidRequest.id
+      && submissionSnapshot?.bid_type === "freight"
+      && submissionSnapshot?.currency === "KRW"
+      && submissionSnapshot?.total_amount === 160000
+      && submissionSnapshot?.detail_summary?.freight_rate_amount === 100000
+      && submissionSnapshot?.detail_summary?.transit_time_days === 3
+      && !("message" in submissionSnapshot)
+      && !("free_time_note" in submissionSnapshot)
+      && !("carrier_note" in submissionSnapshot),
+    reason: auditSnapshotBid.error?.message ?? JSON.stringify({
+      bidId: auditSnapshotBidId,
+      snapshot: submissionSnapshot ?? null
+    })
+  });
 
   const publishedFreightDetailUpdate = await requester
     .from("freight_request_details")

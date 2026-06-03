@@ -525,7 +525,7 @@
 | P262.1 freight bid request-type and deadline guard | 완료 | 알림 선호 규칙이 아니라 freight bid RPC가 통관 요청/마감 지난 요청을 직접 호출로 받지 않게 한다 | bid RPC guard | RPC negative tests |
 | P263.1 freight bid SQL value constraints | 완료 | bid 대상 guard가 아니라 currency, 금액, 리드타임, 유효기간 검증을 SQL에서도 차단하고 invalid 호출 후 bid row가 남지 않게 한다 | bid value constraints | RPC negative tests |
 | P264.1 clearance bid detail type policy | 완료 | freight bid 값 검증이 아니라 clearance/freight detail을 반대 bid type에 직접 붙이지 못하게 DB trigger로 막는다 | bid detail type boundary | migration, DB negative tests |
-| P265.1 bid audit snapshot hardening | 예정 | bid detail RLS가 아니라 분쟁 검토에 필요한 제출 견적 요약을 audit에 민감정보 없이 남긴다 | bid audit snapshot | audit unit/governance |
+| P265.1 bid audit snapshot hardening | 완료 | bid detail RLS가 아니라 분쟁 검토에 필요한 제출 견적 요약을 audit에 민감 자유기입 텍스트 없이 남긴다 | bid audit snapshot | migration, audit contract |
 | P266.1 notification per-kind idempotency | 예정 | bid audit가 아니라 초기 알림과 마감 알림이 job 반복 실행 때 중복 claim/send되지 않게 한다 | notification idempotency | policy/unit, worker rehearsal |
 | P267.1 notification digest semantics | 예정 | per-kind 중복 방지가 아니라 digest enabled가 침묵이 아닌 묶음 알림 상태로 해석되게 한다 | digest policy | policy/unit, worker dry-run |
 | P268.1 reminder fatigue policy | 예정 | digest가 아니라 미열람 파트너에게 마감 알림을 과도하게 보내지 않도록 engagement 기준을 조정한다 | reminder fatigue guard | policy/unit |
