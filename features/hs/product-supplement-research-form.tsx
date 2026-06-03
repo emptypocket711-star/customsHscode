@@ -30,6 +30,7 @@ export function ProductSupplementResearchForm({
   const hasAnswer = summaryAnswer.trim().length > 0 || answers.some((answer) => answer.trim().length > 0);
   const borderClass = tone === "amber" ? "border-amber-100" : "border-blue-100";
   const labelClass = tone === "amber" ? "text-amber-900" : "text-blue-900";
+  const buttonClass = "focus-ring inline-flex min-h-10 items-center justify-center rounded-md bg-blue-700 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300";
 
   function submitSupplement() {
     const summaryLine = summaryAnswer.trim() ? ["- 추가 보완사항: " + summaryAnswer.trim()] : [];
@@ -72,7 +73,7 @@ export function ProductSupplementResearchForm({
           />
         </label>
         <button
-          className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md bg-blue-700 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+          className={buttonClass}
           data-navigation-progress="보완검색"
           disabled={!hasAnswer || isPending}
           onClick={submitSupplement}
@@ -101,6 +102,15 @@ export function ProductSupplementResearchForm({
               />
             </label>
           ))}
+          <button
+            className={buttonClass}
+            data-navigation-progress="보완검색"
+            disabled={!hasAnswer || isPending}
+            onClick={submitSupplement}
+            type="button"
+          >
+            {isPending ? "재조회 중" : "질문 답변 적용하여 재조회"}
+          </button>
         </div>
       </details>
     </div>
