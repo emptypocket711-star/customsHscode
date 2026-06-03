@@ -4,6 +4,27 @@
 
 ## 2026-06-03
 
+### operations smoke content markers
+
+- 이전 작업은 P203 지정 개발자 운영 smoke 계정을 준비하는 실행 경로를 추가한 것이고, 이번 작업은 P204 운영자 env가 준비됐을 때 `/operations/*` smoke가 더 구체적인 본문 marker를 확인하도록 강화한 작업이다.
+- `scripts/smoke_production_routes.mjs`의 optional operations scenarios marker를 일반 문구에서 화면 고유 문구로 바꿨다.
+- `/operations/users`는 `운영 관리 홈`, `플랫폼 요청 운영 상태`, `사용자 상세 관리`를 확인한다.
+- `/operations/health`는 `운영 점검`, `운영 DB 스키마 점검`, `수동 운영 명령`을 확인한다.
+- `/operations/notices`는 `공지 관리`, `대시보드 공지`, `접속 팝업`을 확인한다.
+- 현재 작업 세션에는 `SMOKE_OPERATIONS_EMAIL`/`SMOKE_OPERATIONS_PASSWORD`가 없어 강화 marker가 적용된 운영자 본문 smoke는 실행하지 못했다.
+- 대신 최신 staging preview에서 기본 smoke와 일반 계정 guard smoke가 모두 통과해 기존 경로 회귀와 접근 차단은 유지되는 것을 확인했다.
+- 최신 staging preview는 `https://customs-hscode-c31v6ud7q-koo-apps.vercel.app`다.
+- 다음 작업은 P205 operations smoke diagnostics 개선이다. 이번 P204가 운영자 본문 marker 강화라면, P205는 운영자 env가 없어서 `operationsRoutes=false`일 때 어떤 env가 빠졌는지 smoke 출력만 보고 알 수 있게 만드는 작업이다.
+
+검증:
+
+- `node --check scripts/smoke_production_routes.mjs`
+- `npm run lint`
+- `npm run typecheck`
+- `npm run build`
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-c31v6ud7q-koo-apps.vercel.app`: 9/9 통과, `operationsRoutes=false`
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... npm run smoke:operations:guard -- https://customs-hscode-c31v6ud7q-koo-apps.vercel.app`: 9/9 통과
+
 ### operations smoke account preparation
 
 - 이전 작업은 P202 일반 화주/포워더/관세사 계정이 운영 화면 본문을 보지 못하는지 확인한 것이고, 이번 작업은 P203 운영자 smoke를 실제로 켤 수 있도록 지정 개발자 계정과 profile role을 보강하는 실행 경로를 추가한 작업이다.
