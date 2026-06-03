@@ -3,6 +3,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
   DashboardHome,
+  buildForwarderDashboardMilestones,
   buildMarketplaceNextActions,
   buildRequesterDashboardMilestones,
   type DashboardMarketplaceActivitySummary,
@@ -140,6 +141,26 @@ describe("dashboard marketplace next actions", () => {
       label: "파트너 업무",
       title: "운송 파트너 업무 확인"
     });
+  });
+
+  it("summarizes forwarder dashboard work into opportunity, submitted, selected, and completed milestones", () => {
+    const milestones = buildForwarderDashboardMilestones(activityFixture({
+      freightPartnerActionRequestId: "selected-freight-1",
+      freightPartnerActionStatus: "partner_selected",
+      freightPartnerActions: 2,
+      partnerOpportunities: 5
+    }));
+
+    expect(milestones.map((item) => item.label)).toEqual([
+      "새 기회",
+      "제출 견적",
+      "선정 건",
+      "완료 건"
+    ]);
+    expect(milestones[0]).toMatchObject({ href: "/requests/freight?workspace=forwarder", value: "5건" });
+    expect(milestones[1]).toMatchObject({ href: "/requests/freight/opportunities/selected-freight-1#request-lifecycle", value: "2건" });
+    expect(milestones[2]).toMatchObject({ value: "2건" });
+    expect(milestones[3]).toMatchObject({ value: "0건" });
   });
 
   it("sends active partner bid work to the bid section", () => {

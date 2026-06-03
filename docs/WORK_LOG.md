@@ -4,6 +4,18 @@
 
 ## 2026-06-03
 
+### forwarder dashboard primary actions
+
+- 이전 작업은 P221 화주 대시보드에서 요청하기, 견적 도착, 진행중, 완료 대기를 정리한 것이고, 이번 작업은 P222 포워더 대시보드에서 새 기회, 제출 견적, 선정 건, 완료 건을 기본 행동으로 정리한 작업이다.
+- `buildForwarderDashboardMilestones`를 추가해 포워더가 볼 4개 상태를 계산한다.
+- 포워더 역할이 승인된 사용자는 플랫폼 업무 섹션에서 `포워더 기본 행동` 카드 묶음을 먼저 볼 수 있다.
+- 현재 activity 모델에서 포워더 세부 카운트가 제한적이므로, 선정/완료 건은 `freightPartnerActionStatus` 기준으로 먼저 계산한다.
+- 다음 작업은 P223 broker dashboard primary actions다. 이번 P222가 포워더 운송 업무 기준이라면, P223은 관세사 통관 의뢰 기준으로 새 기회, 제출 견적, 선정 건, 완료 건을 정리하는 작업이다.
+
+검증:
+
+- `npx vitest run features/dashboard/dashboard-home.test.ts`: 8개 통과
+
 ### shipper dashboard primary actions
 
 - 이전 작업은 P220 운영 요청 상세의 우선 판정 카드였고, 이번 작업은 P221 화주 대시보드에서 요청하기, 견적 도착, 진행중, 완료 대기를 기본 행동으로 정리한 작업이다.

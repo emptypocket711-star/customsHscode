@@ -472,6 +472,39 @@ export function buildRequesterDashboardMilestones(activity: DashboardMarketplace
   ];
 }
 
+export function buildForwarderDashboardMilestones(activity: DashboardMarketplaceActivitySummary | null) {
+  const status = activity?.freightPartnerActionStatus ?? null;
+  const hasSelectedWork = status === "partner_selected" || status === "in_progress";
+  const hasCompletedWork = status === "completed";
+
+  return [
+    {
+      description: "매칭된 운송 요청 중 아직 견적 제출을 검토할 수 있는 새 기회를 확인합니다.",
+      href: "/requests/freight?workspace=forwarder",
+      label: "새 기회",
+      value: `${activity?.partnerOpportunities ?? 0}건`
+    },
+    {
+      description: "견적 제출, 제출 후 상태 확인, 조건 변경 필요 여부를 봅니다.",
+      href: partnerActionHref("freight", activity?.freightPartnerActionRequestId, status),
+      label: "제출 견적",
+      value: `${activity?.freightPartnerActions ?? 0}건`
+    },
+    {
+      description: "선정된 운송 요청의 진행 시작과 완료 전환 위치로 이동합니다.",
+      href: partnerActionHref("freight", activity?.freightPartnerActionRequestId, status),
+      label: "선정 건",
+      value: `${hasSelectedWork ? activity?.freightPartnerActions ?? 0 : 0}건`
+    },
+    {
+      description: "완료된 운송 요청의 리포트 확인과 후속 피드백 상태를 봅니다.",
+      href: partnerActionHref("freight", activity?.freightPartnerActionRequestId, status),
+      label: "완료 건",
+      value: `${hasCompletedWork ? activity?.freightPartnerActions ?? 0 : 0}건`
+    }
+  ];
+}
+
 function DashboardMarketplaceEntry({
   activity,
   dictionary,
@@ -495,6 +528,7 @@ function DashboardMarketplaceEntry({
   const hasActiveWork = hasMarketplaceWork(activity);
   const nextActions = buildMarketplaceNextActions(activity, summary);
   const requesterMilestones = buildRequesterDashboardMilestones(activity);
+  const forwarderMilestones = buildForwarderDashboardMilestones(activity);
   const unreadNotificationCount = notifications.filter((notification) => !notification.readAt).length;
   const roleSetupAction = {
     description: roleIntents.length
@@ -637,6 +671,37 @@ function DashboardMarketplaceEntry({
                 </div>
                 <div className="mt-3 grid gap-2 md:grid-cols-4">
                   {requesterMilestones.map((item) => (
+                    <Link
+                      className="focus-ring rounded-md border border-slate-200 bg-white p-3 text-sm transition hover:border-blue-200 hover:bg-blue-50"
+                      data-navigation-progress={item.label}
+                      href={item.href}
+                      key={item.label}
+                    >
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="font-semibold text-[var(--text-primary)]">{item.label}</span>
+                        <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">{item.value}</span>
+                      </span>
+                      <span className="mt-2 block text-xs leading-5 text-[var(--text-secondary)]">{item.description}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            {canSeeForwarderActions ? (
+              <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-[var(--text-primary)]">포워더 기본 행동</h3>
+                    <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+                      새 운송 기회부터 선정 후 완료까지 포워더가 자주 보는 4개 상태만 먼저 정리합니다.
+                    </p>
+                  </div>
+                  <span className="w-fit rounded-md bg-white px-2 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+                    포워딩
+                  </span>
+                </div>
+                <div className="mt-3 grid gap-2 md:grid-cols-4">
+                  {forwarderMilestones.map((item) => (
                     <Link
                       className="focus-ring rounded-md border border-slate-200 bg-white p-3 text-sm transition hover:border-blue-200 hover:bg-blue-50"
                       data-navigation-progress={item.label}
