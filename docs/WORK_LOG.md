@@ -4,6 +4,27 @@
 
 ## 2026-06-03
 
+### operations guard diagnostics
+
+- 이전 작업은 P207 운영자 준비 스크립트의 profile schema fallback을 보강한 것이고, 이번 작업은 P208 일반 계정 운영 차단 guard가 어떤 계정 파일과 역할을 검사했는지 명확히 출력하게 만든 작업이다.
+- `scripts/check_operations_route_guard.mjs`에 `OPERATIONS_GUARD_ROLES` 설정을 추가했다.
+- 기본 guard 대상은 `forwarder,customs_broker,shipper`다.
+- `tmp/test-accounts.json`에 developer 계정이 추가되더라도 기본 guard는 developer 계정을 검사 대상에서 제외한다.
+- guard 출력에 `accountsFile`, `usableAccounts`, `ignoredAccounts`, `requiredRoles`, `checkedRoles`를 추가했다.
+- 필수 역할 계정이 빠져 있으면 실행 초기에 실패하도록 했다.
+- 최신 staging preview는 `https://customs-hscode-e4yiz27a2-koo-apps.vercel.app`다.
+- 다음 작업은 P209 completion report 실무화 재진입이다. 이번 P208이 운영 smoke 검증 체계 보강이라면, P209는 다시 플랫폼 거래 완료 후 실제 업무 기록/리포트 쪽 병목으로 돌아가는 작업이다.
+
+검증:
+
+- `node --check scripts/check_operations_route_guard.mjs`
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... npm run smoke:operations:guard -- https://customs-hscode-gf1p0px4l-koo-apps.vercel.app`: 새 진단 출력과 9/9 통과 확인
+- `npm run lint`
+- `npm run typecheck`
+- `npm run build`
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-e4yiz27a2-koo-apps.vercel.app`: 9/9 통과
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... npm run smoke:operations:guard -- https://customs-hscode-e4yiz27a2-koo-apps.vercel.app`: 새 진단 출력과 9/9 통과 확인
+
 ### operations smoke prepare schema fallback
 
 - 이전 작업은 P206 운영 smoke 실행 절차를 문서화한 것이고, 이번 작업은 P207 `smoke:operations:prepare`가 오래된 profile schema에서도 최소 developer role 보강을 시도하게 만든 코드 보강이다.
