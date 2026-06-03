@@ -497,7 +497,7 @@ const copyGuideLabels: Record<HsCopyGuideLanguage, {
     importRequirements: "수입요건",
     internalTax: "내국세",
     noDestinationInternalTax: "표시할 수입국 내국세 데이터가 없습니다.",
-    noImportRequirements: "세관장확인대상 수입요건은 조회되지 않았습니다.",
+    noImportRequirements: "세관장확인 조회 결과 없음",
     noImportRequirementsCaution: "다만 통합공고, 개별법령, 표시·인증·유통규제 의무가 존재할 수 있으므로 제품 상세자료 기준 확인이 필요합니다.",
     noOriginMarking: "원산지표시대상으로 조회되는 항목은 확인되지 않았습니다.",
     noOriginMarkingCaution: "다만 표시방법, 개별법령, 거래조건에 따라 별도 표시·증빙 의무가 존재할 수 있으므로 제품 상세자료 기준 확인이 필요합니다.",
@@ -532,7 +532,7 @@ const copyGuideLabels: Record<HsCopyGuideLanguage, {
     importRequirements: "Import requirements",
     internalTax: "Internal taxes",
     noDestinationInternalTax: "No destination-country internal tax data is available.",
-    noImportRequirements: "No customs-confirmation import requirement was found in the current lookup.",
+    noImportRequirements: "No customs-confirmation import requirement was found in the current lookup result.",
     noImportRequirementsCaution: "However, integrated notices, individual laws, labeling, certification, or distribution obligations may still apply and should be reviewed based on detailed product data.",
     noOriginMarking: "No origin marking target item was found in the current lookup.",
     noOriginMarkingCaution: "However, marking method, individual laws, and transaction conditions may still require separate marking or evidence review.",
@@ -567,7 +567,7 @@ const copyGuideLabels: Record<HsCopyGuideLanguage, {
     importRequirements: "进口要求",
     internalTax: "国内税/内国税",
     noDestinationInternalTax: "暂无可显示的进口国国内税数据。",
-    noImportRequirements: "当前查询未发现海关确认对象进口要求。",
+    noImportRequirements: "当前查询结果未发现海关确认对象进口要求。",
     noImportRequirementsCaution: "但综合公告、个别法规、标签、认证或流通监管义务仍可能适用，应根据产品详细资料确认。",
     noOriginMarking: "当前查询未发现原产地标示对象。",
     noOriginMarkingCaution: "但标示方法、个别法规、交易条件可能仍要求另行标示或提供证明。",
@@ -675,9 +675,15 @@ function appendRequirementCopyLines(
 
     lines.push(labels.requirementsNeedReview);
   } else {
-    lines.push(labels.noImportRequirements);
-    if (variant === "detailed") lines.push(labels.noImportRequirementsCaution);
+    appendNoRequirementCopyLines(lines, language);
   }
+}
+
+function appendNoRequirementCopyLines(lines: string[], language: HsCopyGuideLanguage) {
+  const labels = copyLabels(language);
+
+  lines.push(labels.noImportRequirements);
+  lines.push(labels.noImportRequirementsCaution);
 }
 
 function appendOriginMarkingCopyLines(
@@ -808,7 +814,7 @@ function hsCopySummaryTexts({
           lines.push(`- ${requirement.name} (${requirement.relatedLaw})`);
         }
       } else {
-        lines.push(labels.noImportRequirements);
+        appendNoRequirementCopyLines(lines, language);
       }
       return lines.join("\n");
     }
@@ -1348,7 +1354,7 @@ function productCandidateCopySummaryTexts({
           lines.push(`- ${requirement.name} (${requirement.relatedLaw})`);
         }
       } else {
-        lines.push(labels.noImportRequirements);
+        appendNoRequirementCopyLines(lines, language);
       }
 
       if (variant === "brief") return;
@@ -2617,7 +2623,7 @@ function destinationCopySummaryTexts({
         lines.push(`- ${requirement.requirementName}${requirement.agency ? ` / ${requirement.agency}` : ""}`);
       }
     } else {
-      lines.push(labels.noImportRequirements);
+      appendNoRequirementCopyLines(lines, language);
     }
 
     if (variant === "brief") return lines.join("\n");
