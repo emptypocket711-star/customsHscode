@@ -66,6 +66,20 @@ function roleLabel(value: string) {
   return roleOptions.find((option) => option.value === value)?.label ?? value;
 }
 
+export function companyRoleRequestDisabledMessage(
+  dashboard: Pick<CompanyRoleRequestsDashboard, "companyRole" | "schemaReady">
+) {
+  if (!dashboard.schemaReady) {
+    return "현재 환경에서는 역할 신청 데이터가 준비되지 않아 신청할 수 없습니다. 로그인 문제는 아니며, 운영자에게 역할 승인 데이터 적용 여부를 확인해 주세요.";
+  }
+
+  if (dashboard.companyRole !== "admin") {
+    return "회사 관리자만 플랫폼 역할을 신청할 수 있습니다. 회사 관리자에게 국내 수출입 화주 또는 필요한 플랫폼 역할 신청을 요청해 주세요.";
+  }
+
+  return null;
+}
+
 function RequestRow({ request }: { request: CompanyRoleRequestItem }) {
   const status = statusLabels[request.status] ?? statusLabels.submitted;
 
@@ -94,6 +108,7 @@ export function CompanyRoleRequestPanel({
 }) {
   const [state, action, pending] = useActionState(createCompanyRoleRequestAction, initialState);
   const canRequest = dashboard.schemaReady && dashboard.companyRole === "admin";
+  const disabledMessage = companyRoleRequestDisabledMessage(dashboard);
 
   useEffect(() => {
     if (state.status !== "idle") {
@@ -111,7 +126,7 @@ export function CompanyRoleRequestPanel({
       <CardBody className="grid gap-4">
         {!dashboard.schemaReady ? (
           <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
-            현재 이 환경에서는 플랫폼 역할 신청 기능이 준비 중입니다. 로그인 문제는 아니며, 역할 승인 데이터 준비 후 신청이 활성화됩니다.
+            현재 이 환경에서는 플랫폼 역할 신청 데이터가 준비되지 않았습니다. 로그인 문제는 아니며, 운영자에게 역할 승인 데이터 적용 여부를 확인해 주세요.
           </p>
         ) : null}
 
@@ -187,9 +202,9 @@ export function CompanyRoleRequestPanel({
             {pending ? "신청 접수 중" : "역할 신청"}
           </button>
 
-          {!canRequest ? (
+          {disabledMessage ? (
             <p className="rounded-md border border-slate-200 bg-white p-3 text-sm leading-6 text-slate-600">
-              회사 관리자만 플랫폼 역할을 신청할 수 있습니다.
+              {disabledMessage}
             </p>
           ) : null}
 
