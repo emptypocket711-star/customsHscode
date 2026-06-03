@@ -4,6 +4,23 @@
 
 ## 2026-06-03
 
+### FTA copy text
+
+- 이전 작업은 P179 복사 안내문 상세 버전의 원산지표시 문구 개선이고, 이번 작업은 P180 상세 복사 안내문의 FTA 세율 문구 개선이다.
+- 상세 복사문에서 FTA 세율 행 바로 아래에 `FTA 세율은 자동 적용이 아니며 원산지증명, 직접운송, 협정 요건 충족 여부를 함께 확인해야 합니다.` 문구를 추가했다.
+- 품명 후보 상세 복사문에서도 같은 문구가 들어가게 했다.
+- 영어/중국어 상세 복사문도 같은 의미로 보강했다.
+- 최신 staging preview는 `https://customs-hscode-a8aas9g4o-koo-apps.vercel.app`다.
+- 다음 작업은 P181 HS 직접조회 복사 안내문의 수입요건 빈 결과 문구 점검이다. 이번 P180이 FTA 복사문이라면, P181은 복사문에서 세관장확인 빈 결과가 요건 부재처럼 전달되지 않는지 보는 작업이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- Playwright staging browser clipboard: `1704.90-9000`, 수입국 `CHN` 상세 복사문에 `FTA 관세율`, `FTA 세율은 자동 적용이 아니며 원산지증명, 직접운송, 협정 요건 충족 여부` 문구 확인
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-a8aas9g4o-koo-apps.vercel.app`: 9/9 통과
+
 ### origin marking copy text
 
 - 이전 작업은 P178 HS 직접조회 기본정보의 `원산지 표시` 행 문구 개선이고, 이번 작업은 P179 복사 안내문 상세 버전의 원산지표시 문구 개선이다.

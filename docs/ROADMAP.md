@@ -468,6 +468,7 @@
 | P177.1 import requirement summary copy | 완료 | FTA/특혜 요약 카드가 아니라 HS 직접조회 상단 `수입요건` 요약 카드가 요건 부재를 단정하지 않게 보조 문구를 붙인다 | customs-confirmation empty caution, candidate review note | unit, browser, typecheck, lint, build, staging smoke |
 | P178.1 origin marking summary copy | 완료 | 수입요건 요약 카드가 아니라 HS 직접조회 기본정보의 `원산지 표시` 행이 대상/비대상 확정 판정처럼 보이지 않게 조회 결과와 확인 필요 문구를 붙인다 | origin marking lookup copy, non-target caution | unit, browser target case, typecheck, lint, build, staging smoke |
 | P179.1 origin marking copy text | 완료 | 화면 기본정보 행 문구가 아니라 복사 안내문 상세 버전의 원산지표시 문구가 화면과 같은 조건부 표현을 쓰게 한다 | copied origin marking review note | unit, browser clipboard, typecheck, lint, build, staging smoke |
+| P180.1 FTA copy text | 완료 | 원산지표시 복사문이 아니라 상세 복사 안내문의 FTA 세율 행이 자동 적용처럼 보이지 않게 협정 요건 확인 문구를 붙인다 | copied FTA review note | browser clipboard, typecheck, lint, build, staging smoke |
 
 #### P109 다음 병목 선정
 
