@@ -18,6 +18,9 @@ const noCompanyUser = {
 const invalidPublishDraft = {
   id: "75000000-0000-4000-8000-000000000401"
 };
+const blockedCompanyPublishDraft = {
+  id: "75000000-0000-4000-8000-000000000402"
+};
 
 function assert(condition, message, details = {}) {
   if (condition) return;
@@ -63,15 +66,29 @@ async function cleanupInvalidPublishDraft(serviceRoleClient) {
   await serviceRoleClient
     .from("service_requests")
     .delete()
-    .eq("id", invalidPublishDraft.id);
+    .in("id", [invalidPublishDraft.id, blockedCompanyPublishDraft.id]);
 
   await serviceRoleClient
     .from("companies")
     .update({
+      blocked_at: null,
+      suspended_at: null,
       verification_status: "email_verified",
       verified_at: null
     })
     .eq("id", fixture.companies.requester.id);
+}
+
+async function requesterProfile(serviceRoleClient) {
+  const { data, error } = await serviceRoleClient
+    .from("profiles")
+    .select("id,company_id")
+    .eq("email", fixture.users.requester.email)
+    .single();
+
+  if (error) throw new Error(`requester profile lookup failed: ${error.message}`);
+  if (!data?.company_id) throw new Error("requester profile company_id missing");
+  return data;
 }
 
 async function findUserByEmail(client, email) {
@@ -127,14 +144,7 @@ async function ensureNoCompanyUser(client, testPassword) {
 }
 
 async function seedInvalidPublishDraft(serviceRoleClient) {
-  const { data: requesterProfile, error: profileError } = await serviceRoleClient
-    .from("profiles")
-    .select("id,company_id")
-    .eq("email", fixture.users.requester.email)
-    .single();
-
-  if (profileError) throw new Error(`requester profile lookup failed: ${profileError.message}`);
-  if (!requesterProfile?.company_id) throw new Error("requester profile company_id missing");
+  const profile = await requesterProfile(serviceRoleClient);
 
   await cleanupInvalidPublishDraft(serviceRoleClient);
 
@@ -144,7 +154,7 @@ async function seedInvalidPublishDraft(serviceRoleClient) {
       verification_status: "operator_approved",
       verified_at: new Date().toISOString()
     })
-    .eq("id", requesterProfile.company_id);
+    .eq("id", profile.company_id);
 
   if (companyError) throw new Error(`requester company publish validation setup failed: ${companyError.message}`);
 
@@ -153,7 +163,7 @@ async function seedInvalidPublishDraft(serviceRoleClient) {
     .from("service_requests")
     .insert({
       created_at: now,
-      created_by: requesterProfile.id,
+      created_by: profile.id,
       deadline_at: null,
       destination_country_code: "KR",
       direction: "import",
@@ -161,7 +171,7 @@ async function seedInvalidPublishDraft(serviceRoleClient) {
       missing_information: [],
       origin_country_code: null,
       product_summary: "P258 invalid publish draft",
-      requester_company_id: requesterProfile.company_id,
+      requester_company_id: profile.company_id,
       request_type: "freight",
       source_lookup_snapshot: {
         generatedAt: now,
@@ -188,6 +198,62 @@ async function seedInvalidPublishDraft(serviceRoleClient) {
     });
 
   if (detailError) throw new Error(`invalid publish freight detail insert failed: ${detailError.message}`);
+}
+
+async function seedBlockedCompanyPublishDraft(serviceRoleClient) {
+  const profile = await requesterProfile(serviceRoleClient);
+  const now = new Date().toISOString();
+
+  const { error: companyError } = await serviceRoleClient
+    .from("companies")
+    .update({
+      blocked_at: now,
+      verification_status: "blocked",
+      verified_at: null
+    })
+    .eq("id", profile.company_id);
+
+  if (companyError) throw new Error(`requester company blocked setup failed: ${companyError.message}`);
+
+  const { error: requestError } = await serviceRoleClient
+    .from("service_requests")
+    .insert({
+      created_at: now,
+      created_by: profile.id,
+      deadline_at: null,
+      destination_country_code: "KR",
+      direction: "import",
+      id: blockedCompanyPublishDraft.id,
+      missing_information: [],
+      origin_country_code: "CN",
+      product_summary: "P259 blocked company publish draft",
+      requester_company_id: profile.company_id,
+      request_type: "freight",
+      source_lookup_snapshot: {
+        generatedAt: now,
+        source: "p259 negative check"
+      },
+      status: "draft",
+      title: "P259 차단 회사 운송 요청",
+      updated_at: now,
+      visibility: "matched_partners"
+    });
+
+  if (requestError) throw new Error(`blocked company service_request insert failed: ${requestError.message}`);
+
+  const { error: detailError } = await serviceRoleClient
+    .from("freight_request_details")
+    .insert({
+      destination_port: "KRPUS",
+      hazardous: false,
+      origin_port: "CNSHA",
+      request_id: blockedCompanyPublishDraft.id,
+      temperature_controlled: false,
+      transport_mode: "sea",
+      used_car: false
+    });
+
+  if (detailError) throw new Error(`blocked company freight detail insert failed: ${detailError.message}`);
 }
 
 async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPassword }) {
@@ -262,6 +328,17 @@ async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPas
     label: "publish-freight-requires-origin-destination-transport",
     ok: Boolean(missingFieldPublish.error?.message?.includes("출발 국가, 도착 국가, 운송 방식은 공개 전에 필요합니다")),
     reason: missingFieldPublish.error?.message ?? "rpc returned without error"
+  });
+
+  await seedBlockedCompanyPublishDraft(serviceRoleClient);
+  const blockedCompanyPublish = await requester.rpc("publish_freight_request", {
+    p_deadline_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    p_request_id: blockedCompanyPublishDraft.id
+  });
+  checks.push({
+    label: "blocked-requester-company-cannot-publish-freight-request",
+    ok: Boolean(blockedCompanyPublish.error?.message?.includes("정지 또는 차단된 회사는 요청을 공개할 수 없습니다")),
+    reason: blockedCompanyPublish.error?.message ?? "rpc returned without error"
   });
 
   const publishedFreightDetailUpdate = await requester

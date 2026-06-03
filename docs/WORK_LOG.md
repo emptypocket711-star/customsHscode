@@ -4,6 +4,22 @@
 
 ## 2026-06-03
 
+### requester company active guard
+
+- 이전 작업은 P258에서 공개 RPC 필수 매칭값 검증을 확인한 것이고, 이번 작업은 필수값이 정상이어도 requester 회사가 차단 상태면 공개 모집을 시작하지 못하는지 확인한 작업이다.
+- service role로 valid freight draft를 만들고 requester 회사 상태를 테스트 중에만 `blocked`로 바꿨다.
+- requester가 `publish_freight_request`를 호출하면 `정지 또는 차단된 회사는 요청을 공개할 수 없습니다.`로 차단되는 것을 Preview DB에서 확인했다.
+- 실행 후 P258/P259 테스트 draft를 삭제하고 requester 회사 상태를 fixture 기준으로 되돌린다.
+- 다음 작업은 P260 unmatched publish state handling이다. 이번 P259가 requester 회사 eligibility guard라면, P260은 매칭 0건 요청이 open 상태로 보이거나 파트너에게 아무도 노출되지 않는 흐름을 운영 확인 대상으로 고정하는 작업이다.
+
+검증:
+
+- `node --check scripts/check_marketplace_rls_negative.mjs`
+- `vercel env run -e preview -- sh -c 'E2E_ALLOW_REMOTE_MARKETPLACE_TRANSACTION=true node scripts/seed_marketplace_transaction_fixture.mjs && E2E_ALLOW_REMOTE_MARKETPLACE_RLS_NEGATIVE=true npm run smoke:marketplace-rls-negative'`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
 ### publish required field SQL validation
 
 - 이전 작업은 P257에서 공개된 운송 상세 조건 직접 수정 차단을 확인한 것이고, 이번 작업은 공개 RPC 자체가 매칭 핵심값 없이 진행되지 않는지 확인한 작업이다.
