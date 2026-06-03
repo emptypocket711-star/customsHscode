@@ -3,6 +3,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
   buildOwnerOperationsBrief,
+  buildOwnerPlainLanguageGuidance,
   buildPlatformRequestOperationsMetricGroups,
   PlatformRequestOperationsPanel
 } from "@/features/operations/platform-request-operations-panel";
@@ -69,6 +70,18 @@ describe("platform request operations panel", () => {
     expect(brief[0]?.value).toBe("견적 도착");
     expect(brief[1]?.value).toBe("1건");
     expect(brief[2]?.value).toBe("5건");
+  });
+
+  it("turns the primary bottleneck into a plain-language owner instruction", () => {
+    const guidance = buildOwnerPlainLanguageGuidance(summaryFixture({
+      bidsReceived: 3,
+      total: 4
+    }));
+
+    expect(guidance.value).toBe("견적 도착");
+    expect(guidance.detail).toContain("선정 전환 병목");
+    expect(guidance.detail).toContain("샘플만 열어 확인");
+    expect(guidance.request).toBe("견적 비교·선택 화면 개선 요청");
   });
 
   it("keeps the default operations view focused on four primary metrics", () => {
@@ -143,6 +156,8 @@ describe("platform request operations panel", () => {
     expect(html).toContain("오늘 맡길 1순위");
     expect(html).toContain("직접 확인 샘플");
     expect(html).toContain("전체 운영 상태");
+    expect(html).toContain("지금 의미");
+    expect(html).toContain("나에게 시킬 말");
     expect(html).toContain("지금 바로 맡길 1순위만 먼저 보여주고");
     expect(html).toContain("다음 후보 2개 보기");
     expect(html).toContain("바로 확인할 운영 샘플");

@@ -297,6 +297,49 @@ type OperationsMetricCard = {
   value: string;
 };
 
+export function buildOwnerPlainLanguageGuidance(
+  summary: PlatformRequestOperationsSummary,
+  primaryAction = buildOwnerActionQueue(summary)[0]
+): OperationsMetricCard & { request: string } {
+  if (!summary.schemaReady) {
+    return {
+      detail: "요청 운영 DB가 준비되지 않아 통계 숫자보다 스키마 적용 여부가 먼저입니다.",
+      label: "지금 의미",
+      request: "플랫폼 요청 DB 스키마 적용 상태와 운영 통계 조회 가능 여부를 먼저 확인해줘.",
+      tone: "warning",
+      value: "DB 확인"
+    };
+  }
+
+  if (primaryAction?.tone === "success") {
+    return {
+      detail: "오늘 바로 막힌 요청 병목은 적습니다. 운영 통계보다 다음 MVP 기능 구현을 이어가도 됩니다.",
+      label: "지금 의미",
+      request: "즉시 병목은 적으니 다음 marketplace MVP 기능 레일을 계속 진행해줘.",
+      tone: "success",
+      value: "정상"
+    };
+  }
+
+  if (primaryAction) {
+    return {
+      detail: `${primaryAction.label} ${primaryAction.value} 때문에 ${primaryAction.reason}이 먼저입니다. 숫자 전체를 보지 말고 이 항목의 샘플만 열어 확인하면 됩니다.`,
+      label: "지금 의미",
+      request: primaryAction.action,
+      tone: primaryAction.tone,
+      value: primaryAction.label
+    };
+  }
+
+  return {
+    detail: "요청 데이터가 아직 없어 운영 병목보다 요청 생성과 파트너 매칭 시작 흐름을 먼저 봅니다.",
+    label: "지금 의미",
+    request: "요청 생성부터 파트너 매칭까지 첫 사용 흐름을 계속 구현해줘.",
+    tone: "neutral",
+    value: "대기"
+  };
+}
+
 export function buildPlatformRequestOperationsMetricGroups(summary: PlatformRequestOperationsSummary): {
   diagnosticMetrics: OperationsMetricCard[];
   primaryMetrics: OperationsMetricCard[];
@@ -342,6 +385,7 @@ export function PlatformRequestOperationsPanel({
   const trustMetricGuidance = buildTrustMetricGuidance(summary);
   const { diagnosticMetrics, primaryMetrics } = buildPlatformRequestOperationsMetricGroups(summary);
   const ownerBrief = buildOwnerOperationsBrief(summary, ownerActionQueue);
+  const plainLanguageGuidance = buildOwnerPlainLanguageGuidance(summary, primaryOwnerAction);
 
   return (
     <div id="platform-request-operations" className="scroll-mt-6">
@@ -372,6 +416,16 @@ export function PlatformRequestOperationsPanel({
                 <p className="mt-2 text-xs leading-5 text-slate-600">{item.detail}</p>
               </div>
             ))}
+          </div>
+          <div className="rounded-md border border-slate-200 bg-slate-950 p-4 text-white">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-semibold">{plainLanguageGuidance.label}</p>
+              <Badge tone={plainLanguageGuidance.tone}>{plainLanguageGuidance.value}</Badge>
+            </div>
+            <p className="mt-2 text-sm leading-6 text-slate-100">{plainLanguageGuidance.detail}</p>
+            <p className="mt-3 rounded-md bg-white/10 px-3 py-2 text-xs font-semibold leading-5 text-slate-100">
+              나에게 시킬 말: {plainLanguageGuidance.request}
+            </p>
           </div>
           <div className="rounded-md border border-slate-200 bg-white p-4">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
