@@ -17,6 +17,7 @@
     "smoke:operations:guard": "node scripts/check_operations_route_guard.mjs",
     "smoke:operations:prepare": "node scripts/prepare_operations_smoke_account.mjs",
     "smoke:production": "node scripts/smoke_production_routes.mjs",
+    "smoke:staging:suite": "node scripts/run_staging_smoke_suite.mjs",
     "smoke:operations:ready": "node scripts/check_operations_smoke_readiness.mjs",
     "e2e:product-supplement": "node scripts/e2e_product_supplement_flow.mjs",
     "e2e:product-supplement:local": "node scripts/run_product_supplement_e2e_local.mjs",

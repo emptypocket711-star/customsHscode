@@ -4,6 +4,21 @@
 
 ## 2026-06-03
 
+### staging smoke suite orchestration
+
+- 이전 작업은 P214 notification worker route 단일 rehearsal이었고, 이번 작업은 P215 DB/schema/route/operations/transaction/completion/notification 검증을 한 순서로 묶어 반복 실행 가능한 staging suite를 만든 작업이다.
+- `smoke:staging:suite` script를 추가했다.
+- suite는 `health:db`, `smoke:marketplace-schema`, `smoke:production`, `smoke:operations:guard`, `e2e:marketplace-transaction:staging`, `e2e:completion-preview:staging`, `e2e:marketplace-notification:staging`, `ops:marketplace-notifications:rehearse-staging`을 순서대로 실행한다.
+- `tmp/test-accounts.json`에서 shipper smoke 계정과 E2E test password 기본값을 읽되 secret 값을 출력하지 않게 했다.
+- 최신 staging preview는 `https://customs-hscode-psbhjibgm-koo-apps.vercel.app`다.
+- 다음 작업은 P216 staging suite result hardening이다. 이번 P215가 여러 검증을 한 명령으로 묶은 작업이라면, P216은 suite 실패 시 단계별 원인과 다음 조치를 더 명확히 출력하고 CI/운영 runbook에 붙일 수 있게 정리하는 작업이다.
+
+검증:
+
+- `node --check scripts/run_staging_smoke_suite.mjs`
+- `npx vitest run scripts/completion_preview_e2e_env.test.ts tests/fixtures/marketplace-transaction.fixture.test.ts`: 13개 통과
+- `vercel env run -e preview -- npm run smoke:staging:suite -- https://customs-hscode-psbhjibgm-koo-apps.vercel.app`: health-db, marketplace-schema, route-smoke, operations-guard, marketplace-transaction, completion-report, notification-dashboard, notification-worker 모두 `result=ok`
+
 ### staging notification worker provider rehearsal
 
 - 이전 작업은 P213 파트너 대시보드에서 이미 생성된 in-app delivery를 클릭하고 읽음 처리하는 E2E였고, 이번 작업은 P214 worker route가 target 계산, send readiness 차단, claim-only delivery 생성을 Preview에서 처리하는지 검증한 작업이다.
