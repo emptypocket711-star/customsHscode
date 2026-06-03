@@ -143,7 +143,7 @@ export function buildMarketplaceDeadlineReminderTargets(
       return (
         match.notificationEnabled &&
         !match.digestEnabled &&
-        match.notificationStatus !== "failed" &&
+        match.notificationStatus === "sent" &&
         !wasDelivered(match, "deadline_reminder") &&
         reminderEligibleInterestStatuses.has(match.interestStatus) &&
         biddableRequestStatuses.has(match.requestStatus) &&

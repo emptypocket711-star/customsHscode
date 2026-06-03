@@ -528,7 +528,7 @@
 | P265.1 bid audit snapshot hardening | 완료 | bid detail RLS가 아니라 분쟁 검토에 필요한 제출 견적 요약을 audit에 민감 자유기입 텍스트 없이 남긴다 | bid audit snapshot | migration, audit contract |
 | P266.1 notification per-kind idempotency | 완료 | bid audit가 아니라 초기 알림과 마감 알림이 job 반복 실행 때 kind/window별로 중복 claim/send되지 않게 한다 | notification idempotency | DB/RPC contract |
 | P267.1 notification digest semantics | 완료 | per-kind 중복 방지가 아니라 digest enabled가 침묵이 아닌 묶음 알림 target으로 해석되게 한다 | digest policy | policy/unit, worker dry-run |
-| P268.1 reminder fatigue policy | 예정 | digest가 아니라 미열람 파트너에게 마감 알림을 과도하게 보내지 않도록 engagement 기준을 조정한다 | reminder fatigue guard | policy/unit |
+| P268.1 reminder fatigue policy | 완료 | digest가 아니라 initial 알림이 아직 sent 되지 않은 파트너에게 마감 알림을 보내지 않도록 engagement 기준을 조정한다 | reminder fatigue guard | policy/unit |
 | P269.1 verification upload cleanup audit | 예정 | 알림 정책이 아니라 회사 검증 증빙 업로드 실패/정리/audit을 orphan 없이 처리한다 | verification upload integrity | repository/action tests |
 | P270.1 profile self-update privilege hardening | 예정 | 업로드 무결성이 아니라 사용자가 profile role/company_role/company_id를 직접 바꿔 권한 상승하지 못하게 한다 | profile privilege boundary | RLS negative tests |
 | P271.1 role review RPC actor validation | 예정 | profile hardening이 아니라 service-role RPC도 actor가 실제 운영 검토 권한자인지 DB에서 검증한다 | reviewer actor guard | RPC negative tests |

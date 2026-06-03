@@ -129,6 +129,7 @@ describe("marketplace deadline reminder policy", () => {
         bidderCompanyId: "partner-1",
         interestStatus: "interested",
         matchId: "draft-bid",
+        notificationStatus: "sent",
         requestDeadlineAt: "2026-06-01T03:00:00.000Z"
       }),
       createMatch({
@@ -144,6 +145,22 @@ describe("marketplace deadline reminder policy", () => {
 
     expect(targets).toHaveLength(1);
     expect(targets[0]?.matchId).toBe("draft-bid");
+  });
+
+  it("requires a sent initial notification before deadline reminders", () => {
+    const targets = buildMarketplaceDeadlineReminderTargets([
+      createMatch({
+        interestStatus: "viewed",
+        matchId: "pending-initial",
+        notificationStatus: "pending",
+        requestDeadlineAt: "2026-06-01T03:00:00.000Z"
+      })
+    ], {
+      now,
+      reminderWindowHours: 6
+    });
+
+    expect(targets).toEqual([]);
   });
 
   it("rejects invalid reminder windows", () => {

@@ -4,6 +4,19 @@
 
 ## 2026-06-03
 
+### reminder fatigue policy
+
+- 이전 작업은 P267에서 digest enabled match를 묶음 알림 target으로 라우팅한 것이고, 이번 작업은 마감 알림이 과도하게 나가지 않도록 reminder 대상을 더 좁힌 작업이다.
+- deadline reminder 정책이 `notificationStatus === 'sent'`인 match만 대상으로 삼게 했다.
+- 즉 partner가 viewed/interested 상태여도 initial 알림이 아직 pending이면 마감 알림을 보내지 않는다.
+- 기존 draft bid 케이스는 initial sent 상태에서는 reminder 대상에 남도록 fixture를 명확히 조정했다.
+- 다음 작업은 P269 verification upload cleanup audit이다. 이번 P268이 알림 피로도 정책이라면, P269는 회사 검증 증빙 업로드 실패/정리/audit이 orphan 없이 처리되는지 확인하는 작업이다.
+
+검증:
+
+- `npx vitest run server/notifications/marketplace-notification-policy.test.ts server/jobs/marketplace-notification-worker.service.test.ts`
+- `npm run typecheck`
+
 ### notification digest semantics
 
 - 이전 작업은 P266에서 initial/deadline reminder 중복 claim을 막는 DB/RPC 계약을 확인한 것이고, 이번 작업은 `digest_enabled`가 단순 침묵이 아니라 묶음 알림 대상으로 라우팅되는지 보강한 작업이다.
