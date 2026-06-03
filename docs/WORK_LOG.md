@@ -4,6 +4,23 @@
 
 ## 2026-06-03
 
+### bid detail type guard migration
+
+- 이전 작업은 P263에서 freight bid 값 검증을 SQL에서 차단하는지 확인한 것이고, 이번 작업은 bid detail 테이블이 잘못된 bid type에 연결되지 않도록 DB 타입 경계를 추가한 작업이다.
+- 기존 RLS는 일반 파트너의 직접 쓰기는 막지만 staff/service-role 경로에서는 `clearance_bid_details`를 freight bid에 붙이는 것을 타입으로 막지 못해 새 migration을 추가했다.
+- `20260603003000_bid_detail_type_guard.sql`에 `enforce_service_bid_detail_type` trigger를 추가해 freight detail은 freight bid에만, clearance detail은 clearance bid에만 연결되게 했다.
+- `enforce_service_bid_type_detail_consistency` trigger도 추가해 detail이 있는 bid의 `bid_type`을 반대 타입으로 바꾸지 못하게 했다.
+- Preview DB에서 migration dry-run 후 실제 적용했고, service-role 직접 insert로 잘못된 detail 연결이 각각 `통관 견적 상세는 통관 견적에만 연결할 수 있습니다.`, `운송 견적 상세는 운송 견적에만 연결할 수 있습니다.`로 차단되는 것을 확인했다.
+- 다음 작업은 P265 bid audit snapshot hardening이다. 이번 P264가 bid/detail 타입 무결성이라면, P265는 분쟁·운영 검토에 필요한 제출 견적 요약을 audit에 민감정보 없이 남기는 작업이다.
+
+검증:
+
+- `node --check scripts/check_marketplace_rls_negative.mjs`
+- `npx vitest run server/repositories/platform-marketplace-governance.test.ts`
+- `vercel env run -e preview -- sh -c 'psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "begin;" -f supabase/migrations/20260603003000_bid_detail_type_guard.sql -c "rollback;"'`
+- `vercel env run -e preview -- sh -c 'psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260603003000_bid_detail_type_guard.sql'`
+- `vercel env run -e preview -- sh -c 'E2E_ALLOW_REMOTE_MARKETPLACE_TRANSACTION=true node scripts/seed_marketplace_transaction_fixture.mjs && E2E_ALLOW_REMOTE_MARKETPLACE_RLS_NEGATIVE=true npm run smoke:marketplace-rls-negative'`
+
 ### freight bid SQL value constraints
 
 - 이전 작업은 P262에서 freight bid RPC의 요청 타입과 마감 guard를 확인한 것이고, 이번 작업은 입찰 가능한 운송 요청이어도 잘못된 값이 DB에서 차단되는지 확인한 작업이다.

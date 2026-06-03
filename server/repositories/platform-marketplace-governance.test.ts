@@ -7,6 +7,8 @@ const marketplaceNotificationPreferencesMigrationPath =
   "supabase/migrations/20260603001000_marketplace_notification_preferences.sql";
 const completionReportDualAckMigrationPath =
   "supabase/migrations/20260603002000_completion_report_dual_ack_review.sql";
+const bidDetailTypeGuardMigrationPath =
+  "supabase/migrations/20260603003000_bid_detail_type_guard.sql";
 
 function readMarketplaceMigration() {
   return readFileSync(join(process.cwd(), marketplaceMigrationPath), "utf8");
@@ -18,6 +20,10 @@ function readMarketplaceNotificationPreferencesMigration() {
 
 function readCompletionReportDualAckMigration() {
   return readFileSync(join(process.cwd(), completionReportDualAckMigrationPath), "utf8");
+}
+
+function readBidDetailTypeGuardMigration() {
+  return readFileSync(join(process.cwd(), bidDetailTypeGuardMigrationPath), "utf8");
 }
 
 function policyBlock(sql: string, policyName: string) {
@@ -412,6 +418,20 @@ describe("platform marketplace migration governance", () => {
     const clearanceBidDetailsPolicy = policyBlock(sql, "staff manages clearance bid details");
     expect(clearanceBidDetailsPolicy).toContain("public.is_staff_or_admin()");
     expect(sql).not.toContain('create policy "bidder manages own clearance bid details"');
+  });
+
+  it("keeps freight and clearance bid detail tables tied to matching bid types", () => {
+    const sql = readBidDetailTypeGuardMigration();
+
+    expect(sql).toContain("create or replace function public.enforce_service_bid_detail_type");
+    expect(sql).toContain("v_bid_type <> 'freight'::public.service_request_type");
+    expect(sql).toContain("운송 견적 상세는 운송 견적에만 연결할 수 있습니다.");
+    expect(sql).toContain("v_bid_type <> 'clearance'::public.service_request_type");
+    expect(sql).toContain("통관 견적 상세는 통관 견적에만 연결할 수 있습니다.");
+    expect(sql).toContain("create trigger enforce_freight_bid_detail_type");
+    expect(sql).toContain("create trigger enforce_clearance_bid_detail_type");
+    expect(sql).toContain("create or replace function public.enforce_service_bid_type_detail_consistency");
+    expect(sql).toContain("create trigger enforce_service_bid_type_detail_consistency");
   });
 
   it("publishes clearance requests by matching verified active customs brokers from preferences", () => {

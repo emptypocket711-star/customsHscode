@@ -92,6 +92,18 @@ async function cleanupUnexpectedPreferenceRows(serviceRoleClient) {
     .eq("service_type", "freight");
 }
 
+async function cleanupWrongBidDetailRows(serviceRoleClient) {
+  await serviceRoleClient
+    .from("clearance_bid_details")
+    .delete()
+    .eq("bid_id", fixture.bids.freight.id);
+
+  await serviceRoleClient
+    .from("freight_bid_details")
+    .delete()
+    .eq("bid_id", fixture.bids.clearance.id);
+}
+
 async function cleanupInvalidPublishDraft(serviceRoleClient) {
   await serviceRoleClient
     .from("service_requests")
@@ -484,6 +496,7 @@ async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPas
     }
   });
   await cleanupUnexpectedPreferenceRows(serviceRoleClient);
+  await cleanupWrongBidDetailRows(serviceRoleClient);
   await restoreForwarderFreightPreference(serviceRoleClient);
   await ensureNoCompanyUser(serviceRoleClient, testPassword);
   await seedInvalidPublishDraft(serviceRoleClient);
@@ -708,6 +721,47 @@ async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPas
     })
   });
 
+  await cleanupWrongBidDetailRows(serviceRoleClient);
+  const clearanceDetailOnFreightBid = await serviceRoleClient
+    .from("clearance_bid_details")
+    .insert({
+      bid_id: fixture.bids.freight.id,
+      brokerage_fee_amount: 1,
+      expected_clearance_days: 1,
+      review_available: true
+    })
+    .select("bid_id");
+  const freightDetailOnClearanceBid = await serviceRoleClient
+    .from("freight_bid_details")
+    .insert({
+      bid_id: fixture.bids.clearance.id,
+      freight_rate_amount: 1,
+      transit_time_days: 1
+    })
+    .select("bid_id");
+  const wrongClearanceRows = await serviceRoleClient
+    .from("clearance_bid_details")
+    .select("bid_id", { count: "exact", head: true })
+    .eq("bid_id", fixture.bids.freight.id);
+  const wrongFreightRows = await serviceRoleClient
+    .from("freight_bid_details")
+    .select("bid_id", { count: "exact", head: true })
+    .eq("bid_id", fixture.bids.clearance.id);
+  checks.push({
+    label: "service-role-cannot-attach-bid-details-to-wrong-bid-type",
+    ok: Boolean(clearanceDetailOnFreightBid.error?.message?.includes("통관 견적 상세는 통관 견적에만 연결할 수 있습니다"))
+      && Boolean(freightDetailOnClearanceBid.error?.message?.includes("운송 견적 상세는 운송 견적에만 연결할 수 있습니다"))
+      && wrongClearanceRows.count === 0
+      && wrongFreightRows.count === 0,
+    reason: JSON.stringify({
+      clearanceOnFreight: clearanceDetailOnFreightBid.error?.message ?? null,
+      clearanceRows: wrongClearanceRows.count,
+      freightOnClearance: freightDetailOnClearanceBid.error?.message ?? null,
+      freightRows: wrongFreightRows.count
+    })
+  });
+  await cleanupWrongBidDetailRows(serviceRoleClient);
+
   const publishedFreightDetailUpdate = await requester
     .from("freight_request_details")
     .update({
@@ -780,6 +834,7 @@ async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPas
   });
 
   await cleanupUnexpectedPreferenceRows(serviceRoleClient);
+  await cleanupWrongBidDetailRows(serviceRoleClient);
   await restoreForwarderFreightPreference(serviceRoleClient);
   await cleanupInvalidPublishDraft(serviceRoleClient);
   return checks;
