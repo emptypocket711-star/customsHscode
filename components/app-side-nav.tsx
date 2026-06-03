@@ -8,6 +8,7 @@ import {
   Database,
   FileSpreadsheet,
   Globe2,
+  Handshake,
   LayoutDashboard,
   Megaphone,
   Menu,
@@ -32,6 +33,7 @@ type NavItem = {
 
 const primaryNavItems: NavItem[] = [
   { href: "/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
+  { href: "/requests", labelKey: "requests", icon: Handshake },
   { href: "/hs/direct", labelKey: "hsDirect", icon: Search },
   { href: "/hs/overseas", labelKey: "hsOverseas", icon: Globe2 },
   { href: "/cargo", labelKey: "cargo", icon: PackageSearch }
