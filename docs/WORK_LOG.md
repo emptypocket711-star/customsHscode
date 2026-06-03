@@ -4,6 +4,26 @@
 
 ## 2026-06-03
 
+### draft error role request anchor
+
+- 이전 작업은 P195 회사 설정 역할 신청 패널 안의 비활성 이유 문구를 구분한 것이고, 이번 작업은 P196 요청 초안 저장 오류 CTA가 회사 설정 상단이 아니라 역할 신청 섹션으로 바로 이동하게 하는 작업이다.
+- `CompanyRoleRequestPanel` 카드에 `platform-role-request` anchor id를 추가했다.
+- 운송/통관 초안 저장 오류의 `회사 설정 확인` 링크를 `/settings/members#platform-role-request`로 변경했다.
+- staging에서 `/settings/members#platform-role-request`로 직접 진입해 hash와 역할 신청 heading, anchor DOM을 확인했다.
+- staging 요청 화면은 현재 플랫폼 요청 스키마 fallback 상태라 실제 server action 오류 CTA까지는 도달하지 못했다. 대신 두 draft panel의 href는 source grep으로 확인했고, 대상 anchor는 최신 preview에서 브라우저로 확인했다.
+- 최신 staging preview는 `https://customs-hscode-1x6idw83x-koo-apps.vercel.app`다.
+- 다음 작업은 P197 요청 스키마 미준비 fallback CTA 점검이다. 이번 P196이 오류 발생 후 CTA의 이동 위치라면, P197은 오류 action까지 가지 못하는 스키마 미준비 상태에서도 사용자가 회사 설정/역할 신청으로 이동할 길이 있는지 보는 작업이다.
+
+검증:
+
+- `npx vitest run features/company-verification/company-role-request-panel.test.ts features/service-requests/request-draft-readiness.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `rg -n "settings/members#platform-role-request|platform-role-request" features/service-requests features/company-verification -S`
+- Playwright staging browser: `/settings/members#platform-role-request` hash, anchor, 역할 신청 heading 확인
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-1x6idw83x-koo-apps.vercel.app`: 9/9 통과
+
 ### role request disabled reason copy
 
 - 이전 작업은 P194 요청 초안 저장 실패 상태에서 회사 설정으로 이동하는 CTA를 추가한 것이고, 이번 작업은 P195 회사 설정으로 이동한 뒤 역할 신청이 비활성일 때 원인을 이해할 수 있게 하는 작업이다.
