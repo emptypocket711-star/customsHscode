@@ -5,11 +5,14 @@ This folder contains helper scripts for local data preparation and operational m
 ## Local dev server
 
 Use `npm run dev:local` when testing UI or E2E flows on the local Supabase stack.
-It overrides `.env.local` Supabase values with local defaults and uses mock AI by
+It overrides `.env.local` Supabase values with local values and uses mock AI by
 default, so route checks are faster and do not accidentally depend on the remote
-project.
+project. Local Supabase keys must be passed through the shell; do not hard-code
+them in scripts.
 
 ```bash
+export LOCAL_SUPABASE_ANON_KEY='...'
+export LOCAL_SUPABASE_SERVICE_ROLE_KEY='...'
 npm run dev:local
 npm run dev:local:env
 ```

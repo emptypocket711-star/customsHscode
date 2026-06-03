@@ -16,8 +16,17 @@ const timeoutMs = Number(process.env.E2E_READINESS_TIMEOUT_MS || 5000);
 
 const localSupabaseUrl = process.env.LOCAL_SUPABASE_URL || "http://127.0.0.1:54321";
 const localDatabaseUrl = process.env.LOCAL_DATABASE_URL || "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
-const localPublishableKey = process.env.LOCAL_SUPABASE_ANON_KEY || "LOCAL_SUPABASE_ANON_KEY_REQUIRED";
-const localSecretKey = process.env.LOCAL_SUPABASE_SERVICE_ROLE_KEY || "LOCAL_SUPABASE_SERVICE_ROLE_KEY_REQUIRED";
+
+function requiredEnv(name) {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`${name} is required for local Supabase E2E.`);
+  }
+  return value;
+}
+
+const localPublishableKey = requiredEnv("LOCAL_SUPABASE_ANON_KEY");
+const localSecretKey = requiredEnv("LOCAL_SUPABASE_SERVICE_ROLE_KEY");
 
 function runStep(label, command, args, env) {
   console.log(`step=${label}`);

@@ -4,11 +4,21 @@ import { spawn } from "node:child_process";
 
 const localSupabaseUrl = process.env.LOCAL_SUPABASE_URL || "http://127.0.0.1:54321";
 const localDatabaseUrl = process.env.LOCAL_DATABASE_URL || "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
-const localPublishableKey = process.env.LOCAL_SUPABASE_ANON_KEY || "LOCAL_SUPABASE_ANON_KEY_REQUIRED";
-const localSecretKey = process.env.LOCAL_SUPABASE_SERVICE_ROLE_KEY || "LOCAL_SUPABASE_SERVICE_ROLE_KEY_REQUIRED";
 const port = process.env.LOCAL_DEV_PORT || process.env.PORT || "3100";
 const aiProvider = process.env.LOCAL_AI_PROVIDER || "mock";
 const host = process.env.LOCAL_DEV_HOST || "127.0.0.1";
+
+function requiredEnv(name) {
+  const value = process.env[name];
+  if (!value) {
+    console.error(`${name} is required for local Supabase development.`);
+    process.exit(1);
+  }
+  return value;
+}
+
+const localPublishableKey = requiredEnv("LOCAL_SUPABASE_ANON_KEY");
+const localSecretKey = requiredEnv("LOCAL_SUPABASE_SERVICE_ROLE_KEY");
 
 function origin(value) {
   try {
