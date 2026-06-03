@@ -27,6 +27,9 @@ const zeroMatchPublishDraft = {
 const notificationDisabledPublishDraft = {
   id: "75000000-0000-4000-8000-000000000404"
 };
+const expiredFreightBidRequest = {
+  id: "75000000-0000-4000-8000-000000000405"
+};
 
 function assert(condition, message, details = {}) {
   if (condition) return;
@@ -40,6 +43,27 @@ function blockedByRls(result) {
   if (result.error) return true;
   if (Array.isArray(result.data)) return result.data.length === 0;
   return result.data === null || result.data === undefined;
+}
+
+function freightBidInput(requestId) {
+  const validUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
+
+  return {
+    p_carrier_note: "P262 guard check",
+    p_currency: "KRW",
+    p_free_time_note: "P262",
+    p_freight_rate_amount: 100000,
+    p_lead_time_days: 2,
+    p_local_charge_amount: 50000,
+    p_message: "P262 direct RPC guard check",
+    p_request_id: requestId,
+    p_surcharge_amount: 10000,
+    p_total_amount: 160000,
+    p_transit_time_days: 3,
+    p_valid_until: validUntil
+  };
 }
 
 async function signedClient({ anonKey, email, password, supabaseUrl }) {
@@ -76,7 +100,8 @@ async function cleanupInvalidPublishDraft(serviceRoleClient) {
       invalidPublishDraft.id,
       blockedCompanyPublishDraft.id,
       zeroMatchPublishDraft.id,
-      notificationDisabledPublishDraft.id
+      notificationDisabledPublishDraft.id,
+      expiredFreightBidRequest.id
     ]);
 
   await serviceRoleClient
@@ -405,6 +430,52 @@ async function seedNotificationDisabledPublishDraft(serviceRoleClient) {
   if (detailError) throw new Error(`notification-disabled freight detail insert failed: ${detailError.message}`);
 }
 
+async function seedExpiredFreightBidRequest(serviceRoleClient) {
+  const profile = await requesterProfile(serviceRoleClient);
+  const now = new Date().toISOString();
+  const expiredAt = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+
+  const { error: requestError } = await serviceRoleClient
+    .from("service_requests")
+    .insert({
+      created_at: now,
+      created_by: profile.id,
+      deadline_at: expiredAt,
+      destination_country_code: "KR",
+      direction: "import",
+      id: expiredFreightBidRequest.id,
+      missing_information: [],
+      origin_country_code: "CN",
+      product_summary: "P262 expired freight bid request",
+      requester_company_id: profile.company_id,
+      request_type: "freight",
+      source_lookup_snapshot: {
+        generatedAt: now,
+        source: "p262 freight bid guard check"
+      },
+      status: "open",
+      title: "P262 마감 지난 운송 요청",
+      updated_at: now,
+      visibility: "matched_partners"
+    });
+
+  if (requestError) throw new Error(`expired freight request insert failed: ${requestError.message}`);
+
+  const { error: detailError } = await serviceRoleClient
+    .from("freight_request_details")
+    .insert({
+      destination_port: "KRPUS",
+      hazardous: false,
+      origin_port: "CNSHA",
+      request_id: expiredFreightBidRequest.id,
+      temperature_controlled: false,
+      transport_mode: "sea",
+      used_car: false
+    });
+
+  if (detailError) throw new Error(`expired freight detail insert failed: ${detailError.message}`);
+}
+
 async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPassword }) {
   const serviceRoleClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: {
@@ -572,6 +643,26 @@ async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPas
     })
   });
   await restoreForwarderFreightPreference(serviceRoleClient);
+
+  const freightBidAgainstClearance = await forwarder.rpc("submit_freight_bid", freightBidInput(fixture.requests.clearance.id));
+  checks.push({
+    label: "forwarder-cannot-submit-freight-bid-to-clearance-request",
+    ok: Boolean(freightBidAgainstClearance.error?.message?.includes("운송 견적 요청을 찾을 수 없습니다")),
+    reason: freightBidAgainstClearance.error?.message ?? "rpc returned without error"
+  });
+
+  await seedExpiredFreightBidRequest(serviceRoleClient);
+  const expiredFreightBid = await forwarder.rpc("submit_freight_bid", freightBidInput(expiredFreightBidRequest.id));
+  const expiredFreightBidRows = await serviceRoleClient
+    .from("service_bids")
+    .select("id", { count: "exact", head: true })
+    .eq("request_id", expiredFreightBidRequest.id);
+  checks.push({
+    label: "forwarder-cannot-submit-freight-bid-after-deadline",
+    ok: Boolean(expiredFreightBid.error?.message?.includes("견적 제출 마감 시간이 지났습니다"))
+      && expiredFreightBidRows.count === 0,
+    reason: expiredFreightBid.error?.message ?? `bidRows=${expiredFreightBidRows.count ?? "unknown"}`
+  });
 
   const publishedFreightDetailUpdate = await requester
     .from("freight_request_details")

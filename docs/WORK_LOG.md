@@ -4,6 +4,19 @@
 
 ## 2026-06-03
 
+### freight bid request type and deadline guard
+
+- 이전 작업은 P261에서 알림 off 파트너도 매칭/노출은 유지되고 최초 알림만 skip되는지 확인한 것이고, 이번 작업은 포워더가 직접 RPC로 잘못된 요청에 freight bid를 넣지 못하게 확인한 작업이다.
+- 포워더 계정으로 `submit_freight_bid`를 통관 요청 ID에 호출하면 `운송 견적 요청을 찾을 수 없습니다.`로 차단되는 것을 Preview DB에서 확인했다.
+- service role로 마감 시간이 지난 별도 freight request를 만들고 포워더가 입찰을 시도하면 `견적 제출 마감 시간이 지났습니다.`로 차단되며 `service_bids` 행이 0건인 것을 확인했다.
+- 실행 후 P258-P262 테스트 draft/request를 삭제하고 requester 회사 상태와 포워더 선호를 fixture 기준으로 되돌린다.
+- 다음 작업은 P263 freight bid SQL value constraints다. 이번 P262가 입찰 대상과 마감 guard라면, P263은 같은 freight bid RPC 안에서 currency, 금액, 리드타임, 유효기간 같은 값 검증을 DB 계약으로 더 촘촘히 고정하는 작업이다.
+
+검증:
+
+- `node --check scripts/check_marketplace_rls_negative.mjs`
+- `vercel env run -e preview -- sh -c 'E2E_ALLOW_REMOTE_MARKETPLACE_TRANSACTION=true node scripts/seed_marketplace_transaction_fixture.mjs && E2E_ALLOW_REMOTE_MARKETPLACE_RLS_NEGATIVE=true npm run smoke:marketplace-rls-negative'`
+
 ### notification-disabled match semantics
 
 - 이전 작업은 P260에서 매칭 0건 요청의 공개 상태와 감사로그 계약을 확인한 것이고, 이번 작업은 파트너가 알림을 꺼도 요청 노출 자체가 사라지지 않는지 확인한 작업이다.
