@@ -4,6 +4,18 @@
 
 ## 2026-06-03
 
+### operations home action rail
+
+- 이전 작업은 P217 운영 패널 내부에 대표용 3줄 요약을 추가한 것이고, 이번 작업은 P218 운영 관리 홈 첫 화면의 액션 레일에 플랫폼 요청 병목을 포함한 작업이다.
+- 기존 `OperationsUsersPriorityPanel`은 역할 신청, 회사 검증, 업체 상태, 사용자 상세만 우선순위로 보았기 때문에 페이지 설명의 `플랫폼 요청 병목`과 실제 첫 화면이 어긋났다.
+- `platformRequestAttentionCount`를 추가해 미답변 질문, 견적 도착, 오래 진행중, 완료 리포트 누락, 알림 후 무응답 등 플랫폼 요청 병목 건수를 상단 레일에 표시했다.
+- 역할/검증/업체 상태가 없으면 사용자 상세보다 플랫폼 요청 병목을 먼저 보도록 owner prompt 우선순위를 조정했다.
+- 다음 작업은 P219 operations metrics action labels다. 이번 P218이 운영 홈 액션 레일에 플랫폼 병목을 끌어올린 작업이라면, P219는 운영 통계 카드 숫자가 다음 행동과 바로 연결되도록 라벨과 설명을 더 직접적으로 줄이는 작업이다.
+
+검증:
+
+- `npx vitest run features/operations/operations-users-priority-panel.test.ts`: 4개 통과
+
 ### marketplace owner operations brief
 
 - 이전 작업은 P216 staging suite와 E2E 진단 안정화였고, 이번 작업은 P217 대표 1인 운영자가 관리 통계를 해석하지 않아도 기본 화면에서 오늘 볼 것만 먼저 보게 하는 UI 단순화 작업이다.

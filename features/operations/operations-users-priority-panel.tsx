@@ -1,4 +1,4 @@
-import { Building2, ClipboardCheck, FileCheck2, UserRound } from "lucide-react";
+import { Building2, ClipboardCheck, FileCheck2, Route, UserRound } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import type {
@@ -6,6 +6,7 @@ import type {
   CompanyRoleRequestReviewQueue,
   CompanyVerificationReviewQueue
 } from "@/server/repositories/company-verification-review.repository";
+import type { PlatformRequestOperationsSummary } from "@/server/repositories/platform-operations.repository";
 import type { ManagedUser } from "@/server/rules/developer-users.service";
 
 function attentionCompanyCount(companies: CompanyOperationsCompanyList) {
@@ -22,11 +23,33 @@ function operationsTone(count: number): "neutral" | "warning" | "info" | "succes
   return count > 0 ? "warning" : "success";
 }
 
+export function platformRequestAttentionCount(summary: PlatformRequestOperationsSummary) {
+  if (!summary.schemaReady) return 1;
+
+  return [
+    summary.unansweredQuestions,
+    summary.bidsReceived,
+    summary.staleInProgress,
+    summary.lowFeedbacks,
+    summary.completedWithoutReport,
+    summary.completionReportsSubmitted,
+    summary.completionReportsAcknowledged,
+    summary.completionReportsReadyToLock,
+    summary.completedWithoutFeedback,
+    summary.openWithoutMatches,
+    summary.notifiedWithoutBids,
+    summary.openWithoutBids,
+    summary.staleDrafts,
+    summary.staleOpen
+  ].reduce((total, count) => total + count, 0);
+}
+
 export function buildOperationsUsersOwnerPrompt(input: {
   attentionCompanies: number;
   incompleteUsers: number;
   pendingRoleRequests: number;
   pendingVerificationDocuments: number;
+  platformAttention: number;
 }) {
   if (input.pendingRoleRequests > 0) {
     return `사용자 관리 화면에서 역할 신청 ${input.pendingRoleRequests}건을 우선 확인하고, 승인/반려 기준이 헷갈리는 항목을 더 쉽게 판단할 수 있게 고쳐줘.`;
@@ -40,6 +63,10 @@ export function buildOperationsUsersOwnerPrompt(input: {
     return `사용자 관리 화면에서 상태 확인이 필요한 업체 ${input.attentionCompanies}건을 우선 분석하고, 정지/차단/미검증 업체를 더 쉽게 구분하게 고쳐줘.`;
   }
 
+  if (input.platformAttention > 0) {
+    return `운영 관리 홈에서 플랫폼 요청 병목 ${input.platformAttention}건을 우선 확인하고, 요청·입찰·완료 흐름 중 오늘 맡길 작업만 더 선명하게 고쳐줘.`;
+  }
+
   if (input.incompleteUsers > 0) {
     return `사용자 관리 화면에서 가입 미완료 사용자 ${input.incompleteUsers}명을 확인하고, 실제 문의 대응에 필요한 검색과 상태 표시를 더 쉽게 고쳐줘.`;
   }
@@ -49,11 +76,13 @@ export function buildOperationsUsersOwnerPrompt(input: {
 
 export function OperationsUsersPriorityPanel({
   companies,
+  platformRequestSummary,
   roleRequests,
   users,
   verificationQueue
 }: {
   companies: CompanyOperationsCompanyList;
+  platformRequestSummary: PlatformRequestOperationsSummary;
   roleRequests: CompanyRoleRequestReviewQueue;
   users: ManagedUser[];
   verificationQueue: CompanyVerificationReviewQueue;
@@ -62,11 +91,13 @@ export function OperationsUsersPriorityPanel({
   const pendingVerificationDocuments = verificationQueue.items.filter((item) => item.status === "submitted").length;
   const attentionCompanies = attentionCompanyCount(companies);
   const incompleteUsers = users.filter((user) => !user.onboardingCompletedAt).length;
+  const platformAttention = platformRequestAttentionCount(platformRequestSummary);
   const ownerPrompt = buildOperationsUsersOwnerPrompt({
     attentionCompanies,
     incompleteUsers,
     pendingRoleRequests,
-    pendingVerificationDocuments
+    pendingVerificationDocuments,
+    platformAttention
   });
 
   const primaryAction = pendingRoleRequests > 0
@@ -75,7 +106,9 @@ export function OperationsUsersPriorityPanel({
       ? "회사 검증 증빙을 먼저 검토합니다."
       : attentionCompanies > 0
         ? "상태 이상 업체를 확인합니다."
-        : "오늘 급한 운영 처리 건은 없습니다.";
+        : platformAttention > 0
+          ? "플랫폼 요청 병목을 확인합니다."
+          : "오늘 급한 운영 처리 건은 없습니다.";
 
   const items = [
     {
@@ -101,6 +134,14 @@ export function OperationsUsersPriorityPanel({
       icon: Building2,
       label: "업체 상태",
       tone: operationsTone(attentionCompanies)
+    },
+    {
+      count: platformAttention,
+      description: "요청·입찰·완료 흐름에서 오늘 맡길 병목입니다.",
+      href: "#platform-request-operations",
+      icon: Route,
+      label: "플랫폼 병목",
+      tone: operationsTone(platformAttention)
     },
     {
       count: incompleteUsers,

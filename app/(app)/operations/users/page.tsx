@@ -56,6 +56,7 @@ export default async function OperationsUsersPage() {
       />
       <OperationsUsersPriorityPanel
         companies={companies}
+        platformRequestSummary={platformRequestSummary}
         roleRequests={roleRequestQueue}
         users={users}
         verificationQueue={verificationQueue}
