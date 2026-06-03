@@ -33,6 +33,9 @@ const expiredFreightBidRequest = {
 const auditSnapshotFreightBidRequest = {
   id: "75000000-0000-4000-8000-000000000406"
 };
+const notificationIdempotencyRequest = {
+  id: "75000000-0000-4000-8000-000000000407"
+};
 
 function assert(condition, message, details = {}) {
   if (condition) return;
@@ -117,7 +120,8 @@ async function cleanupInvalidPublishDraft(serviceRoleClient) {
       zeroMatchPublishDraft.id,
       notificationDisabledPublishDraft.id,
       expiredFreightBidRequest.id,
-      auditSnapshotFreightBidRequest.id
+      auditSnapshotFreightBidRequest.id,
+      notificationIdempotencyRequest.id
     ]);
 
   await serviceRoleClient
@@ -553,6 +557,53 @@ async function seedAuditSnapshotFreightBidRequest(serviceRoleClient) {
   if (matchError) throw new Error(`audit snapshot freight match insert failed: ${matchError.message}`);
 }
 
+async function seedNotificationIdempotencyRequest(serviceRoleClient) {
+  const profile = await requesterProfile(serviceRoleClient);
+  const now = new Date().toISOString();
+  const deadlineAt = new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString();
+
+  const { error: requestError } = await serviceRoleClient
+    .from("service_requests")
+    .insert({
+      created_at: now,
+      created_by: profile.id,
+      deadline_at: deadlineAt,
+      destination_country_code: "KR",
+      direction: "import",
+      id: notificationIdempotencyRequest.id,
+      missing_information: [],
+      origin_country_code: "CN",
+      product_summary: "P266 notification idempotency request",
+      requester_company_id: profile.company_id,
+      request_type: "freight",
+      source_lookup_snapshot: {
+        generatedAt: now,
+        source: "p266 notification idempotency check"
+      },
+      status: "open",
+      title: "P266 알림 중복 방지 요청",
+      updated_at: now,
+      visibility: "matched_partners"
+    });
+
+  if (requestError) throw new Error(`notification idempotency request insert failed: ${requestError.message}`);
+
+  const { error: matchError } = await serviceRoleClient
+    .from("service_request_partner_matches")
+    .insert({
+      interest_status: "none",
+      match_reason: {
+        source: "p266 notification idempotency check"
+      },
+      matched_by: "preference",
+      notification_status: "pending",
+      partner_company_id: fixture.companies.forwarder.id,
+      request_id: notificationIdempotencyRequest.id
+    });
+
+  if (matchError) throw new Error(`notification idempotency match insert failed: ${matchError.message}`);
+}
+
 async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPassword }) {
   const serviceRoleClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: {
@@ -864,6 +915,85 @@ async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPas
     reason: auditSnapshotBid.error?.message ?? JSON.stringify({
       bidId: auditSnapshotBidId,
       snapshot: submissionSnapshot ?? null
+    })
+  });
+
+  await seedNotificationIdempotencyRequest(serviceRoleClient);
+  const notificationIdempotencyMatch = await serviceRoleClient
+    .from("service_request_partner_matches")
+    .select("id")
+    .eq("request_id", notificationIdempotencyRequest.id)
+    .eq("partner_company_id", fixture.companies.forwarder.id)
+    .single();
+  const notificationIdempotencyMatchId = notificationIdempotencyMatch.data?.id;
+  const firstInitialClaim = notificationIdempotencyMatchId
+    ? await serviceRoleClient.rpc("claim_marketplace_notification_delivery", {
+      p_channel: "in_app",
+      p_delivery_window: "p266-initial",
+      p_match_id: notificationIdempotencyMatchId,
+      p_metadata: { matchCount: 1 },
+      p_notification_kind: "initial",
+      p_reason: "P266 initial claim"
+    })
+    : { data: null, error: { message: "match missing" } };
+  const duplicateInitialClaim = notificationIdempotencyMatchId
+    ? await serviceRoleClient.rpc("claim_marketplace_notification_delivery", {
+      p_channel: "in_app",
+      p_delivery_window: "p266-initial",
+      p_match_id: notificationIdempotencyMatchId,
+      p_metadata: { matchCount: 1 },
+      p_notification_kind: "initial",
+      p_reason: "P266 duplicate initial claim"
+    })
+    : { data: null, error: { message: "match missing" } };
+  if (notificationIdempotencyMatchId) {
+    await serviceRoleClient
+      .from("service_request_partner_matches")
+      .update({ interest_status: "viewed" })
+      .eq("id", notificationIdempotencyMatchId);
+  }
+  const firstReminderClaim = notificationIdempotencyMatchId
+    ? await serviceRoleClient.rpc("claim_marketplace_notification_delivery", {
+      p_channel: "in_app",
+      p_delivery_window: notificationIdempotencyRequest.id,
+      p_match_id: notificationIdempotencyMatchId,
+      p_metadata: { matchCount: 1 },
+      p_notification_kind: "deadline_reminder",
+      p_reason: "P266 reminder claim"
+    })
+    : { data: null, error: { message: "match missing" } };
+  const duplicateReminderClaim = notificationIdempotencyMatchId
+    ? await serviceRoleClient.rpc("claim_marketplace_notification_delivery", {
+      p_channel: "in_app",
+      p_delivery_window: notificationIdempotencyRequest.id,
+      p_match_id: notificationIdempotencyMatchId,
+      p_metadata: { matchCount: 1 },
+      p_notification_kind: "deadline_reminder",
+      p_reason: "P266 duplicate reminder claim"
+    })
+    : { data: null, error: { message: "match missing" } };
+  const notificationDeliveryRows = await serviceRoleClient
+    .from("marketplace_notification_deliveries")
+    .select("notification_kind")
+    .eq("request_id", notificationIdempotencyRequest.id);
+  const notificationKinds = Array.isArray(notificationDeliveryRows.data)
+    ? notificationDeliveryRows.data.map((row) => row.notification_kind).sort()
+    : [];
+  checks.push({
+    label: "marketplace-notification-claims-are-idempotent-per-kind",
+    ok: typeof firstInitialClaim.data === "string"
+      && Boolean(duplicateInitialClaim.error?.message?.includes("최초 알림 대상 상태가 아닙니다"))
+      && typeof firstReminderClaim.data === "string"
+      && duplicateReminderClaim.data === null
+      && notificationKinds.length === 2
+      && notificationKinds[0] === "deadline_reminder"
+      && notificationKinds[1] === "initial",
+    reason: JSON.stringify({
+      deliveries: notificationKinds,
+      duplicateInitial: duplicateInitialClaim.error?.message ?? duplicateInitialClaim.data,
+      duplicateReminder: duplicateReminderClaim.error?.message ?? duplicateReminderClaim.data,
+      firstInitial: firstInitialClaim.error?.message ?? firstInitialClaim.data,
+      firstReminder: firstReminderClaim.error?.message ?? firstReminderClaim.data
     })
   });
 

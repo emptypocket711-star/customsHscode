@@ -4,6 +4,20 @@
 
 ## 2026-06-03
 
+### notification per-kind idempotency
+
+- 이전 작업은 P265에서 bid 제출 audit snapshot을 남긴 것이고, 이번 작업은 알림 job/RPC가 반복 실행되어도 같은 종류의 알림이 중복 claim/send되지 않는지 확인한 작업이다.
+- 별도 open request와 pending match를 만들고 service-role로 initial 알림을 claim한 뒤 같은 initial claim을 다시 호출했다.
+- Preview DB에서 첫 initial claim은 delivery id를 반환하고, 중복 initial claim은 `최초 알림 대상 상태가 아닙니다.`로 차단됐다.
+- 같은 match를 viewed 상태로 바꾼 뒤 deadline reminder를 같은 delivery window로 두 번 claim했고, 첫 호출은 delivery id를 반환하고 두 번째 호출은 unique delivery key 충돌로 `null`을 반환했다.
+- 최종 delivery는 `initial`, `deadline_reminder` 각 1건만 남는 것을 확인했다.
+- 다음 작업은 P267 notification digest semantics다. 이번 P266이 알림 종류별 중복 방지라면, P267은 digest enabled가 단순 침묵이 아니라 묶음 알림 대상으로 해석되는지 정책을 확인하는 작업이다.
+
+검증:
+
+- `node --check scripts/check_marketplace_rls_negative.mjs`
+- `vercel env run -e preview -- sh -c 'E2E_ALLOW_REMOTE_MARKETPLACE_TRANSACTION=true node scripts/seed_marketplace_transaction_fixture.mjs && E2E_ALLOW_REMOTE_MARKETPLACE_RLS_NEGATIVE=true npm run smoke:marketplace-rls-negative'`
+
 ### bid submission audit snapshot
 
 - 이전 작업은 P264에서 bid detail 타입 무결성을 DB trigger로 막은 것이고, 이번 작업은 제출된 견적의 운영/분쟁 검토용 요약을 audit에 구조화해 남긴 작업이다.
