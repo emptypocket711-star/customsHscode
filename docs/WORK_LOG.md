@@ -7973,3 +7973,19 @@
 - Playwright requester/forwarder/broker `/dashboard` role regression smoke
 - `npm run typecheck`
 - `npm run lint`
+
+### operations users default detail reduction
+
+- 이전 작업은 대시보드·알림 변경 묶음 회귀 검증인 P158.1이고, 이번 작업은 운영 관리 홈에서 역할 신청·검증·업체 상태 세부 패널을 한 번에 모두 펼치지 않고 우선순위 1개만 보여준 P159.1이다.
+- 역할 신청, 회사 검증 증빙, 업체 운영 관리 패널을 `details`로 감쌌다.
+- 처리 우선순위는 역할 신청 > 검증 증빙 > 업체 상태 순서로 계산하고, 해당하는 첫 패널만 기본으로 연다.
+- 사용자 상세 관리는 기존처럼 문의 대응이 필요할 때만 펼치는 상태를 유지한다.
+- 새 migration, RLS 변경은 없다.
+- 로컬 파일만 수정했고 원격 푸시, 배포는 하지 않았다.
+
+검증:
+
+- Playwright developer `/operations/users`에서 운영 세부 패널 중 기본 open 패널이 1개 이하인지 확인
+- Playwright developer `/operations/users`에서 `user-management` detail이 기본으로 닫혀 있는지 확인
+- `npm run typecheck`
+- `npm run lint`

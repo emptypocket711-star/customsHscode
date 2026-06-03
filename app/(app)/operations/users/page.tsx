@@ -31,6 +31,22 @@ export default async function OperationsUsersPage() {
     listCompanyRoleRequestReviewQueue(),
     getPlatformRequestOperationsSummary(supabase)
   ]);
+  const pendingRoleRequests = roleRequestQueue.items.filter((item) => item.status === "submitted").length;
+  const pendingVerificationDocuments = verificationQueue.items.filter((item) => item.status === "submitted").length;
+  const attentionCompanies = companies.items.filter((company) => (
+    company.verificationStatus === "documents_submitted" ||
+    company.verificationStatus === "email_verified" ||
+    company.verificationStatus === "unverified" ||
+    company.verificationStatus === "suspended" ||
+    company.verificationStatus === "blocked"
+  )).length;
+  const defaultOpenSection = pendingRoleRequests > 0
+    ? "role-requests"
+    : pendingVerificationDocuments > 0
+      ? "verification-documents"
+      : attentionCompanies > 0
+        ? "company-status"
+        : null;
 
   return (
     <div className="grid gap-5">
@@ -45,15 +61,42 @@ export default async function OperationsUsersPage() {
         verificationQueue={verificationQueue}
       />
       <PlatformRequestOperationsPanel summary={platformRequestSummary} />
-      <div id="role-requests" className="scroll-mt-6">
-        <CompanyRoleRequestReviewPanel queue={roleRequestQueue} />
-      </div>
-      <div id="verification-documents" className="scroll-mt-6">
-        <CompanyVerificationReviewPanel queue={verificationQueue} />
-      </div>
-      <div id="company-status" className="scroll-mt-6">
-        <CompanyMarketplaceManagementPanel companies={companies} />
-      </div>
+      <details className="scroll-mt-6 rounded-lg border border-slate-200 bg-white shadow-sm" id="role-requests" open={defaultOpenSection === "role-requests"}>
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4">
+          <span>
+            <span className="block text-base font-semibold text-slate-950">플랫폼 역할 신청 검토</span>
+            <span className="mt-1 block text-sm text-slate-600">입찰·요청 권한을 열기 전 승인 또는 반려할 신청만 확인합니다.</span>
+          </span>
+          <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">{pendingRoleRequests}건</span>
+        </summary>
+        <div className="border-t border-slate-200 p-5">
+          <CompanyRoleRequestReviewPanel queue={roleRequestQueue} />
+        </div>
+      </details>
+      <details className="scroll-mt-6 rounded-lg border border-slate-200 bg-white shadow-sm" id="verification-documents" open={defaultOpenSection === "verification-documents"}>
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4">
+          <span>
+            <span className="block text-base font-semibold text-slate-950">회사 검증 증빙 검토</span>
+            <span className="mt-1 block text-sm text-slate-600">사업자·회사 증빙을 확인해 운영자 승인 여부를 판단합니다.</span>
+          </span>
+          <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">{pendingVerificationDocuments}건</span>
+        </summary>
+        <div className="border-t border-slate-200 p-5">
+          <CompanyVerificationReviewPanel queue={verificationQueue} />
+        </div>
+      </details>
+      <details className="scroll-mt-6 rounded-lg border border-slate-200 bg-white shadow-sm" id="company-status" open={defaultOpenSection === "company-status"}>
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4">
+          <span>
+            <span className="block text-base font-semibold text-slate-950">업체 운영 관리</span>
+            <span className="mt-1 block text-sm text-slate-600">미검증, 정지, 차단 등 요청 노출에 영향을 주는 업체 상태만 필요할 때 확인합니다.</span>
+          </span>
+          <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">{attentionCompanies}건</span>
+        </summary>
+        <div className="border-t border-slate-200 p-5">
+          <CompanyMarketplaceManagementPanel companies={companies} />
+        </div>
+      </details>
       <details id="user-management" className="scroll-mt-6 rounded-lg border border-slate-200 bg-white shadow-sm">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4">
           <span>

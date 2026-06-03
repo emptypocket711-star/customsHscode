@@ -447,6 +447,7 @@
 | P156.1 role-aware dashboard counters and links | 완료 | 카운터 문구 수정이 아니라 화주/포워더/관세사 역할별로 관련 카운터와 workspace 링크만 노출한다 | role-aware dashboard footer | browser, typecheck, lint |
 | P157.1 unapproved role dashboard guard | 완료 | 승인된 역할별 카운터가 아니라 역할 미승인/미설정 상태에서 요청 생성·입찰 링크 대신 역할 설정/승인 확인을 먼저 보여준다 | unapproved role dashboard guard | unit render, browser, typecheck, lint |
 | P158.1 dashboard marketplace regression | 완료 | 역할 미승인 guard 코드 변경이 아니라 P151-P157 대시보드·알림 변경 묶음이 역할별로 계속 정상 동작하는지 확인한다 | dashboard marketplace regression | unit, browser, typecheck, lint |
+| P159.1 operations users default detail reduction | 완료 | 대시보드 회귀 검증이 아니라 운영 관리 홈에서 역할 신청·검증·업체 상태 세부 패널을 한 번에 모두 펼치지 않고 우선순위 1개만 보여준다 | operations users detail reduction | browser, typecheck, lint |
 
 #### P109 다음 병목 선정
 
