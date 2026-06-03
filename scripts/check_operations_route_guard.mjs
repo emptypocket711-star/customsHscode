@@ -2,13 +2,16 @@
 
 import fs from "node:fs";
 import { chromium } from "playwright";
+import { marketplaceTransactionFixture as fixture } from "../tests/fixtures/marketplace-transaction.fixture.mjs";
 
 const baseUrl = process.argv[2] || process.env.SMOKE_BASE_URL || "http://localhost:3000";
 const accountsFile = process.env.OPERATIONS_GUARD_ACCOUNTS_FILE || "tmp/test-accounts.json";
+const accountSource = process.env.OPERATIONS_GUARD_ACCOUNT_SOURCE || "file";
 const guardRoles = (process.env.OPERATIONS_GUARD_ROLES || "forwarder,customs_broker,shipper")
   .split(",")
   .map((role) => role.trim())
   .filter(Boolean);
+const fixturePassword = process.env.OPERATIONS_GUARD_FIXTURE_PASSWORD || process.env.E2E_TEST_PASSWORD || "";
 const timeoutMs = Number(process.env.SMOKE_TIMEOUT_MS || 30000);
 const protectionBypassSecret =
   process.env.VERCEL_AUTOMATION_BYPASS_SECRET ||
@@ -34,6 +37,16 @@ const operationsRoutes = [
 ];
 
 function readAccounts(filePath) {
+  if (accountSource === "marketplace_fixture") {
+    if (!fixturePassword) throw new Error("OPERATIONS_GUARD_ACCOUNT_SOURCE=marketplace_fixture requires E2E_TEST_PASSWORD or OPERATIONS_GUARD_FIXTURE_PASSWORD.");
+
+    return [
+      { email: fixture.users.forwarder.email, password: fixturePassword, role: "forwarder" },
+      { email: fixture.users.broker.email, password: fixturePassword, role: "customs_broker" },
+      { email: fixture.users.requester.email, password: fixturePassword, role: "shipper" }
+    ];
+  }
+
   if (!fs.existsSync(filePath)) throw new Error(`accounts file not found: ${filePath}`);
 
   const payload = JSON.parse(fs.readFileSync(filePath, "utf8"));
@@ -107,6 +120,7 @@ async function main() {
   console.log("HS Finder operations route guard");
   console.log(`baseUrl=${baseUrl}`);
   console.log(`accountsFile=${accountsFile}`);
+  console.log(`accountSource=${accountSource}`);
   console.log(`accounts=${accounts.length}`);
   console.log(`usableAccounts=${usableAccounts.length}`);
   console.log(`ignoredAccounts=${usableAccounts.length - accounts.length}`);

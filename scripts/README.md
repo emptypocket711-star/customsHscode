@@ -152,17 +152,20 @@ secret when Preview protection is enabled.
 
 Use this when a Preview deployment should be checked end-to-end before wider
 manual review. The suite runs DB schema health, marketplace schema visibility,
-route smoke, operations guard, marketplace transaction E2E, completion report
-E2E, notification dashboard E2E, and notification worker rehearsal in that order.
+route smoke, marketplace fixture seed, operations guard, marketplace transaction
+E2E, completion report E2E, notification dashboard E2E, and notification worker
+rehearsal in that order.
 
 ```bash
 vercel env run -e preview -- npm run smoke:staging:suite -- https://your-preview-url.vercel.app
 ```
 
 The suite reads `tmp/test-accounts.json` only to fill missing shipper smoke and
-E2E test password env values. It does not print account passwords or secret
-values. Keep Vercel bypass and job worker secrets in the shell or platform secret
-store.
+E2E test password env values. Before the operations guard it refreshes the
+marketplace fixture requester, forwarder, and broker accounts, then uses those
+fixture accounts for the guard instead of stale local account rows. It does not
+print account passwords or secret values. Keep Vercel bypass and job worker
+secrets in the shell or platform secret store.
 
 The suite prints a `suiteStepSummary` at the end of successful runs and when a
 step fails. Each row includes the step status, duration, and purpose. On failure,

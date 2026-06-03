@@ -32,6 +32,14 @@ const steps = [
       "Check Preview URL, Vercel protection bypass, smoke login credentials, and whether the deployment is still building."
   },
   {
+    label: "marketplace-fixture-seed",
+    command: "node",
+    args: ["scripts/seed_marketplace_transaction_fixture.mjs"],
+    purpose: "Requester, forwarder, and broker fixture accounts are refreshed before role guard and E2E flows.",
+    failureHint:
+      "Check SUPABASE_SERVICE_ROLE_KEY, E2E_TEST_PASSWORD, and remote marketplace E2E allow-list env."
+  },
+  {
     label: "operations-guard",
     command: "npm",
     args: ["run", "smoke:operations:guard", "--", baseUrl],
@@ -159,6 +167,8 @@ function main() {
   const env = {
     ...process.env,
     ...loadShipperAccountDefaults(),
+    E2E_ALLOW_REMOTE_MARKETPLACE_TRANSACTION: "true",
+    OPERATIONS_GUARD_ACCOUNT_SOURCE: "marketplace_fixture",
     SMOKE_REQUIRE_AUTHENTICATED: "true"
   };
 
