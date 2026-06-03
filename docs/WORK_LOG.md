@@ -4,6 +4,25 @@
 
 ## 2026-06-03
 
+### operations schema fallback health CTA
+
+- 이전 작업은 P198 사용자 요청 화면의 fallback CTA 밀도를 줄인 것이고, 이번 작업은 P199 운영 요청 패널에서 스키마 미준비 상태를 봤을 때 운영자가 바로 점검 위치로 이동할 수 있게 한 작업이다.
+- `PlatformRequestOperationsPanel`의 schemaReady=false 안내 문구를 `요청·입찰 기능 DB 스키마 적용 상태` 확인으로 구체화했다.
+- fallback 안내에 `운영 DB 스키마 점검 보기` CTA를 추가했다.
+- CTA는 `/operations/health#schema-health`로 이동한다.
+- 렌더 테스트를 추가해 스키마 미준비 안내 문구와 health check 링크가 유지되도록 고정했다.
+- 최신 staging preview는 `https://customs-hscode-9laoetoug-koo-apps.vercel.app`다.
+- 현재 `tmp/test-accounts.json`에는 운영자/developer 계정이 없어 staging 운영 화면 직접 로그인 검증은 하지 못했다. 대신 렌더 단위 테스트, typecheck/lint/build, 최신 preview smoke로 검증했다.
+- 다음 작업은 P200 운영 화면 검증 계정/스모크 조건 점검이다. 이번 P199가 운영 화면 fallback CTA라면, P200은 운영 화면 변경을 앞으로 실제 브라우저로 검증할 수 있게 계정/seed/스모크 조건을 점검하는 작업이다.
+
+검증:
+
+- `npx vitest run features/operations/platform-request-operations-panel.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-9laoetoug-koo-apps.vercel.app`: 9/9 통과
+
 ### request fallback CTA density
 
 - 이전 작업은 P197 스키마 미준비 fallback 상태에 회사 역할 신청 CTA를 추가한 것이고, 이번 작업은 P198 같은 요청자 화면에서 CTA가 두 번 보이는 밀도 문제를 정리한 작업이다.
