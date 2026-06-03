@@ -662,6 +662,7 @@ function appendRequirementCopyLines(
       lines.push(`- ${requirement.name} (${requirement.relatedLaw})`);
     }
 
+    appendRequirementReviewCopyLine(lines, language);
     if (variant === "brief") return;
 
     const requestHints = requirementRequestHints(requirements);
@@ -673,10 +674,13 @@ function appendRequirementCopyLines(
       }
     }
 
-    lines.push(labels.requirementsNeedReview);
   } else {
     appendNoRequirementCopyLines(lines, language);
   }
+}
+
+function appendRequirementReviewCopyLine(lines: string[], language: HsCopyGuideLanguage) {
+  lines.push(copyLabels(language).requirementsNeedReview);
 }
 
 function appendNoRequirementCopyLines(lines: string[], language: HsCopyGuideLanguage) {
@@ -813,6 +817,7 @@ function hsCopySummaryTexts({
         for (const requirement of groupedRequirements) {
           lines.push(`- ${requirement.name} (${requirement.relatedLaw})`);
         }
+        appendRequirementReviewCopyLine(lines, language);
       } else {
         appendNoRequirementCopyLines(lines, language);
       }
@@ -1353,6 +1358,7 @@ function productCandidateCopySummaryTexts({
         for (const requirement of requirements) {
           lines.push(`- ${requirement.name} (${requirement.relatedLaw})`);
         }
+        appendRequirementReviewCopyLine(lines, language);
       } else {
         appendNoRequirementCopyLines(lines, language);
       }
@@ -2622,6 +2628,7 @@ function destinationCopySummaryTexts({
       for (const requirement of requirements) {
         lines.push(`- ${requirement.requirementName}${requirement.agency ? ` / ${requirement.agency}` : ""}`);
       }
+      appendRequirementReviewCopyLine(lines, language);
     } else {
       appendNoRequirementCopyLines(lines, language);
     }
