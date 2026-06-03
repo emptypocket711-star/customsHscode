@@ -4,6 +4,21 @@
 
 ## 2026-06-03
 
+### operations zero-match developer smoke
+
+- 이전 작업은 P273에서 marketplace DB/RLS negative suite의 그룹별 coverage 출력을 고정한 것이고, 이번 작업은 DB suite가 아니라 거래 E2E의 zero-match 운영 상세 검증이 developer storage state 부재로 skip되지 않게 한 작업이다.
+- `create_marketplace_transaction_storage_states.mjs`가 requester, forwarder, broker뿐 아니라 operations developer 계정의 `local-developer.json`도 만들게 했다.
+- local/staging marketplace transaction runner가 seed 후 `prepare_operations_smoke_account.mjs`를 실행해 developer Auth/Profile을 먼저 준비하게 했다.
+- readiness script가 developer storage state를 필수로 확인하게 했고, transaction E2E에서 developer state 누락 시 운영 zero-match 상세를 skip하던 경로를 제거했다.
+- Preview staging runner에서 seed, developer 준비, 4개 storage state 생성, readiness, 거래 E2E, mutation E2E가 모두 통과했다.
+- 다음 작업은 P275 partner preference anchor smoke다. 이번 P274가 운영자 zero-match 상세을 skip 없이 보게 하는 작업이라면, P275는 파트너 빈 상태에서 관심 조건 링크와 settings anchor가 실제 브라우저 이동으로 유지되는지 고정하는 작업이다.
+
+검증:
+
+- `node --check scripts/create_marketplace_transaction_storage_states.mjs && node --check scripts/e2e_marketplace_transaction_flow.mjs && node --check scripts/check_marketplace_transaction_e2e_readiness.mjs && node --check scripts/run_marketplace_transaction_e2e_staging.mjs && node --check scripts/run_marketplace_transaction_e2e_local.mjs`
+- `npm run test -- tests/fixtures/marketplace-transaction.fixture.test.ts`
+- `E2E_TEST_PASSWORD=... VERCEL_AUTOMATION_BYPASS_SECRET=... vercel env run -e preview -- npm run e2e:marketplace-transaction:staging -- https://customs-hscode-dn0ayaj4k-koo-apps.vercel.app`
+
 ### marketplace RLS negative suite grouping
 
 - 이전 작업은 P272에서 역할 승인 대상 회사 상태 guard를 확인한 것이고, 이번 작업은 개별 guard 추가가 아니라 전체 marketplace DB/RLS negative suite의 커버리지 영역을 반복 실행 결과에 드러나게 한 작업이다.

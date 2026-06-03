@@ -534,7 +534,7 @@
 | P271.1 role review RPC actor validation | 완료 | profile hardening이 아니라 service-role RPC도 actor가 실제 운영 검토 권한자인지 DB에서 검증한다 | reviewer actor guard | RPC negative tests |
 | P272.1 role approval company eligibility | 완료 | actor 검증이 아니라 정지/차단/미검증 회사에 포워더·관세사 역할을 승인하지 않게 한다 | role approval eligibility | RPC negative tests |
 | P273.1 marketplace RLS negative suite | 완료 | 개별 guard가 아니라 requester/partner/staff 권한 우회 케이스를 반복 가능한 통합 negative suite로 묶는다 | RLS negative suite | staged DB test, grouped coverage output |
-| P274.1 operations zero-match developer smoke | 예정 | RLS suite가 아니라 zero-match 운영 상세 검증이 developer storage state 부재로 skip되지 않게 한다 | zero-match ops smoke | staging E2E |
+| P274.1 operations zero-match developer smoke | 완료 | RLS suite가 아니라 zero-match 운영 상세 검증이 developer storage state 부재로 skip되지 않게 한다 | zero-match ops smoke | staging E2E, developer storage state |
 | P275.1 partner preference anchor smoke | 예정 | zero-match smoke가 아니라 파트너 빈 상태의 관심 조건 링크와 settings anchor를 브라우저 스모크에 고정한다 | preference anchor smoke | route/browser smoke |
 | P276.1 migration application runbook hardening | 예정 | anchor smoke가 아니라 Preview DB migration 적용, dry-run, health:db 순서를 실수 없이 반복하게 한다 | migration runbook | docs/script check |
 | P277.1 marketplace security runbook | 예정 | migration runbook이 아니라 운영자가 직접 호출 우회/권한 오류를 발견했을 때 조치 순서를 남긴다 | security runbook | docs review |

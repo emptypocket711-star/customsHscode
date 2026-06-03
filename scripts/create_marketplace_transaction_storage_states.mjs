@@ -16,12 +16,8 @@ import { marketplaceTransactionFixture as fixture } from "../tests/fixtures/mark
 const baseUrl = process.env.E2E_BASE_URL || "http://localhost:3100";
 const timeoutMs = Number(process.env.E2E_TIMEOUT_MS || 120000);
 const outputDir = process.env.E2E_STORAGE_STATE_DIR || "tmp/e2e-auth";
-
-const roles = [
-  ["requester", fixture.users.requester.email, fixture.storageStates.requester],
-  ["forwarder", fixture.users.forwarder.email, fixture.storageStates.forwarder],
-  ["broker", fixture.users.broker.email, fixture.storageStates.broker]
-];
+const developerEmail = (process.env.OPERATIONS_DEVELOPER_EMAIL || process.env.SMOKE_OPERATIONS_EMAIL || "emptypocket711@gmail.com").trim().toLowerCase();
+const developerStateFile = process.env.E2E_MARKETPLACE_DEVELOPER_STATE_FILE || "local-developer.json";
 
 function assert(condition, message) {
   if (condition) return;
@@ -59,6 +55,16 @@ async function main() {
   const localEnv = await loadEnvFile();
   const supabaseUrl = envValue(localEnv, "SUPABASE_URL") || envValue(localEnv, "NEXT_PUBLIC_SUPABASE_URL");
   const password = envValue(localEnv, "E2E_TEST_PASSWORD");
+  const developerPassword =
+    envValue(localEnv, "SMOKE_OPERATIONS_PASSWORD") ||
+    envValue(localEnv, "OPERATIONS_DEVELOPER_PASSWORD") ||
+    password;
+  const roles = [
+    ["requester", fixture.users.requester.email, fixture.storageStates.requester, password],
+    ["forwarder", fixture.users.forwarder.email, fixture.storageStates.forwarder, password],
+    ["broker", fixture.users.broker.email, fixture.storageStates.broker, password],
+    ["developer", developerEmail, developerStateFile, developerPassword]
+  ];
 
   console.log("Marketplace transaction storage state creation");
   console.log(`baseUrlOrigin=${safeOrigin(baseUrl)}`);
@@ -71,6 +77,7 @@ async function main() {
     `local Supabase 또는 명시적으로 허용된 remote Supabase에서만 storage state를 만들 수 있습니다. current=${safeOrigin(supabaseUrl)}. ${remoteE2ERequirement("MARKETPLACE_TRANSACTION")}`
   );
   assert(password, "E2E_TEST_PASSWORD가 필요합니다. 먼저 npm run e2e:marketplace-transaction:seed를 같은 비밀번호로 실행하세요.");
+  assert(developerPassword, "SMOKE_OPERATIONS_PASSWORD, OPERATIONS_DEVELOPER_PASSWORD, 또는 E2E_TEST_PASSWORD가 필요합니다.");
 
   await mkdir(outputDir, { recursive: true });
 
@@ -78,8 +85,8 @@ async function main() {
   const created = [];
 
   try {
-    for (const [role, email, stateFile] of roles) {
-      created.push(await loginAndSaveStorageState(browser, role, email, stateFile, password));
+    for (const [role, email, stateFile, rolePassword] of roles) {
+      created.push(await loginAndSaveStorageState(browser, role, email, stateFile, rolePassword));
     }
   } finally {
     await browser.close();

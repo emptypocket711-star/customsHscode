@@ -47,21 +47,11 @@ function assertLocalBaseUrl(value) {
 
 async function assertStorageStatesExist() {
   for (const [role, statePath] of Object.entries(stateFiles)) {
-    if (role === "developer") continue;
     try {
       await access(statePath);
     } catch {
       throw new Error(`${role} storage state가 없습니다: ${statePath}. 먼저 marketplace transaction auth state를 생성하세요.`);
     }
-  }
-}
-
-async function storageStateExists(statePath) {
-  try {
-    await access(statePath);
-    return true;
-  } catch {
-    return false;
   }
 }
 
@@ -194,11 +184,6 @@ async function assertRequesterZeroMatchDetail(browser) {
 }
 
 async function assertOperationsZeroMatchDetail(browser) {
-  if (!(await storageStateExists(stateFiles.developer))) {
-    console.log(`skip operations zero-match detail: developer storage state missing at ${stateFiles.developer}`);
-    return;
-  }
-
   const result = await pageTextFor(browser, "developer", new URL(`/operations/requests/${fixture.zeroMatchFreightRequestId}`, baseUrl).toString());
   assert(!result.url.includes("/login"), "zero-match 운영 상세가 로그인으로 이동했습니다.", { currentUrl: result.url });
   assertContainsAll(result.text, [

@@ -17,6 +17,7 @@ const stateDir = process.env.E2E_STORAGE_STATE_DIR || "tmp/e2e-auth";
 const timeoutMs = Number(process.env.E2E_READINESS_TIMEOUT_MS || 5000);
 
 const stateFiles = Object.values(fixture.storageStates);
+const developerStateFile = process.env.E2E_MARKETPLACE_DEVELOPER_STATE_FILE || "local-developer.json";
 const fixtureEnvKeys = [
   ...Object.values(fixture.envKeys),
   ...Object.values(fixture.zeroMatch.envKeys)
@@ -53,7 +54,7 @@ async function main() {
     addCheck(checks, `${key} present`, Boolean(value), value ? "present" : "missing");
   }
 
-  for (const stateFile of stateFiles) {
+  for (const stateFile of [...stateFiles, developerStateFile]) {
     const statePath = path.join(stateDir, stateFile);
     addCheck(checks, `storage state ${stateFile}`, await exists(statePath), statePath);
   }

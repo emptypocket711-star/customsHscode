@@ -48,6 +48,7 @@ async function main() {
     E2E_ALLOW_REMOTE_MARKETPLACE_TRANSACTION: "true",
     E2E_BASE_URL: baseUrl,
     E2E_STORAGE_STATE_DIR: storageStateDir,
+    SMOKE_OPERATIONS_PASSWORD: process.env.SMOKE_OPERATIONS_PASSWORD || fileEnv.entries.get("SMOKE_OPERATIONS_PASSWORD") || process.env.E2E_TEST_PASSWORD || fileEnv.entries.get("E2E_TEST_PASSWORD"),
     ...fixtureEnv()
   });
   const supabaseUrl = env.SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL;
@@ -77,6 +78,7 @@ async function main() {
   }
 
   runStep("seed", "node", ["scripts/seed_marketplace_transaction_fixture.mjs"], env);
+  runStep("prepare-operations-developer", "node", ["scripts/prepare_operations_smoke_account.mjs"], env);
   runStep("auth", "node", ["scripts/create_marketplace_transaction_storage_states.mjs"], env);
   runStep("ready", "node", ["scripts/check_marketplace_transaction_e2e_readiness.mjs"], env);
   runStep("e2e", "node", ["scripts/e2e_marketplace_transaction_flow.mjs"], env);

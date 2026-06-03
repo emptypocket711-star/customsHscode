@@ -80,8 +80,9 @@ npm run smoke:operations:guard -- https://your-preview-url.vercel.app
 ## Staging marketplace transaction E2E
 
 Use this after Preview DB schema health is OK and a Preview deployment is ready.
-The staging runner seeds deterministic marketplace fixture data, creates role
-storage states, checks readiness, opens requester/partner/detail pages, and then
+The staging runner seeds deterministic marketplace fixture data, prepares the
+operations developer account, creates requester/partner/developer storage states,
+checks readiness, opens requester/partner/operations detail pages, and then
 submits bids, selects partners, starts/completes requests, and verifies completed
 feedback UI.
 
