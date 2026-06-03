@@ -465,6 +465,7 @@
 | P174.1 import tariff label clarity | 완료 | 세율표 노출량 조정이 아니라 `관세율구분 R/FEF1` 같은 원시 코드 라벨을 사용자용 협정·특혜 관세명으로 바꾼다 | EFTA/LDC/North Korea labels | unit, browser, typecheck, lint, build, staging smoke |
 | P175.1 import tariff country filter guidance | 완료 | 세율 행 이름 개선이 아니라 `ALL` 상태와 특정 수입국 선택 상태의 의미를 사용자가 혼동하지 않게 안내한다 | ALL candidate notice, selected country FTA caution | unit, browser, typecheck, lint, build, staging smoke |
 | P176.1 preferential duty summary copy | 완료 | 세율표 필터 안내가 아니라 HS 직접조회 상단 `FTA/특혜 세율` 요약 카드가 자동 적용처럼 보이지 않게 조건부 문구로 바꾼다 | conditional preferential summary, no hard FTA absence claim | unit, browser, typecheck, lint, build, staging smoke |
+| P177.1 import requirement summary copy | 완료 | FTA/특혜 요약 카드가 아니라 HS 직접조회 상단 `수입요건` 요약 카드가 요건 부재를 단정하지 않게 보조 문구를 붙인다 | customs-confirmation empty caution, candidate review note | unit, browser, typecheck, lint, build, staging smoke |
 
 #### P109 다음 병목 선정
 

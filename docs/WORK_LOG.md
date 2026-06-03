@@ -4,6 +4,25 @@
 
 ## 2026-06-03
 
+### import requirement summary copy
+
+- 이전 작업은 P176 HS 직접조회 상단 `FTA/특혜 세율` 요약 카드 문구 개선이고, 이번 작업은 P177 상단 `수입요건` 요약 카드 문구 개선이다.
+- 요건 후보가 있을 때는 `N개 요건 가능성`과 함께 제출서류·해당 여부는 제품 상세자료 기준 검토가 필요하다는 문구를 붙였다.
+- 요건 후보가 없을 때는 `세관장확인 조회 없음` 대신 `세관장확인 조회 결과 없음`을 사용하고, 통합공고·개별법령·표시·인증·유통규제는 별도 확인이 필요할 수 있다는 문구를 상단 카드에도 표시했다.
+- staging 데이터 기준 `3304.99-1000`은 요건 후보 케이스, `6109.10-1000`은 빈 세관장확인 결과 케이스로 확인했다.
+- 최신 staging preview는 `https://customs-hscode-22er1z7vn-koo-apps.vercel.app`다.
+- 다음 작업은 P178 HS 직접조회 원산지표시 요약/상세 문구 점검이다. 이번 P177이 `수입요건` 카드의 빈 결과 안전 문구라면, P178은 원산지표시 대상 여부가 확정 판정처럼 보이지 않는지 보는 작업이다.
+
+검증:
+
+- `npx vitest run features/hs/import-requirement-summary.test.ts features/hs/preferential-duty-summary.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- Playwright staging browser: `3304.99-1000`에서 `N개 요건 가능성`, `제품 상세자료 기준 검토` 안내 확인
+- Playwright staging browser: `6109.10-1000`에서 `세관장확인 조회 결과 없음`, `통합공고, 개별법령, 표시·인증·유통규제` 안내 확인
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-22er1z7vn-koo-apps.vercel.app`: 9/9 통과
+
 ### preferential duty summary copy
 
 - 이전 작업은 P175 수입국 필터 안내 의미 보강이고, 이번 작업은 P176 HS 직접조회 상단 `FTA/특혜 세율` 요약 카드 문구 개선이다.
