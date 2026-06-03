@@ -4,6 +4,23 @@
 
 ## 2026-06-03
 
+### request draft save messages
+
+- 이전 작업은 P191 요청 초안 저장 전 준비도 패널 문구 정리이고, 이번 작업은 P192 초안 저장 액션 성공/실패 메시지 점검이다.
+- 운송/통관 초안 저장 성공 메시지에 `아래 내 요청 목록에서 상세 화면으로 들어가 서류 첨부와 ... 공개를 진행` 문구를 추가했다.
+- 운송/통관 초안 저장 실패 메시지에 `회사 설정에서 화주 역할과 회사 정보를 확인` 문구를 추가해 사용자가 다음 확인 위치를 알 수 있게 했다.
+- staging에서 운송 초안 저장을 실제로 시도했지만 테스트 계정/플랫폼 데이터 조건상 회사 프로필 오류로 막혔다. 따라서 성공 메시지는 소스와 build로 검증했고, 실패 메시지는 브라우저에서 새 문구가 표시되는지 직접 확인했다.
+- 최신 staging preview는 `https://customs-hscode-nsv2k7tbt-koo-apps.vercel.app`다.
+- 다음 작업은 P193 회사 설정의 화주 역할/회사 정보 진입 UX 점검이다. 이번 P192가 저장 실패 메시지라면, P193은 사용자가 그 메시지를 보고 실제로 회사 설정에서 무엇을 확인할 수 있는지 보는 작업이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- Playwright staging browser: 운송 초안 저장 실패 메시지 새 문구 확인
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-nsv2k7tbt-koo-apps.vercel.app`: 9/9 통과
+
 ### request draft readiness copy
 
 - 이전 작업은 P190 HS/품명 조회 결과에서 요청 초안으로 넘어가는 CTA 회귀 검증이고, 이번 작업은 P191 요청 초안 저장 전 준비도 패널 문구 정리다.
