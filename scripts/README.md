@@ -77,6 +77,27 @@ operations page bodies:
 npm run smoke:operations:guard -- https://your-preview-url.vercel.app
 ```
 
+## Staging marketplace transaction E2E
+
+Use this after Preview DB schema health is OK and a Preview deployment is ready.
+The staging runner seeds deterministic marketplace fixture data, creates role
+storage states, checks readiness, opens requester/partner/detail pages, and then
+submits bids, selects partners, starts/completes requests, and verifies completed
+feedback UI.
+
+Remote fixture seeding is blocked by default. The staging runner sets
+`E2E_ALLOW_REMOTE_MARKETPLACE_TRANSACTION=true` internally, but credentials must
+still come from the shell or platform secret store.
+
+```bash
+vercel env run -e preview -- npm run e2e:marketplace-transaction:staging -- https://your-preview-url.vercel.app
+```
+
+When Vercel deployment protection is enabled, pass
+`VERCEL_AUTOMATION_BYPASS_SECRET` or `VERCEL_PROTECTION_BYPASS_SECRET` in the
+shell. The runner uses a separate `tmp/e2e-auth-staging` storage-state directory
+by default and never prints secret values.
+
 ## Production schema health check
 
 `check-production-schema.mjs` compares the current migration files with the

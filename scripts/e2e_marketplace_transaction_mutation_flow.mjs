@@ -3,6 +3,12 @@
 import { access } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
+import {
+  isLocalOrAllowedRemoteUrl,
+  playwrightContextOptions,
+  remoteE2ERequirement,
+  safeOrigin
+} from "./completion_preview_e2e_env.mjs";
 import { marketplaceTransactionFixture as fixture } from "../tests/fixtures/marketplace-transaction.fixture.mjs";
 
 const baseUrl = process.env.E2E_BASE_URL || "http://localhost:3100";
@@ -24,9 +30,10 @@ function assert(condition, message, details = {}) {
 }
 
 function assertLocalBaseUrl(value) {
-  const url = new URL(value);
-  const isLocal = ["localhost", "127.0.0.1"].includes(url.hostname);
-  assert(isLocal, `local base URL에서만 marketplace transaction mutation e2e를 실행할 수 있습니다. current=${url.origin}`);
+  assert(
+    isLocalOrAllowedRemoteUrl(value, "MARKETPLACE_TRANSACTION"),
+    `local 또는 명시적으로 허용된 remote base URL에서만 marketplace transaction mutation e2e를 실행할 수 있습니다. current=${safeOrigin(value)}. ${remoteE2ERequirement("MARKETPLACE_TRANSACTION")}`
+  );
 }
 
 async function assertStorageStatesExist() {
@@ -45,7 +52,7 @@ function transactionUrl(kind, role, requestId) {
 }
 
 async function pageFor(browser, role) {
-  const context = await browser.newContext({ storageState: stateFiles[role] });
+  const context = await browser.newContext(playwrightContextOptions({ storageState: stateFiles[role] }));
   const page = await context.newPage();
   return { context, page };
 }
@@ -74,7 +81,8 @@ async function submitFreightBid(browser) {
     await page.locator('input[name="transitTimeDays"]').fill("7", { timeout: timeoutMs });
     await page.locator('textarea[name="message"]').fill("E2E mutation freight terms", { timeout: timeoutMs });
     await clickAndSettle(page, page.getByRole("button", { name: "견적 제출" }));
-    await waitForBodyText(page, "운송 견적을 제출했습니다.", "freight partner detail에 견적 제출 성공 메시지가 보이지 않습니다.");
+    await waitForBodyText(page, "제출한 운송 견적", "freight partner detail에 제출된 견적 영역이 보이지 않습니다.");
+    await waitForBodyText(page, "KRW 1,450,000", "freight partner detail에 제출 견적 금액이 보이지 않습니다.");
   } finally {
     await context.close();
   }
@@ -91,7 +99,8 @@ async function submitClearanceBid(browser) {
     await page.locator('input[name="expectedClearanceDays"]').fill("4", { timeout: timeoutMs });
     await page.locator('textarea[name="riskNote"]').fill("E2E mutation preliminary review", { timeout: timeoutMs });
     await clickAndSettle(page, page.getByRole("button", { name: "예비 통관 견적 제출" }));
-    await waitForBodyText(page, "통관 견적을 제출했습니다.", "clearance partner detail에 견적 제출 성공 메시지가 보이지 않습니다.");
+    await waitForBodyText(page, "제출한 통관 견적", "clearance partner detail에 제출된 견적 영역이 보이지 않습니다.");
+    await waitForBodyText(page, "KRW 440,000", "clearance partner detail에 제출 견적 금액이 보이지 않습니다.");
   } finally {
     await context.close();
   }
@@ -163,7 +172,7 @@ async function main() {
     );
     await assertSelectedPartnerView(browser, "freight", "forwarder", fixture.mutation.requests.freight.id, "선정된 운송 요청");
     await completeRequesterLifecycle(browser, "freight", fixture.mutation.requests.freight.id, {
-      afterCompleteText: "운송 요청이 완료 처리되었습니다.",
+      afterCompleteText: "완료 리포트",
       afterStartText: "운송 완료 처리",
       completeButton: "운송 완료 처리",
       startButton: "운송 진행 시작"
@@ -180,7 +189,7 @@ async function main() {
     );
     await assertSelectedPartnerView(browser, "clearance", "broker", fixture.mutation.requests.clearance.id, "선정된 통관 의뢰");
     await completeRequesterLifecycle(browser, "clearance", fixture.mutation.requests.clearance.id, {
-      afterCompleteText: "통관 의뢰가 완료 처리되었습니다.",
+      afterCompleteText: "완료 리포트",
       afterStartText: "통관 완료 처리",
       completeButton: "통관 완료 처리",
       startButton: "통관 진행 시작"

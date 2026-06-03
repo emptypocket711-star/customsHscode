@@ -70,12 +70,54 @@ export function isLocalUrl(value) {
   }
 }
 
-export async function fetchWithTimeout(url, timeoutMs) {
+export function isRemoteE2EAllowed(scope) {
+  const scopedKey = scope ? `E2E_ALLOW_REMOTE_${scope}` : "";
+  return process.env.E2E_ALLOW_REMOTE === "true" || (scopedKey ? process.env[scopedKey] === "true" : false);
+}
+
+export function isLocalOrAllowedRemoteUrl(value, scope) {
+  return isLocalUrl(value) || isRemoteE2EAllowed(scope);
+}
+
+export function remoteE2ERequirement(scope) {
+  const scopedKey = scope ? `E2E_ALLOW_REMOTE_${scope}` : "E2E_ALLOW_REMOTE";
+  return `remote 실행은 ${scopedKey}=true를 명시해야 합니다.`;
+}
+
+export function vercelProtectionHeaders() {
+  const protectionBypassSecret =
+    process.env.VERCEL_AUTOMATION_BYPASS_SECRET ||
+    process.env.VERCEL_PROTECTION_BYPASS_SECRET;
+
+  return protectionBypassSecret
+    ? { "x-vercel-protection-bypass": protectionBypassSecret }
+    : {};
+}
+
+export function playwrightContextOptions(options = {}) {
+  const headers = vercelProtectionHeaders();
+  if (Object.keys(headers).length === 0) return options;
+
+  return {
+    ...options,
+    extraHTTPHeaders: {
+      ...(options.extraHTTPHeaders || {}),
+      ...headers
+    }
+  };
+}
+
+export async function fetchWithTimeout(url, timeoutMs, init = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const response = await fetch(url, {
+      ...init,
+      headers: {
+        ...(init.headers || {}),
+        ...vercelProtectionHeaders()
+      },
       redirect: "manual",
       signal: controller.signal
     });

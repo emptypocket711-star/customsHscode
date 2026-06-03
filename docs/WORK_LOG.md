@@ -4,6 +4,28 @@
 
 ## 2026-06-03
 
+### staging marketplace transaction E2E runner
+
+- 이전 작업은 P210 Preview DB에 marketplace schema와 completion report RPC를 실제 적용하고 route smoke를 통과시킨 것이고, 이번 작업은 P211 Preview 배포에서 marketplace 거래 흐름을 seed부터 mutation까지 브라우저로 검증할 수 있게 만든 작업이다.
+- `e2e:marketplace-transaction:staging` script를 추가했다.
+- staging runner는 Preview DB에 deterministic marketplace fixture를 seed하고, requester/forwarder/broker storage state를 만든 뒤 readiness, 읽기 E2E, mutation E2E를 연속 실행한다.
+- remote fixture seed는 기본 차단 상태를 유지하고, `E2E_ALLOW_REMOTE_MARKETPLACE_TRANSACTION=true`가 있을 때만 실행되게 했다.
+- Vercel deployment protection이 켜진 Preview에서도 login/e2e가 통과하도록 Playwright context와 readiness fetch에 bypass header를 주입하는 공통 helper를 추가했다.
+- 대시보드 상세 링크가 `#request-bids` anchor를 포함하는 현재 UX에 맞춰 E2E selector를 보강했다.
+- 이미 제출된 견적 화면은 제출 form이 숨겨지는 현재 UX에 맞춰 `제출한 운송 견적`, `제출한 통관 견적`, `총액` 기준으로 검증하게 했다.
+- mutation E2E는 transient toast 대신 완료 후 지속 표시되는 완료 리포트/피드백 UI를 기준으로 검증한다.
+- 최신 staging preview는 `https://customs-hscode-52lx18myx-koo-apps.vercel.app`다.
+- 다음 작업은 P212 completion report dual acknowledgement staging E2E 확장이다. 이번 P211이 거래 생성·입찰·선정·완료·피드백 흐름 검증이라면, P212는 완료 리포트 초안 저장, 제출, 화주/파트너 확인, 양측 확인 전 운영 검토 차단까지 직접 검증하는 작업이다.
+
+검증:
+
+- `node --check scripts/completion_preview_e2e_env.mjs ... scripts/run_marketplace_transaction_e2e_staging.mjs`
+- `npx vitest run scripts/completion_preview_e2e_env.test.ts tests/fixtures/marketplace-transaction.fixture.test.ts`: 13개 통과
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `vercel env run -e preview -- npm run e2e:marketplace-transaction:staging -- https://customs-hscode-52lx18myx-koo-apps.vercel.app`: seed, auth, ready, e2e, mutation-e2e 모두 `result=ok`
+
 ### completion report migration application check
 
 - 이전 작업은 P209 완료 리포트 이중 확인 workflow와 RPC migration을 코드로 추가한 것이고, 이번 작업은 P210 Preview DB에 선행 marketplace schema와 완료 리포트 RPC가 실제 적용됐는지 확인하고 누락분을 적용한 작업이다.

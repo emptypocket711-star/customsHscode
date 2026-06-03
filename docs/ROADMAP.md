@@ -498,6 +498,9 @@
 | P207.1 operations smoke prepare schema fallback | 완료 | 운영 smoke 절차 문서화가 아니라 준비 스크립트가 profile 확장 컬럼이 없는 schema에서도 최소 developer role 보강을 시도한다 | operations smoke prepare schema fallback | node check, missing-env check, typecheck, lint, build, staging smoke |
 | P208.1 operations guard diagnostics | 완료 | 운영자 준비 스크립트가 아니라 일반 계정 운영 차단 guard가 어떤 계정 파일과 역할을 검사했는지 명확히 출력한다 | operations guard diagnostics | browser guard, typecheck, lint, build, staging smoke |
 | P209.1 completion report dual acknowledgement review gate | 완료 | 운영 smoke 보강이 아니라 완료 리포트 운영 검토 전 화주와 파트너 양측 확인을 모두 요구한다 | dual acknowledgement review gate | unit, governance, typecheck, lint, build, staging smoke |
+| P210.1 completion report migration application check | 완료 | 완료 리포트 gate 코딩이 아니라 Preview DB에 marketplace schema와 dual-ack RPC를 실제 적용하고 DB health를 통과시킨다 | preview DB schema application | migration dry-run, health:db, schema smoke, route smoke |
+| P211.1 staging marketplace transaction E2E runner | 완료 | DB health와 route smoke가 아니라 Preview에서 seed, 로그인, 요청 상세, 입찰, 선정, 완료, 피드백 mutation 흐름을 브라우저로 검증한다 | staging transaction E2E runner | staging seed/auth/ready/e2e/mutation-e2e, typecheck, lint, build |
+| P212.1 completion report dual acknowledgement staging E2E | 예정 | 거래 완료 mutation이 아니라 완료 리포트 초안 저장, 제출, 화주/파트너 확인, 양측 확인 전 운영 검토 차단을 직접 검증한다 | completion report dual-ack E2E | staging fixture, RPC guard, browser flow |
 
 #### P109 다음 병목 선정
 

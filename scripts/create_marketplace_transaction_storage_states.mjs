@@ -5,8 +5,10 @@ import path from "node:path";
 import { chromium } from "playwright";
 import {
   envValue,
-  isLocalUrl,
+  isLocalOrAllowedRemoteUrl,
   loadEnvFile,
+  playwrightContextOptions,
+  remoteE2ERequirement,
   safeOrigin
 } from "./completion_preview_e2e_env.mjs";
 import { marketplaceTransactionFixture as fixture } from "../tests/fixtures/marketplace-transaction.fixture.mjs";
@@ -27,11 +29,15 @@ function assert(condition, message) {
 }
 
 function assertLocalBaseUrl(value) {
-  assert(isLocalUrl(value), `local base URL에서만 storage state를 만들 수 있습니다. current=${safeOrigin(value)}`);
+  assert(
+    isLocalOrAllowedRemoteUrl(value, "MARKETPLACE_TRANSACTION"),
+    `local 또는 명시적으로 허용된 remote base URL에서만 storage state를 만들 수 있습니다. current=${safeOrigin(value)}. ${remoteE2ERequirement("MARKETPLACE_TRANSACTION")}`
+  );
 }
 
 async function loginAndSaveStorageState(browser, role, email, stateFile, password) {
-  const page = await browser.newPage({ viewport: { width: 1366, height: 900 } });
+  const context = await browser.newContext(playwrightContextOptions({ viewport: { width: 1366, height: 900 } }));
+  const page = await context.newPage();
   const statePath = path.join(outputDir, stateFile);
 
   try {
@@ -42,10 +48,10 @@ async function loginAndSaveStorageState(browser, role, email, stateFile, passwor
       page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: timeoutMs }),
       page.locator('button[type="submit"]').click()
     ]);
-    await page.context().storageState({ path: statePath });
+    await context.storageState({ path: statePath });
     return { role, statePath };
   } finally {
-    await page.close();
+    await context.close();
   }
 }
 
@@ -60,7 +66,10 @@ async function main() {
   console.log("secretValues=not-printed");
 
   assertLocalBaseUrl(baseUrl);
-  assert(isLocalUrl(supabaseUrl), `local Supabase에서만 storage state를 만들 수 있습니다. current=${safeOrigin(supabaseUrl)}`);
+  assert(
+    isLocalOrAllowedRemoteUrl(supabaseUrl, "MARKETPLACE_TRANSACTION"),
+    `local Supabase 또는 명시적으로 허용된 remote Supabase에서만 storage state를 만들 수 있습니다. current=${safeOrigin(supabaseUrl)}. ${remoteE2ERequirement("MARKETPLACE_TRANSACTION")}`
+  );
   assert(password, "E2E_TEST_PASSWORD가 필요합니다. 먼저 npm run e2e:marketplace-transaction:seed를 같은 비밀번호로 실행하세요.");
 
   await mkdir(outputDir, { recursive: true });

@@ -3,8 +3,9 @@
 import { createClient } from "@supabase/supabase-js";
 import {
   envValue,
-  isLocalUrl,
+  isLocalOrAllowedRemoteUrl,
   loadEnvFile,
+  remoteE2ERequirement,
   safeOrigin
 } from "./completion_preview_e2e_env.mjs";
 import {
@@ -600,7 +601,10 @@ async function main() {
   console.log(`supabaseOrigin=${safeOrigin(supabaseUrl) || "missing"}`);
   console.log("secretValues=not-printed");
 
-  assert(isLocalUrl(supabaseUrl), `local Supabase에서만 seed를 실행할 수 있습니다. current=${safeOrigin(supabaseUrl)}`);
+  assert(
+    isLocalOrAllowedRemoteUrl(supabaseUrl, "MARKETPLACE_TRANSACTION"),
+    `local Supabase 또는 명시적으로 허용된 remote Supabase에서만 seed를 실행할 수 있습니다. current=${safeOrigin(supabaseUrl)}. ${remoteE2ERequirement("MARKETPLACE_TRANSACTION")}`
+  );
   assert(serviceRoleKey, "SUPABASE_SERVICE_ROLE_KEY가 필요합니다.");
   assert(testPassword, "E2E_TEST_PASSWORD가 필요합니다.");
 

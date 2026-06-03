@@ -1,9 +1,12 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   envValue,
+  isLocalOrAllowedRemoteUrl,
   isLocalUrl,
+  isRemoteE2EAllowed,
   mergedEnv,
   parseEnvFile,
+  playwrightContextOptions,
   safeOrigin
 } from "./completion_preview_e2e_env.mjs";
 
@@ -35,6 +38,27 @@ INVALID_LINE
     expect(isLocalUrl("https://example.supabase.co")).toBe(false);
     expect(isLocalUrl("not-a-url")).toBe(false);
     expect(isLocalUrl(undefined)).toBe(false);
+  });
+
+  it("requires an explicit remote E2E opt-in for non-local URLs", () => {
+    expect(isRemoteE2EAllowed("MARKETPLACE_TRANSACTION")).toBe(false);
+    expect(isLocalOrAllowedRemoteUrl("https://preview.example", "MARKETPLACE_TRANSACTION")).toBe(false);
+
+    process.env.E2E_ALLOW_REMOTE_MARKETPLACE_TRANSACTION = "true";
+
+    expect(isRemoteE2EAllowed("MARKETPLACE_TRANSACTION")).toBe(true);
+    expect(isLocalOrAllowedRemoteUrl("https://preview.example", "MARKETPLACE_TRANSACTION")).toBe(true);
+  });
+
+  it("adds Vercel protection headers to Playwright context options without printing the secret", () => {
+    process.env.VERCEL_AUTOMATION_BYPASS_SECRET = "bypass-secret";
+
+    expect(playwrightContextOptions({ storageState: "state.json" })).toEqual({
+      extraHTTPHeaders: {
+        "x-vercel-protection-bypass": "bypass-secret"
+      },
+      storageState: "state.json"
+    });
   });
 
   it("returns only URL origins for safe diagnostic output", () => {

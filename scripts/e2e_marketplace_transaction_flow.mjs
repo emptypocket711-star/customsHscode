@@ -3,6 +3,12 @@
 import { access } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
+import {
+  isLocalOrAllowedRemoteUrl,
+  playwrightContextOptions,
+  remoteE2ERequirement,
+  safeOrigin
+} from "./completion_preview_e2e_env.mjs";
 import { marketplaceTransactionFixture as fixtureContract } from "../tests/fixtures/marketplace-transaction.fixture.mjs";
 
 const baseUrl = process.env.E2E_BASE_URL || "http://localhost:3100";
@@ -33,9 +39,10 @@ function assert(condition, message, details = {}) {
 }
 
 function assertLocalBaseUrl(value) {
-  const url = new URL(value);
-  const isLocal = ["localhost", "127.0.0.1"].includes(url.hostname);
-  assert(isLocal, `local base URL에서만 marketplace transaction e2e를 실행할 수 있습니다. current=${url.origin}`);
+  assert(
+    isLocalOrAllowedRemoteUrl(value, "MARKETPLACE_TRANSACTION"),
+    `local 또는 명시적으로 허용된 remote base URL에서만 marketplace transaction e2e를 실행할 수 있습니다. current=${safeOrigin(value)}. ${remoteE2ERequirement("MARKETPLACE_TRANSACTION")}`
+  );
 }
 
 async function assertStorageStatesExist() {
@@ -70,7 +77,7 @@ function transactionUrl(kind, role, requestId) {
 }
 
 async function pageTextFor(browser, role, url) {
-  const context = await browser.newContext({ storageState: stateFiles[role] });
+  const context = await browser.newContext(playwrightContextOptions({ storageState: stateFiles[role] }));
   const page = await context.newPage();
   try {
     await page.goto(url, { waitUntil: "networkidle", timeout: timeoutMs });
@@ -90,14 +97,15 @@ function assertContainsAll(text, tokens, label) {
 }
 
 async function assertUnauthenticatedRedirect(browser, kind, role, requestId) {
-  const page = await browser.newPage();
+  const context = await browser.newContext(playwrightContextOptions());
+  const page = await context.newPage();
   try {
     await page.goto(transactionUrl(kind, role, requestId), { waitUntil: "networkidle", timeout: timeoutMs });
     const body = await page.locator("body").innerText({ timeout: timeoutMs });
     assert(page.url().includes("/login"), "비로그인 거래 화면 접근이 login으로 이동하지 않았습니다.", { currentUrl: page.url() });
     assert(body.includes("로그인"), "비로그인 거래 화면 접근 후 로그인 화면이 표시되지 않았습니다.");
   } finally {
-    await page.close();
+    await context.close();
   }
 }
 
@@ -126,12 +134,12 @@ async function assertRequesterDetail(browser, kind, requestId) {
 }
 
 async function assertRequesterDashboardNextAction(browser) {
-  const context = await browser.newContext({ storageState: stateFiles.requester });
+  const context = await browser.newContext(playwrightContextOptions({ storageState: stateFiles.requester }));
   const page = await context.newPage();
 
   try {
     await page.goto(new URL("/dashboard", baseUrl).toString(), { waitUntil: "networkidle", timeout: timeoutMs });
-    const actionLink = page.locator(`a[href="/requests/freight/${fixture.freightRequestId}"]`).first();
+    const actionLink = page.locator(`a[href^="/requests/freight/${fixture.freightRequestId}"]`).first();
     await Promise.all([
       page.waitForURL((url) => url.pathname === `/requests/freight/${fixture.freightRequestId}`, { timeout: timeoutMs }),
       actionLink.click({ timeout: timeoutMs })
@@ -152,7 +160,7 @@ async function assertRequesterDashboardNextAction(browser) {
 }
 
 async function assertRequesterDetailBidFocus(browser, kind, requestId, requestTitle) {
-  const context = await browser.newContext({ storageState: stateFiles.requester });
+  const context = await browser.newContext(playwrightContextOptions({ storageState: stateFiles.requester }));
   const page = await context.newPage();
 
   try {
@@ -210,16 +218,16 @@ async function assertPartnerOpportunity(browser, kind, role, requestId) {
       ? [
         "운송 입찰 작업",
         fixtureContract.requests.freight.title,
-        "총 견적 금액",
-        "견적 메모",
-        "견적 제출"
+        "제출한 운송 견적",
+        "총액",
+        "이미 제출한 견적"
       ]
       : [
         "통관 입찰 작업",
         fixtureContract.requests.clearance.title,
-        "관세사무소 예비 견적 제출",
-        "총 견적 금액",
-        "예비 통관 견적 제출"
+        "제출한 통관 견적",
+        "총액",
+        "이미 제출한 견적"
       ],
     `${kind} 파트너 상세`
   );
