@@ -4,6 +4,24 @@
 
 ## 2026-06-03
 
+### preview migration application runbook
+
+- 이전 작업은 P275에서 파트너 빈 상태의 관심 조건 링크를 브라우저 smoke로 고정한 것이고, 이번 작업은 UI가 아니라 Preview DB migration 적용 순서를 실수 없이 반복하게 하는 runbook 작업이다.
+- `db:preview-migration:plan` script를 추가해 migration 파일 경로를 검증하고 dry-run, apply, `health:db`, `smoke:marketplace-schema`, staging regression 명령을 순서대로 출력하게 했다.
+- `--file`은 repo 상대 경로, `supabase/migrations` 직하위 `.sql`만 허용하고 repo 밖 경로와 SQL이 아닌 파일은 실패하게 했다.
+- `docs/PREVIEW_MIGRATION_RUNBOOK.md`를 추가해 파일 단위 dry-run/apply/health 반복, secret 비노출, 직접 rollback 금지, 후속 migration 수정 원칙을 정리했다.
+- Preview 환경에서 `health:db`와 `smoke:marketplace-schema`가 현재 blocker 없이 통과하는 것을 확인했다.
+- 다음 작업은 P277 marketplace security runbook이다. 이번 P276이 migration 적용 절차라면, P277은 운영자가 직접 호출 우회, RLS 오류, 권한 상승 의심을 발견했을 때 조치 순서를 남기는 작업이다.
+
+검증:
+
+- `node --check scripts/plan_preview_migration.mjs`
+- `npm run db:preview-migration:plan -- --file supabase/migrations/20260603004000_bid_submission_audit_snapshot.sql`
+- `npm run db:preview-migration:plan -- --file ../bad.sql` 실패 확인
+- `npm run db:preview-migration:plan -- --file supabase/config.toml` 실패 확인
+- `vercel env run -e preview -- npm run health:db`
+- `vercel env run -e preview -- npm run smoke:marketplace-schema`
+
 ### partner preference anchor smoke
 
 - 이전 작업은 P274에서 zero-match 운영 상세가 developer storage state 부재로 skip되지 않게 한 것이고, 이번 작업은 운영자 화면이 아니라 파트너 빈 상태의 관심 조건 설정 링크가 실제 회사 설정 anchor로 이동하는지 고정한 작업이다.

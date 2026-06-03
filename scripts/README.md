@@ -201,6 +201,18 @@ RLS drift before deployment or after manual SQL changes.
 npm run health:db
 ```
 
+## Preview migration plan
+
+Before applying a Preview DB migration, generate the command plan and verify the
+file path. The plan prints dry-run, apply, DB health, marketplace schema, and
+regression commands without printing secret values.
+
+```bash
+npm run db:preview-migration:plan -- --file supabase/migrations/20260603004000_bid_submission_audit_snapshot.sql
+```
+
+See `docs/PREVIEW_MIGRATION_RUNBOOK.md` for the required application order.
+
 The script reads `DATABASE_URL` from the shell or `.env.local`. It does not
 print secrets. Use `--json` for CI or machine-readable output.
 
