@@ -514,7 +514,7 @@ export async function createFreightRequestDraftAction(
   } catch {
     return {
       status: "error",
-      message: "운송 견적 요청 초안을 저장하지 못했습니다. 로그인 상태와 회사 프로필을 확인해 주세요."
+      message: "운송 견적 요청 초안을 저장하지 못했습니다. 로그인 상태를 확인하고, 회사 설정에서 화주 역할과 회사 정보를 확인해 주세요."
     };
   }
 }
