@@ -7922,3 +7922,21 @@
 - Playwright requester `/dashboard`에서 기존 `진행중 요청` 문구 비노출 확인
 - `npm run typecheck`
 - `npm run lint`
+
+### role-aware dashboard counters and links
+
+- 이전 작업은 대시보드 카운터 문구를 명확히 한 P155.1이고, 이번 작업은 화주/포워더/관세사 역할별로 관련 카운터와 workspace 링크만 노출한 P156.1이다.
+- 화주 역할에는 화주 요청 카운터와 `내 운송 요청`, `내 통관 의뢰` 링크만 표시한다.
+- 포워더 역할에는 파트너 업무/입찰 가능 카운터와 `운송 입찰 가능` 링크만 표시한다.
+- 관세사무소 역할에는 파트너 업무/입찰 가능 카운터와 `통관 입찰 가능` 링크만 표시한다.
+- 역할이 여러 개인 회사는 해당 역할 묶음이 함께 표시된다.
+- 새 migration, RLS 변경은 없다.
+- 로컬 파일만 수정했고 원격 푸시, 배포는 하지 않았다.
+
+검증:
+
+- Playwright requester `/dashboard`에서 화주 카운터/링크 노출, 파트너 카운터/입찰 링크 비노출 확인
+- Playwright forwarder `/dashboard`에서 파트너 카운터/운송 입찰 링크 노출, 화주 카운터/내 운송 요청 링크 비노출 확인
+- Playwright broker `/dashboard`에서 파트너 카운터/통관 입찰 링크 노출, 화주 카운터/내 통관 의뢰 링크 비노출 확인
+- `npm run typecheck`
+- `npm run lint`

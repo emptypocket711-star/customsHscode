@@ -483,6 +483,33 @@ function DashboardMarketplaceEntry({
       title: "통관 의뢰 요청"
     }
   ];
+  const marketplaceStats = [
+    ...(canSeeRequesterActions ? [
+      { label: "임시저장 요청", value: activity?.draftRequests ?? 0 },
+      { label: "공개 요청", value: activity?.openRequests ?? 0 },
+      { label: "견적 도착", value: activity?.bidsReceived ?? 0 },
+      { label: "업무 진행", value: activity?.inProgressRequests ?? 0 },
+      { label: "완료", value: activity?.completedRequests ?? 0 },
+      { label: "리포트 대기", value: activity?.completionReportPending ?? 0 },
+      { label: "피드백 대기", value: activity?.feedbackPending ?? 0 }
+    ] : []),
+    ...(canSeeForwarderActions || canSeeBrokerActions ? [
+      { label: "파트너 업무", value: (activity?.freightPartnerActions ?? 0) + (activity?.clearancePartnerActions ?? 0) },
+      { label: "입찰 가능", value: activity?.partnerOpportunities ?? 0 }
+    ] : [])
+  ];
+  const workspaceLinks = [
+    ...(canSeeRequesterActions ? [
+      { href: "/requests/freight?workspace=requester", label: "내 운송 요청" },
+      { href: "/requests/clearance?workspace=requester", label: "내 통관 의뢰" }
+    ] : []),
+    ...(canSeeForwarderActions ? [
+      { href: "/requests/freight?workspace=forwarder", label: "운송 입찰 가능" }
+    ] : []),
+    ...(canSeeBrokerActions ? [
+      { href: "/requests/clearance?workspace=broker", label: "통관 입찰 가능" }
+    ] : [])
+  ];
 
   return (
     <section className="min-w-0 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface)] shadow-[var(--shadow-panel)]">
@@ -639,29 +666,16 @@ function DashboardMarketplaceEntry({
         </div>
       </div>
       <div className="grid gap-2 border-t border-[var(--border-subtle)] bg-slate-50 px-4 py-3 text-xs text-slate-600 md:grid-cols-4 xl:grid-cols-8">
-        <span className="rounded-md bg-white px-3 py-2">임시저장 요청 {activity?.draftRequests ?? 0}</span>
-        <span className="rounded-md bg-white px-3 py-2">공개 요청 {activity?.openRequests ?? 0}</span>
-        <span className="rounded-md bg-white px-3 py-2">견적 도착 {activity?.bidsReceived ?? 0}</span>
-        <span className="rounded-md bg-white px-3 py-2">업무 진행 {activity?.inProgressRequests ?? 0}</span>
-        <span className="rounded-md bg-white px-3 py-2">완료 {activity?.completedRequests ?? 0}</span>
-        <span className="rounded-md bg-white px-3 py-2">리포트 대기 {activity?.completionReportPending ?? 0}</span>
-        <span className="rounded-md bg-white px-3 py-2">피드백 대기 {activity?.feedbackPending ?? 0}</span>
-        <span className="rounded-md bg-white px-3 py-2">파트너 업무 {(activity?.freightPartnerActions ?? 0) + (activity?.clearancePartnerActions ?? 0)}</span>
-        <span className="rounded-md bg-white px-3 py-2">입찰 가능 {activity?.partnerOpportunities ?? 0}</span>
+        {marketplaceStats.map((stat) => (
+          <span className="rounded-md bg-white px-3 py-2" key={stat.label}>{stat.label} {stat.value}</span>
+        ))}
       </div>
       <div className="flex flex-wrap gap-2 border-t border-[var(--border-subtle)] bg-white px-4 py-3">
-        <Link className="focus-ring inline-flex h-9 items-center rounded-md border border-slate-300 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50" href="/requests/freight?workspace=requester">
-          내 운송 요청
-        </Link>
-        <Link className="focus-ring inline-flex h-9 items-center rounded-md border border-slate-300 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50" href="/requests/clearance?workspace=requester">
-          내 통관 의뢰
-        </Link>
-        <Link className="focus-ring inline-flex h-9 items-center rounded-md border border-slate-300 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50" href="/requests/freight?workspace=forwarder">
-          운송 입찰 가능
-        </Link>
-        <Link className="focus-ring inline-flex h-9 items-center rounded-md border border-slate-300 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50" href="/requests/clearance?workspace=broker">
-          통관 입찰 가능
-        </Link>
+        {workspaceLinks.map((link) => (
+          <Link className="focus-ring inline-flex h-9 items-center rounded-md border border-slate-300 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50" href={link.href} key={link.href}>
+            {link.label}
+          </Link>
+        ))}
       </div>
       {!summary?.schemaReady ? (
         <p className="border-t border-[var(--border-subtle)] bg-amber-50 px-5 py-3 text-xs leading-5 text-amber-900">
