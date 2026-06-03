@@ -483,6 +483,7 @@
 | P192.1 request draft save messages | 완료 | 저장 전 준비도 패널이 아니라 초안 저장 액션 성공/실패 메시지가 다음 행동을 알려주도록 상세 화면, 서류 첨부, 공개 모집, 회사 설정 확인 문구를 보강한다 | request draft save next-action messages | browser, typecheck, lint, build, staging smoke |
 | P193.1 company settings role guidance | 완료 | 저장 실패 메시지가 아니라 회사 설정 화면에서 화주 역할과 회사 정보 확인 위치를 바로 이해할 수 있게 상단 설명과 다음 작업 문구를 보강한다 | company settings role guidance | browser, typecheck, lint, build, staging smoke |
 | P194.1 draft save error settings CTA | 완료 | 회사 설정 화면 문구가 아니라 요청 초안 저장 실패 상태에서 바로 회사 설정으로 이동할 수 있는 `회사 설정 확인` CTA를 추가한다 | draft save error settings CTA | browser, typecheck, lint, build, staging smoke |
+| P195.1 role request disabled reason copy | 완료 | 오류 CTA가 아니라 회사 설정 역할 신청 패널에서 신청 비활성 원인이 스키마 미준비인지 회사 관리자 권한 부족인지 구분해 안내한다 | role request disabled reason copy | unit, browser, typecheck, lint, build, staging smoke |
 
 #### P109 다음 병목 선정
 

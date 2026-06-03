@@ -4,6 +4,26 @@
 
 ## 2026-06-03
 
+### role request disabled reason copy
+
+- 이전 작업은 P194 요청 초안 저장 실패 상태에서 회사 설정으로 이동하는 CTA를 추가한 것이고, 이번 작업은 P195 회사 설정으로 이동한 뒤 역할 신청이 비활성일 때 원인을 이해할 수 있게 하는 작업이다.
+- `CompanyRoleRequestPanel`의 비활성 안내를 원인별 helper로 분리했다.
+- 역할 신청 데이터가 준비되지 않은 경우와 회사 관리자가 아닌 경우를 서로 다른 문구로 안내하도록 정리했다.
+- 상단 스키마 준비 중 안내와 하단 비활성 사유 문구가 같은 방향으로 설명되도록 맞췄다.
+- helper 단위 테스트를 추가해 스키마 미준비, 회사 관리자 아님, 신청 가능 상태를 고정했다.
+- staging에서 회사 설정 화면을 열어 역할 신청 패널, 상단/하단 스키마 안내, 기존 짧은 문구 제거를 확인했다.
+- 최신 staging preview는 `https://customs-hscode-cwi1v7czf-koo-apps.vercel.app`다.
+- 다음 작업은 P196 회사 설정 직접 anchor 이동이다. 이번 P195가 역할 신청 패널 안의 비활성 이유 설명이라면, P196은 요청 초안 오류 CTA가 회사 설정 상단이 아니라 역할 신청 섹션으로 바로 이동하게 하는 작업이다.
+
+검증:
+
+- `npx vitest run features/company-verification/company-role-request-panel.test.ts features/company-verification/company-role-request-schemas.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- Playwright staging browser: 회사 설정 역할 신청 패널의 상단/하단 스키마 안내 문구 확인
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-cwi1v7czf-koo-apps.vercel.app`: 9/9 통과
+
 ### draft save error settings CTA
 
 - 이전 작업은 P193 회사 설정의 화주 역할/회사 정보 진입 UX 점검이고, 이번 작업은 P194 요청 초안 저장 실패 상태의 직접 이동 CTA 보강이다.
