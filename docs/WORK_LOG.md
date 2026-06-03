@@ -4,6 +4,19 @@
 
 ## 2026-06-03
 
+### verification upload cleanup audit
+
+- 이전 작업은 P268에서 마감 알림 피로도 정책을 조정한 것이고, 이번 작업은 회사 검증 증빙 업로드 실패 후 cleanup 실패를 조용히 삼키지 않는지 고정한 작업이다.
+- 기존 repository는 storage upload 실패 시 storage object remove와 `company_verification_documents` metadata delete를 모두 시도한다.
+- 테스트를 추가해 object cleanup과 metadata cleanup이 모두 실패하면 `증빙 파일 업로드 실패 후 정리에 실패했습니다: ...` 메시지에 두 실패 원인이 함께 포함되는지 확인했다.
+- 이로써 orphan 가능성이 생겼을 때 운영자가 실패 원인을 추적할 수 있는 경로를 회귀 테스트로 고정했다.
+- 다음 작업은 P270 profile self-update privilege hardening이다. 이번 P269가 업로드 실패 cleanup 가시성이라면, P270은 사용자가 profile role/company_role/company_id를 직접 바꿔 권한 상승하지 못하게 하는 RLS/권한 경계 작업이다.
+
+검증:
+
+- `npx vitest run server/repositories/company-verification.repository.test.ts`
+- `npm run typecheck`
+
 ### reminder fatigue policy
 
 - 이전 작업은 P267에서 digest enabled match를 묶음 알림 target으로 라우팅한 것이고, 이번 작업은 마감 알림이 과도하게 나가지 않도록 reminder 대상을 더 좁힌 작업이다.

@@ -129,4 +129,72 @@ describe("company verification repository helpers", () => {
     expect(removedPaths).toEqual([insertedRows[0]?.storage_path]);
     expect(deletedIds).toEqual([insertedRows[0]?.id]);
   });
+
+  it("reports cleanup failures after verification storage upload failure", async () => {
+    const supabase = {
+      auth: {
+        getUser: async () => ({
+          data: {
+            user: { id: "11111111-1111-4111-8111-111111111111" }
+          }
+        })
+      },
+      from(table: string) {
+        if (table === "profiles") {
+          return {
+            select: () => ({
+              eq: () => ({
+                single: async () => ({
+                  data: {
+                    account_type: "company",
+                    company_id: "22222222-2222-4222-8222-222222222222",
+                    company_role: "admin"
+                  },
+                  error: null
+                })
+              })
+            })
+          };
+        }
+
+        if (table === "company_verification_documents") {
+          return {
+            insert(row: Record<string, unknown>) {
+              return {
+                select: () => ({
+                  single: async () => ({ data: { id: row.id }, error: null })
+                })
+              };
+            },
+            delete: () => ({
+              eq: () => Promise.resolve({ error: { message: "metadata cleanup failed" } })
+            })
+          };
+        }
+
+        throw new Error(`unexpected table ${table}`);
+      },
+      storage: {
+        from: (bucket: string) => {
+          expect(bucket).toBe(companyVerificationDocumentsBucket);
+          return {
+            upload: async () => ({
+              error: { message: "storage upload failed" }
+            }),
+            remove: async () => ({
+              error: { message: "object cleanup failed" }
+            })
+          };
+        }
+      }
+    };
+
+    await expect(
+      uploadCompanyVerificationDocument(
+        supabase as never,
+        { documentType: "business_registration", note: undefined },
+        new File(["mock"], "license.pdf", { type: "application/pdf" })
+      )
+    ).rejects.toThrow("증빙 파일 업로드 실패 후 정리에 실패했습니다: object cleanup failed; metadata cleanup failed");
+  });
 });
