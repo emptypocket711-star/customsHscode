@@ -86,11 +86,14 @@ describe("platform request operations panel", () => {
     }));
 
     expect(groups.primaryMetrics.map((metric) => metric.label)).toEqual([
-      "전체 요청",
-      "진행 요청",
-      "선정 후 진행",
-      "거래 후기"
+      "요청 규모 확인",
+      "견적 선택 대기",
+      "완료 전환 대기",
+      "후기 품질 확인"
     ]);
+    expect(groups.primaryMetrics[1]?.detail).toContain("선택 전환");
+    expect(groups.primaryMetrics[2]?.detail).toContain("완료 전환");
+    expect(groups.primaryMetrics[3]?.detail).toContain("파트너 비교 기준");
     expect(groups.diagnosticMetrics).toHaveLength(17);
   });
 

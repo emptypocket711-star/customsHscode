@@ -322,10 +322,10 @@ export function buildPlatformRequestOperationsMetricGroups(summary: PlatformRequ
       { detail: "만료 처리 점검 대상", label: "마감 지난 공개", tone: tone(summary.staleOpen), value: `${summary.staleOpen}건` }
     ],
     primaryMetrics: [
-      { detail: `운송 ${summary.freight} / 통관 ${summary.clearance}`, label: "전체 요청", tone: "info" as const, value: `${summary.total}건` },
-      { detail: `공개중 ${summary.open} / 견적도착 ${summary.bidsReceived}`, label: "진행 요청", tone: summary.open + summary.bidsReceived > 0 ? "warning" as const : "neutral" as const, value: `${summary.open + summary.bidsReceived}건` },
-      { detail: `선정 ${summary.partnerSelected} / 완료 ${summary.completed}`, label: "선정 후 진행", tone: summary.inProgress + summary.partnerSelected > 0 ? "info" as const : "neutral" as const, value: `${summary.inProgress}건` },
-      { detail: `평균 ${summary.averageFeedbackRating ?? "-"}점 / 낮은 후기 ${summary.lowFeedbacks}건`, label: "거래 후기", tone: summary.lowFeedbacks > 0 ? "warning" as const : "success" as const, value: `${summary.feedbackCount}건` }
+      { detail: `운송 ${summary.freight}건 / 통관 ${summary.clearance}건입니다. 규모 확인용 숫자이며 조치는 아래 병목 카드에서 정합니다.`, label: "요청 규모 확인", tone: "info" as const, value: `${summary.total}건` },
+      { detail: `공개중 ${summary.open}건 / 견적도착 ${summary.bidsReceived}건입니다. 견적도착 건은 선택 전환을 먼저 봅니다.`, label: "견적 선택 대기", tone: summary.open + summary.bidsReceived > 0 ? "warning" as const : "neutral" as const, value: `${summary.open + summary.bidsReceived}건` },
+      { detail: `선정 ${summary.partnerSelected}건 / 진행중 ${summary.inProgress}건 / 완료 ${summary.completed}건입니다. 진행중 건은 완료 전환을 확인합니다.`, label: "완료 전환 대기", tone: summary.inProgress + summary.partnerSelected > 0 ? "info" as const : "neutral" as const, value: `${summary.inProgress}건` },
+      { detail: `후기 ${summary.feedbackCount}건 / 평균 ${summary.averageFeedbackRating ?? "-"}점 / 낮은 후기 ${summary.lowFeedbacks}건입니다. 낮은 후기가 있으면 파트너 비교 기준을 봅니다.`, label: "후기 품질 확인", tone: summary.lowFeedbacks > 0 ? "warning" as const : "success" as const, value: `${summary.feedbackCount}건` }
     ]
   };
 }
