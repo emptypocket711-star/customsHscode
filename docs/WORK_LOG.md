@@ -4,6 +4,29 @@
 
 ## 2026-06-03
 
+### operations smoke account preparation
+
+- 이전 작업은 P202 일반 화주/포워더/관세사 계정이 운영 화면 본문을 보지 못하는지 확인한 것이고, 이번 작업은 P203 운영자 smoke를 실제로 켤 수 있도록 지정 개발자 계정과 profile role을 보강하는 실행 경로를 추가한 작업이다.
+- `scripts/prepare_operations_smoke_account.mjs`를 추가했다.
+- `npm run smoke:operations:prepare`로 실행할 수 있게 package script를 추가했다.
+- 준비 스크립트는 `SUPABASE_URL` 또는 `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SMOKE_OPERATIONS_PASSWORD` 또는 `OPERATIONS_DEVELOPER_PASSWORD`가 있을 때만 DB를 변경한다.
+- 지정 개발자 이메일은 `emptypocket711@gmail.com`으로 제한했다.
+- env가 준비된 경우 Auth user를 생성/업데이트하고, 내부 회사와 `profiles.role=developer`, `company_role=admin`을 맞춘다.
+- 현재 작업 세션에는 Supabase URL, service role key, 운영자 비밀번호 env가 없어 원격 계정 생성은 실행하지 않았다.
+- env 누락 상태에서는 필요한 env와 다음 행동만 출력하고 exit 1로 실패하는 것을 확인했다.
+- 최신 staging preview는 `https://customs-hscode-67xlneix1-koo-apps.vercel.app`다.
+- 다음 작업은 P204 operations smoke content marker 강화다. 이번 P203이 운영자 계정 준비 자동화라면, P204는 운영자 env가 준비됐을 때 `/operations/*` 본문 smoke가 더 구체적인 화면 marker를 확인하도록 강화하는 작업이다.
+
+검증:
+
+- `node --check scripts/prepare_operations_smoke_account.mjs`
+- `npm run smoke:operations:prepare`: env 누락 실패와 nextAction 출력 확인
+- `npm run lint`
+- `npm run typecheck`
+- `npm run build`
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-67xlneix1-koo-apps.vercel.app`: 9/9 통과
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... npm run smoke:operations:guard -- https://customs-hscode-67xlneix1-koo-apps.vercel.app`: 9/9 통과
+
 ### operations route guard smoke
 
 - 이전 작업은 P201 운영자 smoke를 실제로 켤 준비가 됐는지 확인한 것이고, 이번 작업은 P202 일반 화주/포워더/관세사 계정이 운영 화면 본문을 보지 못하는지 자동 검증한 작업이다.
