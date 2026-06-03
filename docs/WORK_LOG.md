@@ -4,6 +4,26 @@
 
 ## 2026-06-03
 
+### operations smoke diagnostics
+
+- 이전 작업은 P204 운영자 smoke가 켜졌을 때 각 운영 화면의 고유 본문 marker를 확인하도록 강화한 것이고, 이번 작업은 P205 운영자 env가 없어 `operationsRoutes=false`가 나올 때 원인을 smoke 출력만 보고 알 수 있게 한 작업이다.
+- `scripts/smoke_production_routes.mjs`에 `operationsEmailPresent`, `operationsPasswordPresent`, `operationsPartialConfig` 진단 출력을 추가했다.
+- 운영자 이메일과 비밀번호가 모두 없으면 `operationsSkipReason=SMOKE_OPERATIONS_EMAIL and SMOKE_OPERATIONS_PASSWORD are not set.`을 출력한다.
+- 둘 중 하나만 있으면 두 env가 모두 필요하다는 skip reason을 출력한다.
+- 둘 다 있는데 session cookie가 없으면 운영자 로그인 세션을 만들지 못했다는 skip reason을 출력한다.
+- 최신 staging preview는 `https://customs-hscode-ftfh8otcx-koo-apps.vercel.app`다.
+- staging smoke에서 운영자 env가 없는 현재 상태의 skip reason과 기본 9개 route 통과를 확인했다.
+- 다음 작업은 P206 operations smoke workflow 문서화다. 이번 P205가 smoke 로그 진단이라면, P206은 `prepare`, `ready`, `production smoke`를 어떤 순서로 실행해야 하는지 scripts 문서에 남기는 작업이다.
+
+검증:
+
+- `node --check scripts/smoke_production_routes.mjs`
+- `npm run lint`
+- `npm run typecheck`
+- `npm run build`
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-ftfh8otcx-koo-apps.vercel.app`: 9/9 통과, operations skip reason 출력 확인
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... npm run smoke:operations:guard -- https://customs-hscode-ftfh8otcx-koo-apps.vercel.app`: 9/9 통과
+
 ### operations smoke content markers
 
 - 이전 작업은 P203 지정 개발자 운영 smoke 계정을 준비하는 실행 경로를 추가한 것이고, 이번 작업은 P204 운영자 env가 준비됐을 때 `/operations/*` smoke가 더 구체적인 본문 marker를 확인하도록 강화한 작업이다.
