@@ -3,6 +3,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { safeOrigin } from "./completion_preview_e2e_env.mjs";
+import { marketplaceTransactionFixture } from "../tests/fixtures/marketplace-transaction.fixture.mjs";
 
 const baseUrl = process.argv[2] || process.env.STAGING_SMOKE_BASE_URL || process.env.E2E_BASE_URL;
 
@@ -24,20 +25,20 @@ const steps = [
       "Apply pending marketplace migrations to Preview, then confirm source/version tables and completion RPCs exist."
   },
   {
-    label: "route-smoke",
-    command: "npm",
-    args: ["run", "smoke:production", "--", baseUrl],
-    purpose: "Public, authenticated, and operations routes respond on the selected Preview deployment.",
-    failureHint:
-      "Check Preview URL, Vercel protection bypass, smoke login credentials, and whether the deployment is still building."
-  },
-  {
     label: "marketplace-fixture-seed",
     command: "node",
     args: ["scripts/seed_marketplace_transaction_fixture.mjs"],
     purpose: "Requester, forwarder, and broker fixture accounts are refreshed before role guard and E2E flows.",
     failureHint:
       "Check SUPABASE_SERVICE_ROLE_KEY, E2E_TEST_PASSWORD, and remote marketplace E2E allow-list env."
+  },
+  {
+    label: "route-smoke",
+    command: "npm",
+    args: ["run", "smoke:production", "--", baseUrl],
+    purpose: "Public and authenticated route bodies respond on the selected Preview deployment with the requester fixture account.",
+    failureHint:
+      "Check Preview URL, Vercel protection bypass, fixture seed status, smoke login credentials, and whether the deployment is still building."
   },
   {
     label: "operations-guard",
@@ -82,6 +83,15 @@ const steps = [
 ];
 
 function loadShipperAccountDefaults() {
+  const fixturePassword = process.env.E2E_TEST_PASSWORD || "";
+  if (fixturePassword) {
+    return {
+      E2E_TEST_PASSWORD: fixturePassword,
+      SMOKE_LOGIN_EMAIL: process.env.SMOKE_LOGIN_EMAIL || marketplaceTransactionFixture.users.requester.email,
+      SMOKE_LOGIN_PASSWORD: process.env.SMOKE_LOGIN_PASSWORD || fixturePassword
+    };
+  }
+
   if (!existsSync("tmp/test-accounts.json")) return {};
 
   try {
