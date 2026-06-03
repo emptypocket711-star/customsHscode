@@ -11,10 +11,10 @@
 - GitHub push protection이 로컬 Supabase key hardcode를 막아서, 로컬 개발 스크립트의 hardcode 키를 제거하고 `LOCAL_SUPABASE_ANON_KEY`, `LOCAL_SUPABASE_SERVICE_ROLE_KEY` 환경변수 필수 입력 방식으로 바꿨다.
 - push 대상 히스토리에서 `sb_secret_...`, `sb_publishable_...` 패턴을 제거한 뒤 다시 push했다.
 - Vercel preview 배포를 만들었고 최신 staging URL은 `https://customs-hscode-hwkza5kxy-koo-apps.vercel.app`다.
-- preview 배포는 READY까지 완료됐지만 Vercel Deployment Protection이 켜져 있어 비로그인 스모크는 `401`로 막힌다.
+- preview 배포는 READY까지 완료됐고, Vercel Deployment Protection bypass secret 적용 후 비로그인 스모크가 통과했다.
 - `scripts/smoke_production_routes.mjs`에 `VERCEL_AUTOMATION_BYPASS_SECRET` 또는 `VERCEL_PROTECTION_BYPASS_SECRET` 기반 `x-vercel-protection-bypass` 헤더 지원을 추가했다.
 - `docs/DEPLOYMENT_RUNBOOK.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md`에 staging/preview 검증 기준을 반영했다.
-- 다음 작업은 P173 staging protection bypass 설정 후 인증 스모크 또는 로컬 DB 재기반화 중 하나다. 이번 P172가 staging 배포 기준을 만든 작업이라면, P173은 실제 보호를 우회해 staging 화면 본문을 검증하거나, staging이 막힌 동안 로컬 DB migration/seed를 재정렬하는 작업이다.
+- 다음 작업은 P173 staging 인증 스모크다. 이번 P172가 staging 배포와 비로그인 보호 흐름을 검증한 작업이라면, P173은 staging에 로그인 가능한 테스트 계정으로 대시보드, 품명검색, HS 직접조회 본문까지 확인하는 작업이다.
 
 검증:
 
@@ -25,6 +25,7 @@
 - `npm run lint`
 - `vercel deploy --yes`: preview READY
 - `npm run smoke:production -- https://customs-hscode-hwkza5kxy-koo-apps.vercel.app`: Vercel Deployment Protection `401` 확인
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... npm run smoke:production -- https://customs-hscode-hwkza5kxy-koo-apps.vercel.app`: login 200, protected route login guard 307, total 10/10 통과
 
 ### product candidate detail handoff regression
 
