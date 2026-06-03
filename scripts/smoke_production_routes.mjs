@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const defaultBaseUrl = process.env.SMOKE_BASE_URL || "http://localhost:3000";
-const timeoutMs = Number(process.env.SMOKE_TIMEOUT_MS || 15000);
+const timeoutMs = Number(process.env.SMOKE_TIMEOUT_MS || 30000);
 let sessionCookie = process.env.SMOKE_COOKIE || "";
 const requireAuthenticated = process.env.SMOKE_REQUIRE_AUTHENTICATED === "true";
 const loginEmail = process.env.SMOKE_LOGIN_EMAIL || "";

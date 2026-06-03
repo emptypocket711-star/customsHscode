@@ -461,6 +461,7 @@
 | P170.1 product candidate detail handoff regression | 완료 | E2E 실행 경로가 아니라 품명 검색 10자리 후보를 눌러 직접조회로 들어갈 때 source/basis date/간략정보 맥락이 유지되는지 검증한다 | product candidate detail handoff | browser, typecheck, lint |
 | P171.1 hs direct detail density review | 대기 | 품명 후보 handoff가 아니라 HS 10자리 직접조회 상세 화면의 간략 정보와 네비게이터 표시 밀도가 적절한지 점검한다 | hs detail density | browser, typecheck, lint |
 | P172.1 staging development baseline | 완료 | 로컬 DB 복구가 아니라 작업 브랜치와 Vercel preview를 기준으로 staging 개발·검증 흐름을 만든다 | staging branch, preview deploy, smoke bypass support | push, preview build, typecheck, lint, smoke blocked by Vercel protection |
+| P173.1 staging authenticated smoke | 완료 | staging 배포 생성이 아니라 보호 우회와 테스트 계정 로그인 후 핵심 보호 화면 본문이 렌더링되는지 확인한다 | staging login, authenticated smoke, timeout calibration | browser login, smoke, typecheck, lint |
 
 #### P109 다음 병목 선정
 

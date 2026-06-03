@@ -109,6 +109,8 @@ npm run health
 npm run smoke:production -- https://hsfinder.co.kr
 ```
 
+기본 timeout은 30초다. 해외 HS 조회처럼 cold start와 데이터 조립이 겹칠 수 있는 route를 포함하므로, 더 짧게 줄일 때는 일시적인 timeout 실패를 실제 장애와 구분한다.
+
 Vercel preview/staging 배포에 Deployment Protection이 켜져 있으면 먼저 Vercel 프로젝트 설정에서
 Protection Bypass for Automation secret을 생성한다. 자동 검증에서는 그 값을 헤더로 전달한다.
 키 원문은 출력하거나 커밋하지 않는다.

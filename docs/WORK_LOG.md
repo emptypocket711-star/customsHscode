@@ -4,6 +4,23 @@
 
 ## 2026-06-03
 
+### staging authenticated smoke
+
+- 이전 작업은 P172 staging 개발 기준 생성이고, 이번 작업은 staging 보호 우회 후 실제 테스트 계정 로그인과 보호 화면 본문을 검증한 P173이다.
+- Vercel Deployment Protection bypass secret을 헤더로 넣어 staging `/login` 접근을 확인했다.
+- 로컬 테스트 계정 파일의 화주, 포워더, 관세사 계정이 staging에서도 `/dashboard` 로그인에 성공하는지 브라우저로 확인했다. 비밀번호와 bypass secret은 출력하지 않았다.
+- 화주 계정으로 인증 스모크를 실행해 대시보드, HS 직접조회, 품명 AI 조회, 해외 HS, 납세 예상, 화물, 중고차 수출, 컨테이너 조회, 무역뉴스 본문 마커를 확인했다.
+- 15초 timeout에서는 해외 HS 조회가 cold start/데이터 조립으로 1회 timeout됐고, 30초 timeout에서는 9/9 통과했다.
+- `scripts/smoke_production_routes.mjs` 기본 timeout을 30초로 조정하고, 배포 런북에 timeout 기준을 문서화했다.
+- 다음 작업은 P171 HS 직접조회 상세 밀도 점검 재개다. 이번 P173이 staging 인증 검증 기반을 만든 작업이라면, 다음은 원래 대기 중이던 HS 10자리 직접조회 화면 자체의 간략 정보와 네비게이터 밀도 품질을 staging 기준으로 확인하는 작업이다.
+
+검증:
+
+- Playwright staging login check: forwarder, customs_broker, shipper `/dashboard` 진입
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true SMOKE_TIMEOUT_MS=30000 npm run smoke:production -- https://customs-hscode-hwkza5kxy-koo-apps.vercel.app`: 9/9 통과
+- `npm run typecheck`
+- `npm run lint`
+
 ### staging development baseline
 
 - 이전 작업은 P170 품명 후보 상세 진입 회귀 검증이고, 이번 작업은 로컬 DB/인증 상태에 흔들리지 않도록 staging 개발 기준을 만든 P172다.
