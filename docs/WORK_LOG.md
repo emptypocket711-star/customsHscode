@@ -4,6 +4,27 @@
 
 ## 2026-06-03
 
+### request schema fallback role settings CTA
+
+- 이전 작업은 P196 초안 저장 오류 CTA가 역할 신청 섹션으로 바로 이동하게 한 것이고, 이번 작업은 P197 오류 action까지 도달하지 못하는 스키마 미준비 fallback 상태에서도 이동 경로를 제공한 작업이다.
+- 운송 견적 요청 화면의 초안 작성, 내 요청 목록, 입찰 가능 요청 fallback 안내에 `회사 역할 신청 확인` CTA를 추가했다.
+- 통관 의뢰 요청 화면의 초안 작성, 내 요청 목록, 입찰 가능 요청 fallback 안내에도 같은 CTA를 추가했다.
+- CTA는 모두 `/settings/members#platform-role-request`로 이동한다.
+- staging에서 운송/통관 요청 화면에 CTA가 각각 표시되고 href가 같은 anchor를 가리키는지 확인했다.
+- visible CTA 클릭 시 회사 설정의 `플랫폼 역할 신청` 섹션으로 이동하고 hash가 `#platform-role-request`로 유지되는지 확인했다.
+- 최신 staging preview는 `https://customs-hscode-pk354dy5g-koo-apps.vercel.app`다.
+- 다음 작업은 P198 요청 화면 fallback CTA 중복/밀도 점검이다. 이번 P197이 스키마 미준비 상태의 이동 경로 추가라면, P198은 같은 CTA가 한 화면에 여러 번 보일 때 과하게 반복되지 않는지 UX 밀도를 정리하는 작업이다.
+
+검증:
+
+- `npx vitest run features/service-requests/request-draft-readiness.test.ts features/company-verification/company-role-request-panel.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `rg -n "회사 역할 신청 확인|settings/members#platform-role-request" features/service-requests/freight-request-draft-panel.tsx features/service-requests/clearance-request-draft-panel.tsx -S`
+- Playwright staging browser: `/requests/freight`, `/requests/clearance` fallback CTA 표시, href, 클릭 후 `/settings/members#platform-role-request` 이동 확인
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-pk354dy5g-koo-apps.vercel.app`: 9/9 통과
+
 ### draft error role request anchor
 
 - 이전 작업은 P195 회사 설정 역할 신청 패널 안의 비활성 이유 문구를 구분한 것이고, 이번 작업은 P196 요청 초안 저장 오류 CTA가 회사 설정 상단이 아니라 역할 신청 섹션으로 바로 이동하게 하는 작업이다.
