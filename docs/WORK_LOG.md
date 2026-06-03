@@ -4,6 +4,19 @@
 
 ## 2026-06-03
 
+### role review RPC actor validation
+
+- 이전 작업은 P270에서 일반 사용자가 profile 권한 필드를 직접 바꾸지 못하게 확인한 것이고, 이번 작업은 service-role로 역할 검토 RPC를 호출해도 actor가 실제 developer인지 DB에서 검증하는지 확인한 작업이다.
+- service-role client로 `review_company_party_type_request`를 직접 호출하되 `p_actor_id`를 requester fixture 사용자로 넣었다.
+- Preview DB에서 `개발자 권한 검토자만 플랫폼 역할 신청을 검토할 수 있습니다.`로 차단되는 것을 확인했다.
+- 기존 RPC가 actor profile role을 DB에서 확인하고 있어 추가 SQL 수정 없이 negative suite에 고정했다.
+- 다음 작업은 P272 role approval company eligibility다. 이번 P271이 검토자 actor 권한 검증이라면, P272는 검토자가 맞더라도 정지/차단/미검증 회사에 포워더·관세사 역할을 승인하지 못하게 하는 회사 상태 guard 작업이다.
+
+검증:
+
+- `node --check scripts/check_marketplace_rls_negative.mjs`
+- `vercel env run -e preview -- sh -c 'E2E_ALLOW_REMOTE_MARKETPLACE_TRANSACTION=true node scripts/seed_marketplace_transaction_fixture.mjs && E2E_ALLOW_REMOTE_MARKETPLACE_RLS_NEGATIVE=true npm run smoke:marketplace-rls-negative'`
+
 ### profile self-update privilege hardening
 
 - 이전 작업은 P269에서 회사 검증 증빙 업로드 실패 cleanup 가시성을 보강한 것이고, 이번 작업은 사용자가 profile 권한 필드를 직접 수정해 권한 상승하지 못하는지 확인한 작업이다.

@@ -1083,6 +1083,18 @@ async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPas
     reason: requesterProfileEscalation.error?.message ?? `rows=${Array.isArray(requesterProfileEscalation.data) ? requesterProfileEscalation.data.length : "unknown"}`
   });
 
+  const requesterAsRoleReviewer = await serviceRoleClient.rpc("review_company_party_type_request", {
+    p_actor_id: fixture.users.requester.id,
+    p_decision: "approved",
+    p_request_id: fixture.requests.freight.id,
+    p_review_note: "P271 negative check"
+  });
+  checks.push({
+    label: "service-role-role-review-rejects-non-developer-actor",
+    ok: Boolean(requesterAsRoleReviewer.error?.message?.includes("개발자 권한 검토자만 플랫폼 역할 신청을 검토할 수 있습니다")),
+    reason: requesterAsRoleReviewer.error?.message ?? "rpc returned without error"
+  });
+
   await cleanupUnexpectedPreferenceRows(serviceRoleClient);
   await cleanupWrongBidDetailRows(serviceRoleClient);
   await restoreForwarderFreightPreference(serviceRoleClient);
