@@ -24,6 +24,9 @@ const blockedCompanyPublishDraft = {
 const zeroMatchPublishDraft = {
   id: "75000000-0000-4000-8000-000000000403"
 };
+const notificationDisabledPublishDraft = {
+  id: "75000000-0000-4000-8000-000000000404"
+};
 
 function assert(condition, message, details = {}) {
   if (condition) return;
@@ -69,7 +72,12 @@ async function cleanupInvalidPublishDraft(serviceRoleClient) {
   await serviceRoleClient
     .from("service_requests")
     .delete()
-    .in("id", [invalidPublishDraft.id, blockedCompanyPublishDraft.id, zeroMatchPublishDraft.id]);
+    .in("id", [
+      invalidPublishDraft.id,
+      blockedCompanyPublishDraft.id,
+      zeroMatchPublishDraft.id,
+      notificationDisabledPublishDraft.id
+    ]);
 
   await serviceRoleClient
     .from("companies")
@@ -80,6 +88,19 @@ async function cleanupInvalidPublishDraft(serviceRoleClient) {
       verified_at: null
     })
     .eq("id", fixture.companies.requester.id);
+}
+
+async function restoreForwarderFreightPreference(serviceRoleClient) {
+  const { error } = await serviceRoleClient
+    .from("partner_service_preferences")
+    .update({
+      cargo_tags: ["general"],
+      notification_enabled: true
+    })
+    .eq("company_id", fixture.companies.forwarder.id)
+    .eq("service_type", "freight");
+
+  if (error) throw new Error(`forwarder freight preference restore failed: ${error.message}`);
 }
 
 async function requesterProfile(serviceRoleClient) {
@@ -316,6 +337,74 @@ async function seedZeroMatchPublishDraft(serviceRoleClient) {
   if (detailError) throw new Error(`zero-match freight detail insert failed: ${detailError.message}`);
 }
 
+async function seedNotificationDisabledPublishDraft(serviceRoleClient) {
+  const profile = await requesterProfile(serviceRoleClient);
+  const now = new Date().toISOString();
+
+  const { error: companyError } = await serviceRoleClient
+    .from("companies")
+    .update({
+      blocked_at: null,
+      suspended_at: null,
+      verification_status: "operator_approved",
+      verified_at: now
+    })
+    .eq("id", profile.company_id);
+
+  if (companyError) throw new Error(`requester company notification-disabled setup failed: ${companyError.message}`);
+
+  const { error: preferenceError } = await serviceRoleClient
+    .from("partner_service_preferences")
+    .update({
+      cargo_tags: [],
+      notification_enabled: false
+    })
+    .eq("company_id", fixture.companies.forwarder.id)
+    .eq("service_type", "freight");
+
+  if (preferenceError) throw new Error(`forwarder notification-disabled setup failed: ${preferenceError.message}`);
+
+  const { error: requestError } = await serviceRoleClient
+    .from("service_requests")
+    .insert({
+      created_at: now,
+      created_by: profile.id,
+      deadline_at: null,
+      destination_country_code: "KR",
+      direction: "import",
+      id: notificationDisabledPublishDraft.id,
+      missing_information: [],
+      origin_country_code: "CN",
+      product_summary: "P261 notification-disabled match draft",
+      requester_company_id: profile.company_id,
+      request_type: "freight",
+      source_lookup_snapshot: {
+        generatedAt: now,
+        source: "p261 notification preference contract check"
+      },
+      status: "draft",
+      title: "P261 알림 비활성 파트너 운송 요청",
+      updated_at: now,
+      visibility: "matched_partners"
+    });
+
+  if (requestError) throw new Error(`notification-disabled service_request insert failed: ${requestError.message}`);
+
+  const { error: detailError } = await serviceRoleClient
+    .from("freight_request_details")
+    .insert({
+      destination_port: "KRPUS",
+      hazardous: false,
+      origin_port: "CNSHA",
+      request_id: notificationDisabledPublishDraft.id,
+      temperature_controlled: false,
+      transport_mode: "sea",
+      used_car: false
+    });
+
+  if (detailError) throw new Error(`notification-disabled freight detail insert failed: ${detailError.message}`);
+}
+
 async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPassword }) {
   const serviceRoleClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: {
@@ -324,6 +413,7 @@ async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPas
     }
   });
   await cleanupUnexpectedPreferenceRows(serviceRoleClient);
+  await restoreForwarderFreightPreference(serviceRoleClient);
   await ensureNoCompanyUser(serviceRoleClient, testPassword);
   await seedInvalidPublishDraft(serviceRoleClient);
 
@@ -441,6 +531,48 @@ async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPas
     })
   });
 
+  await seedNotificationDisabledPublishDraft(serviceRoleClient);
+  const notificationDisabledPublish = await requester.rpc("publish_freight_request", {
+    p_deadline_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    p_request_id: notificationDisabledPublishDraft.id
+  });
+  const notificationDisabledMatch = await serviceRoleClient
+    .from("service_request_partner_matches")
+    .select("id,notification_status,partner_company_id")
+    .eq("request_id", notificationDisabledPublishDraft.id)
+    .eq("partner_company_id", fixture.companies.forwarder.id)
+    .single();
+  const notificationDisabledForwarderRead = await forwarder
+    .from("service_request_partner_matches")
+    .select("id,notification_status")
+    .eq("request_id", notificationDisabledPublishDraft.id);
+  const notificationDisabledClaim = notificationDisabledMatch.data?.id
+    ? await serviceRoleClient.rpc("claim_marketplace_notification_delivery", {
+      p_channel: "in_app",
+      p_delivery_window: "p261-disabled",
+      p_match_id: notificationDisabledMatch.data.id,
+      p_metadata: {},
+      p_notification_kind: "initial",
+      p_reason: "P261 disabled notification check"
+    })
+    : { error: { message: "match missing" } };
+  checks.push({
+    label: "notification-disabled-partner-still-matched-but-initial-delivery-skipped",
+    ok: !notificationDisabledPublish.error
+      && notificationDisabledPublish.data?.matched_count === 1
+      && notificationDisabledMatch.data?.notification_status === "skipped"
+      && Array.isArray(notificationDisabledForwarderRead.data)
+      && notificationDisabledForwarderRead.data.some((row) => row.notification_status === "skipped")
+      && Boolean(notificationDisabledClaim.error?.message?.includes("최초 알림 대상 상태가 아닙니다")),
+    reason: notificationDisabledPublish.error?.message ?? JSON.stringify({
+      claimError: notificationDisabledClaim.error?.message ?? null,
+      forwarderRows: Array.isArray(notificationDisabledForwarderRead.data) ? notificationDisabledForwarderRead.data.length : null,
+      matchedCount: notificationDisabledPublish.data?.matched_count ?? null,
+      notificationStatus: notificationDisabledMatch.data?.notification_status ?? null
+    })
+  });
+  await restoreForwarderFreightPreference(serviceRoleClient);
+
   const publishedFreightDetailUpdate = await requester
     .from("freight_request_details")
     .update({
@@ -513,6 +645,7 @@ async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPas
   });
 
   await cleanupUnexpectedPreferenceRows(serviceRoleClient);
+  await restoreForwarderFreightPreference(serviceRoleClient);
   await cleanupInvalidPublishDraft(serviceRoleClient);
   return checks;
 }

@@ -4,6 +4,20 @@
 
 ## 2026-06-03
 
+### notification-disabled match semantics
+
+- 이전 작업은 P260에서 매칭 0건 요청의 공개 상태와 감사로그 계약을 확인한 것이고, 이번 작업은 파트너가 알림을 꺼도 요청 노출 자체가 사라지지 않는지 확인한 작업이다.
+- 테스트 중에만 포워더 운송 선호의 `notification_enabled=false`와 cargo tag 필터 해제를 적용하고, 매칭 조건이 맞는 freight draft를 공개했다.
+- Preview DB에서 `publish_freight_request`가 `matched_count=1`을 반환하고 match row는 `notification_status=skipped`로 생성되며, 포워더 계정이 해당 match row를 읽을 수 있음을 확인했다.
+- service role의 최초 알림 claim은 `최초 알림 대상 상태가 아닙니다.`로 차단되어, 알림 off가 발송 skip으로만 작동하는 것도 확인했다.
+- 실행 후 P258-P261 테스트 draft를 삭제하고 포워더 운송 선호를 fixture 기준인 `notification_enabled=true`, `cargo_tags=['general']`로 되돌린다.
+- 다음 작업은 P262 freight bid request-type and deadline guard다. 이번 P261이 파트너 선호/알림 의미 계약이라면, P262는 freight bid RPC가 통관 요청이나 마감 지난 요청을 직접 호출로 받지 않게 하는 입찰 대상 guard 작업이다.
+
+검증:
+
+- `node --check scripts/check_marketplace_rls_negative.mjs`
+- `vercel env run -e preview -- sh -c 'E2E_ALLOW_REMOTE_MARKETPLACE_TRANSACTION=true node scripts/seed_marketplace_transaction_fixture.mjs && E2E_ALLOW_REMOTE_MARKETPLACE_RLS_NEGATIVE=true npm run smoke:marketplace-rls-negative'`
+
 ### zero-match publish state contract
 
 - 이전 작업은 P259에서 requester 회사가 차단 상태면 공개 RPC를 통과하지 못하게 확인한 것이고, 이번 작업은 회사와 필수값이 정상이어도 매칭 파트너가 0명인 경우 공개 요청 상태가 어떻게 남는지 확인한 작업이다.
