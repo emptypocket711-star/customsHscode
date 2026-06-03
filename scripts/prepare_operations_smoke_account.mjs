@@ -103,23 +103,57 @@ async function ensureCompany(client) {
 }
 
 async function ensureProfile(client, userId, companyId) {
-  const { data, error } = await client
+  const fullPayload = {
+    id: userId,
+    email: developerEmail,
+    full_name: fullName,
+    role: "developer",
+    company_id: companyId,
+    company_role: "admin",
+    account_type: "company",
+    allowed_ip_count: 5,
+    onboarding_completed_at: new Date().toISOString()
+  };
+  const minimalPayload = {
+    id: userId,
+    email: developerEmail,
+    full_name: fullName,
+    role: "developer",
+    company_id: companyId
+  };
+
+  const fullResult = await client
     .from("profiles")
-    .upsert({
-      id: userId,
-      email: developerEmail,
-      full_name: fullName,
-      role: "developer",
-      company_id: companyId,
-      company_role: "admin",
-      account_type: "company",
-      allowed_ip_count: 5,
-      onboarding_completed_at: new Date().toISOString()
-    }, { onConflict: "id" })
+    .upsert(fullPayload, { onConflict: "id" })
     .select("id,email,role,company_id,company_role")
     .single();
-  if (error) throw new Error(`developer profile upsert failed: ${error.message}`);
-  return data;
+  if (!fullResult.error) return { profile: fullResult.data, schemaMode: "full" };
+
+  if (!isMissingProfileColumnError(fullResult.error)) {
+    throw new Error(`developer profile upsert failed: ${fullResult.error.message}`);
+  }
+
+  const minimalResult = await client
+    .from("profiles")
+    .upsert(minimalPayload, { onConflict: "id" })
+    .select("id,email,role,company_id")
+    .single();
+  if (minimalResult.error) {
+    throw new Error(`developer profile upsert failed: ${fullResult.error.message}; fallback failed: ${minimalResult.error.message}`);
+  }
+
+  return { profile: minimalResult.data, schemaMode: "minimal" };
+}
+
+function isMissingProfileColumnError(error) {
+  const message = `${error.message || ""} ${error.details || ""} ${error.hint || ""}`.toLowerCase();
+  return (message.includes("column") && message.includes("does not exist"))
+    || (message.includes("schema cache") && (
+      message.includes("company_role") ||
+      message.includes("account_type") ||
+      message.includes("allowed_ip_count") ||
+      message.includes("onboarding_completed_at")
+    ));
 }
 
 async function main() {
@@ -135,7 +169,7 @@ async function main() {
 
   const authResult = await ensureAuthUser(client);
   const companyResult = await ensureCompany(client);
-  const profile = await ensureProfile(client, authResult.user.id, companyResult.company.id);
+  const { profile, schemaMode } = await ensureProfile(client, authResult.user.id, companyResult.company.id);
 
   console.log("HS Finder operations smoke account prepare");
   console.log(`developerEmail=${developerEmail}`);
@@ -144,6 +178,7 @@ async function main() {
   console.log(`companyCreated=${companyResult.created}`);
   console.log(`userId=${authResult.user.id}`);
   console.log(`companyId=${companyResult.company.id}`);
+  console.log(`profileSchemaMode=${schemaMode}`);
   console.log(`profileRole=${profile.role}`);
   console.log(`profileCompanyRole=${profile.company_role ?? "unknown"}`);
   console.log("nextAction=SMOKE_OPERATIONS_EMAIL과 SMOKE_OPERATIONS_PASSWORD를 같은 값으로 설정하고 smoke:production을 실행하세요.");
