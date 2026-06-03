@@ -4,6 +4,28 @@
 
 ## 2026-06-03
 
+### completion report migration application check
+
+- 이전 작업은 P209 완료 리포트 이중 확인 workflow와 RPC migration을 코드로 추가한 것이고, 이번 작업은 P210 Preview DB에 선행 marketplace schema와 완료 리포트 RPC가 실제 적용됐는지 확인하고 누락분을 적용한 작업이다.
+- Preview DB에는 `service_request_completion_reports` 테이블과 `review_completion_report(uuid)` 함수가 아직 없었다.
+- `20260531012000_platform_marketplace_schema.sql`을 먼저 트랜잭션 드라이런으로 검증한 뒤 Preview DB에 적용했다.
+- `20260603001000_marketplace_notification_preferences.sql`도 DB health blocker로 확인되어 트랜잭션 드라이런 후 Preview DB에 적용했다.
+- `20260603002000_completion_report_dual_ack_review.sql`을 적용해 `review_completion_report`가 화주와 파트너 양측 확인 없이는 운영 검토로 넘어가지 않게 했다.
+- DB에서 `service_requests`, `service_bids`, `service_request_completion_reports`, `service_request_completion_report_documents` 테이블 존재를 확인했다.
+- 관련 marketplace/completion report 테이블 RLS가 활성화된 것을 확인했다.
+- 최신 staging preview는 `https://customs-hscode-52lx18myx-koo-apps.vercel.app`다.
+- 다음 작업은 P211 staging marketplace transaction smoke 확장이다. 이번 P210이 DB 스키마 실제 적용과 기본 route smoke라면, P211은 적용된 DB 위에서 요청 생성, 입찰, 선정, 완료보고서 주요 경로를 더 직접적으로 검증하는 작업이다.
+
+검증:
+
+- `vercel env run -e preview -- psql ... -f supabase/migrations/20260531012000_platform_marketplace_schema.sql`
+- `vercel env run -e preview -- psql ... -f supabase/migrations/20260603001000_marketplace_notification_preferences.sql`
+- `vercel env run -e preview -- psql ... -f supabase/migrations/20260603002000_completion_report_dual_ack_review.sql`
+- `npm run health:db`: OK, 82/82 tables, 0 blocker, 0 warning
+- `npm run smoke:marketplace-schema`: result=ready
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-52lx18myx-koo-apps.vercel.app`: 9/9 통과
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... npm run smoke:operations:guard -- https://customs-hscode-52lx18myx-koo-apps.vercel.app`: 9/9 통과
+
 ### completion report dual acknowledgement review gate
 
 - 이전 작업은 P208 운영 guard 진단 보강이었고, 이번 작업은 P209 완료 리포트가 운영 검토로 넘어가기 전에 화주와 파트너 양측 확인을 모두 요구하도록 보강한 작업이다.
@@ -12,7 +34,7 @@
 - 한쪽만 확인한 상태에서는 `운영 검토`가 `blocked`로 표시되고, 양측 확인이 모두 있어야 운영 검토가 현재 단계가 된다.
 - `review_completion_report` RPC를 새 migration으로 교체해 `source_snapshot.confirmations`에 `requester`와 `partner`가 모두 없으면 운영 검토를 막는다.
 - audit JSON에 `requester_acknowledged`, `partner_acknowledged`를 남기도록 했다.
-- 이 migration은 커밋/푸시됐지만 현재 원격 Supabase에 직접 적용하지는 않았다. DB 배포 단계에서 `20260603002000_completion_report_dual_ack_review.sql` 적용이 필요하다.
+- 이 migration은 P210에서 Preview DB에 적용했다.
 - 현재 설치된 Supabase CLI에는 `supabase migration lint` 명령이 없어 migration lint는 수행하지 못했고, governance 테스트로 SQL 조건을 고정했다.
 - 최신 staging preview는 `https://customs-hscode-ivdkom0x4-koo-apps.vercel.app`다.
 - 다음 작업은 P210 completion report dual acknowledgement migration application check다. 이번 P209가 코드/migration 작성이라면, P210은 staging DB에 migration이 실제 적용됐는지 점검하고 완료 리포트 화면에서 양측 확인 흐름을 브라우저로 검증하는 작업이다.

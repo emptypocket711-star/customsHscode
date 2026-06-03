@@ -37,11 +37,11 @@
 | Platform Phase 1. 회원 유형·검증 기반 | 완료 | 화주, 포워더, 관세사무소, 해외 업체를 계정 구조에서 명확히 분리 | account type, company profile, verification status, 증빙 업로드 |
 | Platform Phase 2. 운송 견적 요청 MVP | 완료 | 화주가 서류와 운송 조건을 올리고 포워더에게 견적을 받을 수 있게 함 | quote request, attachment, deadline, forwarder bid, shipper comparison |
 | Platform Phase 3. 통관 의뢰 요청 MVP | 완료 | 화주가 통관 의뢰를 올리고 관세사무소가 수수료와 조건을 제안 | clearance request, broker bid, 추가서류 요청, 리드타임 |
-| Platform Phase 4. 알림·관심 조건 | 로컬 완료 | 전체 알림 남발 없이 조건에 맞는 업체에게만 요청 노출·알림 | partner preferences, notification policy, reminder rules |
+| Platform Phase 4. 알림·관심 조건 | Preview DB 적용 | 전체 알림 남발 없이 조건에 맞는 업체에게만 요청 노출·알림 | partner preferences, notification policy, reminder rules |
 | Platform Phase 5. 조회 도구와 요청 연결 | 완료 | HS/품명/관세/요건/중고차 도구에서 견적·의뢰 요청으로 전환 | “이 품목으로 견적 요청”, “통관 의뢰 요청”, 조회 결과 첨부 |
 | Platform Phase 6. 거래 신뢰·운영 관리 | 진행 | 최저가 경쟁만 막고 검증, 응답속도, 전문분야, 거래 이력 기반 비교 제공 | verification badges, response metrics, admin approval, abuse handling |
 
-2026-06-03 기준 세부 실행 레일과 local marketplace transaction E2E는 요청 생성, 공개, 입찰, 선정, zero-match 확인까지 통과했다. 아직 production 알림 provider 연결, 운영 배포 검증, 완료 거래 리포트 실무화는 남아 있으므로 전체 제품은 제한 공개 테스트 전 로컬 완성도를 높이는 단계로 본다.
+2026-06-03 기준 세부 실행 레일과 local marketplace transaction E2E는 요청 생성, 공개, 입찰, 선정, zero-match 확인까지 통과했다. Preview DB에는 marketplace schema, notification preferences, completion report dual-ack review RPC를 적용했고 DB health와 route smoke도 통과했다. 아직 production 알림 provider 연결, 실제 marketplace transaction staging smoke 확장, 완료 거래 리포트 실무화는 남아 있으므로 전체 제품은 제한 공개 테스트 전 스테이징 안정화 단계로 본다.
 
 ### Platform Execution Rail
 
