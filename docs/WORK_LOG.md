@@ -4,6 +4,19 @@
 
 ## 2026-06-03
 
+### zero-match publish state contract
+
+- 이전 작업은 P259에서 requester 회사가 차단 상태면 공개 RPC를 통과하지 못하게 확인한 것이고, 이번 작업은 회사와 필수값이 정상이어도 매칭 파트너가 0명인 경우 공개 요청 상태가 어떻게 남는지 확인한 작업이다.
+- service role로 매칭 조건에 맞는 파트너가 없도록 별도 freight draft를 만들고, requester가 `publish_freight_request`를 호출하게 했다.
+- Preview DB에서 RPC가 `matched_count=0`을 반환하고 요청은 `open`, 매칭 행은 0건, 감사로그 `freight_request_published`의 `matched_count`도 0으로 남는 것을 확인했다.
+- 실행 후 P258/P259/P260 테스트 draft를 삭제하고 requester 회사 상태를 fixture 기준으로 되돌린다.
+- 다음 작업은 P261 notification-disabled match semantics다. 이번 P260이 매칭 0건 요청의 공개 상태/감사로그 계약이라면, P261은 파트너가 알림을 꺼도 요청 노출은 유지되는지 아니면 매칭 자체에서 제외되는지 제품 규칙과 SQL을 일치시키는 작업이다.
+
+검증:
+
+- `node --check scripts/check_marketplace_rls_negative.mjs`
+- `vercel env run -e preview -- sh -c 'E2E_ALLOW_REMOTE_MARKETPLACE_TRANSACTION=true node scripts/seed_marketplace_transaction_fixture.mjs && E2E_ALLOW_REMOTE_MARKETPLACE_RLS_NEGATIVE=true npm run smoke:marketplace-rls-negative'`
+
 ### requester company active guard
 
 - 이전 작업은 P258에서 공개 RPC 필수 매칭값 검증을 확인한 것이고, 이번 작업은 필수값이 정상이어도 requester 회사가 차단 상태면 공개 모집을 시작하지 못하는지 확인한 작업이다.

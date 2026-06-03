@@ -21,6 +21,9 @@ const invalidPublishDraft = {
 const blockedCompanyPublishDraft = {
   id: "75000000-0000-4000-8000-000000000402"
 };
+const zeroMatchPublishDraft = {
+  id: "75000000-0000-4000-8000-000000000403"
+};
 
 function assert(condition, message, details = {}) {
   if (condition) return;
@@ -66,7 +69,7 @@ async function cleanupInvalidPublishDraft(serviceRoleClient) {
   await serviceRoleClient
     .from("service_requests")
     .delete()
-    .in("id", [invalidPublishDraft.id, blockedCompanyPublishDraft.id]);
+    .in("id", [invalidPublishDraft.id, blockedCompanyPublishDraft.id, zeroMatchPublishDraft.id]);
 
   await serviceRoleClient
     .from("companies")
@@ -256,6 +259,63 @@ async function seedBlockedCompanyPublishDraft(serviceRoleClient) {
   if (detailError) throw new Error(`blocked company freight detail insert failed: ${detailError.message}`);
 }
 
+async function seedZeroMatchPublishDraft(serviceRoleClient) {
+  const profile = await requesterProfile(serviceRoleClient);
+  const now = new Date().toISOString();
+
+  const { error: companyError } = await serviceRoleClient
+    .from("companies")
+    .update({
+      blocked_at: null,
+      suspended_at: null,
+      verification_status: "operator_approved",
+      verified_at: now
+    })
+    .eq("id", profile.company_id);
+
+  if (companyError) throw new Error(`requester company zero-match setup failed: ${companyError.message}`);
+
+  const { error: requestError } = await serviceRoleClient
+    .from("service_requests")
+    .insert({
+      created_at: now,
+      created_by: profile.id,
+      deadline_at: null,
+      destination_country_code: "JP",
+      direction: "export",
+      id: zeroMatchPublishDraft.id,
+      missing_information: [],
+      origin_country_code: "KR",
+      product_summary: "P260 zero-match publish draft",
+      requester_company_id: profile.company_id,
+      request_type: "freight",
+      source_lookup_snapshot: {
+        generatedAt: now,
+        source: "p260 zero-match contract check"
+      },
+      status: "draft",
+      title: "P260 파트너 0건 운송 요청",
+      updated_at: now,
+      visibility: "matched_partners"
+    });
+
+  if (requestError) throw new Error(`zero-match service_request insert failed: ${requestError.message}`);
+
+  const { error: detailError } = await serviceRoleClient
+    .from("freight_request_details")
+    .insert({
+      destination_port: "JPTYO",
+      hazardous: false,
+      origin_port: "KRPUS",
+      request_id: zeroMatchPublishDraft.id,
+      temperature_controlled: false,
+      transport_mode: "sea",
+      used_car: false
+    });
+
+  if (detailError) throw new Error(`zero-match freight detail insert failed: ${detailError.message}`);
+}
+
 async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPassword }) {
   const serviceRoleClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: {
@@ -339,6 +399,46 @@ async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPas
     label: "blocked-requester-company-cannot-publish-freight-request",
     ok: Boolean(blockedCompanyPublish.error?.message?.includes("정지 또는 차단된 회사는 요청을 공개할 수 없습니다")),
     reason: blockedCompanyPublish.error?.message ?? "rpc returned without error"
+  });
+
+  await seedZeroMatchPublishDraft(serviceRoleClient);
+  const zeroMatchPublish = await requester.rpc("publish_freight_request", {
+    p_deadline_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    p_request_id: zeroMatchPublishDraft.id
+  });
+  const zeroMatchRequest = await serviceRoleClient
+    .from("service_requests")
+    .select("id,status,published_at")
+    .eq("id", zeroMatchPublishDraft.id)
+    .single();
+  const zeroMatchRows = await serviceRoleClient
+    .from("service_request_partner_matches")
+    .select("id", { count: "exact", head: true })
+    .eq("request_id", zeroMatchPublishDraft.id);
+  const zeroMatchAudit = await serviceRoleClient
+    .from("audit_logs")
+    .select("after_json")
+    .eq("action", "freight_request_published")
+    .eq("target_id", zeroMatchPublishDraft.id)
+    .order("created_at", { ascending: false })
+    .limit(1);
+  const zeroMatchAuditAfter = Array.isArray(zeroMatchAudit.data)
+    ? zeroMatchAudit.data[0]?.after_json
+    : null;
+  checks.push({
+    label: "zero-match-freight-publish-remains-open-with-audit",
+    ok: !zeroMatchPublish.error
+      && zeroMatchPublish.data?.matched_count === 0
+      && zeroMatchRequest.data?.status === "open"
+      && Boolean(zeroMatchRequest.data?.published_at)
+      && zeroMatchRows.count === 0
+      && zeroMatchAuditAfter?.matched_count === 0,
+    reason: zeroMatchPublish.error?.message ?? JSON.stringify({
+      auditMatchedCount: zeroMatchAuditAfter?.matched_count ?? null,
+      matchedCount: zeroMatchPublish.data?.matched_count ?? null,
+      matchRows: zeroMatchRows.count,
+      requestStatus: zeroMatchRequest.data?.status ?? null
+    })
   });
 
   const publishedFreightDetailUpdate = await requester

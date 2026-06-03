@@ -520,7 +520,7 @@
 | P257.1 freight detail draft-only mutation | 완료 | request status 잠금이 아니라 공개 후 운송 상세 조건을 직접 바꿔 기존 매칭과 어긋나지 않게 한다 | detail edit boundary | migration governance, unit/RLS |
 | P258.1 publish required field SQL validation | 완료 | 상세 수정 경계가 아니라 origin/destination/transport mode 같은 매칭 핵심값을 RPC와 Zod에서 같이 요구한다 | publish validation parity | schema tests, action tests |
 | P259.1 requester company active guard | 완료 | deadline guard가 아니라 정지/차단된 requester 회사가 공개 모집을 시작하지 못하게 한다 | requester eligibility guard | RLS/RPC negative tests |
-| P260.1 unmatched publish state handling | 예정 | requester eligibility가 아니라 매칭 0건 요청이 그냥 open으로 보이지 않고 운영 확인 대상으로 남게 한다 | zero-match state | repository/UI tests, staging E2E |
+| P260.1 unmatched publish state handling | 완료 | requester eligibility가 아니라 매칭 0건 요청이 open으로 공개되더라도 matched_count/audit/운영 확인 계약이 깨지지 않게 한다 | zero-match state | DB/RPC contract, staging E2E |
 | P261.1 notification-disabled match semantics | 예정 | zero-match 상태가 아니라 알림 off가 요청 노출 off인지, 노출은 하되 발송 skip인지 제품 규칙과 SQL을 일치시킨다 | preference semantics | policy/unit, staging notification |
 | P262.1 freight bid request-type and deadline guard | 예정 | 알림 선호 규칙이 아니라 freight bid RPC가 통관 요청/마감 지난 요청을 직접 호출로 받지 않게 한다 | bid RPC guard | RPC negative tests |
 | P263.1 freight bid SQL value constraints | 예정 | bid 대상 guard가 아니라 currency, 금액, 리드타임, 유효기간 검증을 SQL에도 중복 적용한다 | bid value constraints | migration governance, action tests |
