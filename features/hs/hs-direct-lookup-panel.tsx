@@ -892,8 +892,8 @@ function productCandidateEvidenceText(candidate: HsCandidateRecommendation) {
 
   if (evidence.length) return evidence.join(" / ");
   return candidate.lookupBasis === "ai_hs_hint"
-    ? "AI가 제품 성격을 기준으로 추천한 HS CODE입니다."
-    : "입력 품명과 제품 단서를 기준으로 추천한 HS CODE입니다.";
+    ? "AI가 제품 성격을 기준으로 우선 검토할 HS 후보입니다."
+    : "입력 품명과 제품 단서를 기준으로 우선 검토할 HS 후보입니다.";
 }
 
 function productCandidateRouteSummary(candidate: HsCandidateRecommendation, lookup?: HsDirectLookupResult) {
@@ -967,7 +967,7 @@ function productCandidateBriefDescription(
 }
 
 function productCandidateDetailButtonText(candidate: HsCandidateRecommendation) {
-  return normalizeHsInput(candidate.hskCode).length >= 10 ? "상세 조회" : "10자리 코드 더 보기";
+  return normalizeHsInput(candidate.hskCode).length >= 10 ? "후보 상세 조회" : "10자리 후보 더 보기";
 }
 
 function uniqueProductQuestions(candidates: HsCandidateRecommendation[], clarification?: ProductClarificationResult | null) {
@@ -1163,7 +1163,7 @@ function ProductCandidateCard({
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <div className={cn("text-xs font-semibold", isPrimary ? "text-blue-700" : "text-slate-500")}>
-            {isPrimary ? "가장 가까운 HS CODE" : `비교 후보 ${candidate.rank}순위`}
+            {isPrimary ? "우선 검토 후보" : `비교 후보 ${candidate.rank}순위`}
           </div>
           <Link
             className={cn(
@@ -1202,7 +1202,7 @@ function ProductCandidateCard({
         data-navigation-progress="상세조회"
         href={detailHref}
       >
-        {normalizeHsInput(candidate.hskCode).length >= 10 ? "이 코드로 조회" : productCandidateDetailButtonText(candidate)}
+        {normalizeHsInput(candidate.hskCode).length >= 10 ? "이 후보로 상세 조회" : productCandidateDetailButtonText(candidate)}
       </Link>
       <div className="mt-2 grid gap-2 sm:grid-cols-2">
         <Link
@@ -1255,7 +1255,7 @@ function ProductCandidateCard({
               </ul>
             ) : (
               <p className="mt-1 leading-6 text-slate-700">
-                추가 보완 없이 조회 가능한 코드입니다.
+                현재 정보로 상세 조회 가능한 후보입니다.
               </p>
             )}
             <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
@@ -3800,7 +3800,7 @@ export async function HsDirectLookupPanel({
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
                     <div>
                       <h2 className="text-sm font-semibold text-slate-950">비교 후보</h2>
-                      <p className="mt-1 text-xs text-slate-500">GPT 점수순으로 함께 확인할 코드를 표시합니다.</p>
+                      <p className="mt-1 text-xs text-slate-500">GPT 점수순으로 함께 검토할 후보를 표시합니다.</p>
                     </div>
                     <Badge tone="info">{initiallyVisibleProductCandidateGroups.length}개 표시</Badge>
                   </div>
