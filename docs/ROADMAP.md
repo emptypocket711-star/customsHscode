@@ -490,6 +490,7 @@
 | P199.1 operations schema fallback health CTA | 완료 | 사용자 요청 화면이 아니라 운영 요청 패널에서 스키마 미준비 상태를 운영 DB 스키마 점검으로 바로 연결한다 | operations schema fallback health CTA | unit, typecheck, lint, build, staging smoke |
 | P200.1 optional operations smoke routes | 완료 | 운영 화면 CTA가 아니라 운영자 계정이 있을 때 `/operations/*` 주요 화면을 production smoke에 선택적으로 포함한다 | optional operations smoke routes | node check, lint, build, staging smoke |
 | P201.1 operations smoke readiness check | 완료 | 운영자 smoke route 추가가 아니라 운영자 smoke를 실제로 켤 수 있는 계정/env 준비 상태를 점검하는 명령을 추가한다 | operations smoke readiness check | node check, readiness, typecheck, lint, build, staging smoke |
+| P202.1 operations route guard smoke | 완료 | 운영자 smoke 준비 점검이 아니라 일반 화주/포워더/관세사 계정이 운영 화면 본문을 보지 못하는지 자동 검증한다 | operations route guard smoke | node check, browser guard, typecheck, lint, build, staging smoke |
 
 #### P109 다음 병목 선정
 

@@ -4,6 +4,28 @@
 
 ## 2026-06-03
 
+### operations route guard smoke
+
+- 이전 작업은 P201 운영자 smoke를 실제로 켤 준비가 됐는지 확인한 것이고, 이번 작업은 P202 일반 화주/포워더/관세사 계정이 운영 화면 본문을 보지 못하는지 자동 검증한 작업이다.
+- `scripts/check_operations_route_guard.mjs`를 추가했다.
+- `npm run smoke:operations:guard`로 실행할 수 있게 package script를 추가했다.
+- 검증 대상 운영 route는 `/operations/users`, `/operations/health`, `/operations/notices`다.
+- 각 route에서 일반 계정에게는 `운영 화면은 지정된 개발자` 차단 문구가 보이고, 운영 본문 marker가 누출되지 않는지 확인한다.
+- 최신 staging preview는 `https://customs-hscode-5j3wut9r9-koo-apps.vercel.app`다.
+- 첫 staging guard 실행은 Vercel 보호 우회 header 없이 로그인 보호 화면에 걸리는 것을 확인했고, 우회 secret을 적용한 뒤 재실행해 통과했다.
+- staging 배포 검증에서 포워더, 관세사, 화주 3개 계정과 3개 운영 route 조합 총 9건이 모두 `denied=true`, `leaked=false`로 통과했다.
+- 다음 작업은 P203 운영자 계정 seed/실제 operations smoke activation 점검이다. 이번 P202가 일반 계정 차단 검증이라면, P203은 지정 개발자 또는 운영자 테스트 계정으로 운영 화면 본문을 안전하게 검증할 수 있는 경로를 연결하는 작업이다.
+
+검증:
+
+- `node --check scripts/check_operations_route_guard.mjs`
+- `npm run lint`
+- `npm run typecheck`
+- `npm run build`
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... npm run smoke:operations:guard -- https://customs-hscode-p4zvxsu3h-koo-apps.vercel.app`: 9/9 통과
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-5j3wut9r9-koo-apps.vercel.app`: 9/9 통과
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... npm run smoke:operations:guard -- https://customs-hscode-5j3wut9r9-koo-apps.vercel.app`: 9/9 통과
+
 ### operations smoke readiness check
 
 - 이전 작업은 P200 production smoke에 운영자 route를 선택적으로 포함한 것이고, 이번 작업은 P201 운영자 smoke를 실제로 켤 준비가 됐는지 점검하는 명령을 추가한 작업이다.
