@@ -14,5 +14,10 @@ describe("requests page", () => {
     expect(html).toContain("이후 결과");
     expect(html).toContain("/requests/freight");
     expect(html).toContain("/requests/clearance");
+    expect(html).toContain("이미 저장한 요청 확인");
+    expect(html).toContain("내 운송 요청");
+    expect(html).toContain("내 통관 의뢰");
+    expect(html).toContain("/requests/freight?workspace=requester");
+    expect(html).toContain("/requests/clearance?workspace=requester");
   });
 });

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, FileText, Ship } from "lucide-react";
+import { ArrowRight, FileText, ListChecks, Ship } from "lucide-react";
 import { PageHeading } from "@/components/page-heading";
 import { Badge } from "@/components/ui/badge";
 
@@ -71,6 +71,29 @@ export default function RequestsPage() {
             </Link>
           );
         })}
+      </section>
+      <section className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <span className="flex min-w-0 gap-3">
+            <span className="grid size-10 shrink-0 place-items-center rounded-md bg-white text-slate-700 ring-1 ring-slate-200">
+              <ListChecks aria-hidden="true" size={19} />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold text-slate-950">이미 저장한 요청 확인</span>
+              <span className="mt-1 block text-xs leading-5 text-slate-600">
+                초안, 공개, 입찰, 선정, 완료 상태는 각 요청 관리 화면에서 이어서 처리합니다.
+              </span>
+            </span>
+          </span>
+          <span className="flex flex-wrap gap-2">
+            <Link className="focus-ring inline-flex h-9 items-center rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50" href="/requests/freight?workspace=requester">
+              내 운송 요청
+            </Link>
+            <Link className="focus-ring inline-flex h-9 items-center rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50" href="/requests/clearance?workspace=requester">
+              내 통관 의뢰
+            </Link>
+          </span>
+        </div>
       </section>
     </div>
   );
