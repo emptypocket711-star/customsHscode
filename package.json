@@ -16,6 +16,7 @@
     "smoke:marketplace-schema": "node scripts/check_marketplace_schema_visibility.mjs",
     "smoke:production": "node scripts/smoke_production_routes.mjs",
     "e2e:product-supplement": "node scripts/e2e_product_supplement_flow.mjs",
+    "e2e:product-supplement:local": "node scripts/run_product_supplement_e2e_local.mjs",
     "e2e:completion-preview:ready": "node scripts/check_completion_preview_e2e_readiness.mjs",
     "e2e:completion-preview:local": "node scripts/run_completion_preview_e2e_local.mjs",
     "e2e:completion-preview": "node scripts/e2e_completion_report_preview_flow.mjs",

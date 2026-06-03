@@ -18,6 +18,17 @@ To test the real GPT product-name flow against local Supabase, pass
 `LOCAL_AI_PROVIDER=openai` and keep `OPENAI_API_KEY` in the shell or `.env.local`.
 The script prints only origins and provider names, never secret values.
 
+Run the product-name supplement flow against the local server with a stored local
+session:
+
+```bash
+npm run e2e:product-supplement:local
+```
+
+The local runner requires a reachable local Next.js server, local Supabase health,
+and `tmp/e2e-auth/local-developer.json`. It rejects non-local base URLs and does
+not print secrets.
+
 ## Production schema health check
 
 `check-production-schema.mjs` compares the current migration files with the

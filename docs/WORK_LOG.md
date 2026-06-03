@@ -4,6 +4,22 @@
 
 ## 2026-06-03
 
+### local product supplement e2e runner
+
+- 이전 작업은 P168 로컬 dev 서버 실행 환경 분리이고, 이번 작업은 품명 보완 E2E가 로컬 서버·storage state·local Supabase를 일관되게 사용하도록 감싼 P169다.
+- `scripts/run_product_supplement_e2e_local.mjs`를 추가해 로컬 base URL, local Supabase health, storage state 존재를 먼저 확인한 뒤 `e2e_product_supplement_flow.mjs`를 실행하게 했다.
+- `npm run e2e:product-supplement:local`을 추가했다.
+- storage state host와 맞도록 기본 E2E base URL은 `http://127.0.0.1:3100`으로 고정했다.
+- runner 출력에는 base URL origin, Supabase origin, storage state 경로만 남기고 secret 값은 출력하지 않는다.
+- 다음 작업은 P170 품명 후보 상세 진입 회귀 검증이다. 이번 P169가 E2E 실행 경로 안정화라면, P170은 품명 검색 10자리 후보를 누른 뒤 직접조회 화면에서 source/basis date/간략정보가 유지되는지 보는 작업이다.
+
+검증:
+
+- `node --check scripts/run_product_supplement_e2e_local.mjs`
+- `npm run e2e:product-supplement:local`
+- `npm run typecheck`
+- `npm run lint`
+
 ### local dev environment split
 
 - 이전 작업은 P167 품명 AI 검색의 HSK 10자리 후보 품질 보강이고, 이번 작업은 로컬 브라우저 검증이 원격 `.env.local` 설정에 흔들리지 않도록 개발 서버 실행 환경을 분리한 P168이다.

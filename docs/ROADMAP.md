@@ -457,7 +457,8 @@
 | P166.1 roadmap status sync | 완료 | 운영 전체 smoke가 아니라 오래된 로드맵 상태 불일치를 최신 작업 상태와 맞춘다 | roadmap status sync | docs review |
 | P167.1 product name HSK10 expansion | 완료 | 운영/대시보드 검증이 아니라 품명 AI 검색에서 GPT가 넓은 HS4/HS6만 줘도 사용자 화면에 HSK 10자리 후보를 먼저 표시한다 | product search HSK10 expansion | unit, e2e, browser, typecheck, lint |
 | P168.1 local dev environment split | 완료 | 품명 검색 결과 품질이 아니라 `.env.local` 원격 설정과 로컬 검증 설정을 분리해 브라우저/E2E 속도와 재현성을 안정화한다 | local env guard | env review, typecheck, lint |
-| P169.1 local E2E runner consistency | 대기 | 서버 실행 환경 분리가 아니라 기존 E2E/리뷰 스크립트가 로컬 서버·storage state·local env를 일관되게 사용하도록 정리한다 | local e2e consistency | script review, smoke |
+| P169.1 local E2E runner consistency | 완료 | 서버 실행 환경 분리가 아니라 기존 E2E/리뷰 스크립트가 로컬 서버·storage state·local env를 일관되게 사용하도록 정리한다 | local e2e consistency | script review, e2e, typecheck, lint |
+| P170.1 product candidate detail handoff regression | 대기 | E2E 실행 경로가 아니라 품명 검색 10자리 후보를 눌러 직접조회로 들어갈 때 source/basis date/간략정보 맥락이 유지되는지 검증한다 | product candidate detail handoff | browser, typecheck, lint |
 
 #### P109 다음 병목 선정
 
