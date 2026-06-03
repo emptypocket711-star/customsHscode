@@ -132,6 +132,22 @@ sets it internally and also enables the marketplace transaction remote fixture
 guard because it reuses that seed/auth flow. Keep all credentials in the shell or
 platform secret store.
 
+## Staging marketplace notification worker rehearsal
+
+Use this after the notification dashboard E2E passes. This runner prepares the
+marketplace mutation requests for notification targeting, calls the protected
+worker route in dry-run mode, verifies `send=1` is blocked when provider
+readiness is disabled, and then verifies claim-only mode creates deliveries
+without external sends.
+
+```bash
+vercel env run -e preview -- npm run ops:marketplace-notifications:rehearse-staging -- https://your-preview-url.vercel.app
+```
+
+Remote worker rehearsal requires a Preview job secret through `JOB_WORKER_SECRET`
+or `CRON_SECRET`. The runner also needs the Vercel deployment protection bypass
+secret when Preview protection is enabled.
+
 ## Production schema health check
 
 `check-production-schema.mjs` compares the current migration files with the

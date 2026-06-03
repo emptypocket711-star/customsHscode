@@ -4,6 +4,24 @@
 
 ## 2026-06-03
 
+### staging notification worker provider rehearsal
+
+- 이전 작업은 P213 파트너 대시보드에서 이미 생성된 in-app delivery를 클릭하고 읽음 처리하는 E2E였고, 이번 작업은 P214 worker route가 target 계산, send readiness 차단, claim-only delivery 생성을 Preview에서 처리하는지 검증한 작업이다.
+- `ops:marketplace-notifications:rehearse-staging` script를 추가했다.
+- staging runner는 marketplace transaction fixture seed 후 protected `/api/jobs/marketplace-notifications` route를 호출한다.
+- 기존 local rehearsal에 명시적 `E2E_ALLOW_REMOTE_MARKETPLACE_NOTIFICATION_WORKER=true` remote guard, Vercel bypass header, `x-job-worker-secret` header를 추가했다.
+- dry-run은 target을 계산하지만 delivery를 claim하지 않는지 확인한다.
+- `send=1` 요청은 provider readiness가 꺼져 있을 때 400으로 차단되는지 확인한다.
+- claim-only 실행은 외부 발송 없이 delivery를 claim하고 `claimedWithoutSenderCount`를 남기는지 확인한다.
+- 최신 staging preview는 `https://customs-hscode-psbhjibgm-koo-apps.vercel.app`다.
+- 다음 작업은 P215 staging smoke suite orchestration이다. 이번 P214가 notification worker 단일 경로 rehearsal이라면, P215는 지금 만든 schema, route, transaction, completion, notification smoke/E2E를 하나의 스테이징 검증 순서로 묶는 작업이다.
+
+검증:
+
+- `node --check scripts/rehearse_marketplace_notifications_local.mjs scripts/run_marketplace_notification_worker_rehearsal_staging.mjs`
+- `npx vitest run server/jobs/marketplace-notification-worker.service.test.ts server/jobs/marketplace-notification-send-readiness.test.ts server/jobs/marketplace-notification-provider.test.ts server/repositories/marketplace-notification-deliveries.repository.test.ts`: 24개 통과
+- `vercel env run -e preview -- npm run ops:marketplace-notifications:rehearse-staging -- https://customs-hscode-psbhjibgm-koo-apps.vercel.app`: seed, dry-run, blocked send, claim-only 모두 `result=ok`
+
 ### staging marketplace notification E2E
 
 - 이전 작업은 P212 완료 리포트 preview와 dual acknowledgement RPC guard를 Preview에서 검증한 것이고, 이번 작업은 P213 파트너 알림 대시보드 E2E를 Preview에서 검증할 수 있게 만든 작업이다.

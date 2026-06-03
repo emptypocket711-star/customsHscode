@@ -39,6 +39,7 @@
     "e2e:marketplace-transaction": "node scripts/e2e_marketplace_transaction_flow.mjs",
     "e2e:storage:cleanup": "node scripts/cleanup_e2e_storage_states.mjs",
     "ops:marketplace-notifications:rehearse-local": "node scripts/rehearse_marketplace_notifications_local.mjs",
+    "ops:marketplace-notifications:rehearse-staging": "node scripts/run_marketplace_notification_worker_rehearsal_staging.mjs",
     "ops:marketplace-notifications:email-opt-in-local": "node scripts/rehearse_marketplace_email_opt_in_local.mjs",
     "probe:pnct": "node scripts/probe_pnct_container.mjs",
     "loadtest:lookup": "node scripts/load_lookup_routes.mjs",

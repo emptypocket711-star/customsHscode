@@ -3,10 +3,12 @@
 import { createClient } from "@supabase/supabase-js";
 import {
   fetchWithTimeout,
+  isLocalOrAllowedRemoteUrl,
   isLocalUrl,
   loadEnvFile,
   mergedEnv,
-  safeOrigin
+  safeOrigin,
+  vercelProtectionHeaders
 } from "./completion_preview_e2e_env.mjs";
 import { marketplaceTransactionFixture as fixture } from "../tests/fixtures/marketplace-transaction.fixture.mjs";
 
@@ -73,8 +75,11 @@ async function cleanupNotificationTargets(client) {
 }
 
 async function fetchJob(pathAndQuery) {
+  const workerSecret = process.env.JOB_WORKER_SECRET || process.env.CRON_SECRET;
   const response = await fetch(new URL(pathAndQuery, baseUrl), {
     headers: {
+      ...vercelProtectionHeaders(),
+      ...(workerSecret ? { "x-job-worker-secret": workerSecret } : {}),
       "User-Agent": "hsfinder-marketplace-notification-rehearsal/1.0"
     }
   });
@@ -97,15 +102,17 @@ async function main() {
   const env = mergedEnv(fileEnv);
   const supabaseUrl = env.SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY;
+  const workerSecret = env.JOB_WORKER_SECRET || env.CRON_SECRET;
   const failures = [];
 
-  if (!isLocalUrl(baseUrl)) failures.push(`E2E_BASE_URL/OPERATIONS_BASE_URL must be local. origin=${safeOrigin(baseUrl)}`);
-  if (!isLocalUrl(supabaseUrl)) failures.push(`SUPABASE_URL must be local. origin=${safeOrigin(supabaseUrl)}`);
+  if (!isLocalOrAllowedRemoteUrl(baseUrl, "MARKETPLACE_NOTIFICATION_WORKER")) failures.push(`E2E_BASE_URL/OPERATIONS_BASE_URL must be local or allowed remote. origin=${safeOrigin(baseUrl)}`);
+  if (!isLocalOrAllowedRemoteUrl(supabaseUrl, "MARKETPLACE_NOTIFICATION_WORKER")) failures.push(`SUPABASE_URL must be local or allowed remote. origin=${safeOrigin(supabaseUrl)}`);
   if (!serviceRoleKey) failures.push("SUPABASE_SERVICE_ROLE_KEY is missing.");
+  if (!isLocalUrl(baseUrl) && !workerSecret) failures.push("JOB_WORKER_SECRET or CRON_SECRET is missing for remote rehearsal.");
 
-  if (isLocalUrl(baseUrl)) {
+  if (isLocalOrAllowedRemoteUrl(baseUrl, "MARKETPLACE_NOTIFICATION_WORKER")) {
     const loginReachable = await fetchWithTimeout(new URL("/login", baseUrl).toString(), timeoutMs);
-    if (!loginReachable.ok) failures.push("local Next.js /login is not reachable.");
+    if (!loginReachable.ok) failures.push("Next.js /login is not reachable.");
   }
 
   console.log("Marketplace notification local rehearsal");
