@@ -19,7 +19,7 @@ const protectedScenarios = [
   {
     name: "dashboard",
     path: "/dashboard",
-    markers: ["HS Finder", "대시보드", "운송·통관 요청 시작·관리"]
+    markers: ["HS Finder", "대시보드"]
   },
   {
     name: "requests-hub",
