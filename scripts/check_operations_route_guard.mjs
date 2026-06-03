@@ -5,6 +5,10 @@ import { chromium } from "playwright";
 
 const baseUrl = process.argv[2] || process.env.SMOKE_BASE_URL || "http://localhost:3000";
 const accountsFile = process.env.OPERATIONS_GUARD_ACCOUNTS_FILE || "tmp/test-accounts.json";
+const guardRoles = (process.env.OPERATIONS_GUARD_ROLES || "forwarder,customs_broker,shipper")
+  .split(",")
+  .map((role) => role.trim())
+  .filter(Boolean);
 const timeoutMs = Number(process.env.SMOKE_TIMEOUT_MS || 30000);
 const protectionBypassSecret =
   process.env.VERCEL_AUTOMATION_BYPASS_SECRET ||
@@ -52,8 +56,15 @@ function includesAny(body, markers) {
 }
 
 async function main() {
-  const accounts = readAccounts(accountsFile);
-  if (!accounts.length) throw new Error(`no usable accounts in ${accountsFile}`);
+  const usableAccounts = readAccounts(accountsFile);
+  if (!usableAccounts.length) throw new Error(`no usable accounts in ${accountsFile}`);
+
+  const accounts = usableAccounts.filter((account) => guardRoles.includes(account.role || ""));
+  const checkedRoles = Array.from(new Set(accounts.map((account) => account.role || "unknown")));
+  const missingRoles = guardRoles.filter((role) => !checkedRoles.includes(role));
+  if (missingRoles.length) {
+    throw new Error(`operations guard accounts missing required roles: ${missingRoles.join(", ")}`);
+  }
 
   const browser = await chromium.launch({ headless: true });
   const failures = [];
@@ -95,7 +106,12 @@ async function main() {
 
   console.log("HS Finder operations route guard");
   console.log(`baseUrl=${baseUrl}`);
+  console.log(`accountsFile=${accountsFile}`);
   console.log(`accounts=${accounts.length}`);
+  console.log(`usableAccounts=${usableAccounts.length}`);
+  console.log(`ignoredAccounts=${usableAccounts.length - accounts.length}`);
+  console.log(`requiredRoles=${guardRoles.join(",")}`);
+  console.log(`checkedRoles=${checkedRoles.join(",")}`);
   console.log(`routes=${operationsRoutes.length}`);
   console.log(`vercelProtectionBypass=${Boolean(protectionBypassSecret)}`);
   for (const result of results) {
