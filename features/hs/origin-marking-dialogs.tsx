@@ -3,6 +3,7 @@
 import { X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useRef } from "react";
+import { originMarkingSummaryText } from "@/features/hs/origin-marking-summary";
 
 type OriginMarkingInfo = {
   isTarget: boolean;
@@ -146,10 +147,12 @@ function LawLinks() {
 }
 
 function OriginMarkingTargetDialog({ originMarking, hskCode, itemName }: OriginMarkingDialogProps) {
+  const summary = originMarkingSummaryText(true);
+
   return (
     <DialogShell
       title="원산지표시대상"
-      trigger="원산지표시대상(Y)"
+      trigger={summary.summary}
       triggerClassName="focus-ring rounded text-left font-semibold text-red-600 underline-offset-2 hover:underline"
     >
       <div className="max-h-[78vh] overflow-auto p-4 text-sm">
@@ -264,13 +267,25 @@ function OriginMarkingMethodDialog({ originMarking, itemName }: OriginMarkingDia
 
 export function OriginMarkingLinks({ originMarking, hskCode, itemName }: OriginMarkingLinksProps) {
   if (!originMarking?.isTarget) {
-    return <span className="text-slate-500">-</span>;
+    const summary = originMarkingSummaryText(false);
+
+    return (
+      <span className="grid gap-1">
+        <span className="text-sm font-semibold text-slate-700">{summary.summary}</span>
+        <span className="text-xs leading-5 text-slate-500">{summary.note}</span>
+      </span>
+    );
   }
 
+  const summary = originMarkingSummaryText(true);
+
   return (
-    <span className="inline-flex flex-wrap items-center gap-2">
+    <span className="grid gap-1">
+      <span className="inline-flex flex-wrap items-center gap-2">
       <OriginMarkingTargetDialog hskCode={hskCode} itemName={itemName} originMarking={originMarking} />
       <OriginMarkingMethodDialog hskCode={hskCode} itemName={itemName} originMarking={originMarking} />
+      </span>
+      <span className="text-xs leading-5 text-slate-500">{summary.note}</span>
     </span>
   );
 }
