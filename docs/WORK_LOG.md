@@ -7940,3 +7940,20 @@
 - Playwright broker `/dashboard`에서 파트너 카운터/통관 입찰 링크 노출, 화주 카운터/내 통관 의뢰 링크 비노출 확인
 - `npm run typecheck`
 - `npm run lint`
+
+### unapproved role dashboard guard
+
+- 이전 작업은 승인된 역할별 대시보드 카운터와 workspace 링크를 분리한 P156.1이고, 이번 작업은 역할 미승인/미설정 상태에서 요청 생성·입찰 링크 대신 역할 설정/승인 확인을 먼저 보여준 P157.1이다.
+- 승인된 marketplace 역할이 없으면 상단 action card는 `플랫폼 역할 설정` 또는 `플랫폼 역할 승인 대기`만 표시한다.
+- 가입 시 선택한 역할 intent만 있는 경우에도 운영자 승인 전에는 요청 생성·입찰 action card를 열지 않는다.
+- 화주/포워더/관세사 승인 역할 계정은 기존 역할별 대시보드 링크와 카운터가 유지되는지 브라우저로 확인했다.
+- 새 migration, RLS 변경은 없다.
+- 로컬 파일만 수정했고 원격 푸시, 배포는 하지 않았다.
+
+검증:
+
+- `npx vitest run features/dashboard/dashboard-home.test.ts`
+- unit render에서 역할 없음 상태의 `플랫폼 역할 설정` 노출, 요청 생성/입찰 링크 비노출 확인
+- Playwright requester/forwarder/broker `/dashboard` 승인 역할 회귀 확인
+- `npm run typecheck`
+- `npm run lint`

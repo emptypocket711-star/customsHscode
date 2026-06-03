@@ -419,16 +419,23 @@ function DashboardMarketplaceEntry({
   const status = summary?.verificationStatus ?? "unverified";
   const partyTypes = summary?.partyTypes ?? [];
   const roleIntents = summary?.roleIntents ?? [];
-  const displayRoles = new Set([...partyTypes, ...roleIntents]);
   const marketplaceDictionary = dictionary.marketplace;
-  const isForeignPartner = displayRoles.has("foreign_shipper");
-  const canSeeRequesterActions =
-    displayRoles.size === 0 || displayRoles.has("domestic_shipper") || displayRoles.has("foreign_shipper");
-  const canSeeForwarderActions = displayRoles.has("forwarder");
-  const canSeeBrokerActions = displayRoles.has("customs_broker");
+  const approvedRoles = new Set(partyTypes);
+  const isForeignPartner = approvedRoles.has("foreign_shipper");
+  const canSeeRequesterActions = approvedRoles.has("domestic_shipper") || approvedRoles.has("foreign_shipper");
+  const canSeeForwarderActions = approvedRoles.has("forwarder");
+  const canSeeBrokerActions = approvedRoles.has("customs_broker");
   const hasActiveWork = hasMarketplaceWork(activity);
   const nextActions = buildMarketplaceNextActions(activity, summary);
   const unreadNotificationCount = notifications.filter((notification) => !notification.readAt).length;
+  const roleSetupAction = {
+    description: roleIntents.length
+      ? "가입 시 선택한 역할은 접수되어 있습니다. 운영자 승인 전에는 요청 공개와 입찰 업무가 제한됩니다."
+      : "회사 설정에서 화주, 포워더, 관세사무소, 해외 파트너 중 필요한 플랫폼 역할을 먼저 지정합니다.",
+    href: "/settings/members",
+    icon: CheckCircle2,
+    title: roleIntents.length ? "플랫폼 역할 승인 대기" : "플랫폼 역할 설정"
+  };
   const actions = [
     ...(isForeignPartner ? [
       {
@@ -469,20 +476,7 @@ function DashboardMarketplaceEntry({
       title: "관세사 입찰 확인"
     }] : [])
   ];
-  const visibleActions = actions.length ? actions.slice(0, 4) : [
-    {
-      description: "화물 조건을 정리하고 검증 포워더에게 운송 견적을 요청합니다.",
-      href: "/requests/freight",
-      icon: Ship,
-      title: "운송 견적 요청"
-    },
-    {
-      description: "HSK, FTA, 요건 검토 범위를 정리하고 관세사무소 견적을 요청합니다.",
-      href: "/requests/clearance",
-      icon: FileText,
-      title: "통관 의뢰 요청"
-    }
-  ];
+  const visibleActions = actions.length ? actions.slice(0, 4) : [roleSetupAction];
   const marketplaceStats = [
     ...(canSeeRequesterActions ? [
       { label: "임시저장 요청", value: activity?.draftRequests ?? 0 },
@@ -665,18 +659,22 @@ function DashboardMarketplaceEntry({
           </div>
         </div>
       </div>
-      <div className="grid gap-2 border-t border-[var(--border-subtle)] bg-slate-50 px-4 py-3 text-xs text-slate-600 md:grid-cols-4 xl:grid-cols-8">
-        {marketplaceStats.map((stat) => (
-          <span className="rounded-md bg-white px-3 py-2" key={stat.label}>{stat.label} {stat.value}</span>
-        ))}
-      </div>
-      <div className="flex flex-wrap gap-2 border-t border-[var(--border-subtle)] bg-white px-4 py-3">
-        {workspaceLinks.map((link) => (
-          <Link className="focus-ring inline-flex h-9 items-center rounded-md border border-slate-300 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50" href={link.href} key={link.href}>
-            {link.label}
-          </Link>
-        ))}
-      </div>
+      {marketplaceStats.length ? (
+        <div className="grid gap-2 border-t border-[var(--border-subtle)] bg-slate-50 px-4 py-3 text-xs text-slate-600 md:grid-cols-4 xl:grid-cols-8">
+          {marketplaceStats.map((stat) => (
+            <span className="rounded-md bg-white px-3 py-2" key={stat.label}>{stat.label} {stat.value}</span>
+          ))}
+        </div>
+      ) : null}
+      {workspaceLinks.length ? (
+        <div className="flex flex-wrap gap-2 border-t border-[var(--border-subtle)] bg-white px-4 py-3">
+          {workspaceLinks.map((link) => (
+            <Link className="focus-ring inline-flex h-9 items-center rounded-md border border-slate-300 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50" href={link.href} key={link.href}>
+              {link.label}
+            </Link>
+          ))}
+        </div>
+      ) : null}
       {!summary?.schemaReady ? (
         <p className="border-t border-[var(--border-subtle)] bg-amber-50 px-5 py-3 text-xs leading-5 text-amber-900">
           로그인은 정상입니다. 현재 이 환경에서는 플랫폼 요청·입찰 데이터가 아직 준비되지 않아 화주 요청 공개, 포워더 입찰, 관세사무소 입찰 흐름이 제한됩니다. HS 조회와 일반 대시보드는 계속 확인할 수 있습니다.

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import {
+  DashboardHome,
   buildMarketplaceNextActions,
   type DashboardMarketplaceActivitySummary,
   type DashboardMarketplaceSummary
@@ -127,5 +130,31 @@ describe("dashboard marketplace next actions", () => {
       label: "파트너 업무",
       title: "통관 파트너 업무 확인"
     });
+  });
+
+  it("shows role setup instead of request creation cards before marketplace roles are approved", () => {
+    const html = renderToStaticMarkup(
+      createElement(DashboardHome, {
+        basisDate: "2026-06-03",
+        cargoWatches: [],
+        favorites: [],
+        locale: "ko-KR",
+        lookupHistory: [],
+        marketplaceActivity: activityFixture(),
+        marketplaceNotifications: [],
+        marketplaceSummary: {
+          ...summaryFixture,
+          partyTypes: [],
+          roleIntents: []
+        },
+        notices: []
+      })
+    );
+
+    expect(html).toContain("플랫폼 역할 설정");
+    expect(html).not.toContain("운송 견적 요청</span>");
+    expect(html).not.toContain("통관 의뢰 요청</span>");
+    expect(html).not.toContain("내 운송 요청");
+    expect(html).not.toContain("운송 입찰 가능");
   });
 });
