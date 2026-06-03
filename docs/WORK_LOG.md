@@ -4,6 +4,25 @@
 
 ## 2026-06-03
 
+### import tariff country filter guidance
+
+- 이전 작업은 P174 세율표 라벨 품질 개선이고, 이번 작업은 P175 수입국 필터 안내 의미 보강이다.
+- `ALL` 상태는 이 HSK에 등록된 세율 후보를 함께 보여주는 참고 화면이라는 문구를 추가했다.
+- 특정 국가 선택 시 해당 국가와 연결된 협정·특혜 세율만 표시하며 FTA 세율은 자동 적용이 아니라 원산지증명과 협정 요건 확인이 필요하다는 문구를 표시하게 했다.
+- 국가 필터 선택 후 안내 문구가 `중국 (CHN) 기준...`으로 바뀌고 세율표가 주요 3건으로 줄어드는 것을 staging 브라우저에서 확인했다.
+- 최신 staging preview는 `https://customs-hscode-5b6mju7pz-koo-apps.vercel.app`다.
+- 다음 작업은 P176 HS 직접조회 상단 요약 카드의 FTA/특혜 세율 문구 점검이다. 이번 P175가 세율표 필터 영역의 설명이라면, P176은 상단 10자리 요약 카드에서 `수입국 선택 시 확인`, 특정 국가 세율 표시가 사용자를 덜 헷갈리게 하는지 보는 작업이다.
+
+검증:
+
+- `npx vitest run features/hs/import-tariff-country-filter.test.ts features/hs/import-tariff-display.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- Playwright staging browser: `ALL` 상태에서 `세율 후보`, `원산지증명` 안내 확인
+- Playwright staging browser: 중국 선택 후 `중국 (CHN) 기준`, `자동 적용이 아니며` 안내 확인
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-5b6mju7pz-koo-apps.vercel.app`: 9/9 통과
+
 ### import tariff label clarity
 
 - 이전 작업은 P171 HS 직접조회 상세 세율표 밀도 개선이고, 이번 작업은 P174 세율표 라벨 품질 개선이다.
