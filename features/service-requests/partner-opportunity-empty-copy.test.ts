@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { partnerOpportunityEmptyCopy } from "@/features/service-requests/partner-opportunity-empty-copy";
+import {
+  PARTNER_PREFERENCES_SECTION_ID,
+  partnerOpportunityEmptyCopy
+} from "@/features/service-requests/partner-opportunity-empty-copy";
 
 describe("partner opportunity empty copy", () => {
   it("explains freight opportunities depend on verification and forwarder preferences", () => {
@@ -12,5 +15,9 @@ describe("partner opportunity empty copy", () => {
     expect(partnerOpportunityEmptyCopy.clearance).toContain("현재 입찰 가능한 통관 의뢰가 없습니다");
     expect(partnerOpportunityEmptyCopy.clearance).toContain("회사 검증 상태");
     expect(partnerOpportunityEmptyCopy.clearance).toContain("관세사무소 관심 조건");
+  });
+
+  it("exposes the settings anchor used by partner opportunity links", () => {
+    expect(PARTNER_PREFERENCES_SECTION_ID).toBe("partner-preferences");
   });
 });

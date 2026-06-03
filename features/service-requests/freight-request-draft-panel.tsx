@@ -13,7 +13,10 @@ import {
 } from "@/features/service-requests/marketplace-request-prefill";
 import { MarketplacePrefillSourcePanel } from "@/features/service-requests/marketplace-prefill-source-panel";
 import { OverseasPartnerRequestHint } from "@/features/service-requests/overseas-partner-request-hint";
-import { partnerOpportunityEmptyCopy } from "@/features/service-requests/partner-opportunity-empty-copy";
+import {
+  PARTNER_PREFERENCES_SECTION_ID,
+  partnerOpportunityEmptyCopy
+} from "@/features/service-requests/partner-opportunity-empty-copy";
 import { PartnerOpportunityFlowPanel } from "@/features/service-requests/partner-opportunity-flow-panel";
 import { RequestDraftReadinessPanel } from "@/features/service-requests/request-draft-readiness-panel";
 import { SelectedPartnerDocumentHandoff } from "@/features/service-requests/selected-partner-document-handoff";
@@ -1565,9 +1568,15 @@ export function FreightRequestDraftPanel({
               </div>
             ) : null}
             {schemaReady && opportunities.length === 0 ? (
-              <p className="rounded-md border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                {partnerOpportunityEmptyCopy.freight}
-              </p>
+              <div className="grid gap-3 rounded-md border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                <p>{partnerOpportunityEmptyCopy.freight}</p>
+                <Link
+                  className="focus-ring inline-flex h-9 w-fit items-center justify-center rounded-md bg-white px-3 text-xs font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100"
+                  href={`/settings/members#${PARTNER_PREFERENCES_SECTION_ID}`}
+                >
+                  관심 조건 설정 확인
+                </Link>
+              </div>
             ) : null}
             {schemaReady && opportunities.length > 0 && filteredOpportunities.length === 0 ? (
               <p className="rounded-md border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">

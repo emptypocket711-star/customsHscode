@@ -1,3 +1,5 @@
+export const PARTNER_PREFERENCES_SECTION_ID = "partner-preferences";
+
 export const partnerOpportunityEmptyCopy = {
   clearance:
     "현재 입찰 가능한 통관 의뢰가 없습니다. 회사 검증 상태와 관세사무소 관심 조건에 맞는 공개 요청이 생기면 표시됩니다.",

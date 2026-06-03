@@ -8,6 +8,7 @@ import type {
   PartnerPreferenceActionState,
   PartnerServiceType
 } from "@/features/partner-preferences/schemas";
+import { PARTNER_PREFERENCES_SECTION_ID } from "@/features/service-requests/partner-opportunity-empty-copy";
 import { updatePartnerPreferenceAction } from "@/server/actions/partner-preferences.actions";
 import type {
   PartnerPreferenceItem,
@@ -274,7 +275,7 @@ export function PartnerPreferencesPanel({
   const hasPartnerRole = dashboard.partyTypes.includes("forwarder") || dashboard.partyTypes.includes("customs_broker");
 
   return (
-    <Card>
+    <Card id={PARTNER_PREFERENCES_SECTION_ID}>
       <CardHeader
         action={dashboard.preferences.some((preference) => preference.notificationEnabled) ? (
           <Bell aria-hidden="true" className="text-blue-700" size={22} />
