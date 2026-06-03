@@ -82,6 +82,14 @@ const bidInitialState: FreightBidSubmitActionState = {
 const selectBidInitialState: FreightBidSelectActionState = {
   status: "idle"
 };
+
+function RoleRequestSettingsLink() {
+  return (
+    <Link className="focus-ring inline-flex h-9 w-fit items-center justify-center rounded-md bg-white px-3 text-xs font-semibold text-amber-900 ring-1 ring-amber-200 hover:bg-amber-100" data-navigation-progress="회사 설정" href="/settings/members#platform-role-request">
+      회사 역할 신청 확인
+    </Link>
+  );
+}
 const lifecycleInitialState: ServiceRequestLifecycleActionState = {
   status: "idle"
 };
@@ -1303,9 +1311,10 @@ export function FreightRequestDraftPanel({
             />
             <CardBody>
               {!schemaReady ? (
-                <p className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
-                  로그인은 정상입니다. 현재 이 환경에서는 플랫폼 요청 기능이 준비 중이라 운송 초안 저장과 포워더 공개 모집이 제한됩니다.
-                </p>
+                <div className="mb-4 grid gap-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
+                  <p>로그인은 정상입니다. 현재 이 환경에서는 플랫폼 요청 기능이 준비 중이라 운송 초안 저장과 포워더 공개 모집이 제한됩니다.</p>
+                  <RoleRequestSettingsLink />
+                </div>
               ) : null}
           <form
             action={action}
@@ -1479,9 +1488,10 @@ export function FreightRequestDraftPanel({
             />
             <CardBody className="grid gap-3">
               {!schemaReady ? (
-                <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
-                  현재 이 환경에서는 플랫폼 요청 목록 데이터가 준비되지 않아 내 운송 요청을 불러올 수 없습니다. 계정 문제는 아니며, HS 조회와 일반 대시보드는 사용할 수 있습니다.
-                </p>
+                <div className="grid gap-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
+                  <p>현재 이 환경에서는 플랫폼 요청 목록 데이터가 준비되지 않아 내 운송 요청을 불러올 수 없습니다. 계정 문제는 아니며, HS 조회와 일반 대시보드는 사용할 수 있습니다.</p>
+                  <RoleRequestSettingsLink />
+                </div>
               ) : null}
               {schemaReady && requests.length === 0 ? (
                 <p className="rounded-md border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
@@ -1513,9 +1523,10 @@ export function FreightRequestDraftPanel({
           <CardBody className="grid gap-3">
             <PartnerOpportunityFlowPanel kind="freight" />
             {!schemaReady ? (
-              <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
-                현재 이 환경에서는 포워더 입찰 데이터가 준비되지 않아 입찰 가능 요청을 불러올 수 없습니다. 역할 권한 확인은 플랫폼 데이터 준비 후 진행합니다.
-              </p>
+              <div className="grid gap-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
+                <p>현재 이 환경에서는 포워더 입찰 데이터가 준비되지 않아 입찰 가능 요청을 불러올 수 없습니다. 역할 권한 확인은 플랫폼 데이터 준비 후 진행합니다.</p>
+                <RoleRequestSettingsLink />
+              </div>
             ) : null}
             {schemaReady && opportunities.length === 0 ? (
               <p className="rounded-md border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
