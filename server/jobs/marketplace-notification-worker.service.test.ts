@@ -10,6 +10,13 @@ function createQuery(data: unknown[] = []) {
   };
 }
 
+function createPreferenceQuery(data: unknown[] = []) {
+  return {
+    in: vi.fn().mockResolvedValue({ data, error: null }),
+    select: vi.fn().mockReturnThis()
+  };
+}
+
 describe("marketplace notification worker", () => {
   it("builds dry-run targets without claiming deliveries", async () => {
     const matchQuery = createQuery([{
@@ -26,6 +33,7 @@ describe("marketplace notification worker", () => {
     }]);
     const bidQuery = { in: vi.fn().mockResolvedValue({ data: [], error: null }), select: vi.fn().mockReturnThis() };
     const deliveryQuery = { in: vi.fn().mockReturnThis(), select: vi.fn().mockReturnThis() };
+    const preferenceQuery = createPreferenceQuery();
     deliveryQuery.in.mockReturnValueOnce(deliveryQuery).mockResolvedValueOnce({ data: [], error: null });
 
     const supabase = {
@@ -33,6 +41,7 @@ describe("marketplace notification worker", () => {
         if (table === "service_request_partner_matches") return matchQuery;
         if (table === "service_bids") return bidQuery;
         if (table === "marketplace_notification_deliveries") return deliveryQuery;
+        if (table === "partner_service_preferences") return preferenceQuery;
         throw new Error(`unexpected table ${table}`);
       }),
       rpc: vi.fn()
@@ -68,6 +77,7 @@ describe("marketplace notification worker", () => {
     }]);
     const bidQuery = { in: vi.fn().mockResolvedValue({ data: [], error: null }), select: vi.fn().mockReturnThis() };
     const deliveryQuery = { in: vi.fn().mockReturnThis(), select: vi.fn().mockReturnThis() };
+    const preferenceQuery = createPreferenceQuery();
     deliveryQuery.in.mockReturnValueOnce(deliveryQuery).mockResolvedValueOnce({ data: [], error: null });
 
     const supabase = {
@@ -75,6 +85,7 @@ describe("marketplace notification worker", () => {
         if (table === "service_request_partner_matches") return matchQuery;
         if (table === "service_bids") return bidQuery;
         if (table === "marketplace_notification_deliveries") return deliveryQuery;
+        if (table === "partner_service_preferences") return preferenceQuery;
         throw new Error(`unexpected table ${table}`);
       }),
       rpc: vi.fn().mockResolvedValue({ data: "delivery-1", error: null })
@@ -119,6 +130,7 @@ describe("marketplace notification worker", () => {
       update: vi.fn().mockReturnThis()
     };
     deliveryQuery.in.mockReturnValueOnce(deliveryQuery).mockResolvedValueOnce({ data: [], error: null });
+    const preferenceQuery = createPreferenceQuery();
     const sender = vi.fn().mockResolvedValue({ providerId: "provider-1" });
 
     const supabase = {
@@ -126,6 +138,7 @@ describe("marketplace notification worker", () => {
         if (table === "service_request_partner_matches") return matchQuery;
         if (table === "service_bids") return bidQuery;
         if (table === "marketplace_notification_deliveries") return deliveryQuery;
+        if (table === "partner_service_preferences") return preferenceQuery;
         throw new Error(`unexpected table ${table}`);
       }),
       rpc: vi.fn().mockResolvedValue({ data: "delivery-1", error: null })
@@ -179,6 +192,7 @@ describe("marketplace notification worker", () => {
       update: vi.fn().mockReturnThis()
     };
     deliveryQuery.in.mockReturnValueOnce(deliveryQuery).mockResolvedValueOnce({ data: [], error: null });
+    const preferenceQuery = createPreferenceQuery();
     const sender = vi.fn().mockRejectedValue(new Error("provider timeout while sending"));
 
     const supabase = {
@@ -186,6 +200,7 @@ describe("marketplace notification worker", () => {
         if (table === "service_request_partner_matches") return matchQuery;
         if (table === "service_bids") return bidQuery;
         if (table === "marketplace_notification_deliveries") return deliveryQuery;
+        if (table === "partner_service_preferences") return preferenceQuery;
         throw new Error(`unexpected table ${table}`);
       }),
       rpc: vi.fn().mockResolvedValue({ data: "delivery-1", error: null })
@@ -224,6 +239,7 @@ describe("marketplace notification worker", () => {
     }]);
     const bidQuery = { in: vi.fn().mockResolvedValue({ data: [], error: null }), select: vi.fn().mockReturnThis() };
     const deliveryQuery = { in: vi.fn().mockReturnThis(), select: vi.fn().mockReturnThis() };
+    const preferenceQuery = createPreferenceQuery();
     deliveryQuery.in.mockReturnValueOnce(deliveryQuery).mockResolvedValueOnce({ data: [], error: null });
 
     const supabase = {
@@ -231,6 +247,7 @@ describe("marketplace notification worker", () => {
         if (table === "service_request_partner_matches") return matchQuery;
         if (table === "service_bids") return bidQuery;
         if (table === "marketplace_notification_deliveries") return deliveryQuery;
+        if (table === "partner_service_preferences") return preferenceQuery;
         throw new Error(`unexpected table ${table}`);
       }),
       rpc: vi.fn()
@@ -247,6 +264,54 @@ describe("marketplace notification worker", () => {
       initialTargetCount: 0,
       reminderTargetCount: 0,
       targetCount: 0
+    });
+    expect(supabase.rpc).not.toHaveBeenCalled();
+  });
+
+  it("routes digest-enabled partner matches to digest targets instead of immediate targets", async () => {
+    const matchQuery = createQuery([{
+      id: "match-digest",
+      interest_status: "none",
+      notification_status: "pending",
+      partner_company_id: "partner-1",
+      service_requests: {
+        deadline_at: "2026-06-01T12:00:00.000Z",
+        id: "request-1",
+        request_type: "freight",
+        status: "open"
+      }
+    }]);
+    const bidQuery = { in: vi.fn().mockResolvedValue({ data: [], error: null }), select: vi.fn().mockReturnThis() };
+    const deliveryQuery = { in: vi.fn().mockReturnThis(), select: vi.fn().mockReturnThis() };
+    const preferenceQuery = createPreferenceQuery([{
+      company_id: "partner-1",
+      digest_enabled: true,
+      service_type: "freight"
+    }]);
+    deliveryQuery.in.mockReturnValueOnce(deliveryQuery).mockResolvedValueOnce({ data: [], error: null });
+
+    const supabase = {
+      from: vi.fn((table: string) => {
+        if (table === "service_request_partner_matches") return matchQuery;
+        if (table === "service_bids") return bidQuery;
+        if (table === "marketplace_notification_deliveries") return deliveryQuery;
+        if (table === "partner_service_preferences") return preferenceQuery;
+        throw new Error(`unexpected table ${table}`);
+      }),
+      rpc: vi.fn()
+    };
+
+    const result = await runMarketplaceNotificationWorker(supabase as never, {
+      dryRun: true,
+      now: new Date("2026-06-01T00:00:00.000Z")
+    });
+
+    expect(result).toMatchObject({
+      digestTargetCount: 1,
+      dryRun: true,
+      initialTargetCount: 0,
+      reminderTargetCount: 0,
+      targetCount: 1
     });
     expect(supabase.rpc).not.toHaveBeenCalled();
   });

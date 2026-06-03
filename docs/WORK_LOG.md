@@ -4,6 +4,20 @@
 
 ## 2026-06-03
 
+### notification digest semantics
+
+- 이전 작업은 P266에서 initial/deadline reminder 중복 claim을 막는 DB/RPC 계약을 확인한 것이고, 이번 작업은 `digest_enabled`가 단순 침묵이 아니라 묶음 알림 대상으로 라우팅되는지 보강한 작업이다.
+- worker가 `partner_service_preferences.digest_enabled`를 읽어 match 정책 입력에 반영하게 했다.
+- digest enabled match는 immediate initial/reminder target에서 제외되고, `buildMarketplaceDigestTargets`가 partner/window 단위 digest target으로 묶는다.
+- worker는 digest target을 `channel=digest`, digest delivery key, request/match count metadata로 claim한다.
+- provider copy도 digest target을 처리하도록 알림 유형 라벨을 `묶음 알림`으로 보강했다.
+- 다음 작업은 P268 reminder fatigue policy다. 이번 P267이 digest 라우팅 의미라면, P268은 미열람/미참여 파트너에게 마감 알림이 과도하게 나가지 않도록 engagement 기준을 조정하는 작업이다.
+
+검증:
+
+- `npx vitest run server/notifications/marketplace-notification-policy.test.ts server/jobs/marketplace-notification-worker.service.test.ts`
+- `npm run typecheck`
+
 ### notification per-kind idempotency
 
 - 이전 작업은 P265에서 bid 제출 audit snapshot을 남긴 것이고, 이번 작업은 알림 job/RPC가 반복 실행되어도 같은 종류의 알림이 중복 claim/send되지 않는지 확인한 작업이다.

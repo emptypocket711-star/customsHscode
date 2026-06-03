@@ -175,6 +175,7 @@ describe("marketplace digest notification policy", () => {
       partnerCompanyId: "partner-1",
       reason: "digest_matched_requests_open",
       requestCount: 2,
+      requestIds: ["request-1", "request-2"],
       requestTypes: ["clearance", "freight"]
     }]);
   });

@@ -10,21 +10,28 @@ export const marketplaceNotificationProviderNames = ["internal_dry_run", "transa
 export type MarketplaceNotificationProviderName = typeof marketplaceNotificationProviderNames[number];
 
 function notificationKindLabel(kind: MarketplaceNotificationSendInput["target"]["notificationKind"]) {
+  if (kind === "digest") return "묶음 알림";
   if (kind === "deadline_reminder") return "마감 임박";
   return "신규 요청";
 }
 
-function requestTypeLabel(type: MarketplaceNotificationSendInput["target"]["requestType"]) {
+function targetRequestType(target: MarketplaceNotificationSendInput["target"]) {
+  return target.notificationKind === "digest" ? target.requestTypes[0] : target.requestType;
+}
+
+function requestTypeLabel(type: "clearance" | "freight") {
   return type === "freight" ? "운송 견적" : "통관 의뢰";
 }
 
 function buildMarketplaceNotificationEmail(input: MarketplaceNotificationSendInput) {
+  const requestType = targetRequestType(input.target);
+
   return {
-    subject: `[HS FINDER] ${requestTypeLabel(input.target.requestType)} 알림: ${notificationKindLabel(input.target.notificationKind)}`,
+    subject: `[HS FINDER] ${requestTypeLabel(requestType)} 알림: ${notificationKindLabel(input.target.notificationKind)}`,
     text: [
       "HS FINDER 플랫폼 요청 알림입니다.",
       "",
-      `요청 유형: ${requestTypeLabel(input.target.requestType)}`,
+      `요청 유형: ${requestTypeLabel(requestType)}`,
       `알림 유형: ${notificationKindLabel(input.target.notificationKind)}`,
       `알림 사유: ${input.target.reason}`,
       "",
@@ -49,11 +56,11 @@ export function createMarketplaceNotificationProvider(
     return async (input: MarketplaceNotificationSendInput) => {
       const recipients = await listMarketplaceNotificationRecipientsForPartner(
         options.supabase as SupabaseClient,
-        input.target.partnerCompanyId,
-        {
-          limit: 1,
-          requireEmailOptInForKind: input.target.notificationKind
-        }
+          input.target.partnerCompanyId,
+          {
+            limit: 1,
+          requireEmailOptInForKind: input.target.notificationKind === "digest" ? "initial" : input.target.notificationKind
+          }
       );
       const recipient = recipients[0];
       if (!recipient) throw new Error("recipient_missing");

@@ -1,8 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  buildMarketplaceDigestTargets,
   buildInitialMarketplaceNotificationTargets,
   buildMarketplaceDeadlineReminderTargets,
   type MarketplaceMatchNotificationInput,
+  type MarketplaceDigestTarget,
   type MarketplaceNotificationTarget
 } from "@/server/notifications/marketplace-notification-policy";
 import {
@@ -35,9 +37,18 @@ type MarketplaceNotificationDeliveryRow = {
   notification_kind: "deadline_reminder" | "digest" | "initial";
 };
 
+type MarketplaceNotificationPreferenceRow = {
+  company_id: string;
+  digest_enabled: boolean | null;
+  service_type: "clearance" | "freight";
+};
+
+type MarketplaceNotificationWorkerTarget = MarketplaceNotificationTarget | MarketplaceDigestTarget;
+
 export type MarketplaceNotificationWorkerResult = {
   claimedCount: number;
   claimedWithoutSenderCount: number;
+  digestTargetCount: number;
   dryRun: boolean;
   failedSendCount: number;
   initialTargetCount: number;
@@ -49,7 +60,7 @@ export type MarketplaceNotificationWorkerResult = {
 
 export type MarketplaceNotificationSendInput = {
   deliveryId: string;
-  target: MarketplaceNotificationTarget;
+  target: MarketplaceNotificationWorkerTarget;
 };
 
 export type MarketplaceNotificationSender = (
@@ -59,12 +70,19 @@ export type MarketplaceNotificationSender = (
 function mapMatches(
   matches: MarketplaceNotificationMatchRow[],
   bids: MarketplaceNotificationBidRow[],
-  deliveries: MarketplaceNotificationDeliveryRow[]
+  deliveries: MarketplaceNotificationDeliveryRow[],
+  preferences: MarketplaceNotificationPreferenceRow[]
 ): MarketplaceMatchNotificationInput[] {
+  const preferenceByCompanyAndType = new Map(preferences.map((preference) => [
+    `${preference.company_id}:${preference.service_type}`,
+    preference
+  ]));
+
   return matches
     .filter((match) => match.service_requests)
     .map((match) => {
       const request = match.service_requests as NonNullable<MarketplaceNotificationMatchRow["service_requests"]>;
+      const preference = preferenceByCompanyAndType.get(`${match.partner_company_id}:${request.request_type}`);
       const bid = bids.find((item) =>
         item.request_id === request.id &&
         item.bidder_company_id === match.partner_company_id
@@ -78,7 +96,7 @@ function mapMatches(
         bidStatus: bid?.status ?? null,
         bidderCompanyId: bid?.bidder_company_id ?? null,
         deliveredNotificationKinds,
-        digestEnabled: false,
+        digestEnabled: Boolean(preference?.digest_enabled),
         interestStatus: match.interest_status,
         matchId: match.id,
         notificationEnabled: match.notification_status !== "skipped",
@@ -117,8 +135,13 @@ export async function runMarketplaceNotificationWorker(
     .map((match) => match.service_requests?.id)
     .filter((id): id is string => typeof id === "string");
   const matchIds = matches.map((match) => match.id);
+  const partnerCompanyIds = Array.from(new Set(matches.map((match) => match.partner_company_id)));
 
-  const [{ data: bidRows, error: bidsError }, { data: deliveryRows, error: deliveriesError }] = await Promise.all([
+  const [
+    { data: bidRows, error: bidsError },
+    { data: deliveryRows, error: deliveriesError },
+    { data: preferenceRows, error: preferencesError }
+  ] = await Promise.all([
     requestIds.length
       ? supabase
         .from("service_bids")
@@ -131,28 +154,38 @@ export async function runMarketplaceNotificationWorker(
         .select("match_id,notification_kind")
         .in("match_id", matchIds)
         .in("status", ["claimed", "sent"])
+      : Promise.resolve({ data: [], error: null }),
+    partnerCompanyIds.length
+      ? supabase
+        .from("partner_service_preferences")
+        .select("company_id,service_type,digest_enabled")
+        .in("company_id", partnerCompanyIds)
       : Promise.resolve({ data: [], error: null })
   ]);
 
   if (bidsError) throw new Error(bidsError.message);
   if (deliveriesError) throw new Error(deliveriesError.message);
+  if (preferencesError) throw new Error(preferencesError.message);
 
   const policyInput = mapMatches(
     matches,
     (bidRows ?? []) as MarketplaceNotificationBidRow[],
-    (deliveryRows ?? []) as MarketplaceNotificationDeliveryRow[]
+    (deliveryRows ?? []) as MarketplaceNotificationDeliveryRow[],
+    (preferenceRows ?? []) as MarketplaceNotificationPreferenceRow[]
   );
   const initialTargets = buildInitialMarketplaceNotificationTargets(policyInput, { now: input.now });
   const reminderTargets = buildMarketplaceDeadlineReminderTargets(policyInput, {
     now: input.now,
     reminderWindowHours: input.reminderWindowHours
   });
-  const targets = [...initialTargets, ...reminderTargets];
+  const digestTargets = buildMarketplaceDigestTargets(policyInput, { now: input.now });
+  const targets: MarketplaceNotificationWorkerTarget[] = [...initialTargets, ...reminderTargets, ...digestTargets];
 
   if (input.dryRun) {
     return {
       claimedCount: 0,
       claimedWithoutSenderCount: 0,
+      digestTargetCount: digestTargets.length,
       dryRun: true,
       failedSendCount: 0,
       initialTargetCount: initialTargets.length,
@@ -169,16 +202,25 @@ export async function runMarketplaceNotificationWorker(
   let sentCount = 0;
   let skippedDuplicateCount = 0;
   for (const target of targets) {
+    const isDigest = target.notificationKind === "digest";
     const deliveryId = await claimMarketplaceNotificationDelivery(supabase, {
-      channel: "in_app",
-      deliveryWindow: target.notificationKind === "deadline_reminder" ? target.requestId : null,
-      matchId: target.matchId,
-      metadata: { requestCount: 1 },
+      channel: isDigest ? "digest" : "in_app",
+      deliveryWindow: isDigest
+        ? target.digestWindow
+        : target.notificationKind === "deadline_reminder"
+          ? target.requestId
+          : null,
+      digestKey: isDigest ? target.digestKey : null,
+      matchId: isDigest ? null : target.matchId,
+      metadata: {
+        matchCount: isDigest ? target.matchIds.length : 1,
+        requestCount: isDigest ? target.requestCount : 1
+      },
       notificationKind: target.notificationKind,
       partnerCompanyId: target.partnerCompanyId,
       reason: target.reason,
-      requestId: target.requestId,
-      requestType: target.requestType
+      requestId: isDigest ? target.requestIds[0] : target.requestId,
+      requestType: isDigest ? target.requestTypes[0] : target.requestType
     });
 
     if (deliveryId) {
@@ -210,6 +252,7 @@ export async function runMarketplaceNotificationWorker(
   return {
     claimedCount,
     claimedWithoutSenderCount,
+    digestTargetCount: digestTargets.length,
     dryRun: false,
     failedSendCount,
     initialTargetCount: initialTargets.length,

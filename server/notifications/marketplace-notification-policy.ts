@@ -35,6 +35,7 @@ export type MarketplaceDigestTarget = {
   partnerCompanyId: string;
   reason: string;
   requestCount: number;
+  requestIds: string[];
   requestTypes: MarketplaceServiceType[];
 };
 
@@ -204,6 +205,7 @@ export function buildMarketplaceDigestTargets(
       partnerCompanyId,
       reason: "digest_matched_requests_open",
       requestCount: group.length,
+      requestIds: group.map((match) => match.requestId).sort(),
       requestTypes
     };
   });
