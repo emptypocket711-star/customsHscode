@@ -183,6 +183,33 @@ export default async function OperationsRequestDetailPage({
         </CardBody>
       </Card>
 
+      <Card>
+        <CardHeader
+          action={<Badge tone={improvementPrompt ? "warning" : "success"}>{improvementPrompt ? "확인 필요" : "정상 범위"}</Badge>}
+          description="원문을 열지 않고 운영자가 먼저 볼 카드 순서입니다."
+          title="운영 확인 순서"
+        />
+        <CardBody>
+          <div className="grid gap-2 md:grid-cols-3">
+            <a className="focus-ring rounded-md border border-slate-200 bg-slate-50 px-3 py-3 text-sm transition hover:border-blue-200 hover:bg-blue-50" href={improvementTarget?.href ?? "#request-matches"}>
+              <span className="block text-xs font-semibold text-slate-500">1단계</span>
+              <span className="mt-1 block font-semibold text-slate-950">{improvementTarget?.label ?? "파트너 노출·알림 확인"}</span>
+              <span className="mt-1 block text-xs leading-5 text-slate-600">현재 요청에서 가장 먼저 확인할 운영 병목을 봅니다.</span>
+            </a>
+            <a className="focus-ring rounded-md border border-slate-200 bg-slate-50 px-3 py-3 text-sm transition hover:border-blue-200 hover:bg-blue-50" href="#request-bids">
+              <span className="block text-xs font-semibold text-slate-500">2단계</span>
+              <span className="mt-1 block font-semibold text-slate-950">견적 상태 확인</span>
+              <span className="mt-1 block text-xs leading-5 text-slate-600">금액 원문 없이 제출·선정·수정 정책 상태만 확인합니다.</span>
+            </a>
+            <a className="focus-ring rounded-md border border-slate-200 bg-slate-50 px-3 py-3 text-sm transition hover:border-blue-200 hover:bg-blue-50" href="#completion-report-summary">
+              <span className="block text-xs font-semibold text-slate-500">3단계</span>
+              <span className="mt-1 block font-semibold text-slate-950">완료 후속 확인</span>
+              <span className="mt-1 block text-xs leading-5 text-slate-600">완료 리포트, 보관 서류, 피드백 집계만 확인합니다.</span>
+            </a>
+          </div>
+        </CardBody>
+      </Card>
+
       <Card id="request-matches">
         <CardHeader
           action={<Badge tone={detail.matchSummary && detail.matchSummary.matchedPartnerCount > 0 ? "info" : "warning"}>노출 {detail.matchSummary?.matchedPartnerCount ?? "-"}곳</Badge>}

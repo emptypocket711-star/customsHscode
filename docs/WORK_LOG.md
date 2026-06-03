@@ -8037,3 +8037,19 @@
 - Playwright developer operations detail collapse checks
 - `npm run typecheck`
 - `npm run lint`
+
+### operations request check order
+
+- 이전 작업은 운영 사용자·점검·공지 화면 회귀 검증인 P162.1이고, 이번 작업은 운영 요청 상세 상단에 민감정보 없이 먼저 볼 카드 순서를 표시한 P163.1이다.
+- `운영 확인 순서` 카드를 추가해 1단계 운영 병목, 2단계 견적 상태, 3단계 완료 후속 확인으로 이동하게 했다.
+- 첫 단계는 현재 개선 프롬프트 target이 있으면 그 target으로, 없으면 파트너 노출·알림 요약으로 이동한다.
+- 견적 상태와 완료 리포트 요약은 각각 `#request-bids`, `#completion-report-summary` 앵커로 연결했다.
+- 새 migration, RLS 변경은 없다.
+- 로컬 파일만 수정했고 원격 푸시, 배포는 하지 않았다.
+
+검증:
+
+- Playwright developer `/operations/requests/75000000-0000-4000-8000-000000000001`에서 `운영 확인 순서` 노출 확인
+- Playwright에서 `#request-bids`, `#completion-report-summary` 앵커 링크 확인
+- `npm run typecheck`
+- `npm run lint`
