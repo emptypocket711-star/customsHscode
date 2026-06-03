@@ -32,12 +32,23 @@ export function visibleImportTariffRows<T>(tariffs: T[], showAll: boolean) {
   return showAll ? tariffs : tariffs.slice(0, DEFAULT_VISIBLE_IMPORT_TARIFF_ROWS);
 }
 
+export function importTariffCountryFilterNotice(countryCode: string) {
+  const normalized = countryCode.trim().toUpperCase();
+
+  if (normalized === "ALL") {
+    return "모든국가 상태는 이 HSK에 등록된 세율 후보를 함께 보여주는 참고 화면입니다. 실제 FTA·특혜 적용 여부는 수입국, 원산지, 직접운송, 원산지증명 요건을 정한 뒤 확인합니다.";
+  }
+
+  return `${exportCountryLabel(countryCode)} 기준으로 공통 세율과 해당 국가에 연결된 협정·특혜 세율만 표시합니다. FTA 세율은 자동 적용이 아니며 원산지증명과 협정 요건 확인이 필요합니다.`;
+}
+
 export function ImportTariffCountryFilter({ initialCountryCode, tariffs }: ImportTariffCountryFilterProps) {
   const [countryCode, setCountryCode] = useState(initialCountryCode);
   const [showAllTariffs, setShowAllTariffs] = useState(false);
   const displayTariffs = useMemo(() => filterImportTariffsForCountry(tariffs, countryCode), [countryCode, tariffs]);
   const visibleTariffs = visibleImportTariffRows(displayTariffs, showAllTariffs);
   const hiddenTariffCount = Math.max(displayTariffs.length - visibleTariffs.length, 0);
+  const filterNotice = importTariffCountryFilterNotice(countryCode);
 
   function handleCountryChange(nextCountryCode: string) {
     setCountryCode(nextCountryCode);
@@ -55,7 +66,7 @@ export function ImportTariffCountryFilter({ initialCountryCode, tariffs }: Impor
           onChange={handleCountryChange}
         />
         <p className="text-xs leading-5 text-slate-500">
-          국가를 선택하면 현재 조회된 10자리 품목의 관세율만 즉시 필터링합니다. 다시 조회하지 않습니다.
+          {filterNotice}
         </p>
         <TariffPriorityGuideDialog />
       </div>

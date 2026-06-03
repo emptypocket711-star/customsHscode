@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_VISIBLE_IMPORT_TARIFF_ROWS, visibleImportTariffRows } from "./import-tariff-country-filter";
+import {
+  DEFAULT_VISIBLE_IMPORT_TARIFF_ROWS,
+  importTariffCountryFilterNotice,
+  visibleImportTariffRows
+} from "./import-tariff-country-filter";
 
 describe("visibleImportTariffRows", () => {
   const rows = Array.from({ length: DEFAULT_VISIBLE_IMPORT_TARIFF_ROWS + 3 }, (_, index) => index + 1);
@@ -10,5 +14,21 @@ describe("visibleImportTariffRows", () => {
 
   it("keeps all rows when expanded", () => {
     expect(visibleImportTariffRows(rows, true)).toEqual(rows);
+  });
+
+  it("explains that ALL countries is a candidate overview, not an FTA applicability decision", () => {
+    const notice = importTariffCountryFilterNotice("ALL");
+
+    expect(notice).toContain("세율 후보");
+    expect(notice).toContain("수입국");
+    expect(notice).toContain("원산지증명");
+  });
+
+  it("explains selected-country filtering and FTA conditions", () => {
+    const notice = importTariffCountryFilterNotice("CHN");
+
+    expect(notice).toContain("중국");
+    expect(notice).toContain("해당 국가");
+    expect(notice).toContain("자동 적용이 아니며");
   });
 });
