@@ -92,17 +92,17 @@ const operationsScenarios = [
   {
     name: "operations-users",
     path: "/operations/users",
-    markers: ["운영", "사용자"]
+    markers: ["운영 관리 홈", "플랫폼 요청 운영 상태", "사용자 상세 관리"]
   },
   {
     name: "operations-health",
     path: "/operations/health",
-    markers: ["운영", "스키마"]
+    markers: ["운영 점검", "운영 DB 스키마 점검", "수동 운영 명령"]
   },
   {
     name: "operations-notices",
     path: "/operations/notices",
-    markers: ["운영", "공지"]
+    markers: ["공지 관리", "대시보드 공지", "접속 팝업"]
   }
 ];
 
