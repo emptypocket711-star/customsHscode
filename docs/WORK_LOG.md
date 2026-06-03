@@ -4,6 +4,22 @@
 
 ## 2026-06-03
 
+### requester direct workflow update lock
+
+- 이전 작업은 P255에서 회사 없는 인증 사용자의 publish RPC 직접 호출 차단을 하네스에 추가한 것이고, 이번 작업은 requester가 `service_requests` 테이블을 직접 update해 workflow 상태를 바꾸는 경로를 더 넓게 고정한 작업이다.
+- 기존 direct update check를 status/published_at뿐 아니라 deadline_at/title까지 함께 바꾸는 시도로 확장했다.
+- Preview DB에서 requester fixture 계정이 직접 update를 시도했을 때 rows=0으로 차단되는 것을 확인했다.
+- 추가 SQL 수정은 없었다. 현재 migration의 direct update grant/RLS 경계가 이미 닫혀 있어 regression 하네스로 고정했다.
+- 다음 작업은 P257 freight detail draft-only mutation이다. 이번 P256이 요청 본문 status/deadline/published_at/title 직접 변경 차단이라면, P257은 공개 후 운송 상세 조건 변경으로 기존 매칭과 어긋나는 경로가 닫혀 있는지 확인하는 작업이다.
+
+검증:
+
+- `node --check scripts/check_marketplace_rls_negative.mjs`
+- `vercel env run -e preview -- sh -c 'E2E_ALLOW_REMOTE_MARKETPLACE_TRANSACTION=true node scripts/seed_marketplace_transaction_fixture.mjs && E2E_ALLOW_REMOTE_MARKETPLACE_RLS_NEGATIVE=true npm run smoke:marketplace-rls-negative'`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
 ### publish RPC nullable company guard regression
 
 - 이전 작업은 P254에서 marketplace DB/RLS negative 하네스를 만든 것이고, 이번 작업은 그 하네스에 회사 없는 인증 사용자의 `publish_freight_request` 직접 호출 차단을 추가한 작업이다.

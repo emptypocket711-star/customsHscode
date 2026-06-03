@@ -158,13 +158,15 @@ async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPas
   const statusUpdate = await requester
     .from("service_requests")
     .update({
+      deadline_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       published_at: new Date().toISOString(),
-      status: "open"
+      status: "open",
+      title: "P256 direct mutation should be blocked"
     })
     .eq("id", fixture.mutation.requests.freight.id)
-    .select("id,status");
+    .select("id,status,deadline_at,published_at,title");
   checks.push({
-    label: "requester-direct-service-request-status-update",
+    label: "requester-direct-service-request-workflow-update",
     ok: blockedByRls(statusUpdate),
     reason: statusUpdate.error?.message ?? `rows=${Array.isArray(statusUpdate.data) ? statusUpdate.data.length : "unknown"}`
   });

@@ -516,7 +516,7 @@
 | P253.1 P280 backend hardening runway sync | 완료 | 파트너 빈 상태 링크가 아니라 P254-P280을 직접 호출 우회, RLS, 상태 전이, 알림 중복 방지 중심으로 다시 고정한다 | roadmap/work log sync | docs diff check |
 | P254.1 marketplace DB/RLS negative harness | 완료 | 문서 정리가 아니라 requester/forwarder/broker/staff/service-role 우회 시나리오를 실행 가능한 DB/RLS 테스트 하네스로 만든다 | executable RLS matrix | DB/RLS negative harness, no secrets |
 | P255.1 publish RPC nullable company guard | 완료 | 테스트 하네스가 아니라 회사 없는 인증 사용자가 운송 요청 공개 RPC를 직접 호출해 권한 검사를 우회하지 못하게 한다 | publish auth guard | migration governance, RLS negative test, typecheck, lint, build |
-| P256.1 requester direct status update lock | 예정 | 공개 RPC guard가 아니라 requester가 `service_requests`를 직접 `open`으로 바꿔 매칭/audit을 우회하지 못하게 한다 | status transition RPC-only | migration governance, RLS negative test |
+| P256.1 requester direct status update lock | 완료 | 공개 RPC guard가 아니라 requester가 `service_requests`를 직접 `open`으로 바꿔 매칭/audit을 우회하지 못하게 한다 | status transition RPC-only | migration governance, RLS negative test |
 | P257.1 freight detail draft-only mutation | 예정 | request status 잠금이 아니라 공개 후 운송 상세 조건을 직접 바꿔 기존 매칭과 어긋나지 않게 한다 | detail edit boundary | migration governance, unit/RLS |
 | P258.1 publish required field SQL validation | 예정 | 상세 수정 경계가 아니라 origin/destination/transport mode 같은 매칭 핵심값을 RPC와 Zod에서 같이 요구한다 | publish validation parity | schema tests, action tests |
 | P259.1 requester company active guard | 예정 | deadline guard가 아니라 정지/차단된 requester 회사가 공개 모집을 시작하지 못하게 한다 | requester eligibility guard | RLS/RPC negative tests |
