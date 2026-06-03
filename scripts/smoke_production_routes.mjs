@@ -8,6 +8,8 @@ const loginEmail = process.env.SMOKE_LOGIN_EMAIL || "";
 const loginPassword = process.env.SMOKE_LOGIN_PASSWORD || "";
 const operationsLoginEmail = process.env.SMOKE_OPERATIONS_EMAIL || "";
 const operationsLoginPassword = process.env.SMOKE_OPERATIONS_PASSWORD || "";
+const operationsLoginConfigured = Boolean(operationsLoginEmail && operationsLoginPassword);
+const operationsLoginPartiallyConfigured = Boolean(operationsLoginEmail || operationsLoginPassword) && !operationsLoginConfigured;
 const protectionBypassSecret =
   process.env.VERCEL_AUTOMATION_BYPASS_SECRET ||
   process.env.VERCEL_PROTECTION_BYPASS_SECRET ||
@@ -231,7 +233,7 @@ async function main() {
   if (!sessionCookie && loginEmail && loginPassword) {
     sessionCookie = await sessionCookieFromLogin(baseUrl);
   }
-  const operationsSessionCookie = operationsLoginEmail && operationsLoginPassword
+  const operationsSessionCookie = operationsLoginConfigured
     ? await sessionCookieFromLogin(baseUrl, operationsLoginEmail, operationsLoginPassword)
     : "";
   const results = [];
@@ -254,6 +256,14 @@ async function main() {
   console.log(`baseUrl=${baseUrl}`);
   console.log(`timeoutMs=${timeoutMs} authenticated=${Boolean(sessionCookie)} requireAuthenticated=${requireAuthenticated}`);
   console.log(`operationsAuthenticated=${Boolean(operationsSessionCookie)} operationsRoutes=${Boolean(operationsLoginEmail || operationsLoginPassword)}`);
+  console.log(`operationsEmailPresent=${Boolean(operationsLoginEmail)} operationsPasswordPresent=${Boolean(operationsLoginPassword)} operationsPartialConfig=${operationsLoginPartiallyConfigured}`);
+  if (!operationsLoginEmail && !operationsLoginPassword) {
+    console.log("operationsSkipReason=SMOKE_OPERATIONS_EMAIL and SMOKE_OPERATIONS_PASSWORD are not set.");
+  } else if (operationsLoginPartiallyConfigured) {
+    console.log("operationsSkipReason=Both SMOKE_OPERATIONS_EMAIL and SMOKE_OPERATIONS_PASSWORD are required for operations route content smoke.");
+  } else if (!operationsSessionCookie) {
+    console.log("operationsSkipReason=Operations credentials were provided but login did not produce a Supabase session cookie.");
+  }
   console.log(`vercelProtectionBypass=${Boolean(protectionBypassSecret)}`);
   for (const result of results) printResult(result);
 
