@@ -4,6 +4,27 @@
 
 ## 2026-06-03
 
+### staging suite result hardening
+
+- 이전 작업은 P215 schema/route/transaction/completion/notification 검증을 한 명령으로 묶은 것이고, 이번 작업은 P216 suite 실패 시 어느 단계가 왜 실패했는지 운영자가 바로 볼 수 있게 결과 출력을 강화한 작업이다.
+- `smoke:staging:suite`의 각 단계에 목적과 실패 시 다음 조치 힌트를 붙였다.
+- suite 성공/실패 모두 `suiteStepSummary`를 출력하도록 해서 단계별 status, duration, purpose를 남긴다.
+- 실패 시 `suiteFailureDetails`에 failed step, failed command, exit code/signal, last passed step, next action을 출력하게 했다.
+- `scripts/README.md`에 suite failure triage 방법을 추가했다.
+- 실제 staging suite 재실행 중 `marketplace-transaction` mutation 단계에서 통관 완료 직후 requester 상세가 stale 상태를 한 번 보고 실패하는 현상을 확인했다.
+- Preview DB 확인 결과 통관 요청은 `completed`로 정상 변경되어 제품 RPC가 아니라 E2E 대기 조건 문제로 판단했고, 완료 action 이후 상세 페이지를 제한 시간 안에서 재조회하며 완료 리포트 UI를 기다리도록 mutation E2E를 보강했다.
+- 다음 작업은 P217 staging marketplace admin simplification plan이다. 이번 P216이 검증 도구의 실패 진단을 강화한 작업이라면, P217은 개발자/대표 1인 운영자가 실제로 이해하고 조치할 수 있게 관리 페이지와 통계 UI를 줄이고 재구성하는 작업이다.
+
+검증:
+
+- `node --check scripts/run_staging_smoke_suite.mjs`
+- `npm run smoke:staging:suite -- https://example.invalid`: 실패 출력에서 `suiteStepSummary`, `suiteFailureDetails`, `nextAction`, `lastPassedStep` 확인
+- Preview DB에서 mutation fixture의 freight/clearance 요청 status가 `completed`로 변경된 것을 확인
+- `vercel env run -e preview -- npm run smoke:staging:suite -- https://customs-hscode-psbhjibgm-koo-apps.vercel.app`: health-db, marketplace-schema, route-smoke, operations-guard, marketplace-transaction, completion-report, notification-dashboard, notification-worker 모두 `result=ok`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
 ### staging smoke suite orchestration
 
 - 이전 작업은 P214 notification worker route 단일 rehearsal이었고, 이번 작업은 P215 DB/schema/route/operations/transaction/completion/notification 검증을 한 순서로 묶어 반복 실행 가능한 staging suite를 만든 작업이다.

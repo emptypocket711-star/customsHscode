@@ -164,6 +164,13 @@ E2E test password env values. It does not print account passwords or secret
 values. Keep Vercel bypass and job worker secrets in the shell or platform secret
 store.
 
+The suite prints a `suiteStepSummary` at the end of successful runs and when a
+step fails. Each row includes the step status, duration, and purpose. On failure,
+read `suiteFailureDetails`: it prints the failed command, exit code or signal,
+the last passed step, and a targeted `nextAction` hint. Treat
+`operations-guard` failures as access-control issues until the role/RLS path is
+checked.
+
 ## Production schema health check
 
 `check-production-schema.mjs` compares the current migration files with the

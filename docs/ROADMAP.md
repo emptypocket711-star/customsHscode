@@ -504,7 +504,8 @@
 | P213.1 staging marketplace notification E2E/provider readiness | 완료 | 완료 리포트 gate가 아니라 매칭 알림 대시보드, opportunity 이동, 읽음 처리를 Preview에서 직접 검증한다 | staging notification E2E | notification readiness, dashboard link, read mark |
 | P214.1 staging notification worker/provider rehearsal | 완료 | 이미 생성된 알림 소비가 아니라 worker route가 target 계산, delivery claim, send-readiness를 처리하는 백엔드 경로를 Preview에서 검증한다 | worker/provider rehearsal | dry-run, claim-only, send readiness |
 | P215.1 staging smoke suite orchestration | 완료 | 개별 staging E2E가 아니라 schema, route, transaction, completion, notification 검증을 한 순서로 묶어 반복 실행 가능하게 만든다 | staging smoke suite | orchestration script, docs, latest preview run |
-| P216.1 staging suite result hardening | 예정 | suite 실행 묶음이 아니라 실패 단계별 원인과 다음 조치를 더 명확히 출력해 운영 runbook에 붙일 수 있게 한다 | suite diagnostics | step summary, failure hints, docs |
+| P216.1 staging suite result hardening | 완료 | suite 실행 묶음이 아니라 실패 단계별 원인과 다음 조치를 더 명확히 출력해 운영 runbook에 붙일 수 있게 한다 | suite diagnostics | step summary, failure hints, docs |
+| P217.1 staging marketplace admin simplification plan | 예정 | 스테이징 검증 도구가 아니라 개발자/대표 1인 운영자가 이해할 수 있게 관리 페이지 메뉴와 통계 액션을 줄이는 작업 방향을 코드와 문서 기준으로 정리한다 | admin UX simplification | page inventory, UX review, implementation plan |
 
 #### P109 다음 병목 선정
 
