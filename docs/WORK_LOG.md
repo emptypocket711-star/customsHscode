@@ -4,6 +4,20 @@
 
 ## 2026-06-03
 
+### marketplace MVP release readiness review
+
+- 이전 작업은 P279에서 P254-P278 전체 staging regression suite를 통과시킨 것이고, 이번 작업은 새 기능 구현이 아니라 제한 공개 테스트 기준과 출시 보류 조건을 대표/운영자 관점으로 정리한 작업이다.
+- `docs/MARKETPLACE_MVP_RELEASE_READINESS.md`를 추가했다.
+- 현재 decision은 `제한 공개 테스트 가능`으로 정리했다.
+- 화주, 포워더, 관세사무소, 운영자/developer는 테스트 가능으로 두고, 해외 수출입자는 국가별 검증/언어/파트너 연결 정책이 필요해 보류로 분리했다.
+- 마지막 Preview regression suite 13단계 통과 결과와 hold condition을 문서에 남겼다.
+- 대량 외부 홍보, 실제 결제/정산, 실제 발송 provider enable, 법적 확정 표현은 아직 보류로 명시했다.
+
+검증:
+
+- docs review
+- `rg -n "제한 공개 테스트 가능|Hold Conditions|smoke:staging:suite" docs/MARKETPLACE_MVP_RELEASE_READINESS.md docs/ROADMAP.md docs/WORK_LOG.md`
+
 ### P254-P278 staging regression suite
 
 - 이전 작업은 P278에서 marketplace 주요 route 성능 smoke를 만든 것이고, 이번 작업은 개별 smoke가 아니라 P254-P278에서 만든 보안/운영/성능 검증을 full staging suite에 포함해 회귀 실행한 작업이다.
