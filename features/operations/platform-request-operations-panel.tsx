@@ -314,9 +314,14 @@ export function PlatformRequestOperationsPanel({
         />
         <CardBody className="grid gap-4">
           {!summary.schemaReady ? (
-            <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
-              현재 이 환경에서는 플랫폼 요청 운영 데이터가 준비되지 않아 요청 통계를 계산할 수 없습니다. 로그인 문제는 아니며, 요청·입찰 기능 데이터 준비 후 운영 큐가 표시됩니다.
-            </p>
+            <div className="grid gap-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
+              <p>
+                현재 이 환경에서는 플랫폼 요청 운영 데이터가 준비되지 않아 요청 통계를 계산할 수 없습니다. 로그인 문제는 아니며, 요청·입찰 기능 DB 스키마 적용 상태를 먼저 확인해야 합니다.
+              </p>
+              <Link className="focus-ring inline-flex h-9 w-fit items-center justify-center rounded-md bg-white px-3 text-xs font-semibold text-amber-900 ring-1 ring-amber-200 hover:bg-amber-100" href="/operations/health#schema-health">
+                운영 DB 스키마 점검 보기
+              </Link>
+            </div>
           ) : null}
           <div className="rounded-md border border-slate-200 bg-white p-4">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">

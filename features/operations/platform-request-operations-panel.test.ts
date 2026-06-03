@@ -152,6 +152,21 @@ describe("platform request operations panel", () => {
     expect(html).not.toContain("완료 리포트 잠금 완료: 5건");
   });
 
+  it("links schema fallback guidance to the operations schema health check", () => {
+    const html = renderToStaticMarkup(
+      createElement(PlatformRequestOperationsPanel, {
+        summary: summaryFixture({
+          actionRequest: "플랫폼 요청 DB 스키마 적용 상태를 먼저 확인해줘.",
+          schemaReady: false
+        })
+      })
+    );
+
+    expect(html).toContain("요청·입찰 기능 DB 스키마 적용 상태를 먼저 확인");
+    expect(html).toContain("운영 DB 스키마 점검 보기");
+    expect(html).toContain("/operations/health#schema-health");
+  });
+
   it("renders no-response cause segmentation in the owner action detail", () => {
     const html = renderToStaticMarkup(
       createElement(PlatformRequestOperationsPanel, {
