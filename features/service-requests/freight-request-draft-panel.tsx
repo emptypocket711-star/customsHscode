@@ -25,12 +25,16 @@ import {
 import { ServiceRequestFeedbackForm } from "@/features/service-requests/service-request-feedback-form";
 import {
   countServiceRequestStatuses,
+  filterServiceRequestsByStatus,
   isSelectedOrLaterStatus,
   serviceRequestBidStatusLabel,
   serviceRequestBidStatusTone,
   serviceRequestDocumentTypeLabel,
   serviceRequestPartnerInterestStatusLabel,
-  serviceRequestPartnerInterestStatusTone
+  serviceRequestPartnerInterestStatusTone,
+  serviceRequestStatusFilterLabel,
+  serviceRequestStatusFilterOptions,
+  type ServiceRequestStatusFilter
 } from "@/features/service-requests/service-request-status";
 import {
   answerFreightRequestQuestionAction,
@@ -1229,10 +1233,14 @@ export function FreightRequestDraftPanel({
   const searchParams = useSearchParams();
   const initialWorkspace = searchParams.get("workspace") === "forwarder" ? "forwarder" : "requester";
   const [activeWorkspace, setActiveWorkspace] = useState<"requester" | "forwarder">(initialWorkspace);
+  const [statusFilter, setStatusFilter] = useState<ServiceRequestStatusFilter>("all");
   const prefill = marketplaceRequestPrefillFromSearchParams(searchParams);
   const prefilledProductSummary = marketplacePrefilledProductSummary(prefill);
   const prefilledTitle = marketplacePrefilledTitle(prefill, "freight");
   const counts = countServiceRequestStatuses(requests, opportunities);
+  const filteredRequests = filterServiceRequestsByStatus(requests, statusFilter);
+  const filteredOpportunities = statusFilter === "all" || statusFilter === "opportunities" ? opportunities : [];
+  const statusFilterOptions = serviceRequestStatusFilterOptions(counts, activeWorkspace === "forwarder" ? "partner" : "requester");
   const unansweredQuestionCount = Object.values(questionsByRequestId)
     .flat()
     .filter((question) => !question.answer).length;
@@ -1269,7 +1277,10 @@ export function FreightRequestDraftPanel({
               ? "focus-ring rounded-md bg-blue-700 px-4 py-3 text-left text-sm font-semibold text-white"
               : "focus-ring rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-700 hover:bg-slate-100"
           }
-          onClick={() => setActiveWorkspace("requester")}
+          onClick={() => {
+            setActiveWorkspace("requester");
+            setStatusFilter("all");
+          }}
           type="button"
         >
           내 요청 관리
@@ -1281,7 +1292,10 @@ export function FreightRequestDraftPanel({
               ? "focus-ring rounded-md bg-blue-700 px-4 py-3 text-left text-sm font-semibold text-white"
               : "focus-ring rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-700 hover:bg-slate-100"
           }
-          onClick={() => setActiveWorkspace("forwarder")}
+          onClick={() => {
+            setActiveWorkspace("forwarder");
+            setStatusFilter("all");
+          }}
           type="button"
         >
           입찰 가능 요청
@@ -1299,6 +1313,23 @@ export function FreightRequestDraftPanel({
         <span className={unansweredQuestionCount > 0 ? "rounded-md bg-amber-50 px-3 py-2 font-semibold text-amber-900 md:col-span-6" : "rounded-md bg-slate-50 px-3 py-2 md:col-span-6"}>
           미답변 질문 {unansweredQuestionCount}건
         </span>
+      </div>
+
+      <div className="flex flex-wrap gap-2 rounded-md border border-slate-200 bg-white p-3" aria-label="운송 요청 상태 필터">
+        {statusFilterOptions.map((option) => (
+          <button
+            className={
+              statusFilter === option.key
+                ? "focus-ring rounded-md bg-slate-900 px-3 py-2 text-xs font-semibold text-white"
+                : "focus-ring rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            }
+            key={option.key}
+            onClick={() => setStatusFilter(option.key)}
+            type="button"
+          >
+            {option.label} {option.count}건
+          </button>
+        ))}
       </div>
 
       {activeWorkspace === "requester" ? (
@@ -1497,7 +1528,12 @@ export function FreightRequestDraftPanel({
                   저장된 운송 견적 요청이 없습니다. 위 초안 저장부터 시작해 주세요.
                 </p>
               ) : null}
-              {requests.map((request) => (
+              {schemaReady && requests.length > 0 && filteredRequests.length === 0 ? (
+                <p className="rounded-md border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                  선택한 상태({serviceRequestStatusFilterLabel(statusFilter)})에 해당하는 운송 견적 요청이 없습니다.
+                </p>
+              ) : null}
+              {filteredRequests.map((request) => (
                 <FreightRequestRow
                   compact
                   key={request.id}
@@ -1515,7 +1551,7 @@ export function FreightRequestDraftPanel({
       ) : (
         <Card>
           <CardHeader
-            action={<Badge tone={opportunities.length > 0 ? "info" : "neutral"}>{opportunities.length}건</Badge>}
+            action={<Badge tone={filteredOpportunities.length > 0 ? "info" : "neutral"}>{filteredOpportunities.length}건</Badge>}
             description="회사 관심 조건과 검증 상태에 따라 매칭된 운송 요청입니다. 조건 확인 질문 후 견적을 제출할 수 있습니다."
             title="입찰 가능 운송 요청"
           />
@@ -1532,7 +1568,12 @@ export function FreightRequestDraftPanel({
                 현재 입찰 가능한 운송 요청이 없습니다.
               </p>
             ) : null}
-            {opportunities.map((opportunity) => (
+            {schemaReady && opportunities.length > 0 && filteredOpportunities.length === 0 ? (
+              <p className="rounded-md border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                선택한 상태({serviceRequestStatusFilterLabel(statusFilter)})에 해당하는 입찰 가능 운송 요청이 없습니다.
+              </p>
+            ) : null}
+            {filteredOpportunities.map((opportunity) => (
               <FreightOpportunityRow
                 compact
                 completionReport={completionReportsByRequestId[opportunity.id]}

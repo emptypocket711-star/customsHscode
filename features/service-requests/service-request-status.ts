@@ -6,14 +6,64 @@ export function countServiceRequestStatuses<TRequest extends { status: string }>
   requests: TRequest[],
   opportunities: unknown[]
 ) {
+  const inProgress = requests.filter((request) => request.status === "in_progress").length;
+  const selected = requests.filter((request) => request.status === "partner_selected").length;
+
   return {
+    all: requests.length,
     bidsReceived: requests.filter((request) => request.status === "bids_received").length,
+    completed: requests.filter((request) => request.status === "completed").length,
     drafts: requests.filter((request) => request.status === "draft").length,
-    inProgress: requests.filter((request) => request.status === "in_progress").length,
+    inProgress,
+    inProgressOrSelected: inProgress + selected,
     open: requests.filter((request) => request.status === "open").length,
     opportunities: opportunities.length,
-    selected: requests.filter((request) => request.status === "partner_selected").length
+    selected
   };
+}
+
+export type ServiceRequestStatusFilter = "all" | "draft" | "open" | "bids_received" | "in_progress" | "completed" | "opportunities";
+
+export function serviceRequestStatusFilterLabel(filter: ServiceRequestStatusFilter) {
+  if (filter === "draft") return "초안";
+  if (filter === "open") return "모집중";
+  if (filter === "bids_received") return "견적 도착";
+  if (filter === "in_progress") return "진행중";
+  if (filter === "completed") return "완료";
+  if (filter === "opportunities") return "입찰 가능";
+  return "전체";
+}
+
+export function serviceRequestStatusFilterOptions(
+  counts: ReturnType<typeof countServiceRequestStatuses>,
+  workspace: "partner" | "requester"
+) {
+  if (workspace === "partner") {
+    return [
+      { count: counts.opportunities, key: "all" as const, label: "전체" },
+      { count: counts.opportunities, key: "opportunities" as const, label: serviceRequestStatusFilterLabel("opportunities") }
+    ];
+  }
+
+  return [
+    { count: counts.all, key: "all" as const, label: "전체" },
+    { count: counts.drafts, key: "draft" as const, label: serviceRequestStatusFilterLabel("draft") },
+    { count: counts.open, key: "open" as const, label: serviceRequestStatusFilterLabel("open") },
+    { count: counts.bidsReceived, key: "bids_received" as const, label: serviceRequestStatusFilterLabel("bids_received") },
+    { count: counts.inProgressOrSelected, key: "in_progress" as const, label: serviceRequestStatusFilterLabel("in_progress") },
+    { count: counts.completed, key: "completed" as const, label: serviceRequestStatusFilterLabel("completed") }
+  ];
+}
+
+export function filterServiceRequestsByStatus<TRequest extends { status: string }>(
+  requests: TRequest[],
+  filter: ServiceRequestStatusFilter
+) {
+  if (filter === "all" || filter === "opportunities") return requests;
+  if (filter === "in_progress") {
+    return requests.filter((request) => request.status === "partner_selected" || request.status === "in_progress");
+  }
+  return requests.filter((request) => request.status === filter);
 }
 
 export function serviceRequestDocumentTypeLabel(type: string) {
