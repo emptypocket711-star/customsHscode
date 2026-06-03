@@ -24,7 +24,7 @@ const protectedScenarios = [
   {
     name: "requests-hub",
     path: "/requests",
-    markers: ["요청 시작", "운송 견적 요청", "통관 의뢰 요청", "이미 저장한 요청 확인"]
+    markers: ["요청 시작", "운송 견적 요청", "통관 의뢰 요청", "이미 저장한 요청 확인", "파트너 입찰 업무"]
   },
   {
     name: "hs-import-exact",
