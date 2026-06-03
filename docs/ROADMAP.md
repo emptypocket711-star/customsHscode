@@ -523,7 +523,7 @@
 | P260.1 unmatched publish state handling | 완료 | requester eligibility가 아니라 매칭 0건 요청이 open으로 공개되더라도 matched_count/audit/운영 확인 계약이 깨지지 않게 한다 | zero-match state | DB/RPC contract, staging E2E |
 | P261.1 notification-disabled match semantics | 완료 | zero-match 상태가 아니라 알림 off가 요청 노출 off가 아니며 매칭은 유지되고 최초 발송만 skip되는 제품 규칙을 SQL과 일치시킨다 | preference semantics | DB/RPC contract, staging notification |
 | P262.1 freight bid request-type and deadline guard | 완료 | 알림 선호 규칙이 아니라 freight bid RPC가 통관 요청/마감 지난 요청을 직접 호출로 받지 않게 한다 | bid RPC guard | RPC negative tests |
-| P263.1 freight bid SQL value constraints | 예정 | bid 대상 guard가 아니라 currency, 금액, 리드타임, 유효기간 검증을 SQL에도 중복 적용한다 | bid value constraints | migration governance, action tests |
+| P263.1 freight bid SQL value constraints | 완료 | bid 대상 guard가 아니라 currency, 금액, 리드타임, 유효기간 검증을 SQL에서도 차단하고 invalid 호출 후 bid row가 남지 않게 한다 | bid value constraints | RPC negative tests |
 | P264.1 clearance bid detail type policy | 예정 | freight bid 값 검증이 아니라 clearance detail을 freight bid에 직접 붙이지 못하게 RLS를 조인다 | bid detail type boundary | RLS negative tests |
 | P265.1 bid audit snapshot hardening | 예정 | bid detail RLS가 아니라 분쟁 검토에 필요한 제출 견적 요약을 audit에 민감정보 없이 남긴다 | bid audit snapshot | audit unit/governance |
 | P266.1 notification per-kind idempotency | 예정 | bid audit가 아니라 초기 알림과 마감 알림이 job 반복 실행 때 중복 claim/send되지 않게 한다 | notification idempotency | policy/unit, worker rehearsal |

@@ -664,6 +664,50 @@ async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPas
     reason: expiredFreightBid.error?.message ?? `bidRows=${expiredFreightBidRows.count ?? "unknown"}`
   });
 
+  const invalidFreightBidRequestId = fixture.mutation.requests.freight.id;
+  const invalidCurrencyBid = await forwarder.rpc("submit_freight_bid", {
+    ...freightBidInput(invalidFreightBidRequestId),
+    p_currency: "KR"
+  });
+  const zeroTotalBid = await forwarder.rpc("submit_freight_bid", {
+    ...freightBidInput(invalidFreightBidRequestId),
+    p_total_amount: 0
+  });
+  const negativeDetailAmountBid = await forwarder.rpc("submit_freight_bid", {
+    ...freightBidInput(invalidFreightBidRequestId),
+    p_freight_rate_amount: -1
+  });
+  const invalidLeadTimeBid = await forwarder.rpc("submit_freight_bid", {
+    ...freightBidInput(invalidFreightBidRequestId),
+    p_lead_time_days: 0
+  });
+  const pastValidUntilBid = await forwarder.rpc("submit_freight_bid", {
+    ...freightBidInput(invalidFreightBidRequestId),
+    p_valid_until: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+  });
+  const invalidValueBidRows = await serviceRoleClient
+    .from("service_bids")
+    .select("id", { count: "exact", head: true })
+    .eq("request_id", invalidFreightBidRequestId)
+    .eq("bidder_company_id", fixture.companies.forwarder.id);
+  checks.push({
+    label: "freight-bid-sql-value-constraints-block-invalid-inputs",
+    ok: Boolean(invalidCurrencyBid.error?.message?.includes("통화 코드는 3자리 코드로 입력해 주세요"))
+      && Boolean(zeroTotalBid.error?.message?.includes("견적 총액을 입력해야 합니다"))
+      && Boolean(negativeDetailAmountBid.error?.message?.includes("견적 상세 금액은 0보다 커야 합니다"))
+      && Boolean(invalidLeadTimeBid.error?.message?.includes("리드타임과 운송일수는 1일 이상이어야 합니다"))
+      && Boolean(pastValidUntilBid.error?.message?.includes("견적 유효기한은 오늘 이후여야 합니다"))
+      && invalidValueBidRows.count === 0,
+    reason: JSON.stringify({
+      bidRows: invalidValueBidRows.count,
+      currency: invalidCurrencyBid.error?.message ?? null,
+      detailAmount: negativeDetailAmountBid.error?.message ?? null,
+      leadTime: invalidLeadTimeBid.error?.message ?? null,
+      total: zeroTotalBid.error?.message ?? null,
+      validUntil: pastValidUntilBid.error?.message ?? null
+    })
+  });
+
   const publishedFreightDetailUpdate = await requester
     .from("freight_request_details")
     .update({

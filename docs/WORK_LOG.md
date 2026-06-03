@@ -4,6 +4,19 @@
 
 ## 2026-06-03
 
+### freight bid SQL value constraints
+
+- 이전 작업은 P262에서 freight bid RPC의 요청 타입과 마감 guard를 확인한 것이고, 이번 작업은 입찰 가능한 운송 요청이어도 잘못된 값이 DB에서 차단되는지 확인한 작업이다.
+- 포워더 계정으로 mutation freight request에 대해 invalid currency, 0원 총액, 음수 상세 금액, 0일 리드타임, 과거 유효기한을 각각 `submit_freight_bid`로 호출했다.
+- Preview DB에서 `통화 코드는 3자리 코드로 입력해 주세요.`, `견적 총액을 입력해야 합니다.`, `견적 상세 금액은 0보다 커야 합니다.`, `리드타임과 운송일수는 1일 이상이어야 합니다.`, `견적 유효기한은 오늘 이후여야 합니다.` 메시지로 각각 차단되는 것을 확인했다.
+- 모든 invalid 호출 뒤에도 해당 request/forwarder 조합의 `service_bids` 행은 0건으로 유지됐다.
+- 다음 작업은 P264 clearance bid detail type policy다. 이번 P263이 freight bid 값 검증이라면, P264는 통관 bid detail을 freight bid에 붙이거나 반대로 섞는 타입 경계를 RLS/DB 검증으로 고정하는 작업이다.
+
+검증:
+
+- `node --check scripts/check_marketplace_rls_negative.mjs`
+- `vercel env run -e preview -- sh -c 'E2E_ALLOW_REMOTE_MARKETPLACE_TRANSACTION=true node scripts/seed_marketplace_transaction_fixture.mjs && E2E_ALLOW_REMOTE_MARKETPLACE_RLS_NEGATIVE=true npm run smoke:marketplace-rls-negative'`
+
 ### freight bid request type and deadline guard
 
 - 이전 작업은 P261에서 알림 off 파트너도 매칭/노출은 유지되고 최초 알림만 skip되는지 확인한 것이고, 이번 작업은 포워더가 직접 RPC로 잘못된 요청에 freight bid를 넣지 못하게 확인한 작업이다.
