@@ -78,6 +78,9 @@
 ## Deployment Direction
 
 - 1차 런칭은 Vercel + Supabase로 간다.
+- 로컬 DB/인증 상태가 검증을 흔들 때는 운영 서버가 아니라 staging/preview 배포를 개발 검증 기준으로 사용한다.
+- staging 개발은 `main` 직접 push가 아니라 작업 브랜치와 Vercel preview 배포를 우선한다.
+- Vercel preview Deployment Protection이 켜진 경우 자동 스모크와 Playwright 검증은 `x-vercel-protection-bypass` 헤더를 사용한다. bypass secret은 Vercel 프로젝트 설정에서 생성하고 원문을 로그나 문서에 남기지 않는다.
 - 트래픽 증가 전 Upstash Redis 등 durable cache/rate limit 공유 저장소를 붙인다.
 - 무거운 작업은 `background_jobs`로 분리한다.
 - 문서/OCR/엑셀 변환, 월별 공식 데이터 수집, 보고서 생성은 request-time 작업에서 분리한다.

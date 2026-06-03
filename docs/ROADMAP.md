@@ -460,6 +460,7 @@
 | P169.1 local E2E runner consistency | 완료 | 서버 실행 환경 분리가 아니라 기존 E2E/리뷰 스크립트가 로컬 서버·storage state·local env를 일관되게 사용하도록 정리한다 | local e2e consistency | script review, e2e, typecheck, lint |
 | P170.1 product candidate detail handoff regression | 완료 | E2E 실행 경로가 아니라 품명 검색 10자리 후보를 눌러 직접조회로 들어갈 때 source/basis date/간략정보 맥락이 유지되는지 검증한다 | product candidate detail handoff | browser, typecheck, lint |
 | P171.1 hs direct detail density review | 대기 | 품명 후보 handoff가 아니라 HS 10자리 직접조회 상세 화면의 간략 정보와 네비게이터 표시 밀도가 적절한지 점검한다 | hs detail density | browser, typecheck, lint |
+| P172.1 staging development baseline | 완료 | 로컬 DB 복구가 아니라 작업 브랜치와 Vercel preview를 기준으로 staging 개발·검증 흐름을 만든다 | staging branch, preview deploy, smoke bypass support | push, preview build, typecheck, lint, smoke blocked by Vercel protection |
 
 #### P109 다음 병목 선정
 
