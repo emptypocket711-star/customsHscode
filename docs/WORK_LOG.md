@@ -7907,3 +7907,18 @@
 - local env 지정 `npm run e2e:marketplace-notification`
 - `npm run typecheck`
 - `npm run lint`
+
+### dashboard request counter label clarity
+
+- 이전 작업은 notification E2E fixture를 추가한 P154.1이고, 이번 작업은 대시보드 하단 카운터에서 공개 요청과 실제 진행중 업무가 혼동되지 않게 문구를 분리한 P155.1이다.
+- 기존 `진행중 요청` 카운터는 실제로 `openRequests`를 표시하고 있었다.
+- 이미 `업무 진행` 카운터가 `inProgressRequests`를 표시하므로, `openRequests` 카운터 문구를 `공개 요청`으로 바꿨다.
+- 새 migration, RLS 변경은 없다.
+- 로컬 파일만 수정했고 원격 푸시, 배포는 하지 않았다.
+
+검증:
+
+- Playwright requester `/dashboard`에서 `공개 요청 n`, `업무 진행 n` 확인
+- Playwright requester `/dashboard`에서 기존 `진행중 요청` 문구 비노출 확인
+- `npm run typecheck`
+- `npm run lint`
