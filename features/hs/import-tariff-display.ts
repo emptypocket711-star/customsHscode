@@ -36,6 +36,13 @@ const rcepAseanAgreement: AgreementOption = {
   evidence: "RCEP 원산지증명, 직접운송, 누적 적용 여부"
 };
 
+const koreaEftaAgreement: AgreementOption = {
+  prefix: "FEF",
+  label: "한-EFTA FTA 관세율",
+  coType: "원산지신고 또는 협정상 원산지증명",
+  evidence: "EFTA 협정 원산지증명, 직접운송, 생산·원재료 증빙"
+};
+
 const euMemberImportCountryCodes = [
   "AUT", "AT",
   "BEL", "BE",
@@ -70,6 +77,7 @@ const euMemberImportCountryCodes = [
 const countryAgreementOptions: Record<string, AgreementOption[]> = {
   AUS: [{ prefix: "FAU", label: "한-호주 FTA 관세율", coType: "원산지증명서 또는 협정상 원산지신고", evidence: "원산지증명, 직접운송, 생산·원재료 증빙" }],
   CAN: [{ prefix: "FCA", label: "한-캐나다 FTA 관세율", coType: "원산지증명서 또는 원산지신고", evidence: "원산지증명, 직접운송, 생산·원재료 증빙" }],
+  CHE: [koreaEftaAgreement],
   CHN: [
     { prefix: "FCN", label: "한-중 FTA 관세율", coType: "기관발급 원산지증명서", evidence: "한-중 FTA 원산지증명서, 직접운송 증빙, 원산지소명자료" },
     { prefix: "FRCCN", label: "RCEP 관세율(중국)", coType: "RCEP 원산지증명서 또는 인증수출자 원산지신고", evidence: "RCEP 원산지증명, 직접운송, 누적 적용 여부" }
@@ -81,6 +89,7 @@ const countryAgreementOptions: Record<string, AgreementOption[]> = {
     rcepAseanAgreement
   ],
   IND: [{ prefix: "FIN", label: "한-인도 CEPA 관세율", coType: "기관발급 원산지증명서", evidence: "원산지증명서, 직접운송 증빙, 원산지소명자료" }],
+  ISL: [koreaEftaAgreement],
   ISR: [{ prefix: "FIL", label: "한-이스라엘 FTA 관세율", coType: "협정상 원산지증명", evidence: "원산지증명, 직접운송, 생산·원재료 증빙" }],
   JPN: [{ prefix: "FRCJP", label: "RCEP 관세율(일본)", coType: "RCEP 원산지증명서 또는 인증수출자 원산지신고", evidence: "RCEP 원산지증명, 직접운송, 원산지소명자료" }],
   KHM: [
@@ -113,6 +122,7 @@ const countryAgreementOptions: Record<string, AgreementOption[]> = {
   ],
   MMR: [koreaAseanAgreement, rcepAseanAgreement],
   BRU: [koreaAseanAgreement, rcepAseanAgreement],
+  NOR: [koreaEftaAgreement],
   CHL: [{ prefix: "FCL", label: "한-칠레 FTA 관세율", coType: "협정상 원산지증명", evidence: "원산지증명, 직접운송, 생산·원재료 증빙" }],
   COL: [{ prefix: "FCO", label: "한-콜롬비아 FTA 관세율", coType: "협정상 원산지증명", evidence: "원산지증명, 직접운송, 생산·원재료 증빙" }],
   PER: [{ prefix: "FPE", label: "한-페루 FTA 관세율", coType: "협정상 원산지증명", evidence: "원산지증명, 직접운송, 생산·원재료 증빙" }],
@@ -139,16 +149,20 @@ const importCountryAgreementAliases: Record<string, string> = {
   ID: "IDN",
   IL: "ISR",
   IN: "IND",
+  IS: "ISL",
   JP: "JPN",
   KH: "KHM",
+  LI: "CHE",
   MM: "MMR",
   MY: "MYS",
   NI: "NIC",
   NZ: "NZL",
+  NO: "NOR",
   PA: "PAN",
   PE: "PER",
   PH: "PHL",
   SG: "SGP",
+  CH: "CHE",
   SV: "SLV",
   TH: "THA",
   TR: "TUR",
@@ -380,6 +394,9 @@ export function displayImportTariffLabel(tariff: Pick<ImportTariffDisplayRow, "r
   const agreement = agreementForRateType(tariff.rateType, countryCode);
   if (agreement) return agreement.label;
   if (isCommonImportTariff(tariff)) return commonTariffLabel(tariff.rateType, tariff.label);
+  if (isLeastDevelopedCountryTariff(tariff.rateType) || isNorthKoreaTariff(tariff.rateType)) {
+    return commonTariffLabel(tariff.rateType, tariff.label);
+  }
   return tariff.label;
 }
 
