@@ -479,6 +479,7 @@
 | P188.1 product candidate clipboard score | 완료 | 화면 문구가 아니라 품명 AI 결과를 복사해 외부로 전달할 때도 후보별 GPT 점수와 예비 안내가 함께 들어가게 한다 | copied product candidate score | browser clipboard, typecheck, lint, build, staging smoke |
 | P189.1 product search detail source banner | 완료 | 복사문이 아니라 품명 후보를 눌러 들어간 10자리 상세조회 상단 배너가 확정 HS처럼 보이지 않게 `우선 검토 후보`, `예비 조회`로 정리한다 | product-search detail provisional banner | browser, typecheck, lint, build, staging smoke |
 | P190.1 marketplace prefill provisional flow regression | 완료 | 상세조회 배너가 아니라 HS/품명 조회 결과에서 운송·통관 요청 초안으로 넘어갈 때 예비 HSK와 담당자 검토 문구가 유지되는지 검증한다 | marketplace prefill provisional regression | browser, staging smoke |
+| P191.1 request draft readiness copy | 완료 | 조회 결과 prefill 패널이 아니라 요청 초안 저장 전 준비도 패널을 사용자 관점의 `저장 필수`, `견적 판단 정보`, `초안 저장 가능` 문구로 정리한다 | request draft readiness copy | browser, typecheck, lint, build, staging smoke |
 
 #### P109 다음 병목 선정
 

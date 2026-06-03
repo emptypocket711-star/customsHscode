@@ -4,6 +4,24 @@
 
 ## 2026-06-03
 
+### request draft readiness copy
+
+- 이전 작업은 P190 HS/품명 조회 결과에서 요청 초안으로 넘어가는 CTA 회귀 검증이고, 이번 작업은 P191 요청 초안 저장 전 준비도 패널 문구 정리다.
+- `초안 저장 필수값`, `보완 추천`, `저장 가능` 문구를 `초안 저장에 필요한 값`, `저장 필수`, `견적 판단 정보`, `초안 저장 가능`으로 바꿔 사용자 입장에서 해야 할 일을 더 명확히 했다.
+- `지금 필요한 값`도 `초안 저장 전 필요한 값`으로 바꿔 저장 전 필수값과 공개/견적 판단 보완값을 구분했다.
+- staging에서 운송 초안과 통관 초안 prefill URL을 열어 새 문구가 보이는지 확인했다.
+- 첫 검증은 금지어를 `저장 가능`으로 너무 넓게 잡아 `초안 저장 가능`까지 걸렸고, 이후 이전 문구인 `초안 저장 필수값이 채워졌습니다.`, `보완 추천`만 금지하도록 조정해 통과했다.
+- 최신 staging preview는 `https://customs-hscode-iv057uicw-koo-apps.vercel.app`다.
+- 다음 작업은 P192 요청 초안 저장 액션의 성공/오류 메시지 점검이다. 이번 P191이 저장 전 준비도 패널이라면, P192는 실제 저장 버튼을 눌렀을 때 사용자가 다음 행동을 알 수 있는지 보는 작업이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- Playwright staging browser: 운송/통관 초안 준비도 패널 새 문구와 이전 문구 미노출 확인
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-iv057uicw-koo-apps.vercel.app`: 9/9 통과
+
 ### marketplace prefill provisional flow regression
 
 - 이전 작업은 P189 품명 후보 상세조회 진입 배너 문구 점검이고, 이번 작업은 P190 HS/품명 조회 결과에서 요청 초안으로 넘어가는 CTA 회귀 검증이다.
