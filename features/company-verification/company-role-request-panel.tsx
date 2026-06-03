@@ -15,6 +15,8 @@ const initialState: CompanyRoleRequestActionState = {
   status: "idle"
 };
 
+export const COMPANY_ROLE_REQUEST_SECTION_ID = "platform-role-request";
+
 const roleOptions = [
   {
     description: "운송 견적 또는 통관 의뢰를 요청하는 국내 화주 계정입니다.",
@@ -117,7 +119,7 @@ export function CompanyRoleRequestPanel({
   }, [state.status]);
 
   return (
-    <Card>
+    <Card id={COMPANY_ROLE_REQUEST_SECTION_ID}>
       <CardHeader
         action={<ClipboardCheck aria-hidden="true" className="text-blue-700" size={22} />}
         description="필요한 플랫폼 역할을 신청합니다. 신청만으로 입찰·요청 권한이 바로 부여되지는 않습니다."
