@@ -4,6 +4,27 @@
 
 ## 2026-06-03
 
+### operations smoke prepare schema fallback
+
+- 이전 작업은 P206 운영 smoke 실행 절차를 문서화한 것이고, 이번 작업은 P207 `smoke:operations:prepare`가 오래된 profile schema에서도 최소 developer role 보강을 시도하게 만든 코드 보강이다.
+- `scripts/prepare_operations_smoke_account.mjs`의 profile upsert를 full schema와 minimal schema 두 단계로 나눴다.
+- full schema는 `company_role`, `account_type`, `allowed_ip_count`, `onboarding_completed_at`까지 채운다.
+- profile 확장 컬럼이 없거나 schema cache 오류가 나면 minimal schema로 재시도해 `id`, `email`, `full_name`, `role`, `company_id`만 보강한다.
+- 성공 출력에 `profileSchemaMode=full|minimal`을 추가했다.
+- 현재 작업 세션에는 Supabase service role env와 운영자 비밀번호 env가 없어 실제 원격 profile upsert는 실행하지 않았다.
+- 최신 staging preview는 `https://customs-hscode-gf1p0px4l-koo-apps.vercel.app`다.
+- 다음 작업은 P208 operations guard diagnostics 개선이다. 이번 P207이 운영자 준비 스크립트의 schema fallback이라면, P208은 일반 계정 guard 스크립트가 테스트 계정 파일 상태와 검사 대상 계정을 더 명확히 출력하게 하는 작업이다.
+
+검증:
+
+- `node --check scripts/prepare_operations_smoke_account.mjs`
+- `npm run smoke:operations:prepare`: env 누락 실패와 nextAction 출력 확인
+- `npm run lint`
+- `npm run typecheck`
+- `npm run build`
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-gf1p0px4l-koo-apps.vercel.app`: 9/9 통과
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... npm run smoke:operations:guard -- https://customs-hscode-gf1p0px4l-koo-apps.vercel.app`: 9/9 통과
+
 ### operations smoke workflow docs
 
 - 이전 작업은 P205 smoke 실행 결과에 운영자 env 진단을 추가한 것이고, 이번 작업은 P206 운영 smoke를 실제로 켜는 절차를 scripts 문서에 정리한 작업이다.
