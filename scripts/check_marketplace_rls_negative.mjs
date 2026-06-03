@@ -15,6 +15,9 @@ const noCompanyUser = {
   email: "marketplace-rls-no-company@example.test",
   fullName: "marketplace rls no company"
 };
+const invalidPublishDraft = {
+  id: "75000000-0000-4000-8000-000000000401"
+};
 
 function assert(condition, message, details = {}) {
   if (condition) return;
@@ -54,6 +57,21 @@ async function cleanupUnexpectedPreferenceRows(serviceRoleClient) {
     .delete()
     .eq("company_id", fixture.companies.broker.id)
     .eq("service_type", "freight");
+}
+
+async function cleanupInvalidPublishDraft(serviceRoleClient) {
+  await serviceRoleClient
+    .from("service_requests")
+    .delete()
+    .eq("id", invalidPublishDraft.id);
+
+  await serviceRoleClient
+    .from("companies")
+    .update({
+      verification_status: "email_verified",
+      verified_at: null
+    })
+    .eq("id", fixture.companies.requester.id);
 }
 
 async function findUserByEmail(client, email) {
@@ -108,6 +126,70 @@ async function ensureNoCompanyUser(client, testPassword) {
   return user.data.user;
 }
 
+async function seedInvalidPublishDraft(serviceRoleClient) {
+  const { data: requesterProfile, error: profileError } = await serviceRoleClient
+    .from("profiles")
+    .select("id,company_id")
+    .eq("email", fixture.users.requester.email)
+    .single();
+
+  if (profileError) throw new Error(`requester profile lookup failed: ${profileError.message}`);
+  if (!requesterProfile?.company_id) throw new Error("requester profile company_id missing");
+
+  await cleanupInvalidPublishDraft(serviceRoleClient);
+
+  const { error: companyError } = await serviceRoleClient
+    .from("companies")
+    .update({
+      verification_status: "operator_approved",
+      verified_at: new Date().toISOString()
+    })
+    .eq("id", requesterProfile.company_id);
+
+  if (companyError) throw new Error(`requester company publish validation setup failed: ${companyError.message}`);
+
+  const now = new Date().toISOString();
+  const { error: requestError } = await serviceRoleClient
+    .from("service_requests")
+    .insert({
+      created_at: now,
+      created_by: requesterProfile.id,
+      deadline_at: null,
+      destination_country_code: "KR",
+      direction: "import",
+      id: invalidPublishDraft.id,
+      missing_information: [],
+      origin_country_code: null,
+      product_summary: "P258 invalid publish draft",
+      requester_company_id: requesterProfile.company_id,
+      request_type: "freight",
+      source_lookup_snapshot: {
+        generatedAt: now,
+        source: "p258 negative check"
+      },
+      status: "draft",
+      title: "P258 필수값 누락 운송 요청",
+      updated_at: now,
+      visibility: "matched_partners"
+    });
+
+  if (requestError) throw new Error(`invalid publish service_request insert failed: ${requestError.message}`);
+
+  const { error: detailError } = await serviceRoleClient
+    .from("freight_request_details")
+    .insert({
+      destination_port: "KRPUS",
+      hazardous: false,
+      origin_port: "CNSHA",
+      request_id: invalidPublishDraft.id,
+      temperature_controlled: false,
+      transport_mode: null,
+      used_car: false
+    });
+
+  if (detailError) throw new Error(`invalid publish freight detail insert failed: ${detailError.message}`);
+}
+
 async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPassword }) {
   const serviceRoleClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: {
@@ -117,6 +199,7 @@ async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPas
   });
   await cleanupUnexpectedPreferenceRows(serviceRoleClient);
   await ensureNoCompanyUser(serviceRoleClient, testPassword);
+  await seedInvalidPublishDraft(serviceRoleClient);
 
   const requester = await signedClient({
     anonKey,
@@ -169,6 +252,16 @@ async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPas
     label: "requester-direct-service-request-workflow-update",
     ok: blockedByRls(statusUpdate),
     reason: statusUpdate.error?.message ?? `rows=${Array.isArray(statusUpdate.data) ? statusUpdate.data.length : "unknown"}`
+  });
+
+  const missingFieldPublish = await requester.rpc("publish_freight_request", {
+    p_deadline_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    p_request_id: invalidPublishDraft.id
+  });
+  checks.push({
+    label: "publish-freight-requires-origin-destination-transport",
+    ok: Boolean(missingFieldPublish.error?.message?.includes("출발 국가, 도착 국가, 운송 방식은 공개 전에 필요합니다")),
+    reason: missingFieldPublish.error?.message ?? "rpc returned without error"
   });
 
   const publishedFreightDetailUpdate = await requester
@@ -243,6 +336,7 @@ async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPas
   });
 
   await cleanupUnexpectedPreferenceRows(serviceRoleClient);
+  await cleanupInvalidPublishDraft(serviceRoleClient);
   return checks;
 }
 

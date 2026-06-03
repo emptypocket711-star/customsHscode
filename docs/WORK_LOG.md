@@ -4,6 +4,22 @@
 
 ## 2026-06-03
 
+### publish required field SQL validation
+
+- 이전 작업은 P257에서 공개된 운송 상세 조건 직접 수정 차단을 확인한 것이고, 이번 작업은 공개 RPC 자체가 매칭 핵심값 없이 진행되지 않는지 확인한 작업이다.
+- service role로 별도 invalid freight draft를 만들고, requester 회사 상태를 테스트 중에만 `operator_approved`로 올려 필수값 검증 지점까지 도달하게 했다.
+- origin_country_code와 transport_mode가 빠진 draft를 requester가 `publish_freight_request`로 공개하려 하면 `출발 국가, 도착 국가, 운송 방식은 공개 전에 필요합니다.`로 차단되는 것을 Preview DB에서 확인했다.
+- 실행 후 invalid draft를 삭제하고 requester 회사 검증 상태를 fixture 기준인 `email_verified`로 되돌린다.
+- 다음 작업은 P259 requester company active guard다. 이번 P258이 필수 매칭값 검증이라면, P259는 정지/차단된 requester 회사가 publish RPC를 통과하지 못하는지 명시적으로 고정하는 작업이다.
+
+검증:
+
+- `node --check scripts/check_marketplace_rls_negative.mjs`
+- `vercel env run -e preview -- sh -c 'E2E_ALLOW_REMOTE_MARKETPLACE_TRANSACTION=true node scripts/seed_marketplace_transaction_fixture.mjs && E2E_ALLOW_REMOTE_MARKETPLACE_RLS_NEGATIVE=true npm run smoke:marketplace-rls-negative'`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
 ### freight detail draft-only mutation
 
 - 이전 작업은 P256에서 requester가 `service_requests` workflow 필드를 직접 바꾸지 못하게 negative check를 넓힌 것이고, 이번 작업은 공개된 운송 요청의 `freight_request_details` 직접 수정 경계를 확인한 작업이다.
