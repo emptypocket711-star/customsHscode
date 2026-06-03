@@ -4,6 +4,18 @@
 
 ## 2026-06-03
 
+### broker dashboard primary actions
+
+- 이전 작업은 P222 포워더 대시보드에서 새 기회, 제출 견적, 선정 건, 완료 건을 정리한 것이고, 이번 작업은 P223 관세사 대시보드에서 통관 의뢰 기회, 제출 견적, 선정 건, 완료 건을 기본 행동으로 정리한 작업이다.
+- `buildBrokerDashboardMilestones`를 추가해 관세사무소가 볼 4개 상태를 계산한다.
+- 관세사 역할이 승인된 사용자는 플랫폼 업무 섹션에서 `관세사 기본 행동` 카드 묶음을 먼저 볼 수 있다.
+- 파트너 완료 건은 입찰 섹션이 아니라 완료 리포트/피드백 섹션 anchor로 이동하도록 `partnerActionHref`를 보정했다.
+- 다음 작업은 P224 request list status filters다. 이번 P223이 관세사 대시보드 기본 행동이라면, P224는 요청 목록에서 임시저장, 모집중, 견적도착, 진행중, 완료 상태 필터와 문구를 정리하는 작업이다.
+
+검증:
+
+- `npx vitest run features/dashboard/dashboard-home.test.ts`: 9개 통과
+
 ### forwarder dashboard primary actions
 
 - 이전 작업은 P221 화주 대시보드에서 요청하기, 견적 도착, 진행중, 완료 대기를 정리한 것이고, 이번 작업은 P222 포워더 대시보드에서 새 기회, 제출 견적, 선정 건, 완료 건을 기본 행동으로 정리한 작업이다.

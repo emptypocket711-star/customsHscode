@@ -511,7 +511,8 @@
 | P220.1 operations request detail priority view | 완료 | 운영 통계 라벨이 아니라 운영 요청 상세에서 완료 리포트, 피드백, 파트너 응답 위험, 다음 조치를 먼저 보이게 한다 | operations request detail | detail priority layout, unit test |
 | P221.1 shipper dashboard primary actions | 완료 | 운영 요청 상세가 아니라 화주 대시보드에서 요청하기, 진행중, 견적 도착, 완료 대기를 기본 행동으로 정리한다 | shipper dashboard UX | dashboard actions, unit test |
 | P222.1 forwarder dashboard primary actions | 완료 | 화주 대시보드가 아니라 포워더 대시보드에서 새 기회, 제출 견적, 선정 건, 완료 건을 기본 행동으로 정리한다 | forwarder dashboard UX | partner actions, unit test |
-| P223.1 broker dashboard primary actions | 예정 | 포워더 대시보드가 아니라 관세사 대시보드에서 통관 의뢰 기회, 제출 견적, 선정 건, 완료 건을 기본 행동으로 정리한다 | broker dashboard UX | broker actions, unit/browser check |
+| P223.1 broker dashboard primary actions | 완료 | 포워더 대시보드가 아니라 관세사 대시보드에서 통관 의뢰 기회, 제출 견적, 선정 건, 완료 건을 기본 행동으로 정리한다 | broker dashboard UX | broker actions, unit test |
+| P224.1 request list status filters | 예정 | 역할별 대시보드가 아니라 요청 목록에서 임시저장, 모집중, 견적도착, 진행중, 완료 상태 필터와 문구를 정리한다 | request list UX | status filters, unit/browser check |
 
 #### P109 다음 병목 선정
 

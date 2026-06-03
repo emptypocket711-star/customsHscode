@@ -3,6 +3,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
   DashboardHome,
+  buildBrokerDashboardMilestones,
   buildForwarderDashboardMilestones,
   buildMarketplaceNextActions,
   buildRequesterDashboardMilestones,
@@ -161,6 +162,26 @@ describe("dashboard marketplace next actions", () => {
     expect(milestones[1]).toMatchObject({ href: "/requests/freight/opportunities/selected-freight-1#request-lifecycle", value: "2건" });
     expect(milestones[2]).toMatchObject({ value: "2건" });
     expect(milestones[3]).toMatchObject({ value: "0건" });
+  });
+
+  it("summarizes broker dashboard work into clearance opportunity, submitted, selected, and completed milestones", () => {
+    const milestones = buildBrokerDashboardMilestones(activityFixture({
+      clearancePartnerActionRequestId: "completed-clearance-1",
+      clearancePartnerActionStatus: "completed",
+      clearancePartnerActions: 1,
+      partnerOpportunities: 4
+    }));
+
+    expect(milestones.map((item) => item.label)).toEqual([
+      "통관 의뢰 기회",
+      "제출 견적",
+      "선정 건",
+      "완료 건"
+    ]);
+    expect(milestones[0]).toMatchObject({ href: "/requests/clearance?workspace=broker", value: "4건" });
+    expect(milestones[1]).toMatchObject({ href: "/requests/clearance/opportunities/completed-clearance-1#request-completion", value: "1건" });
+    expect(milestones[2]).toMatchObject({ value: "0건" });
+    expect(milestones[3]).toMatchObject({ value: "1건" });
   });
 
   it("sends active partner bid work to the bid section", () => {
