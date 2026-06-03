@@ -457,6 +457,7 @@ const copyGuideLabels: Record<HsCopyGuideLanguage, {
   adCvd: string;
   candidateIntroDetailed: string;
   candidateIntroSingleDetailed: string;
+  gptScore: string;
   hsCode: string;
   hsPath: string;
   importRequirements: string;
@@ -485,6 +486,7 @@ const copyGuideLabels: Record<HsCopyGuideLanguage, {
   standardVat: string;
   ftaRate: string;
   ftaReviewNote: string;
+  scoreSuffix: string;
 }> = {
   ko: {
     appliedDutyRate: "적용 관세율",
@@ -492,6 +494,7 @@ const copyGuideLabels: Record<HsCopyGuideLanguage, {
     adCvd: "AD/CVD",
     candidateIntroDetailed: "예상 가능한 내역은 아래와 같습니다. 정확한 제품 설명, 사진, 카탈로그, 재질/구성, 용도, 모델명, 장착 대상 정보를 주시면 다시 확인하겠습니다.",
     candidateIntroSingleDetailed: "일반적인 제품 설명 기준으로 우선 검토 가능한 내역은 아래와 같습니다. 정확한 제품 설명, 사진, 카탈로그, 재질/구성, 용도, 모델명, 장착 대상 정보를 주시면 다시 확인하겠습니다.",
+    gptScore: "GPT 점수",
     hsCode: "HS CODE",
     hsPath: "HS CODE 경로",
     importRequirements: "수입요건",
@@ -519,7 +522,8 @@ const copyGuideLabels: Record<HsCopyGuideLanguage, {
     finalReviewNote: "정확한 적용 여부는 제품 상세자료, 원산지, 선적 경로, 실제 신고 시점 기준으로 다시 확인해 주세요.",
     standardVat: "부가세 : 10%",
     ftaRate: "FTA 관세율",
-    ftaReviewNote: "FTA 세율은 자동 적용이 아니며 원산지증명, 직접운송, 협정 요건 충족 여부를 함께 확인해야 합니다."
+    ftaReviewNote: "FTA 세율은 자동 적용이 아니며 원산지증명, 직접운송, 협정 요건 충족 여부를 함께 확인해야 합니다.",
+    scoreSuffix: "점"
   },
   en: {
     appliedDutyRate: "Applicable duty rate",
@@ -527,6 +531,7 @@ const copyGuideLabels: Record<HsCopyGuideLanguage, {
     adCvd: "AD/CVD",
     candidateIntroDetailed: "Possible HS candidates are listed below. Please provide the exact product description, photo, catalog, material/composition, use, model name, and mounting/installation target for a further review.",
     candidateIntroSingleDetailed: "Based on the general product description, the following item may be reviewed first. Please provide the exact product description, photo, catalog, material/composition, use, model name, and mounting/installation target for a further review.",
+    gptScore: "GPT score",
     hsCode: "HS code",
     hsPath: "HS code path",
     importRequirements: "Import requirements",
@@ -554,7 +559,8 @@ const copyGuideLabels: Record<HsCopyGuideLanguage, {
     finalReviewNote: "Please re-check applicability based on detailed product data, origin, shipping route, and the actual declaration date.",
     standardVat: "VAT: 10%",
     ftaRate: "FTA preferential rate",
-    ftaReviewNote: "FTA rates are not applied automatically and require review of origin proof, direct transport, and agreement conditions."
+    ftaReviewNote: "FTA rates are not applied automatically and require review of origin proof, direct transport, and agreement conditions.",
+    scoreSuffix: "pts"
   },
   zh: {
     appliedDutyRate: "适用关税税率",
@@ -562,6 +568,7 @@ const copyGuideLabels: Record<HsCopyGuideLanguage, {
     adCvd: "反倾销/反补贴",
     candidateIntroDetailed: "以下为可能的 HS 编码候选。请提供准确的产品说明、照片、目录、材质/成分、用途、型号、安装或使用对象后再确认。",
     candidateIntroSingleDetailed: "根据一般产品说明，可优先参考以下候选。请提供准确的产品说明、照片、目录、材质/成分、用途、型号、安装或使用对象后再确认。",
+    gptScore: "GPT 分数",
     hsCode: "HS 编码",
     hsPath: "HS 编码路径",
     importRequirements: "进口要求",
@@ -589,7 +596,8 @@ const copyGuideLabels: Record<HsCopyGuideLanguage, {
     finalReviewNote: "请根据产品详细资料、原产地、运输路径及实际申报日期重新确认适用性。",
     standardVat: "增值税: 10%",
     ftaRate: "FTA 优惠税率",
-    ftaReviewNote: "FTA 税率不会自动适用，需一并确认原产地证明、直接运输及协定适用条件。"
+    ftaReviewNote: "FTA 税率不会自动适用，需一并确认原产地证明、直接运输及协定适用条件。",
+    scoreSuffix: "分"
   }
 };
 
@@ -1353,6 +1361,7 @@ function productCandidateCopySummaryTexts({
       lines.push("");
       lines.push(`${index + 1}. ${candidate.koreanName}`);
       lines.push(`${labels.hsCode} : ${formatHsCode(candidate.hskCode)}`);
+      lines.push(`${labels.gptScore} : ${Math.round(candidate.confidenceScore * 100)}${labels.scoreSuffix}`);
       lines.push(labels.importRequirements);
       if (requirements.length) {
         for (const requirement of requirements) {
