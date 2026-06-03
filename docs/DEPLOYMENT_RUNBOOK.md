@@ -109,6 +109,15 @@ npm run health
 npm run smoke:production -- https://hsfinder.co.kr
 ```
 
+Vercel preview/staging 배포에 Deployment Protection이 켜져 있으면 먼저 Vercel 프로젝트 설정에서
+Protection Bypass for Automation secret을 생성한다. 자동 검증에서는 그 값을 헤더로 전달한다.
+키 원문은 출력하거나 커밋하지 않는다.
+
+```bash
+VERCEL_AUTOMATION_BYPASS_SECRET='...' \
+npm run smoke:production -- https://customs-hscode-....vercel.app
+```
+
 로그인 쿠키 없이 실행하면 보호 페이지가 로그인으로 막히는지 확인한다. 실제 보호 페이지 내용까지 확인하려면 브라우저 개발자도구에서 로그인 세션 쿠키를 복사해 `SMOKE_COOKIE`에 넣고 실행한다. 쿠키 원문은 커밋하거나 로그에 공유하지 않는다.
 
 ```bash

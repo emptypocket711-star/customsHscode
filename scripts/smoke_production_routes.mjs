@@ -6,6 +6,10 @@ let sessionCookie = process.env.SMOKE_COOKIE || "";
 const requireAuthenticated = process.env.SMOKE_REQUIRE_AUTHENTICATED === "true";
 const loginEmail = process.env.SMOKE_LOGIN_EMAIL || "";
 const loginPassword = process.env.SMOKE_LOGIN_PASSWORD || "";
+const protectionBypassSecret =
+  process.env.VERCEL_AUTOMATION_BYPASS_SECRET ||
+  process.env.VERCEL_PROTECTION_BYPASS_SECRET ||
+  "";
 
 const protectedScenarios = [
   {
@@ -113,6 +117,11 @@ async function sessionCookieFromLogin(baseUrl) {
   const browser = await chromium.launch({ headless: true });
   try {
     const page = await browser.newPage();
+    if (protectionBypassSecret) {
+      await page.setExtraHTTPHeaders({
+        "x-vercel-protection-bypass": protectionBypassSecret
+      });
+    }
     const loginUrl = new URL("/login", baseUrl).toString();
     await page.goto(loginUrl, { waitUntil: "domcontentloaded", timeout: timeoutMs });
     await page.locator('input[name="email"]').fill(loginEmail, { timeout: timeoutMs });
@@ -145,6 +154,7 @@ async function fetchScenario(baseUrl, scenario, protectedRoute) {
       signal: controller.signal,
       headers: {
         "User-Agent": "hsfinder-production-smoke/1.0",
+        ...(protectionBypassSecret ? { "x-vercel-protection-bypass": protectionBypassSecret } : {}),
         ...(sessionCookie ? { Cookie: sessionCookie } : {})
       }
     });
@@ -215,6 +225,7 @@ async function main() {
   console.log("HS Finder production smoke");
   console.log(`baseUrl=${baseUrl}`);
   console.log(`timeoutMs=${timeoutMs} authenticated=${Boolean(sessionCookie)} requireAuthenticated=${requireAuthenticated}`);
+  console.log(`vercelProtectionBypass=${Boolean(protectionBypassSecret)}`);
   for (const result of results) printResult(result);
 
   const failed = results.filter((result) => !result.ok);
