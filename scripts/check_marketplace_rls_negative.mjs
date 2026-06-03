@@ -171,6 +171,21 @@ async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPas
     reason: statusUpdate.error?.message ?? `rows=${Array.isArray(statusUpdate.data) ? statusUpdate.data.length : "unknown"}`
   });
 
+  const publishedFreightDetailUpdate = await requester
+    .from("freight_request_details")
+    .update({
+      hazardous: true,
+      origin_port: "P257",
+      transport_mode: "air"
+    })
+    .eq("request_id", fixture.requests.freight.id)
+    .select("request_id,transport_mode,origin_port,hazardous");
+  checks.push({
+    label: "requester-cannot-update-published-freight-details",
+    ok: blockedByRls(publishedFreightDetailUpdate),
+    reason: publishedFreightDetailUpdate.error?.message ?? `rows=${Array.isArray(publishedFreightDetailUpdate.data) ? publishedFreightDetailUpdate.data.length : "unknown"}`
+  });
+
   const forwarderClearancePreference = await forwarder
     .from("partner_service_preferences")
     .insert({

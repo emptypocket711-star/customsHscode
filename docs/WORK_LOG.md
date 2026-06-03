@@ -4,6 +4,22 @@
 
 ## 2026-06-03
 
+### freight detail draft-only mutation
+
+- 이전 작업은 P256에서 requester가 `service_requests` workflow 필드를 직접 바꾸지 못하게 negative check를 넓힌 것이고, 이번 작업은 공개된 운송 요청의 `freight_request_details` 직접 수정 경계를 확인한 작업이다.
+- requester fixture가 공개 상태의 운송 요청 detail에서 transport_mode, origin_port, hazardous 값을 직접 update하려고 시도한다.
+- Preview DB에서 해당 update가 rows=0으로 차단되는 것을 확인했다.
+- 추가 SQL 수정은 없었다. 현재 RLS가 `request.status = 'draft'` 조건으로 공개 후 detail 변경을 막고 있어 regression 하네스로 고정했다.
+- 다음 작업은 P258 publish required field SQL validation이다. 이번 P257이 공개 후 상세 수정 차단이라면, P258은 공개 RPC 자체가 origin/destination/transport mode 같은 매칭 핵심값 없이 진행되지 않는지 검증하는 작업이다.
+
+검증:
+
+- `node --check scripts/check_marketplace_rls_negative.mjs`
+- `vercel env run -e preview -- sh -c 'E2E_ALLOW_REMOTE_MARKETPLACE_TRANSACTION=true node scripts/seed_marketplace_transaction_fixture.mjs && E2E_ALLOW_REMOTE_MARKETPLACE_RLS_NEGATIVE=true npm run smoke:marketplace-rls-negative'`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
 ### requester direct workflow update lock
 
 - 이전 작업은 P255에서 회사 없는 인증 사용자의 publish RPC 직접 호출 차단을 하네스에 추가한 것이고, 이번 작업은 requester가 `service_requests` 테이블을 직접 update해 workflow 상태를 바꾸는 경로를 더 넓게 고정한 작업이다.
