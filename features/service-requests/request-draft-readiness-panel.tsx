@@ -27,20 +27,20 @@ export function RequestDraftReadinessPanel({
         <div className="grid gap-1">
           <p className={readyToSave ? "inline-flex items-center gap-2 text-sm font-semibold text-emerald-900" : "inline-flex items-center gap-2 text-sm font-semibold text-amber-950"}>
             {readyToSave ? <CheckCircle2 aria-hidden="true" size={17} /> : <AlertCircle aria-hidden="true" size={17} />}
-            {readyToSave ? "초안 저장 필수값이 채워졌습니다." : "초안 저장 전 필수값을 확인해 주세요."}
+            {readyToSave ? "초안 저장에 필요한 값이 채워졌습니다." : "초안 저장 전 먼저 채울 값을 확인해 주세요."}
           </p>
           <p className={readyToSave ? "text-xs leading-5 text-emerald-800" : "text-xs leading-5 text-amber-900"}>
-            필수 {summary.satisfiedRequiredCount}/{summary.requiredCount} · 보완 추천 {summary.satisfiedRecommendedCount}/{summary.recommendedCount}
+            저장 필수 {summary.satisfiedRequiredCount}/{summary.requiredCount} · 견적 판단 정보 {summary.satisfiedRecommendedCount}/{summary.recommendedCount}
           </p>
         </div>
         <span className={readyToSave ? "rounded-md bg-white px-2.5 py-1 text-xs font-semibold text-emerald-800" : "rounded-md bg-white px-2.5 py-1 text-xs font-semibold text-amber-900"}>
-          {readyToSave ? "저장 가능" : "필수값 필요"}
+          {readyToSave ? "초안 저장 가능" : "필수값 필요"}
         </span>
       </div>
 
       {summary.missingRequired.length > 0 ? (
         <div className="grid gap-1 text-xs leading-5 text-amber-950">
-          <p className="font-semibold">지금 필요한 값</p>
+          <p className="font-semibold">초안 저장 전 필요한 값</p>
           <p>{summary.missingRequired.map((item) => item.label).join(", ")}</p>
         </div>
       ) : null}
