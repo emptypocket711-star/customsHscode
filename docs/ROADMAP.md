@@ -513,6 +513,34 @@
 | P222.1 forwarder dashboard primary actions | 완료 | 화주 대시보드가 아니라 포워더 대시보드에서 새 기회, 제출 견적, 선정 건, 완료 건을 기본 행동으로 정리한다 | forwarder dashboard UX | partner actions, unit test |
 | P223.1 broker dashboard primary actions | 완료 | 포워더 대시보드가 아니라 관세사 대시보드에서 통관 의뢰 기회, 제출 견적, 선정 건, 완료 건을 기본 행동으로 정리한다 | broker dashboard UX | broker actions, unit test |
 | P224.1 request list status filters | 예정 | 역할별 대시보드가 아니라 요청 목록에서 임시저장, 모집중, 견적도착, 진행중, 완료 상태 필터와 문구를 정리한다 | request list UX | status filters, unit/browser check |
+| P253.1 P280 backend hardening runway sync | 완료 | 파트너 빈 상태 링크가 아니라 P254-P280을 직접 호출 우회, RLS, 상태 전이, 알림 중복 방지 중심으로 다시 고정한다 | roadmap/work log sync | docs diff check |
+| P254.1 marketplace DB/RLS negative harness | 예정 | 문서 정리가 아니라 requester/forwarder/broker/staff/service-role 우회 시나리오를 실행 가능한 DB/RLS 테스트 하네스로 만든다 | executable RLS matrix | DB/RLS negative harness, no secrets |
+| P255.1 publish RPC nullable company guard | 예정 | 테스트 하네스가 아니라 회사 없는 인증 사용자가 운송 요청 공개 RPC를 직접 호출해 권한 검사를 우회하지 못하게 한다 | publish auth guard | migration governance, RLS negative test, typecheck, lint, build |
+| P256.1 requester direct status update lock | 예정 | 공개 RPC guard가 아니라 requester가 `service_requests`를 직접 `open`으로 바꿔 매칭/audit을 우회하지 못하게 한다 | status transition RPC-only | migration governance, RLS negative test |
+| P257.1 freight detail draft-only mutation | 예정 | request status 잠금이 아니라 공개 후 운송 상세 조건을 직접 바꿔 기존 매칭과 어긋나지 않게 한다 | detail edit boundary | migration governance, unit/RLS |
+| P258.1 publish required field SQL validation | 예정 | 상세 수정 경계가 아니라 origin/destination/transport mode 같은 매칭 핵심값을 RPC와 Zod에서 같이 요구한다 | publish validation parity | schema tests, action tests |
+| P259.1 requester company active guard | 예정 | deadline guard가 아니라 정지/차단된 requester 회사가 공개 모집을 시작하지 못하게 한다 | requester eligibility guard | RLS/RPC negative tests |
+| P260.1 unmatched publish state handling | 예정 | requester eligibility가 아니라 매칭 0건 요청이 그냥 open으로 보이지 않고 운영 확인 대상으로 남게 한다 | zero-match state | repository/UI tests, staging E2E |
+| P261.1 notification-disabled match semantics | 예정 | zero-match 상태가 아니라 알림 off가 요청 노출 off인지, 노출은 하되 발송 skip인지 제품 규칙과 SQL을 일치시킨다 | preference semantics | policy/unit, staging notification |
+| P262.1 freight bid request-type and deadline guard | 예정 | 알림 선호 규칙이 아니라 freight bid RPC가 통관 요청/마감 지난 요청을 직접 호출로 받지 않게 한다 | bid RPC guard | RPC negative tests |
+| P263.1 freight bid SQL value constraints | 예정 | bid 대상 guard가 아니라 currency, 금액, 리드타임, 유효기간 검증을 SQL에도 중복 적용한다 | bid value constraints | migration governance, action tests |
+| P264.1 clearance bid detail type policy | 예정 | freight bid 값 검증이 아니라 clearance detail을 freight bid에 직접 붙이지 못하게 RLS를 조인다 | bid detail type boundary | RLS negative tests |
+| P265.1 bid audit snapshot hardening | 예정 | bid detail RLS가 아니라 분쟁 검토에 필요한 제출 견적 요약을 audit에 민감정보 없이 남긴다 | bid audit snapshot | audit unit/governance |
+| P266.1 notification per-kind idempotency | 예정 | bid audit가 아니라 초기 알림과 마감 알림이 job 반복 실행 때 중복 claim/send되지 않게 한다 | notification idempotency | policy/unit, worker rehearsal |
+| P267.1 notification digest semantics | 예정 | per-kind 중복 방지가 아니라 digest enabled가 침묵이 아닌 묶음 알림 상태로 해석되게 한다 | digest policy | policy/unit, worker dry-run |
+| P268.1 reminder fatigue policy | 예정 | digest가 아니라 미열람 파트너에게 마감 알림을 과도하게 보내지 않도록 engagement 기준을 조정한다 | reminder fatigue guard | policy/unit |
+| P269.1 verification upload cleanup audit | 예정 | 알림 정책이 아니라 회사 검증 증빙 업로드 실패/정리/audit을 orphan 없이 처리한다 | verification upload integrity | repository/action tests |
+| P270.1 profile self-update privilege hardening | 예정 | 업로드 무결성이 아니라 사용자가 profile role/company_role/company_id를 직접 바꿔 권한 상승하지 못하게 한다 | profile privilege boundary | RLS negative tests |
+| P271.1 role review RPC actor validation | 예정 | profile hardening이 아니라 service-role RPC도 actor가 실제 운영 검토 권한자인지 DB에서 검증한다 | reviewer actor guard | RPC negative tests |
+| P272.1 role approval company eligibility | 예정 | actor 검증이 아니라 정지/차단/미검증 회사에 포워더·관세사 역할을 승인하지 않게 한다 | role approval eligibility | RPC tests, operations UI copy |
+| P273.1 marketplace RLS negative suite | 예정 | 개별 guard가 아니라 requester/partner/staff 권한 우회 케이스를 반복 가능한 통합 negative suite로 묶는다 | RLS negative suite | staged DB test |
+| P274.1 operations zero-match developer smoke | 예정 | RLS suite가 아니라 zero-match 운영 상세 검증이 developer storage state 부재로 skip되지 않게 한다 | zero-match ops smoke | staging E2E |
+| P275.1 partner preference anchor smoke | 예정 | zero-match smoke가 아니라 파트너 빈 상태의 관심 조건 링크와 settings anchor를 브라우저 스모크에 고정한다 | preference anchor smoke | route/browser smoke |
+| P276.1 migration application runbook hardening | 예정 | anchor smoke가 아니라 Preview DB migration 적용, dry-run, health:db 순서를 실수 없이 반복하게 한다 | migration runbook | docs/script check |
+| P277.1 marketplace security runbook | 예정 | migration runbook이 아니라 운영자가 직접 호출 우회/권한 오류를 발견했을 때 조치 순서를 남긴다 | security runbook | docs review |
+| P278.1 marketplace route performance smoke | 예정 | 보안 runbook이 아니라 주요 marketplace route의 응답 시간과 병목을 staging에서 계측한다 | route perf smoke | load/smoke script |
+| P279.1 P254-P278 staging regression suite | 예정 | 개별 보강이 아니라 새 guard와 runbook 변경 후 suite 전체가 여전히 통과하는지 확인한다 | full staging regression | smoke:staging:suite |
+| P280.1 marketplace MVP release readiness review | 예정 | staging regression이 아니라 화주/포워더/관세사/운영자 기준으로 남은 수동 검토 항목과 출시 보류 조건을 정리한다 | release readiness report | docs, final suite summary |
 
 #### P109 다음 병목 선정
 

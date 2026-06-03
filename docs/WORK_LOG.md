@@ -4,6 +4,18 @@
 
 ## 2026-06-03
 
+### P280 backend hardening runway sync
+
+- 이전 작업은 P251 파트너 입찰 빈 상태에서 관심 조건 설정으로 이동하는 링크를 추가하고 P252 최신 프리뷰 suite 전체를 통과시킨 것이고, 이번 작업은 P254-P280을 단순 UI 추가가 아니라 직접 호출 우회, RLS, 상태 전이, 알림 중복 방지 중심의 백엔드 완성 레일로 다시 고정한 작업이다.
+- ROADMAP의 P254-P280에 공개 RPC, requester 직접 status update, 공개 후 상세 수정, bid RPC, notification idempotency, profile 권한 상승, role review RPC, RLS negative suite, release readiness까지 이어지는 순서를 추가했다.
+- 닫혀 있던 보안/백엔드 리뷰어 결과에서 반복적으로 나온 리스크를 우선순위에 반영했다. 특히 `회사 없는 인증 사용자`, `직접 RLS update`, `마감 지난 bid`, `freight/clearance type mismatch`, `profile self-update`는 다음 구현 우선순위로 둔다.
+- QA 에이전트 검토 결과를 반영해 P254는 특정 guard 구현 전에 executable DB/RLS negative harness를 먼저 만드는 것으로 보정했다.
+- 다음 작업은 P254 marketplace DB/RLS negative harness다. 이번 P253이 작업 순서를 문서로 고정한 것이라면, P254는 실제 DB/RLS 우회 시나리오를 반복 실행 가능한 테스트로 바꿔 이후 guard 수정의 기준선을 만드는 작업이다.
+
+검증:
+
+- `git diff --check`
+
 ### broker dashboard primary actions
 
 - 이전 작업은 P222 포워더 대시보드에서 새 기회, 제출 견적, 선정 건, 완료 건을 정리한 것이고, 이번 작업은 P223 관세사 대시보드에서 통관 의뢰 기회, 제출 견적, 선정 건, 완료 건을 기본 행동으로 정리한 작업이다.
