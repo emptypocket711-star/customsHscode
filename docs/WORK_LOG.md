@@ -4,6 +4,25 @@
 
 ## 2026-06-03
 
+### origin marking summary copy
+
+- 이전 작업은 P177 상단 `수입요건` 요약 카드 문구 개선이고, 이번 작업은 P178 HS 직접조회 기본정보의 `원산지 표시` 행 문구 개선이다.
+- 원산지표시 대상 행의 버튼 문구를 `원산지표시대상(Y)`에서 `표시대상 조회됨(Y)`으로 바꾸고, 표시방법·예외는 물품 상태, 포장, 거래조건 기준 확인이 필요하다는 보조 문구를 붙였다.
+- 원산지표시 비대상 또는 데이터 없음 상태는 `-` 대신 `표시대상 조회 결과 없음`과 개별법령·거래조건·재포장 여부에 따른 별도 표시·증빙 의무 가능성 문구를 표시하게 했다.
+- staging의 주요 HS 상세 데이터는 원산지표시 대상 케이스가 넓게 붙어 있어 실제 비대상 화면 케이스는 찾지 못했다. 비대상 문구는 단위 테스트로 검증했다.
+- 최신 staging preview는 `https://customs-hscode-pwjaiypxb-koo-apps.vercel.app`다.
+- 다음 작업은 P179 HS 직접조회 복사 안내문의 원산지표시 문구 점검이다. 이번 P178이 화면 기본정보 행의 표시 문구라면, P179는 사용자가 복사해서 고객에게 보내는 짧은/상세 안내문에 같은 안전 문구가 적절히 들어가는지 보는 작업이다.
+
+검증:
+
+- `npx vitest run features/hs/origin-marking-summary.test.ts features/hs/import-requirement-summary.test.ts features/hs/preferential-duty-summary.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- Playwright staging browser: `3304.99-1000`에서 `표시대상 조회됨(Y)`, `표시방법과 예외는 물품 상태, 포장, 거래조건 기준` 안내 확인
+- Playwright staging browser: 여러 HS 코드에서 비대상 케이스 탐색했으나 현재 staging 데이터는 대상 케이스만 확인됨
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-pwjaiypxb-koo-apps.vercel.app`: 9/9 통과
+
 ### import requirement summary copy
 
 - 이전 작업은 P176 HS 직접조회 상단 `FTA/특혜 세율` 요약 카드 문구 개선이고, 이번 작업은 P177 상단 `수입요건` 요약 카드 문구 개선이다.
