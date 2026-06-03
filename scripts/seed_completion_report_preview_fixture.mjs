@@ -2,6 +2,11 @@
 
 import { createClient } from "@supabase/supabase-js";
 import {
+  isLocalOrAllowedRemoteUrl,
+  remoteE2ERequirement,
+  safeOrigin
+} from "./completion_preview_e2e_env.mjs";
+import {
   buildCompletionReportPreviewSourceSnapshot,
   completionReportPreviewFixture as fixture,
   completionReportPreviewSeedCompanies as companies,
@@ -20,9 +25,10 @@ function assert(condition, message) {
 function assertLocalSupabaseUrl(value) {
   assert(value, "SUPABASE_URL 또는 NEXT_PUBLIC_SUPABASE_URL이 필요합니다.");
 
-  const url = new URL(value);
-  const isLocal = ["localhost", "127.0.0.1"].includes(url.hostname);
-  assert(isLocal, `local Supabase에서만 실행할 수 있습니다. current=${url.origin}`);
+  assert(
+    isLocalOrAllowedRemoteUrl(value, "COMPLETION_PREVIEW"),
+    `local Supabase 또는 명시적으로 허용된 remote Supabase에서만 실행할 수 있습니다. current=${safeOrigin(value)}. ${remoteE2ERequirement("COMPLETION_PREVIEW")}`
+  );
 }
 
 function requiredEnv() {

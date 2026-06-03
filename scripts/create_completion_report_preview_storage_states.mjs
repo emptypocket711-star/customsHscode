@@ -3,6 +3,12 @@
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
+import {
+  isLocalOrAllowedRemoteUrl,
+  playwrightContextOptions,
+  remoteE2ERequirement,
+  safeOrigin
+} from "./completion_preview_e2e_env.mjs";
 import { completionReportPreviewFixture as fixture } from "../tests/fixtures/completion-report-preview.fixture.mjs";
 
 const baseUrl = process.env.E2E_BASE_URL || "http://localhost:3100";
@@ -23,13 +29,15 @@ function assert(condition, message) {
 }
 
 function assertLocalBaseUrl(value) {
-  const url = new URL(value);
-  const isLocal = ["localhost", "127.0.0.1"].includes(url.hostname);
-  assert(isLocal, `local base URL에서만 storage state를 만들 수 있습니다. current=${url.origin}`);
+  assert(
+    isLocalOrAllowedRemoteUrl(value, "COMPLETION_PREVIEW"),
+    `local 또는 명시적으로 허용된 remote base URL에서만 storage state를 만들 수 있습니다. current=${safeOrigin(value)}. ${remoteE2ERequirement("COMPLETION_PREVIEW")}`
+  );
 }
 
 async function loginAndSaveStorageState(browser, role, email) {
-  const page = await browser.newPage({ viewport: { width: 1366, height: 900 } });
+  const context = await browser.newContext(playwrightContextOptions({ viewport: { width: 1366, height: 900 } }));
+  const page = await context.newPage();
   const statePath = path.join(outputDir, `completion-preview-${role}.json`);
 
   try {
@@ -40,10 +48,10 @@ async function loginAndSaveStorageState(browser, role, email) {
       page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: timeoutMs }),
       page.locator('button[type="submit"]').click()
     ]);
-    await page.context().storageState({ path: statePath });
+    await context.storageState({ path: statePath });
     return statePath;
   } finally {
-    await page.close();
+    await context.close();
   }
 }
 

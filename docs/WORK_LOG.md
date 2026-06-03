@@ -4,6 +4,23 @@
 
 ## 2026-06-03
 
+### completion report dual acknowledgement staging E2E
+
+- 이전 작업은 P211 Preview에서 거래 seed, 입찰, 선정, 완료, 피드백 mutation 흐름을 검증한 것이고, 이번 작업은 P212 완료 리포트 preview와 dual acknowledgement RPC guard를 Preview에서 직접 검증한 작업이다.
+- `e2e:completion-preview:staging` script를 추가했다.
+- staging runner는 completion report fixture seed, requester/selected partner/unmatched partner/developer storage state 생성, preview E2E, dual-ack RPC E2E를 순서대로 실행한다.
+- completion preview seed/auth/e2e 스크립트가 명시적 `E2E_ALLOW_REMOTE_COMPLETION_PREVIEW=true`에서만 remote Preview를 허용하도록 보강했다.
+- Vercel deployment protection이 켜진 Preview에서도 preview E2E가 통과하도록 Playwright context에 bypass header를 주입했다.
+- `e2e:completion-preview:dual-ack` script를 추가해 draft report를 제출하고, 화주만 확인한 상태에서는 `review_completion_report`가 차단되며, 파트너 확인 후에는 운영 검토가 통과하는지 확인한다.
+- 최신 staging preview는 `https://customs-hscode-psbhjibgm-koo-apps.vercel.app`다.
+- 다음 작업은 P213 staging marketplace notification E2E/provider readiness 확장이다. 이번 P212가 완료 리포트 확인/운영 검토 gate 검증이라면, P213은 매칭 알림 수신 설정, delivery claim, provider readiness를 Preview에서 직접 검증하는 작업이다.
+
+검증:
+
+- `node --check scripts/seed_completion_report_preview_fixture.mjs ... scripts/run_completion_preview_e2e_staging.mjs`
+- `npx vitest run scripts/completion_preview_e2e_env.test.ts tests/fixtures/marketplace-transaction.fixture.test.ts features/service-requests/service-request-completion-report-workflow.test.ts server/repositories/platform-marketplace-governance.test.ts`: 48개 통과
+- `vercel env run -e preview -- npm run e2e:completion-preview:staging -- https://customs-hscode-psbhjibgm-koo-apps.vercel.app`: seed, auth, preview-e2e, dual-ack-rpc 모두 `result=ok`
+
 ### staging marketplace transaction E2E runner
 
 - 이전 작업은 P210 Preview DB에 marketplace schema와 completion report RPC를 실제 적용하고 route smoke를 통과시킨 것이고, 이번 작업은 P211 Preview 배포에서 marketplace 거래 흐름을 seed부터 mutation까지 브라우저로 검증할 수 있게 만든 작업이다.

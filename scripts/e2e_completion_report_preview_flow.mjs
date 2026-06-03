@@ -4,6 +4,12 @@ import { access } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import {
+  isLocalOrAllowedRemoteUrl,
+  playwrightContextOptions,
+  remoteE2ERequirement,
+  safeOrigin
+} from "./completion_preview_e2e_env.mjs";
+import {
   completionReportPreviewAccessMatrix,
   completionReportPreviewFixture as fixture
 } from "../tests/fixtures/completion-report-preview.fixture.mjs";
@@ -32,9 +38,10 @@ function assert(condition, message, details = {}) {
 }
 
 function assertLocalBaseUrl(value) {
-  const url = new URL(value);
-  const isLocal = ["localhost", "127.0.0.1"].includes(url.hostname);
-  assert(isLocal, `local base URL에서만 completion preview e2e를 실행할 수 있습니다. current=${url.origin}`);
+  assert(
+    isLocalOrAllowedRemoteUrl(value, "COMPLETION_PREVIEW"),
+    `local 또는 명시적으로 허용된 remote base URL에서만 completion preview e2e를 실행할 수 있습니다. current=${safeOrigin(value)}. ${remoteE2ERequirement("COMPLETION_PREVIEW")}`
+  );
 }
 
 function previewUrl(kind, requestId) {
@@ -56,7 +63,7 @@ async function assertStorageStatesExist() {
 }
 
 async function pageTextFor(browser, role, url) {
-  const context = await browser.newContext({ storageState: stateFiles[role] });
+  const context = await browser.newContext(playwrightContextOptions({ storageState: stateFiles[role] }));
   const page = await context.newPage();
   try {
     await page.goto(url, { waitUntil: "networkidle", timeout: timeoutMs });
@@ -106,7 +113,7 @@ async function assertMismatchedKindHidden(browser, role) {
 }
 
 async function assertDraftFreightMutationPersists(browser) {
-  const context = await browser.newContext({ storageState: stateFiles.requester });
+  const context = await browser.newContext(playwrightContextOptions({ storageState: stateFiles.requester }));
   const page = await context.newPage();
 
   try {
@@ -153,14 +160,15 @@ async function assertDraftFreightMutationPersists(browser) {
 }
 
 async function assertUnauthenticatedRedirect(browser, kind, requestId) {
-  const page = await browser.newPage();
+  const context = await browser.newContext(playwrightContextOptions());
+  const page = await context.newPage();
   try {
     await page.goto(previewUrl(kind, requestId), { waitUntil: "networkidle", timeout: timeoutMs });
     const body = await page.locator("body").innerText({ timeout: timeoutMs });
     assert(page.url().includes("/login"), "비로그인 preview 접근이 login으로 이동하지 않았습니다.", { currentUrl: page.url() });
     assert(body.includes("로그인"), "비로그인 preview 접근 후 로그인 화면이 표시되지 않았습니다.");
   } finally {
-    await page.close();
+    await context.close();
   }
 }
 

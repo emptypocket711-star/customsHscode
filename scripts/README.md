@@ -98,6 +98,23 @@ When Vercel deployment protection is enabled, pass
 shell. The runner uses a separate `tmp/e2e-auth-staging` storage-state directory
 by default and never prints secret values.
 
+## Staging completion report E2E
+
+Use this after the marketplace transaction E2E passes. The completion runner
+seeds completion-report fixtures, creates requester/selected-partner/developer
+storage states, verifies preview access and redaction, saves a draft report, and
+then checks the dual acknowledgement RPC guard.
+
+```bash
+vercel env run -e preview -- npm run e2e:completion-preview:staging -- https://your-preview-url.vercel.app
+```
+
+Remote completion fixture seeding is blocked unless
+`E2E_ALLOW_REMOTE_COMPLETION_PREVIEW=true` is present. The staging runner sets it
+internally, but credentials must still come from the shell or platform secret
+store. When deployment protection is enabled, pass
+`VERCEL_AUTOMATION_BYPASS_SECRET` or `VERCEL_PROTECTION_BYPASS_SECRET`.
+
 ## Production schema health check
 
 `check-production-schema.mjs` compares the current migration files with the
