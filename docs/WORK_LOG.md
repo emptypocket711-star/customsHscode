@@ -4,6 +4,20 @@
 
 ## 2026-06-03
 
+### marketplace route performance smoke
+
+- 이전 작업은 P277에서 marketplace 권한/RLS 사고 대응 runbook을 만든 것이고, 이번 작업은 보안 문서가 아니라 주요 marketplace route의 응답 시간과 핵심 marker를 staging에서 계측하는 smoke를 만든 작업이다.
+- `smoke:marketplace-routes:perf` script를 추가했다.
+- smoke는 requester와 developer 계정으로 로그인 쿠키를 얻고 `/dashboard`, `/requests`, `/requests/freight`, `/requests/clearance`, zero-match 운영 상세를 fetch로 측정한다.
+- 각 route는 8초 budget과 핵심 본문 marker를 같이 확인한다.
+- Preview 배포에서 fixture seed와 operations developer 준비 후 5개 route가 모두 통과했고 최대 응답 시간은 2332ms였다.
+- 다음 작업은 P279 P254-P278 staging regression suite다. 이번 P278이 route 성능 단일 smoke라면, P279는 지금까지 추가한 guard, runbook, route smoke를 포함해 staging 회귀 흐름이 여전히 통과하는지 확인하는 작업이다.
+
+검증:
+
+- `node --check scripts/smoke_marketplace_route_performance.mjs`
+- `E2E_TEST_PASSWORD=... VERCEL_AUTOMATION_BYPASS_SECRET=... vercel env run -e preview -- sh -c 'export E2E_ALLOW_REMOTE_MARKETPLACE_TRANSACTION=true; export E2E_BASE_URL=https://customs-hscode-dn0ayaj4k-koo-apps.vercel.app; export SMOKE_OPERATIONS_PASSWORD="$E2E_TEST_PASSWORD"; node scripts/seed_marketplace_transaction_fixture.mjs && node scripts/prepare_operations_smoke_account.mjs && npm run smoke:marketplace-routes:perf -- https://customs-hscode-dn0ayaj4k-koo-apps.vercel.app'`
+
 ### marketplace security incident runbook
 
 - 이전 작업은 P276에서 Preview DB migration dry-run/apply/health 순서를 고정한 것이고, 이번 작업은 migration 절차가 아니라 marketplace 권한/RLS 사고 의심 시 운영자가 조치할 순서를 남긴 작업이다.

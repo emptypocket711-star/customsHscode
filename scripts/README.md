@@ -198,6 +198,16 @@ exposure is suspected, follow `docs/MARKETPLACE_SECURITY_RUNBOOK.md`. Start with
 DB health, marketplace schema smoke, the grouped negative suite, and operations
 guard before changing data or writing a follow-up migration.
 
+## Marketplace route performance smoke
+
+Use this to measure key marketplace pages on a Preview deployment with requester
+and developer sessions. It checks content markers and fails if any route exceeds
+the route budget.
+
+```bash
+vercel env run -e preview -- npm run smoke:marketplace-routes:perf -- https://your-preview-url.vercel.app
+```
+
 ## Production schema health check
 
 `check-production-schema.mjs` compares the current migration files with the

@@ -538,7 +538,7 @@
 | P275.1 partner preference anchor smoke | 완료 | zero-match smoke가 아니라 파트너 빈 상태의 관심 조건 링크와 settings anchor를 브라우저 스모크에 고정한다 | preference anchor smoke | route/browser smoke |
 | P276.1 migration application runbook hardening | 완료 | anchor smoke가 아니라 Preview DB migration 적용, dry-run, health:db 순서를 실수 없이 반복하게 한다 | migration runbook | docs/script check |
 | P277.1 marketplace security runbook | 완료 | migration runbook이 아니라 운영자가 직접 호출 우회/권한 오류를 발견했을 때 조치 순서를 남긴다 | security runbook | docs review |
-| P278.1 marketplace route performance smoke | 예정 | 보안 runbook이 아니라 주요 marketplace route의 응답 시간과 병목을 staging에서 계측한다 | route perf smoke | load/smoke script |
+| P278.1 marketplace route performance smoke | 완료 | 보안 runbook이 아니라 주요 marketplace route의 응답 시간과 병목을 staging에서 계측한다 | route perf smoke | load/smoke script |
 | P279.1 P254-P278 staging regression suite | 예정 | 개별 보강이 아니라 새 guard와 runbook 변경 후 suite 전체가 여전히 통과하는지 확인한다 | full staging regression | smoke:staging:suite |
 | P280.1 marketplace MVP release readiness review | 예정 | staging regression이 아니라 화주/포워더/관세사/운영자 기준으로 남은 수동 검토 항목과 출시 보류 조건을 정리한다 | release readiness report | docs, final suite summary |
 
