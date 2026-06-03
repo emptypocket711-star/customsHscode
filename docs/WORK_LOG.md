@@ -4,6 +4,21 @@
 
 ## 2026-06-03
 
+### marketplace prefill provisional flow regression
+
+- 이전 작업은 P189 품명 후보 상세조회 진입 배너 문구 점검이고, 이번 작업은 P190 HS/품명 조회 결과에서 요청 초안으로 넘어가는 CTA 회귀 검증이다.
+- 코드상 요청 초안에는 이미 `HS 조회 결과에서 시작한 요청 초안입니다.`, `예비값`, `HSK 확정 및 법령·요건 적용 여부는 담당자 검토가 필요합니다.` 패널이 있었다.
+- staging에서 품명 `사탕` 결과의 `이 후보로 운송 초안 만들기`, `이 후보로 통관 초안 만들기` 링크를 실제로 열어 두 요청 초안 모두 예비값 패널이 표시되는지 확인했다.
+- 운송 초안과 통관 초안 모두 `hskCode`, `hs6`, `productName`, `basisDate`가 prefill로 전달되지만 확정값 문구 없이 예비진단 참고값으로 안내되는 것을 확인했다.
+- 별도 코드 수정은 필요하지 않았다.
+- 최신 staging preview는 `https://customs-hscode-egw756g7t-koo-apps.vercel.app`다.
+- 다음 작업은 P191 요청 초안 저장 전 준비도 패널의 문구 회귀 점검이다. 이번 P190이 조회 결과 prefill 패널이라면, P191은 사용자가 실제 초안 저장 전 보는 필수값/보완값 안내가 너무 개발자스럽거나 확정적으로 보이지 않는지 보는 작업이다.
+
+검증:
+
+- Playwright staging browser: 품명 `사탕`에서 운송/통관 초안 CTA 이동, 예비값 패널과 담당자 검토 문구 확인
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-egw756g7t-koo-apps.vercel.app`: 9/9 통과
+
 ### product search detail source banner
 
 - 이전 작업은 P188 품명 AI 결과 복사문 점수 보강이고, 이번 작업은 P189 품명 후보 상세조회 진입 배너 문구 점검이다.
