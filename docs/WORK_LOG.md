@@ -4,6 +4,18 @@
 
 ## 2026-06-03
 
+### shipper dashboard primary actions
+
+- 이전 작업은 P220 운영 요청 상세의 우선 판정 카드였고, 이번 작업은 P221 화주 대시보드에서 요청하기, 견적 도착, 진행중, 완료 대기를 기본 행동으로 정리한 작업이다.
+- 대시보드의 보조 도구와 최근 기록은 접힌 영역으로 유지해 첫 화면이 플랫폼 업무 중심으로 보이게 했다.
+- `buildRequesterDashboardMilestones`를 추가해 화주 기본 행동 4개를 계산한다.
+- 견적 도착, 진행중, 완료 대기 링크는 운송/통관 중 실제 action request 상태에 맞는 상세 anchor로 이동하도록 보정했다.
+- 다음 작업은 P222 forwarder dashboard primary actions다. 이번 P221이 화주 입장에서 요청 생성과 진행 상태를 정리한 작업이라면, P222는 포워더가 새 기회, 제출 견적, 선정 건, 완료 건을 기본 행동으로 볼 수 있게 정리하는 작업이다.
+
+검증:
+
+- `npx vitest run features/dashboard/dashboard-home.test.ts`: 7개 통과
+
 ### operations request detail priority view
 
 - 이전 작업은 P219 운영 통계 카드 라벨을 다음 행동 중심으로 바꾼 것이고, 이번 작업은 P220 운영 요청 상세 상단에서 완료 리포트, 피드백, 파트너 응답 위험을 먼저 보이게 한 작업이다.

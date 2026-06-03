@@ -205,47 +205,62 @@ export function DashboardHome({
         summary={marketplaceSummary}
       />
 
-      <DashboardWorkflowLinks locale={locale} />
+      <details className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface)] shadow-[var(--shadow-panel)]">
+        <summary className="focus-ring flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4">
+          <span>
+            <span className="block text-base font-semibold text-[var(--text-primary)]">보조 도구와 최근 기록</span>
+            <span className="mt-1 block text-xs leading-5 text-[var(--text-secondary)]">
+              검색과 플랫폼 업무 이후에 필요한 실무 도구, 공지, 즐겨찾기, 최근 조회를 확인합니다.
+            </span>
+          </span>
+          <span className="shrink-0 rounded-md border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600">
+            펼치기
+          </span>
+        </summary>
+        <div className="grid gap-5 border-t border-[var(--border-subtle)] p-4 sm:p-5">
+          <DashboardWorkflowLinks locale={locale} />
 
-      <section className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-3">
-        <DashboardNoticeCard locale={locale} notices={notices} />
-        <DashboardListCard
-          description={dictionary.lists.favorites.description}
-          emptyText={dictionary.lists.favorites.empty}
-          icon={Star}
-          items={favorites.map((favorite) => ({
-            href: `/hs/direct?query=${favorite.hskCode}&direction=import&destinationCountry=ALL&basisDate=${favorite.basisDate ?? basisDate}`,
-            title: formatHsCode(favorite.hskCode),
-            subtitle: favorite.displayName ?? dictionary.lists.favorites.defaultName,
-            meta: favorite.basisDate ?? basisDate
-          }))}
-          title={dictionary.lists.favorites.title}
-        />
-        <DashboardListCard
-          description={dictionary.lists.history.description}
-          icon={Clock3}
-          emptyText={dictionary.lists.history.empty}
-          items={lookupHistory.map((item) => ({
-            href: lookupHistoryHref(item),
-            title: displayLookupTitle(item.query),
-            subtitle: displayLookupMeta(item, dictionary),
-            meta: item.basisDate
-          }))}
-          title={dictionary.lists.history.title}
-        />
-        <DashboardListCard
-          description={dictionary.lists.cargo.description}
-          emptyText={dictionary.lists.cargo.empty}
-          icon={Bell}
-          items={cargoWatches.map((watch) => ({
-            href: "/cargo",
-            title: watch.houseBlNo || watch.masterBlNo || watch.cargoManagementNo || "-",
-            subtitle: `${cargoWatchStatusDisplay(watch.targetStatus)} ${dictionary.lists.cargo.targetSuffix} · ${dictionary.lists.cargo.statusPrefix} ${watch.lastStatus || dictionary.lists.cargo.unchecked}`,
-            meta: cargoWatchStatusLabel(watch.status, dictionary)
-          }))}
-          title={dictionary.lists.cargo.title}
-        />
-      </section>
+          <section className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-3">
+            <DashboardNoticeCard locale={locale} notices={notices} />
+            <DashboardListCard
+              description={dictionary.lists.favorites.description}
+              emptyText={dictionary.lists.favorites.empty}
+              icon={Star}
+              items={favorites.map((favorite) => ({
+                href: `/hs/direct?query=${favorite.hskCode}&direction=import&destinationCountry=ALL&basisDate=${favorite.basisDate ?? basisDate}`,
+                title: formatHsCode(favorite.hskCode),
+                subtitle: favorite.displayName ?? dictionary.lists.favorites.defaultName,
+                meta: favorite.basisDate ?? basisDate
+              }))}
+              title={dictionary.lists.favorites.title}
+            />
+            <DashboardListCard
+              description={dictionary.lists.history.description}
+              icon={Clock3}
+              emptyText={dictionary.lists.history.empty}
+              items={lookupHistory.map((item) => ({
+                href: lookupHistoryHref(item),
+                title: displayLookupTitle(item.query),
+                subtitle: displayLookupMeta(item, dictionary),
+                meta: item.basisDate
+              }))}
+              title={dictionary.lists.history.title}
+            />
+            <DashboardListCard
+              description={dictionary.lists.cargo.description}
+              emptyText={dictionary.lists.cargo.empty}
+              icon={Bell}
+              items={cargoWatches.map((watch) => ({
+                href: "/cargo",
+                title: watch.houseBlNo || watch.masterBlNo || watch.cargoManagementNo || "-",
+                subtitle: `${cargoWatchStatusDisplay(watch.targetStatus)} ${dictionary.lists.cargo.targetSuffix} · ${dictionary.lists.cargo.statusPrefix} ${watch.lastStatus || dictionary.lists.cargo.unchecked}`,
+                meta: cargoWatchStatusLabel(watch.status, dictionary)
+              }))}
+              title={dictionary.lists.cargo.title}
+            />
+          </section>
+        </div>
+      </details>
     </div>
   );
 }
@@ -307,6 +322,29 @@ function partnerActionHref(requestType: "clearance" | "freight", requestId?: str
   if (!requestId) return `${basePath}?workspace=${workspace}`;
   if (status === "partner_selected" || status === "in_progress") return `${basePath}/opportunities/${requestId}#request-lifecycle`;
   return `${basePath}/opportunities/${requestId}#opportunity-bid`;
+}
+
+function requesterMilestoneHref(
+  activity: DashboardMarketplaceActivitySummary | null,
+  statuses: string[]
+) {
+  if (activity?.freightRequesterActionRequestId && statuses.includes(activity.freightRequesterActionStatus ?? "")) {
+    return requesterActionHref("freight", activity.freightRequesterActionRequestId, activity.freightRequesterActionStatus);
+  }
+
+  if (activity?.clearanceRequesterActionRequestId && statuses.includes(activity.clearanceRequesterActionStatus ?? "")) {
+    return requesterActionHref("clearance", activity.clearanceRequesterActionRequestId, activity.clearanceRequesterActionStatus);
+  }
+
+  if (activity?.freightRequesterActionRequestId) {
+    return requesterActionHref("freight", activity.freightRequesterActionRequestId, activity.freightRequesterActionStatus);
+  }
+
+  if (activity?.clearanceRequesterActionRequestId) {
+    return requesterActionHref("clearance", activity.clearanceRequesterActionRequestId, activity.clearanceRequesterActionStatus);
+  }
+
+  return "/requests/freight?workspace=requester";
 }
 
 export function buildMarketplaceNextActions(
@@ -405,6 +443,35 @@ export function buildMarketplaceNextActions(
   ];
 }
 
+export function buildRequesterDashboardMilestones(activity: DashboardMarketplaceActivitySummary | null) {
+  return [
+    {
+      description: "운송·통관 요청 초안을 만들거나 임시저장 요청을 이어서 작성합니다.",
+      href: "/requests/freight?workspace=requester",
+      label: "요청하기",
+      value: `${activity?.draftRequests ?? 0}건`
+    },
+    {
+      description: "도착한 견적을 비교하고 포워더 또는 관세사무소를 선정합니다.",
+      href: requesterMilestoneHref(activity, ["bids_received", "open"]),
+      label: "견적 도착",
+      value: `${activity?.bidsReceived ?? 0}건`
+    },
+    {
+      description: "선정된 거래의 진행 시작, 진행중 상태, 완료 처리 위치로 이동합니다.",
+      href: requesterMilestoneHref(activity, ["partner_selected", "in_progress"]),
+      label: "진행중",
+      value: `${(activity?.selectedRequests ?? 0) + (activity?.inProgressRequests ?? 0)}건`
+    },
+    {
+      description: "완료 리포트 확인과 거래 피드백 제출이 필요한 요청을 봅니다.",
+      href: requesterMilestoneHref(activity, ["completed"]),
+      label: "완료 대기",
+      value: `${(activity?.completionReportPending ?? 0) + (activity?.feedbackPending ?? 0)}건`
+    }
+  ];
+}
+
 function DashboardMarketplaceEntry({
   activity,
   dictionary,
@@ -427,6 +494,7 @@ function DashboardMarketplaceEntry({
   const canSeeBrokerActions = approvedRoles.has("customs_broker");
   const hasActiveWork = hasMarketplaceWork(activity);
   const nextActions = buildMarketplaceNextActions(activity, summary);
+  const requesterMilestones = buildRequesterDashboardMilestones(activity);
   const unreadNotificationCount = notifications.filter((notification) => !notification.readAt).length;
   const roleSetupAction = {
     description: roleIntents.length
@@ -554,6 +622,37 @@ function DashboardMarketplaceEntry({
       <div className="border-t border-[var(--border-subtle)] bg-white px-4 py-4">
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
           <div className="min-w-0">
+            {canSeeRequesterActions ? (
+              <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-[var(--text-primary)]">화주 기본 행동</h3>
+                    <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+                      요청 생성부터 완료 후속까지 화주가 자주 보는 4개 상태만 먼저 정리합니다.
+                    </p>
+                  </div>
+                  <span className="w-fit rounded-md bg-white px-2 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+                    수출입 화주
+                  </span>
+                </div>
+                <div className="mt-3 grid gap-2 md:grid-cols-4">
+                  {requesterMilestones.map((item) => (
+                    <Link
+                      className="focus-ring rounded-md border border-slate-200 bg-white p-3 text-sm transition hover:border-blue-200 hover:bg-blue-50"
+                      data-navigation-progress={item.label}
+                      href={item.href}
+                      key={item.label}
+                    >
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="font-semibold text-[var(--text-primary)]">{item.label}</span>
+                        <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">{item.value}</span>
+                      </span>
+                      <span className="mt-2 block text-xs leading-5 text-[var(--text-secondary)]">{item.description}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : null}
             <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <h3 className="text-sm font-semibold text-[var(--text-primary)]">다음 행동</h3>

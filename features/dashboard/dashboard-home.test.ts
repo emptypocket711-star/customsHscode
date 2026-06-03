@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import {
   DashboardHome,
   buildMarketplaceNextActions,
+  buildRequesterDashboardMilestones,
   type DashboardMarketplaceActivitySummary,
   type DashboardMarketplaceSummary
 } from "@/features/dashboard/dashboard-home";
@@ -85,6 +86,32 @@ describe("dashboard marketplace next actions", () => {
     });
     expect(actions[0].description).toContain("완료 리포트");
     expect(actions[0].description).toContain("피드백");
+  });
+
+  it("summarizes shipper dashboard work into request, bid, progress, and completion milestones", () => {
+    const milestones = buildRequesterDashboardMilestones(activityFixture({
+      bidsReceived: 2,
+      clearanceRequesterActionRequestId: "clearance-progress-1",
+      clearanceRequesterActionStatus: "in_progress",
+      completionReportPending: 1,
+      draftRequests: 3,
+      feedbackPending: 1,
+      freightRequesterActionRequestId: "freight-bids-1",
+      freightRequesterActionStatus: "bids_received",
+      inProgressRequests: 1,
+      selectedRequests: 1
+    }));
+
+    expect(milestones.map((item) => item.label)).toEqual([
+      "요청하기",
+      "견적 도착",
+      "진행중",
+      "완료 대기"
+    ]);
+    expect(milestones[0]).toMatchObject({ href: "/requests/freight?workspace=requester", value: "3건" });
+    expect(milestones[1]).toMatchObject({ href: "/requests/freight/freight-bids-1#request-bids", value: "2건" });
+    expect(milestones[2]).toMatchObject({ href: "/requests/clearance/clearance-progress-1#request-lifecycle", value: "2건" });
+    expect(milestones[3]).toMatchObject({ value: "2건" });
   });
 
   it("keeps workspace fallback links when no first request id is available", () => {
