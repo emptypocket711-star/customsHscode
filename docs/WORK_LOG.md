@@ -4,6 +4,24 @@
 
 ## 2026-06-03
 
+### company settings role guidance
+
+- 이전 작업은 P192 초안 저장 액션 성공/실패 메시지 점검이고, 이번 작업은 P193 회사 설정의 화주 역할/회사 정보 진입 UX 점검이다.
+- 회사 설정 상단 설명에 회사 정보, 화주·포워더·관세사무소 역할 신청, 검증 상태와 제출 증빙을 관리한다는 내용을 추가했다.
+- 플랫폼 참여 상태의 다음 작업 문구에 국내 수출입 화주 또는 해외 수출입 파트너 역할 신청/승인 상태 확인을 먼저 안내하도록 보강했다.
+- staging에서 회사 설정 화면을 열어 상단 설명, 다음 작업 문구, 플랫폼 역할 신청 heading, 국내 수출입 화주 선택지가 보이는지 확인했다.
+- 첫 검증은 `플랫폼 역할 신청` 텍스트가 여러 곳에 있어 strict mode가 걸렸고, heading 기준으로 선택자를 좁혀 재검증했다.
+- 최신 staging preview는 `https://customs-hscode-6696eo8ct-koo-apps.vercel.app`다.
+- 다음 작업은 P194 회사 설정에서 저장 실패 후 이동할 수 있는 직접 링크/CTA 점검이다. 이번 P193이 화면 문구라면, P194는 요청 저장 실패 메시지나 초안 화면에서 회사 설정으로 바로 이동할 수 있는 경로가 충분한지 보는 작업이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- Playwright staging browser: 회사 설정 상단 설명, 다음 작업, 역할 신청 heading, 국내 수출입 화주 선택지 확인
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-6696eo8ct-koo-apps.vercel.app`: 9/9 통과
+
 ### request draft save messages
 
 - 이전 작업은 P191 요청 초안 저장 전 준비도 패널 문구 정리이고, 이번 작업은 P192 초안 저장 액션 성공/실패 메시지 점검이다.
