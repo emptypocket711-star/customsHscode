@@ -152,20 +152,26 @@ secret when Preview protection is enabled.
 
 Use this when a Preview deployment should be checked end-to-end before wider
 manual review. The suite runs DB schema health, marketplace schema visibility,
-route smoke, marketplace fixture seed, operations guard, marketplace transaction
-E2E, completion report E2E, notification dashboard E2E, and notification worker
-rehearsal in that order.
+marketplace fixture seed, authenticated route smoke, operations guard,
+marketplace transaction E2E, completion report E2E, notification dashboard E2E,
+and notification worker rehearsal in that order.
 
 ```bash
 vercel env run -e preview -- npm run smoke:staging:suite -- https://your-preview-url.vercel.app
 ```
 
 The suite reads `tmp/test-accounts.json` only to fill missing shipper smoke and
-E2E test password env values. Before the operations guard it refreshes the
-marketplace fixture requester, forwarder, and broker accounts, then uses those
-fixture accounts for the guard instead of stale local account rows. It does not
-print account passwords or secret values. Keep Vercel bypass and job worker
-secrets in the shell or platform secret store.
+E2E test password env values. Before route smoke and the operations guard it
+refreshes the marketplace fixture requester, forwarder, and broker accounts, then
+uses those accounts for authenticated route checks and guard checks instead of
+stale local account rows. It does not print account passwords or secret values.
+Keep Vercel bypass and job worker secrets in the shell or platform secret store.
+
+Route smoke markers should be stable for the account state used by the suite.
+Use page-level markers or fixture-stable content. Avoid markers that only appear
+when a dashboard has no active work, no bids, or a particular zero-count fallback;
+those can fail after fixture data is refreshed even when the application is
+working correctly.
 
 The suite prints a `suiteStepSummary` at the end of successful runs and when a
 step fails. Each row includes the step status, duration, and purpose. On failure,
