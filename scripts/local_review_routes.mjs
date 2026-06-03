@@ -18,6 +18,11 @@ const passwordLoginRoutes = [
   },
   {
     accountRole: "shipper",
+    expectedText: "요청 시작",
+    path: "/requests"
+  },
+  {
+    accountRole: "shipper",
     expectedText: "로그인은 정상입니다",
     path: "/requests/freight"
   },
@@ -66,6 +71,11 @@ const storageStateRoutes = [
     expectedText: "대시보드",
     forbiddenText: ["관세사 입찰 확인"],
     path: "/dashboard"
+  },
+  {
+    accountRole: "shipper",
+    expectedText: "요청 시작",
+    path: "/requests"
   },
   {
     accountRole: "shipper",
