@@ -17,6 +17,7 @@ import { destinationAgreementRateDisplayItems, destinationDisplayAgreementRates,
 import { DestinationAgreementRateDialog } from "@/features/hs/destination-agreement-rate-dialog";
 import { displayImportTariffLabel, filterImportTariffsForCountry, importTariffApplicationPriority, isCommonImportTariff } from "@/features/hs/import-tariff-display";
 import { ImportTariffCountryFilter } from "@/features/hs/import-tariff-country-filter";
+import { preferentialDutySummaryText } from "@/features/hs/preferential-duty-summary";
 import { DestinationAdditionalTariffDialog } from "@/features/hs/destination-additional-tariff-dialog";
 import { DestinationImportRequirementDialog } from "@/features/hs/destination-import-requirement-dialog";
 import { DestinationInternalTaxDialog, destinationInternalTaxText } from "@/features/hs/destination-internal-tax-dialog";
@@ -4093,11 +4094,12 @@ export async function HsDirectLookupPanel({
               const dutySummary = estimatorDutyTariff
                 ? tariffSummaryText(estimatorDutyTariff, selectedDestinationCountry)
                 : "표시할 관세율 데이터 없음";
-              const preferentialDutySummary = selectedDestinationCountry === "ALL"
-                ? "수입국 선택 시 확인"
-                : estimatorPreferentialTariff
+              const preferentialDutySummary = preferentialDutySummaryText({
+                countryCode: selectedDestinationCountry,
+                preferentialTariffText: estimatorPreferentialTariff
                   ? tariffSummaryText(estimatorPreferentialTariff, selectedDestinationCountry)
-                  : "표시 가능한 FTA 없음";
+                  : undefined
+              });
               const requirementSummary = groupedRequirements.length
                 ? `${groupedRequirements.length}개 요건 가능성`
                 : "세관장확인 조회 없음";
@@ -4203,7 +4205,8 @@ export async function HsDirectLookupPanel({
                         </div>
                         <div className="rounded-md border border-blue-100 bg-white px-3 py-2">
                           <p className="text-xs font-semibold text-slate-500">FTA/특혜 세율</p>
-                          <p className="mt-1 text-sm font-semibold text-slate-950">{preferentialDutySummary}</p>
+                          <p className="mt-1 text-sm font-semibold text-slate-950">{preferentialDutySummary.summary}</p>
+                          <p className="mt-1 text-xs leading-5 text-slate-500">{preferentialDutySummary.note}</p>
                         </div>
                         <div className="rounded-md border border-blue-100 bg-white px-3 py-2">
                           <p className="text-xs font-semibold text-slate-500">수입요건</p>
