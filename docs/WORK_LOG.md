@@ -4,6 +4,23 @@
 
 ## 2026-06-03
 
+### staging marketplace notification E2E
+
+- 이전 작업은 P212 완료 리포트 preview와 dual acknowledgement RPC guard를 Preview에서 검증한 것이고, 이번 작업은 P213 파트너 알림 대시보드 E2E를 Preview에서 검증할 수 있게 만든 작업이다.
+- `e2e:marketplace-notification:staging` script를 추가했다.
+- staging runner는 marketplace transaction fixture seed, role storage state 생성, notification readiness, partner dashboard notification E2E를 순서대로 실행한다.
+- notification dashboard E2E와 readiness가 명시적 `E2E_ALLOW_REMOTE_MARKETPLACE_NOTIFICATION=true`에서만 remote Preview를 허용하도록 보강했다.
+- Vercel deployment protection이 켜진 Preview에서도 dashboard E2E가 통과하도록 Playwright context에 bypass header를 주입했다.
+- notification E2E는 파트너 대시보드 알림 패널 표시, raw request id 미노출, opportunity detail 이동, 예상 anchor 이동, 읽음 처리 상태를 확인한다.
+- 최신 staging preview는 `https://customs-hscode-psbhjibgm-koo-apps.vercel.app`다.
+- 다음 작업은 P214 staging notification worker/provider rehearsal 확장이다. 이번 P213이 이미 만들어진 in-app delivery를 대시보드에서 소비하는 검증이라면, P214는 worker route가 알림 target을 계산하고 delivery를 claim/send-readiness로 처리하는 백엔드 경로를 Preview에서 검증하는 작업이다.
+
+검증:
+
+- `node --check scripts/e2e_marketplace_notification_dashboard.mjs scripts/check_marketplace_notification_e2e_readiness.mjs scripts/run_marketplace_notification_e2e_staging.mjs`
+- `npx vitest run scripts/completion_preview_e2e_env.test.ts tests/fixtures/marketplace-transaction.fixture.test.ts server/jobs/marketplace-notification-worker.service.test.ts server/repositories/marketplace-notification-deliveries.repository.test.ts`: 27개 통과
+- `vercel env run -e preview -- npm run e2e:marketplace-notification:staging -- https://customs-hscode-psbhjibgm-koo-apps.vercel.app`: seed, auth, ready, notification-e2e 모두 `result=ok`
+
 ### completion report dual acknowledgement staging E2E
 
 - 이전 작업은 P211 Preview에서 거래 seed, 입찰, 선정, 완료, 피드백 mutation 흐름을 검증한 것이고, 이번 작업은 P212 완료 리포트 preview와 dual acknowledgement RPC guard를 Preview에서 직접 검증한 작업이다.

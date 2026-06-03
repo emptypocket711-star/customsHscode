@@ -501,7 +501,8 @@
 | P210.1 completion report migration application check | 완료 | 완료 리포트 gate 코딩이 아니라 Preview DB에 marketplace schema와 dual-ack RPC를 실제 적용하고 DB health를 통과시킨다 | preview DB schema application | migration dry-run, health:db, schema smoke, route smoke |
 | P211.1 staging marketplace transaction E2E runner | 완료 | DB health와 route smoke가 아니라 Preview에서 seed, 로그인, 요청 상세, 입찰, 선정, 완료, 피드백 mutation 흐름을 브라우저로 검증한다 | staging transaction E2E runner | staging seed/auth/ready/e2e/mutation-e2e, typecheck, lint, build |
 | P212.1 completion report dual acknowledgement staging E2E | 완료 | 거래 완료 mutation이 아니라 완료 리포트 초안 저장, 제출, 화주/파트너 확인, 양측 확인 전 운영 검토 차단을 직접 검증한다 | completion report dual-ack E2E | staging fixture, RPC guard, browser flow |
-| P213.1 staging marketplace notification E2E/provider readiness | 예정 | 완료 리포트 gate가 아니라 매칭 알림 수신 설정, delivery claim, provider readiness를 Preview에서 직접 검증한다 | staging notification E2E | preference seed, delivery claim, provider readiness |
+| P213.1 staging marketplace notification E2E/provider readiness | 완료 | 완료 리포트 gate가 아니라 매칭 알림 대시보드, opportunity 이동, 읽음 처리를 Preview에서 직접 검증한다 | staging notification E2E | notification readiness, dashboard link, read mark |
+| P214.1 staging notification worker/provider rehearsal | 예정 | 이미 생성된 알림 소비가 아니라 worker route가 target 계산, delivery claim, send-readiness를 처리하는 백엔드 경로를 Preview에서 검증한다 | worker/provider rehearsal | dry-run, claim-only, send readiness |
 
 #### P109 다음 병목 선정
 

@@ -115,6 +115,23 @@ internally, but credentials must still come from the shell or platform secret
 store. When deployment protection is enabled, pass
 `VERCEL_AUTOMATION_BYPASS_SECRET` or `VERCEL_PROTECTION_BYPASS_SECRET`.
 
+## Staging marketplace notification E2E
+
+Use this after the marketplace transaction runner passes. The notification runner
+reuses the marketplace transaction fixture, creates partner storage states, checks
+notification readiness, opens the partner dashboard notification panel, follows
+the opportunity link, and marks the in-app delivery as read.
+
+```bash
+vercel env run -e preview -- npm run e2e:marketplace-notification:staging -- https://your-preview-url.vercel.app
+```
+
+Remote notification E2E is blocked unless
+`E2E_ALLOW_REMOTE_MARKETPLACE_NOTIFICATION=true` is present. The staging runner
+sets it internally and also enables the marketplace transaction remote fixture
+guard because it reuses that seed/auth flow. Keep all credentials in the shell or
+platform secret store.
+
 ## Production schema health check
 
 `check-production-schema.mjs` compares the current migration files with the

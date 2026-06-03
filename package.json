@@ -29,6 +29,7 @@
     "e2e:completion-preview:auth": "node scripts/create_completion_report_preview_storage_states.mjs",
     "e2e:marketplace-notification:ready": "node scripts/check_marketplace_notification_e2e_readiness.mjs",
     "e2e:marketplace-notification": "node scripts/e2e_marketplace_notification_dashboard.mjs",
+    "e2e:marketplace-notification:staging": "node scripts/run_marketplace_notification_e2e_staging.mjs",
     "e2e:marketplace-transaction:ready": "node scripts/check_marketplace_transaction_e2e_readiness.mjs",
     "e2e:marketplace-transaction:local": "node scripts/run_marketplace_transaction_e2e_local.mjs",
     "e2e:marketplace-transaction:staging": "node scripts/run_marketplace_transaction_e2e_staging.mjs",

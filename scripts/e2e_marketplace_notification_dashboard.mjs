@@ -3,6 +3,12 @@
 import { access } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
+import {
+  isLocalOrAllowedRemoteUrl,
+  playwrightContextOptions,
+  remoteE2ERequirement,
+  safeOrigin
+} from "./completion_preview_e2e_env.mjs";
 
 const baseUrl = process.env.E2E_BASE_URL || "http://localhost:3100";
 const stateDir = process.env.E2E_STORAGE_STATE_DIR || "tmp/e2e-auth";
@@ -22,9 +28,10 @@ function assert(condition, message, details = {}) {
 }
 
 function assertLocalBaseUrl(value) {
-  const url = new URL(value);
-  const isLocal = ["localhost", "127.0.0.1"].includes(url.hostname);
-  assert(isLocal, `local base URL에서만 marketplace notification e2e를 실행할 수 있습니다. current=${url.origin}`);
+  assert(
+    isLocalOrAllowedRemoteUrl(value, "MARKETPLACE_NOTIFICATION"),
+    `local 또는 명시적으로 허용된 remote base URL에서만 marketplace notification e2e를 실행할 수 있습니다. current=${safeOrigin(value)}. ${remoteE2ERequirement("MARKETPLACE_NOTIFICATION")}`
+  );
 }
 
 async function assertStorageStateExists() {
@@ -42,7 +49,7 @@ async function main() {
   await assertStorageStateExists();
 
   const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({ storageState: partnerStatePath });
+  const context = await browser.newContext(playwrightContextOptions({ storageState: partnerStatePath }));
   const page = await context.newPage();
 
   try {
