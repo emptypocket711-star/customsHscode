@@ -484,6 +484,7 @@ const copyGuideLabels: Record<HsCopyGuideLanguage, {
   finalReviewNote: string;
   standardVat: string;
   ftaRate: string;
+  ftaReviewNote: string;
 }> = {
   ko: {
     appliedDutyRate: "적용 관세율",
@@ -517,7 +518,8 @@ const copyGuideLabels: Record<HsCopyGuideLanguage, {
     requirementsNeedReview: "수입요건 해당 여부와 제출서류는 제품 상세자료 확인 후 검토가 필요합니다.",
     finalReviewNote: "정확한 적용 여부는 제품 상세자료, 원산지, 선적 경로, 실제 신고 시점 기준으로 다시 확인해 주세요.",
     standardVat: "부가세 : 10%",
-    ftaRate: "FTA 관세율"
+    ftaRate: "FTA 관세율",
+    ftaReviewNote: "FTA 세율은 자동 적용이 아니며 원산지증명, 직접운송, 협정 요건 충족 여부를 함께 확인해야 합니다."
   },
   en: {
     appliedDutyRate: "Applicable duty rate",
@@ -551,7 +553,8 @@ const copyGuideLabels: Record<HsCopyGuideLanguage, {
     requirementsNeedReview: "Applicability and required documents should be reviewed after checking detailed product information.",
     finalReviewNote: "Please re-check applicability based on detailed product data, origin, shipping route, and the actual declaration date.",
     standardVat: "VAT: 10%",
-    ftaRate: "FTA preferential rate"
+    ftaRate: "FTA preferential rate",
+    ftaReviewNote: "FTA rates are not applied automatically and require review of origin proof, direct transport, and agreement conditions."
   },
   zh: {
     appliedDutyRate: "适用关税税率",
@@ -585,7 +588,8 @@ const copyGuideLabels: Record<HsCopyGuideLanguage, {
     requirementsNeedReview: "进口要求适用性和提交资料需根据产品详细资料进一步确认。",
     finalReviewNote: "请根据产品详细资料、原产地、运输路径及实际申报日期重新确认适用性。",
     standardVat: "增值税: 10%",
-    ftaRate: "FTA 优惠税率"
+    ftaRate: "FTA 优惠税率",
+    ftaReviewNote: "FTA 税率不会自动适用，需一并确认原产地证明、直接运输及协定适用条件。"
   }
 };
 
@@ -816,6 +820,7 @@ function hsCopySummaryTexts({
 
     if (ftaTariffs.length) {
       lines.push(`${labels.ftaRate} : ${ftaTariffs.map((tariff) => tariffSummaryText(tariff, countryCode)).join(" / ")}`);
+      lines.push(labels.ftaReviewNote);
     }
 
     lines.push(labels.internalTax);
@@ -1358,6 +1363,7 @@ function productCandidateCopySummaryTexts({
 
       if (ftaTariffs.length) {
         lines.push(`${labels.ftaRate} : ${ftaTariffs.map((tariff) => tariffSummaryText(tariff, countryCode)).join(" / ")}`);
+        lines.push(labels.ftaReviewNote);
       }
 
       lines.push(labels.internalTax);
