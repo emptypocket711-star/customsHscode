@@ -452,6 +452,7 @@
 | P161.1 notice delete danger guard | 완료 | 운영 점검 fallback 문구가 아니라 공지 관리에서 삭제 폼을 위험 작업 접힘 영역으로 분리해 평소 수정 흐름과 구분한다 | notice danger guard | browser, typecheck, lint |
 | P162.1 operations management regression | 완료 | 공지 삭제 UI 변경이 아니라 운영 사용자·점검·공지 화면이 함께 정상 렌더링되고 접힘 정책이 유지되는지 확인한다 | operations management regression | browser, typecheck, lint |
 | P163.1 operations request check order | 완료 | 운영 관리 목록 회귀 검증이 아니라 운영 요청 상세 상단에 민감정보 없이 먼저 볼 카드 순서를 표시한다 | operations request check order | browser, typecheck, lint |
+| P164.1 operations request detail regression | 완료 | 운영 요청 상세 순서 카드 추가가 아니라 운송·통관 운영 상세이 민감정보 보호 문구와 주요 운영 앵커를 계속 유지하는지 확인한다 | operations request detail regression | browser, typecheck, lint |
 
 #### P109 다음 병목 선정
 

@@ -8053,3 +8053,20 @@
 - Playwright에서 `#request-bids`, `#completion-report-summary` 앵커 링크 확인
 - `npm run typecheck`
 - `npm run lint`
+
+### operations request detail regression
+
+- 이전 작업은 운영 요청 상세 상단에 `운영 확인 순서`를 추가한 P163.1이고, 이번 작업은 운송·통관 운영 상세이 민감정보 보호 문구와 주요 운영 앵커를 계속 유지하는지 확인한 P164.1이다.
+- developer 계정으로 운송 운영 상세와 통관 운영 상세 fixture를 모두 열었다.
+- `운영 확인 순서`, 민감정보 비노출 안내, `파트너 노출·알림 운영 요약`, `견적 상태` 문구를 확인했다.
+- `#request-bids`, `#completion-report-summary` 앵커 링크가 유지되는지 확인했다.
+- 화면 텍스트에서 견적 금액/메시지 원문/파일명 원문 노출 label이 보이지 않는지 확인했다.
+- 새 코드 변경은 없고, 문서 상태만 완료로 갱신했다.
+- 로컬 파일만 수정했고 원격 푸시, 배포는 하지 않았다.
+
+검증:
+
+- Playwright developer `/operations/requests/75000000-0000-4000-8000-000000000001`
+- Playwright developer `/operations/requests/75000000-0000-4000-8000-000000000002`
+- `npm run typecheck`
+- `npm run lint`
