@@ -4,6 +4,28 @@
 
 ## 2026-06-03
 
+### operations smoke readiness check
+
+- 이전 작업은 P200 production smoke에 운영자 route를 선택적으로 포함한 것이고, 이번 작업은 P201 운영자 smoke를 실제로 켤 준비가 됐는지 점검하는 명령을 추가한 작업이다.
+- `scripts/check_operations_smoke_readiness.mjs`를 추가했다.
+- `npm run smoke:operations:ready`로 실행할 수 있게 package script를 추가했다.
+- readiness는 지정 개발자 이메일 `emptypocket711@gmail.com` 기준으로 확인한다.
+- `tmp/test-accounts.json`에 developer 계정 비밀번호가 있거나, `SMOKE_OPERATIONS_EMAIL`/`SMOKE_OPERATIONS_PASSWORD` env가 준비되면 ready=true가 된다.
+- 현재 저장된 테스트 계정에는 developer 계정이 없어 ready=false로 확인됐다.
+- env에 지정 개발자 이메일과 임시 비밀번호 값을 넣었을 때 ready=true가 되는지도 확인했다.
+- 최신 staging preview는 `https://customs-hscode-p4zvxsu3h-koo-apps.vercel.app`다.
+- 다음 작업은 P202 운영 route guard 일반 계정 차단 검증이다. 이번 P201이 운영자 smoke 준비 여부 점검이라면, P202는 운영자 계정이 없더라도 일반 화주/포워더/관세사 계정이 운영 화면에 접근하지 못하는지 staging에서 확인하는 작업이다.
+
+검증:
+
+- `node --check scripts/check_operations_smoke_readiness.mjs`
+- `npm run smoke:operations:ready`: ready=false, exit 1 확인
+- `SMOKE_OPERATIONS_EMAIL=... SMOKE_OPERATIONS_PASSWORD=... npm run smoke:operations:ready`: ready=true 확인
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-p4zvxsu3h-koo-apps.vercel.app`: 9/9 통과, `operationsRoutes=false`
+
 ### optional operations smoke routes
 
 - 이전 작업은 P199 운영 요청 패널의 스키마 fallback CTA를 추가한 것이고, 이번 작업은 P200 운영 화면 변경을 앞으로 smoke에서 검증할 수 있게 조건을 추가한 작업이다.
