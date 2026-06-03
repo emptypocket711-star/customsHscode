@@ -454,6 +454,9 @@
 | P163.1 operations request check order | 완료 | 운영 관리 목록 회귀 검증이 아니라 운영 요청 상세 상단에 민감정보 없이 먼저 볼 카드 순서를 표시한다 | operations request check order | browser, typecheck, lint |
 | P164.1 operations request detail regression | 완료 | 운영 요청 상세 순서 카드 추가가 아니라 운송·통관 운영 상세이 민감정보 보호 문구와 주요 운영 앵커를 계속 유지하는지 확인한다 | operations request detail regression | browser, typecheck, lint |
 | P165.1 operations full smoke regression | 완료 | 운영 요청 상세 개별 검증이 아니라 운영 사용자·점검·공지·운송 상세·통관 상세 화면 전체가 함께 정상 렌더링되는지 확인한다 | operations full smoke | browser, typecheck, lint |
+| P166.1 roadmap status sync | 완료 | 운영 전체 smoke가 아니라 오래된 로드맵 상태 불일치를 최신 작업 상태와 맞춘다 | roadmap status sync | docs review |
+| P167.1 product name HSK10 expansion | 완료 | 운영/대시보드 검증이 아니라 품명 AI 검색에서 GPT가 넓은 HS4/HS6만 줘도 사용자 화면에 HSK 10자리 후보를 먼저 표시한다 | product search HSK10 expansion | unit, e2e, browser, typecheck, lint |
+| P168.1 local dev environment split | 대기 | 품명 검색 결과 품질이 아니라 `.env.local` 원격 설정과 로컬 검증 설정을 분리해 브라우저/E2E 속도와 재현성을 안정화한다 | local env guard | env review, smoke |
 
 #### P109 다음 병목 선정
 

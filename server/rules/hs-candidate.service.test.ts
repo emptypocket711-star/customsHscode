@@ -120,6 +120,43 @@ describe("recommendHsCandidates", () => {
     expect(candidates[0]?.scoreBreakdown.join(" ")).toMatch(/AI HS 후보 상세 조회|키워드/);
   });
 
+  it("expands broad GPT sugar confectionery hints to a Korean HSK 10-digit candy candidate", async () => {
+    process.env.AI_PROVIDER = "openai";
+    process.env.OPENAI_API_KEY = "test-key";
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      output_text: JSON.stringify({
+        classificationState: "single_likely_candidate",
+        certainty: "high",
+        displayMode: "single",
+        correctedProductName: "사탕",
+        primaryCandidate: {
+          code: "1704",
+          reason: "사탕은 일반적으로 코코아를 함유하지 않은 설탕과자류로 검토됩니다.",
+          requiredInfo: ["초콜릿 함유 여부", "껌 또는 의약품 표시 여부", "성분표"],
+          score: 96
+        },
+        candidateHsCodes: ["1704"],
+        candidateHsCodeReasons: [
+          { code: "1704", reason: "코코아를 함유하지 않은 설탕과자류 가능성", requiredInfo: ["초콜릿 함유 여부", "성분표"], score: 96 }
+        ],
+        searchTerms: ["사탕", "캔디", "설탕과자", "sugar confectionery", "candy"],
+        koreanTerms: ["사탕", "캔디", "설탕과자"],
+        englishTerms: ["sugar confectionery", "candy"],
+        productFamilies: ["sugar confectionery"],
+        missingQuestions: ["초콜릿 또는 코코아 함유 여부 확인이 필요합니다."]
+      })
+    }), { status: 200 })));
+
+    const candidates = await recommendHsCandidatesForProduct({
+      productName: "사탕",
+      basisDate: "2026-05-30"
+    });
+
+    expect(candidates[0]?.hskCode).toBe("1704902090");
+    expect(candidates[0]?.koreanName).toBe("기타 캔디류");
+    expect(candidates[0]?.scoreBreakdown.join(" ")).toContain("GPT 추천 점수: 96점");
+  });
+
   it("keeps competing acronym meanings from AI lookup hints", async () => {
     const candidates = await recommendHsCandidatesForProduct({
       productName: "esc",

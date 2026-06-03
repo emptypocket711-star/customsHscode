@@ -4,6 +4,24 @@
 
 ## 2026-06-03
 
+### product name search HSK10 expansion
+
+- 이전 작업은 운영/대시보드/거래 상태 화면 회귀 검증이고, 이번 작업은 품명 AI 검색에서 GPT가 넓은 HS4/HS6만 주는 경우에도 사용자 화면에는 HSK 10자리 후보를 먼저 보여주도록 보강한 것이다.
+- 사탕·캔디·설탕과자 문맥에서 GPT 응답이 `1704`처럼 넓게 들어와도 `1704.90-2090` 계열의 한국 HSK 10자리 확장 힌트를 보존하도록 AI 정규화 후처리를 수정했다.
+- `hs_master` seed 또는 원격 DB에 해당 1704 하위 행이 비어 있어도 후보 카드에 HSK 10자리 명칭을 표시할 수 있도록 1704 계열 공식 HSK 확장 fallback을 추가했다.
+- 캐시 버전을 올려 기존 `사탕 -> 1704` 결과가 메모리/lookup cache에 남아 화면에 계속 표시되는 문제를 방지했다.
+- 품명 보완 재조회 E2E가 로컬 storage state를 사용할 수 있게 해 로그인 계정 타임아웃과 검색 UX 검증을 분리했다.
+- 브라우저에서 `사탕` 검색 결과가 상단 후보 카드에 HSK 10자리로 표시되고, 보완사항 입력/재조회 CTA와 `AI 분류 흐름 요약` 순서가 유지되는 것을 확인했다.
+- 다음 작업은 P168 로컬 개발 서버 환경 고정 점검이다. 이번 P167이 품명 검색 결과 품질 보강이라면, P168은 `.env.local`의 원격 Supabase/OpenAI 설정 때문에 로컬 검증이 느려지거나 흔들리지 않도록 실행 환경을 분리하는 작업이다.
+
+검증:
+
+- `npx vitest run server/rules/hs-candidate.service.test.ts server/ai/clarification.service.test.ts`
+- `E2E_BASE_URL=http://127.0.0.1:3100 E2E_STORAGE_STATE=tmp/e2e-auth/local-developer.json E2E_TIMEOUT_MS=180000 node scripts/e2e_product_supplement_flow.mjs`
+- Playwright storage-state check: `/hs/direct?query=사탕&direction=import&destinationCountry=CN&basisDate=2026-05-30`
+- `npm run typecheck`
+- `npm run lint`
+
 ### marketplace document visibility handoff
 
 - 이전 작업은 P80 대표 운영 큐와 상세 개선 요청 안내이고, 이번 작업은 P81 화주·파트너 서류 공개 범위 handoff 보강이다.

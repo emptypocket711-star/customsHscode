@@ -5,6 +5,7 @@ import { chromium } from "playwright";
 const baseUrl = process.env.E2E_BASE_URL || "https://hsfinder.co.kr";
 const loginEmail = process.env.E2E_LOGIN_EMAIL || process.env.SMOKE_LOGIN_EMAIL || "hsfinder-e2e@example.com";
 const loginPassword = process.env.E2E_LOGIN_PASSWORD || process.env.SMOKE_LOGIN_PASSWORD || "HsFinderTest!2026";
+const storageState = process.env.E2E_STORAGE_STATE;
 const timeoutMs = Number(process.env.E2E_TIMEOUT_MS || 120000);
 
 function assert(condition, message, details = {}) {
@@ -36,15 +37,19 @@ function productSearchUrl(query) {
 
 async function main() {
   const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage({ viewport: { width: 1366, height: 900 } });
+  const context = storageState
+    ? await browser.newContext({ storageState, viewport: { width: 1366, height: 900 } })
+    : await browser.newContext({ viewport: { width: 1366, height: 900 } });
+  const page = await context.newPage();
   const startedAt = performance.now();
 
   try {
-    await login(page);
+    if (!storageState) await login(page);
     await page.goto(productSearchUrl("사탕"), { waitUntil: "networkidle", timeout: timeoutMs });
 
     const initialBody = await page.locator("body").innerText({ timeout: timeoutMs });
     assert(initialBody.includes("가장 가까운 HS CODE"), "품명검색 결과 1순위 코드가 표시되지 않았습니다.");
+    assert(initialBody.includes("HSK 10자리"), "품명검색 결과가 HSK 10자리까지 표시되어야 합니다.");
     assert(initialBody.includes("간단 보완사항"), "간단 보완사항 입력이 표시되지 않았습니다.");
     assert(initialBody.includes("질문별로 답변하기"), "질문별 상세 입력 접힘 영역이 표시되지 않았습니다.");
 
@@ -71,10 +76,12 @@ async function main() {
     assert(finalBody.includes("1개 반영"), "보완사항 반영 개수 배지가 표시되지 않았습니다.");
     assert(finalBody.includes("코코아 미함유, 소매포장된 설탕 과자입니다."), "입력한 보완사항 답변이 요약 패널에 표시되지 않았습니다.");
     assert(finalBody.includes("가장 가까운 HS CODE"), "보완 재조회 후 결과 코드가 표시되지 않았습니다.");
+    assert(finalBody.includes("HSK 10자리"), "보완 재조회 후 결과가 HSK 10자리까지 표시되어야 합니다.");
     assert(finalBody.indexOf("품명 기반 HS CODE 추천 결과") < finalBody.indexOf("AI 분류 흐름 요약"), "결과가 AI 흐름보다 먼저 표시되어야 합니다.");
 
     console.log("HS Finder product supplement E2E");
     console.log(`baseUrl=${baseUrl}`);
+    console.log(`accountMode=${storageState ? "storage-state" : "password-login"}`);
     console.log(`durationMs=${Math.round(performance.now() - startedAt)}`);
     console.log("result=ok");
   } finally {

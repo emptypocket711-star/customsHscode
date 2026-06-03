@@ -70,6 +70,93 @@ type CustomsHsCodeSearchRow = {
   effective_to: string | null;
 };
 
+const curatedHsMasterExpansionRows: HsMasterSearchRow[] = [
+  {
+    hsk_code: "1704100000",
+    hs6: "170410",
+    korean_name: "추잉껌(당을 도포하였는지에 상관없다)",
+    english_name: "Chewing gum, whether or not sugar-coated",
+    source_name: "관세법령정보포털 HSK 품목분류표",
+    source_url: "https://unipass.customs.go.kr/clip/index.do",
+    source_version: "hsk-curated-expansion-2026-1704",
+    effective_from: "2026-01-01",
+    effective_to: null
+  },
+  {
+    hsk_code: "1704901000",
+    hs6: "170490",
+    korean_name: "감초 추출물(과자로 만들어진 것은 제외한다)",
+    english_name: "Liquorice extract, not put up as confectionery",
+    source_name: "관세법령정보포털 HSK 품목분류표",
+    source_url: "https://unipass.customs.go.kr/clip/index.do",
+    source_version: "hsk-curated-expansion-2026-1704",
+    effective_from: "2026-01-01",
+    effective_to: null
+  },
+  {
+    hsk_code: "1704902010",
+    hs6: "170490",
+    korean_name: "드롭스(drops)",
+    english_name: "Drops",
+    source_name: "관세법령정보포털 HSK 품목분류표",
+    source_url: "https://unipass.customs.go.kr/clip/index.do",
+    source_version: "hsk-curated-expansion-2026-1704",
+    effective_from: "2026-01-01",
+    effective_to: null
+  },
+  {
+    hsk_code: "1704902020",
+    hs6: "170490",
+    korean_name: "캐러멜",
+    english_name: "Caramels",
+    source_name: "관세법령정보포털 HSK 품목분류표",
+    source_url: "https://unipass.customs.go.kr/clip/index.do",
+    source_version: "hsk-curated-expansion-2026-1704",
+    effective_from: "2026-01-01",
+    effective_to: null
+  },
+  {
+    hsk_code: "1704902090",
+    hs6: "170490",
+    korean_name: "기타 캔디류",
+    english_name: "Other candies",
+    source_name: "관세법령정보포털 HSK 품목분류표",
+    source_url: "https://unipass.customs.go.kr/clip/index.do",
+    source_version: "hsk-curated-expansion-2026-1704",
+    effective_from: "2026-01-01",
+    effective_to: null
+  },
+  {
+    hsk_code: "1704909000",
+    hs6: "170490",
+    korean_name: "기타 설탕과자",
+    english_name: "Other sugar confectionery",
+    source_name: "관세법령정보포털 HSK 품목분류표",
+    source_url: "https://unipass.customs.go.kr/clip/index.do",
+    source_version: "hsk-curated-expansion-2026-1704",
+    effective_from: "2026-01-01",
+    effective_to: null
+  }
+];
+
+function curatedHsMasterRowsByCodeHints(input: ProductHsRecommendationInput, codeHints: string[]) {
+  const hints = Array.from(new Set(
+    codeHints
+      .map((code) => code.replace(/[^0-9]/g, ""))
+      .filter((code) => code.length >= 4 && code.length <= 10)
+  ));
+
+  return curatedHsMasterExpansionRows.filter((row) =>
+    row.effective_from <= input.basisDate
+    && (!row.effective_to || row.effective_to >= input.basisDate)
+    && hints.some((code) => {
+      if (code.length >= 10) return row.hsk_code === code.slice(0, 10);
+      if (code.length >= 6) return row.hs6 === code.slice(0, 6) || row.hsk_code.startsWith(code);
+      return row.hsk_code.startsWith(code);
+    })
+  );
+}
+
 type NormalizedProductSearch = {
   input: ProductHsRecommendationInput;
   normalization: AiProductSearchNormalizationResult | null;
@@ -562,6 +649,10 @@ async function findHsMasterRowsByCodeHintPrefixes(
     }
   }
 
+  for (const row of curatedHsMasterRowsByCodeHints(input, normalizedHints)) {
+    collected.set(row.hsk_code, row);
+  }
+
   const rows = [...collected.values()];
   const tenDigitRows = rows.filter((row) => row.hsk_code.replace(/[^0-9]/g, "").length === 10);
   return tenDigitRows.length ? tenDigitRows : rows;
@@ -614,6 +705,10 @@ function mockHsMasterRowsByCodeHints(
         rows.set(fallbackRecord.hsk_code, fallbackRecord);
       }
     }
+  }
+
+  for (const row of curatedHsMasterRowsByCodeHints(input, normalizedHints)) {
+    rows.set(row.hsk_code, row);
   }
 
   return [...rows.values()];
@@ -843,7 +938,7 @@ function productRecommendationCacheKey(input: ProductHsRecommendationInput) {
     .digest("hex");
 
   return lookupCacheKey("hs-product-recommendations", {
-    version: 1,
+    version: 2,
     basisDate: input.basisDate,
     inputHash
   });

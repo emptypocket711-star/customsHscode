@@ -5,7 +5,7 @@ import { redactSensitiveText } from "@/server/ai/redaction";
 import { cachedLookup, lookupCacheKey } from "@/server/cache/lookup-cache";
 import { logLookupTelemetry, productInputShape } from "@/server/observability/lookup-telemetry";
 
-const productSearchNormalizationVersion = "product-search-normalization-v22";
+const productSearchNormalizationVersion = "product-search-normalization-v23";
 
 function productInputText(input: ProductHsRecommendationInput) {
   const hsCodeHints = extractHsCodeHintsFromProductInput(input);
@@ -96,6 +96,14 @@ function productContextLookupHints(input: ProductHsRecommendationInput, normaliz
       code: "841451",
       reason: "입력값에 전기팬·휴대용 선풍기 완제품 문맥이 있어 제8414.51호 계열 확인이 우선 필요합니다.",
       requiredInfo: ["전동기를 내장한 팬 완제품인지", "출력과 날개/하우징 구조", "휴대용·탁상용·천장용 등 설치 형태", "배터리가 내장형인지 별도 배터리인지"]
+    });
+  }
+
+  if (/(사탕|캔디|드롭스|캐러멜|카라멜|설탕\s*과자|sugar\s*confectionery|candy|candies|caramel|drops)/i.test(text)) {
+    hints.push({
+      code: "1704902090",
+      reason: "입력값에 사탕·캔디류 문맥이 있어 제1704.90-2090호 기타 캔디류 확인이 우선 필요합니다.",
+      requiredInfo: ["코코아 함유 여부", "껌·드롭스·캐러멜 등 세부 유형", "성분표와 소매포장 표시사항"]
     });
   }
 
@@ -263,6 +271,8 @@ function focusedDisplayHsHints(normalization: AiProductSearchNormalizationResult
     && primaryCode
     && candidateHsCodes.some((code) => code === primaryCode || code.startsWith(primaryCode) || primaryCode.startsWith(code))
   ) {
+    const specificCode = candidateHsCodes.find((code) => code.length > primaryCode.length && code.startsWith(primaryCode));
+    if (specificCode) return [specificCode];
     return [primaryCode];
   }
 
