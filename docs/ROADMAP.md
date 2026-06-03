@@ -541,6 +541,7 @@
 | P278.1 marketplace route performance smoke | 완료 | 보안 runbook이 아니라 주요 marketplace route의 응답 시간과 병목을 staging에서 계측한다 | route perf smoke | load/smoke script |
 | P279.1 P254-P278 staging regression suite | 완료 | 개별 보강이 아니라 새 guard와 runbook 변경 후 suite 전체가 여전히 통과하는지 확인한다 | full staging regression | smoke:staging:suite |
 | P280.1 marketplace MVP release readiness review | 완료 | staging regression이 아니라 화주/포워더/관세사/운영자 기준으로 남은 수동 검토 항목과 출시 보류 조건을 정리한다 | release readiness report | docs, final suite summary |
+| P281.1 public lookup and gated auth actions | 예정 | release readiness가 아니라 HS/품명/적하목록 같은 기본 조회는 비로그인으로 열고 저장·요청·입찰·문서·운영 액션만 로그인으로 유도한다 | auth gate policy + implementation | route smoke, server auth/RLS checks |
 
 #### P109 다음 병목 선정
 

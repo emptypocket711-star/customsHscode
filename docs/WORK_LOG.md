@@ -4,6 +4,19 @@
 
 ## 2026-06-03
 
+### public lookup and auth gate handoff
+
+- 이전 작업은 P280에서 marketplace MVP를 제한 공개 테스트 가능 상태로 판정한 것이고, 이번 작업은 기능 구현이 아니라 다음 코덱스가 이어받을 P281 방향을 문서화한 작업이다.
+- `docs/PUBLIC_ACCESS_AND_AUTH_GATE_PLAN.md`를 추가해 기본 조회는 비로그인 공개, 저장/요청/입찰/문서/운영 액션은 로그인 필수로 분리했다.
+- `docs/CODEX_HANDOFF.md`를 추가해 현재 브랜치, staging 주소, P280까지 완료된 범위, P279 full suite 통과 상태, P281 다음 작업을 정리했다.
+- `docs/DECISIONS.md`의 오래된 선로그인 정책을 공개 조회 + 액션 단위 auth gate 정책으로 갱신했다.
+- `docs/ROADMAP.md`에 P281 `public lookup and gated auth actions`를 다음 작업으로 추가했다.
+
+검증:
+
+- docs review
+- `rg -n "public lookup|비로그인|P281|CODEX_HANDOFF|PUBLIC_ACCESS" docs`
+
 ### marketplace MVP release readiness review
 
 - 이전 작업은 P279에서 P254-P278 전체 staging regression suite를 통과시킨 것이고, 이번 작업은 새 기능 구현이 아니라 제한 공개 테스트 기준과 출시 보류 조건을 대표/운영자 관점으로 정리한 작업이다.
