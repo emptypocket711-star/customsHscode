@@ -8085,3 +8085,17 @@
 - Playwright developer operations full smoke 5 routes
 - `npm run typecheck`
 - `npm run lint`
+
+### roadmap completed fixture status sync
+
+- 이전 작업은 운영 화면 전체 smoke 검증인 P165.1이고, 이번 작업은 오래된 로드맵 상태 불일치를 바로잡은 P166.1이다.
+- `P42.4 completion report e2e fixture implementation`은 fixture 원장, seed/auth/e2e 후속 작업이 이미 완료되어 있었지만 로드맵 상태가 `진행`으로 남아 있었다.
+- P42.4 상태를 `완료`로 갱신했다.
+- 남은 `진행` 표기는 상위 phase 또는 큰 범위 상태임을 확인했다.
+- 새 코드 변경은 없다.
+- 로컬 파일만 수정했고 원격 푸시, 배포는 하지 않았다.
+
+검증:
+
+- `rg -n "\\| .*진행|로컬 진행" docs/ROADMAP.md`
+- `git diff --check`

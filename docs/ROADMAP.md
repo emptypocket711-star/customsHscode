@@ -181,7 +181,7 @@
 | P42.1 completion report preview UI browser check | 완료 | route mapping 공통화가 아니라 로컬 브라우저에서 preview route 접근 보호와 화면 렌더링 경로를 확인한다 | preview browser check | local browser, route 확인 |
 | P42.2 completion report preview auth fixture plan | 완료 | 비로그인 보호 확인이 아니라 실제 로그인/권한 fixture로 preview 본문 렌더링을 자동 검증하는 방법을 정리한다 | preview auth fixture plan | docs, test plan |
 | P42.3 completion report local seed helper plan | 완료 | 권한 fixture 계획이 아니라 preview e2e에 필요한 최소 local seed helper 구조를 설계한다 | preview seed helper plan | docs, test plan |
-| P42.4 completion report e2e fixture implementation | 진행 | seed helper 계획이 아니라 실제 테스트 fixture 파일과 role별 storage state 준비 코드를 만든다 | preview e2e fixture | unit/e2e setup review, typecheck, lint |
+| P42.4 completion report e2e fixture implementation | 완료 | seed helper 계획이 아니라 실제 테스트 fixture 파일과 role별 storage state 준비 코드를 만든다 | preview e2e fixture | unit/e2e setup review, typecheck, lint |
 | P42.5 completion report seed runner | 완료 | fixture 데이터 원장이 아니라 service-role Supabase local seed runner를 만들어 실제 DB에 테스트 데이터를 넣는다 | preview seed runner | unit, typecheck, lint, build, local guard |
 | P42.6 completion report storage state script | 완료 | DB seed runner가 아니라 seeded role 계정으로 로그인해 Playwright storage state를 생성하는 스크립트를 만든다 | preview storage state | typecheck, lint, build, guarded script |
 | P42.7 completion report preview e2e script | 완료 | storage state 생성이 아니라 생성된 role별 세션으로 preview 본문/권한/민감정보 미노출을 검증하는 e2e script를 만든다 | preview e2e script | typecheck, lint, build, guarded script |
