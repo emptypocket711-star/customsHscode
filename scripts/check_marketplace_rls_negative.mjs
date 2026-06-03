@@ -1068,6 +1068,21 @@ async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPas
     reason: authenticatedClaim.error?.message ?? "rpc returned without error"
   });
 
+  const requesterProfileEscalation = await requester
+    .from("profiles")
+    .update({
+      company_id: fixture.companies.forwarder.id,
+      company_role: "admin",
+      role: "developer"
+    })
+    .eq("id", fixture.users.requester.id)
+    .select("id,company_id,company_role,role");
+  checks.push({
+    label: "requester-cannot-self-escalate-profile-privilege-fields",
+    ok: blockedByRls(requesterProfileEscalation),
+    reason: requesterProfileEscalation.error?.message ?? `rows=${Array.isArray(requesterProfileEscalation.data) ? requesterProfileEscalation.data.length : "unknown"}`
+  });
+
   await cleanupUnexpectedPreferenceRows(serviceRoleClient);
   await cleanupWrongBidDetailRows(serviceRoleClient);
   await restoreForwarderFreightPreference(serviceRoleClient);

@@ -530,7 +530,7 @@
 | P267.1 notification digest semantics | 완료 | per-kind 중복 방지가 아니라 digest enabled가 침묵이 아닌 묶음 알림 target으로 해석되게 한다 | digest policy | policy/unit, worker dry-run |
 | P268.1 reminder fatigue policy | 완료 | digest가 아니라 initial 알림이 아직 sent 되지 않은 파트너에게 마감 알림을 보내지 않도록 engagement 기준을 조정한다 | reminder fatigue guard | policy/unit |
 | P269.1 verification upload cleanup audit | 완료 | 알림 정책이 아니라 회사 검증 증빙 업로드 실패 후 storage/metadata cleanup 실패가 추적 가능하게 드러나게 한다 | verification upload integrity | repository tests |
-| P270.1 profile self-update privilege hardening | 예정 | 업로드 무결성이 아니라 사용자가 profile role/company_role/company_id를 직접 바꿔 권한 상승하지 못하게 한다 | profile privilege boundary | RLS negative tests |
+| P270.1 profile self-update privilege hardening | 완료 | 업로드 무결성이 아니라 사용자가 profile role/company_role/company_id를 직접 바꿔 권한 상승하지 못하게 한다 | profile privilege boundary | RLS negative tests |
 | P271.1 role review RPC actor validation | 예정 | profile hardening이 아니라 service-role RPC도 actor가 실제 운영 검토 권한자인지 DB에서 검증한다 | reviewer actor guard | RPC negative tests |
 | P272.1 role approval company eligibility | 예정 | actor 검증이 아니라 정지/차단/미검증 회사에 포워더·관세사 역할을 승인하지 않게 한다 | role approval eligibility | RPC tests, operations UI copy |
 | P273.1 marketplace RLS negative suite | 예정 | 개별 guard가 아니라 requester/partner/staff 권한 우회 케이스를 반복 가능한 통합 negative suite로 묶는다 | RLS negative suite | staged DB test |

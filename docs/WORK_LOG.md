@@ -4,6 +4,19 @@
 
 ## 2026-06-03
 
+### profile self-update privilege hardening
+
+- 이전 작업은 P269에서 회사 검증 증빙 업로드 실패 cleanup 가시성을 보강한 것이고, 이번 작업은 사용자가 profile 권한 필드를 직접 수정해 권한 상승하지 못하는지 확인한 작업이다.
+- requester fixture 계정으로 `profiles.company_id`, `company_role`, `role`을 직접 update해 타 회사 admin/developer 권한으로 바꾸려는 시도를 추가했다.
+- Preview DB에서 해당 update가 `permission denied for table profiles`로 차단되는 것을 확인했다.
+- 기존 migration의 column-level grant와 profile update RPC 경계가 유지되고 있어 추가 SQL 수정 없이 RLS/권한 negative suite에 고정했다.
+- 다음 작업은 P271 role review RPC actor validation이다. 이번 P270이 일반 사용자 profile 직접 권한 상승 차단이라면, P271은 service-role role review RPC도 actor가 실제 운영 검토 권한자인지 DB에서 검증하는 작업이다.
+
+검증:
+
+- `node --check scripts/check_marketplace_rls_negative.mjs`
+- `vercel env run -e preview -- sh -c 'E2E_ALLOW_REMOTE_MARKETPLACE_TRANSACTION=true node scripts/seed_marketplace_transaction_fixture.mjs && E2E_ALLOW_REMOTE_MARKETPLACE_RLS_NEGATIVE=true npm run smoke:marketplace-rls-negative'`
+
 ### verification upload cleanup audit
 
 - 이전 작업은 P268에서 마감 알림 피로도 정책을 조정한 것이고, 이번 작업은 회사 검증 증빙 업로드 실패 후 cleanup 실패를 조용히 삼키지 않는지 고정한 작업이다.
