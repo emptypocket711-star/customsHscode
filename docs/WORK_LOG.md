@@ -4,6 +4,21 @@
 
 ## 2026-06-03
 
+### partner preference anchor smoke
+
+- 이전 작업은 P274에서 zero-match 운영 상세가 developer storage state 부재로 skip되지 않게 한 것이고, 이번 작업은 운영자 화면이 아니라 파트너 빈 상태의 관심 조건 설정 링크가 실제 회사 설정 anchor로 이동하는지 고정한 작업이다.
+- `e2e:partner-preference-anchor` smoke를 추가했다.
+- smoke는 match가 없는 전용 포워더 계정을 준비하고 `/requests/freight?workspace=forwarder`에서 `현재 입찰 가능한 운송 요청이 없습니다` empty state를 확인한다.
+- `관심 조건 설정 확인` 링크가 `/settings/members#partner-preferences`를 가리키는지 확인하고, 클릭 후 회사 설정의 `운송 견적 관심 조건` 섹션까지 도착하는지 브라우저로 검증한다.
+- Preview 배포에서 Vercel bypass와 Preview DB service-role env로 smoke가 통과했다.
+- 다음 작업은 P276 migration application runbook hardening이다. 이번 P275가 파트너 empty state anchor라면, P276은 Preview DB migration 적용, dry-run, health 확인 순서를 실수 없이 반복하게 하는 runbook 작업이다.
+
+검증:
+
+- `node --check scripts/e2e_partner_preference_anchor_smoke.mjs`
+- `npm run test -- features/service-requests/partner-opportunity-empty-copy.test.ts`
+- `E2E_TEST_PASSWORD=... E2E_ALLOW_REMOTE_MARKETPLACE_TRANSACTION=true E2E_BASE_URL=https://customs-hscode-dn0ayaj4k-koo-apps.vercel.app VERCEL_AUTOMATION_BYPASS_SECRET=... vercel env run -e preview -- npm run e2e:partner-preference-anchor`
+
 ### operations zero-match developer smoke
 
 - 이전 작업은 P273에서 marketplace DB/RLS negative suite의 그룹별 coverage 출력을 고정한 것이고, 이번 작업은 DB suite가 아니라 거래 E2E의 zero-match 운영 상세 검증이 developer storage state 부재로 skip되지 않게 한 작업이다.

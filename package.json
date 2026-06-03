@@ -39,6 +39,7 @@
     "e2e:marketplace-transaction:auth": "node scripts/create_marketplace_transaction_storage_states.mjs",
     "e2e:marketplace-transaction:mutation": "node scripts/e2e_marketplace_transaction_mutation_flow.mjs",
     "e2e:marketplace-transaction": "node scripts/e2e_marketplace_transaction_flow.mjs",
+    "e2e:partner-preference-anchor": "node scripts/e2e_partner_preference_anchor_smoke.mjs",
     "e2e:storage:cleanup": "node scripts/cleanup_e2e_storage_states.mjs",
     "ops:marketplace-notifications:rehearse-local": "node scripts/rehearse_marketplace_notifications_local.mjs",
     "ops:marketplace-notifications:rehearse-staging": "node scripts/run_marketplace_notification_worker_rehearsal_staging.mjs",

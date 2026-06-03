@@ -99,6 +99,16 @@ When Vercel deployment protection is enabled, pass
 shell. The runner uses a separate `tmp/e2e-auth-staging` storage-state directory
 by default and never prints secret values.
 
+To verify the partner empty-state settings link without disturbing the full
+transaction E2E, run the partner preference anchor smoke. It prepares a synthetic
+forwarder with no matched opportunities, opens the freight partner workspace,
+clicks `관심 조건 설정 확인`, and verifies the browser lands on
+`/settings/members#partner-preferences`.
+
+```bash
+vercel env run -e preview -- npm run e2e:partner-preference-anchor
+```
+
 ## Staging completion report E2E
 
 Use this after the marketplace transaction E2E passes. The completion runner
