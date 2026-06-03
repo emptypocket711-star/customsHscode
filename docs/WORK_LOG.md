@@ -4,6 +4,25 @@
 
 ## 2026-06-03
 
+### product search detail source banner
+
+- 이전 작업은 P188 품명 AI 결과 복사문 점수 보강이고, 이번 작업은 P189 품명 후보 상세조회 진입 배너 문구 점검이다.
+- 품명 후보를 눌러 10자리 상세조회로 들어갔을 때 상단 배너가 `품명검색에서 선택한 HS CODE입니다.`, `추천된 HS CODE`라고 표시되어 확정 분류처럼 보일 수 있었다.
+- 배너 제목을 `품명검색에서 선택한 우선 검토 후보입니다.`로 바꾸고, 본문을 `후보 코드 기준의 예비 조회 결과`라고 명확히 했다.
+- staging에서 품명 `사탕` 결과의 `이 후보로 상세 조회` 링크를 실제로 클릭해 `source=product_search` URL로 이동하고, 새 배너 문구가 표시되는지 확인했다.
+- 기존 문구 `품명검색에서 선택한 HS CODE입니다.`, `추천된 HS CODE를 상세 조회`가 화면에 남지 않았는지 확인했다.
+- 최신 staging preview는 `https://customs-hscode-egw756g7t-koo-apps.vercel.app`다.
+- 다음 작업은 P190 HS/품명 조회에서 요청 초안으로 넘어가는 CTA 문구 회귀 점검이다. 이번 P189가 상세조회 출처 배너라면, P190은 `운송 초안`, `통관 초안`으로 넘어갈 때 예비 HSK가 확정값처럼 전달되지 않는지 보는 작업이다.
+
+검증:
+
+- `rg -n "추천된 HS CODE|품명검색에서 선택한 HS CODE|상세 조회하고 있습니다|확정값|확정 HS" features/hs/hs-direct-lookup-panel.tsx -S`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- Playwright staging browser: 품명 `사탕` 후보 상세조회 진입 후 출처 배너 문구와 이전 문구 미노출 확인
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-egw756g7t-koo-apps.vercel.app`: 9/9 통과
+
 ### product candidate clipboard score
 
 - 이전 작업은 P187 품명 AI 결과 화면 전체 문구 회귀 점검이고, 이번 작업은 P188 품명 AI 결과 복사문 점수 보강이다.

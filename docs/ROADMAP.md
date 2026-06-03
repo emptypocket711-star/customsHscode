@@ -477,6 +477,7 @@
 | P186.1 product supplement question rerun action | 완료 | 간단 보완사항 재조회 검증이 아니라 접힌 질문별 답변 영역 하단에서도 바로 재조회할 수 있게 해 모바일 흐름을 줄인다 | question-level supplement rerun action | browser, typecheck, lint, build, staging smoke |
 | P187.1 product classification flow copy regression | 완료 | 질문별 답변 버튼이 아니라 품명 AI 결과 화면 전체에서 `가장 유력`, `가장 가까운 코드` 같은 확정형 표현을 없애고 후보/점수/보완/상세조회 흐름을 검증한다 | product AI result copy regression | browser, typecheck, lint, build, staging smoke |
 | P188.1 product candidate clipboard score | 완료 | 화면 문구가 아니라 품명 AI 결과를 복사해 외부로 전달할 때도 후보별 GPT 점수와 예비 안내가 함께 들어가게 한다 | copied product candidate score | browser clipboard, typecheck, lint, build, staging smoke |
+| P189.1 product search detail source banner | 완료 | 복사문이 아니라 품명 후보를 눌러 들어간 10자리 상세조회 상단 배너가 확정 HS처럼 보이지 않게 `우선 검토 후보`, `예비 조회`로 정리한다 | product-search detail provisional banner | browser, typecheck, lint, build, staging smoke |
 
 #### P109 다음 병목 선정
 
