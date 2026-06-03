@@ -6,6 +6,8 @@ let sessionCookie = process.env.SMOKE_COOKIE || "";
 const requireAuthenticated = process.env.SMOKE_REQUIRE_AUTHENTICATED === "true";
 const loginEmail = process.env.SMOKE_LOGIN_EMAIL || "";
 const loginPassword = process.env.SMOKE_LOGIN_PASSWORD || "";
+const operationsLoginEmail = process.env.SMOKE_OPERATIONS_EMAIL || "";
+const operationsLoginPassword = process.env.SMOKE_OPERATIONS_PASSWORD || "";
 const protectionBypassSecret =
   process.env.VERCEL_AUTOMATION_BYPASS_SECRET ||
   process.env.VERCEL_PROTECTION_BYPASS_SECRET ||
@@ -86,6 +88,24 @@ const publicScenarios = [
   }
 ];
 
+const operationsScenarios = [
+  {
+    name: "operations-users",
+    path: "/operations/users",
+    markers: ["운영", "사용자"]
+  },
+  {
+    name: "operations-health",
+    path: "/operations/health",
+    markers: ["운영", "스키마"]
+  },
+  {
+    name: "operations-notices",
+    path: "/operations/notices",
+    markers: ["운영", "공지"]
+  }
+];
+
 function buildUrl(baseUrl, scenario) {
   const url = new URL(scenario.path, baseUrl);
   for (const [key, value] of Object.entries(scenario.params ?? {})) {
@@ -104,8 +124,8 @@ function hasMarker(body, marker) {
   return body.toLocaleLowerCase("ko-KR").includes(marker.toLocaleLowerCase("ko-KR"));
 }
 
-async function sessionCookieFromLogin(baseUrl) {
-  if (!loginEmail || !loginPassword) return "";
+async function sessionCookieFromLogin(baseUrl, email = loginEmail, password = loginPassword) {
+  if (!email || !password) return "";
 
   let chromium;
   try {
@@ -124,8 +144,8 @@ async function sessionCookieFromLogin(baseUrl) {
     }
     const loginUrl = new URL("/login", baseUrl).toString();
     await page.goto(loginUrl, { waitUntil: "domcontentloaded", timeout: timeoutMs });
-    await page.locator('input[name="email"]').fill(loginEmail, { timeout: timeoutMs });
-    await page.locator('input[name="password"]').fill(loginPassword, { timeout: timeoutMs });
+    await page.locator('input[name="email"]').fill(email, { timeout: timeoutMs });
+    await page.locator('input[name="password"]').fill(password, { timeout: timeoutMs });
     await Promise.all([
       page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: timeoutMs }),
       page.locator('button[type="submit"]').click()
@@ -141,7 +161,7 @@ async function sessionCookieFromLogin(baseUrl) {
   }
 }
 
-async function fetchScenario(baseUrl, scenario, protectedRoute) {
+async function fetchScenario(baseUrl, scenario, protectedRoute, cookie = sessionCookie) {
   const url = buildUrl(baseUrl, scenario);
   const controller = new AbortController();
   const startedAt = performance.now();
@@ -155,14 +175,14 @@ async function fetchScenario(baseUrl, scenario, protectedRoute) {
       headers: {
         "User-Agent": "hsfinder-production-smoke/1.0",
         ...(protectionBypassSecret ? { "x-vercel-protection-bypass": protectionBypassSecret } : {}),
-        ...(sessionCookie ? { Cookie: sessionCookie } : {})
+        ...(cookie ? { Cookie: cookie } : {})
       }
     });
     const body = await response.text();
     const durationMs = performance.now() - startedAt;
     const hasMarkers = scenario.markers.every((marker) => hasMarker(body, marker));
     const loginRedirect = protectedRoute && isLoginRedirect(response, body);
-    const ok = protectedRoute && !sessionCookie && !requireAuthenticated
+    const ok = protectedRoute && !cookie && !requireAuthenticated
       ? loginRedirect
       : response.ok && body.length > 500 && hasMarkers;
 
@@ -211,6 +231,9 @@ async function main() {
   if (!sessionCookie && loginEmail && loginPassword) {
     sessionCookie = await sessionCookieFromLogin(baseUrl);
   }
+  const operationsSessionCookie = operationsLoginEmail && operationsLoginPassword
+    ? await sessionCookieFromLogin(baseUrl, operationsLoginEmail, operationsLoginPassword)
+    : "";
   const results = [];
 
   if (!sessionCookie) {
@@ -221,10 +244,16 @@ async function main() {
   for (const scenario of protectedScenarios) {
     results.push(await fetchScenario(baseUrl, scenario, true));
   }
+  if (operationsLoginEmail || operationsLoginPassword) {
+    for (const scenario of operationsScenarios) {
+      results.push(await fetchScenario(baseUrl, scenario, true, operationsSessionCookie));
+    }
+  }
 
   console.log("HS Finder production smoke");
   console.log(`baseUrl=${baseUrl}`);
   console.log(`timeoutMs=${timeoutMs} authenticated=${Boolean(sessionCookie)} requireAuthenticated=${requireAuthenticated}`);
+  console.log(`operationsAuthenticated=${Boolean(operationsSessionCookie)} operationsRoutes=${Boolean(operationsLoginEmail || operationsLoginPassword)}`);
   console.log(`vercelProtectionBypass=${Boolean(protectionBypassSecret)}`);
   for (const result of results) printResult(result);
 
