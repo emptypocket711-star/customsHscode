@@ -470,6 +470,7 @@ const copyGuideLabels: Record<HsCopyGuideLanguage, {
   originMarking: string;
   originMarkingCondition: string;
   originMarkingMethod: string;
+  originMarkingReviewNote: string;
   originMarkingTarget: string;
   productCodeHelp: string;
   productDetailReview: string;
@@ -503,7 +504,8 @@ const copyGuideLabels: Record<HsCopyGuideLanguage, {
     originMarking: "원산지 표시",
     originMarkingCondition: "조건",
     originMarkingMethod: "표시방법",
-    originMarkingTarget: "원산지표시대상(Y)",
+    originMarkingReviewNote: "표시방법과 예외는 물품 상태, 포장, 거래조건 기준으로 확인이 필요합니다.",
+    originMarkingTarget: "표시대상 조회됨(Y)",
     productCodeHelp: "제품코드나 모델명만 있는 경우 제조사 카탈로그, 제품 URL, 사양서, 사진 중 하나를 함께 보내 주세요.",
     productDetailReview: "정확한 정보를 주시면 해당 내용 기준으로 다시 확인하겠습니다.",
     productInfoInsufficient: "현재 제공된 품명만으로는 HS CODE 후보를 충분히 특정하기 어렵습니다.",
@@ -536,7 +538,8 @@ const copyGuideLabels: Record<HsCopyGuideLanguage, {
     originMarking: "Origin marking",
     originMarkingCondition: "Condition",
     originMarkingMethod: "Marking method",
-    originMarkingTarget: "Origin marking target (Y)",
+    originMarkingReviewNote: "Marking method and exceptions should be reviewed based on product condition, packaging, and transaction terms.",
+    originMarkingTarget: "Origin marking target found (Y)",
     productCodeHelp: "If only a product code or model name is available, please also provide a manufacturer catalog, product URL, specification sheet, or photo.",
     productDetailReview: "Once accurate information is provided, the item can be reviewed again based on those details.",
     productInfoInsufficient: "The provided product name is not enough to narrow down an HS code candidate.",
@@ -569,7 +572,8 @@ const copyGuideLabels: Record<HsCopyGuideLanguage, {
     originMarking: "原产地标示",
     originMarkingCondition: "条件",
     originMarkingMethod: "标示方法",
-    originMarkingTarget: "原产地标示对象(Y)",
+    originMarkingReviewNote: "标示方法和例外情形需根据货物状态、包装及交易条件另行确认。",
+    originMarkingTarget: "已查询到原产地标示对象(Y)",
     productCodeHelp: "如果只有产品代码或型号，请同时提供制造商目录、产品链接、规格书或照片。",
     productDetailReview: "提供准确信息后，可根据该资料重新确认。",
     productInfoInsufficient: "仅凭当前产品名称，难以充分确定 HS 编码候选。",
@@ -691,6 +695,7 @@ function appendOriginMarkingCopyLines(
   const method = originMarking.method?.methodSummary ? ` / ${labels.originMarkingMethod}: ${originMarking.method.methodSummary}` : "";
   const condition = originMarking.conditionText ? ` / ${labels.originMarkingCondition}: ${originMarking.conditionText}` : "";
   lines.push(`${labels.originMarkingTarget}${method}${condition}`);
+  if (variant === "detailed") lines.push(labels.originMarkingReviewNote);
 }
 
 function isBasicTariffLabel(label: string) {
