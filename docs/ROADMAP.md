@@ -488,6 +488,7 @@
 | P197.1 request schema fallback role settings CTA | 완료 | 오류 CTA가 아니라 플랫폼 요청 스키마 미준비 fallback 상태에서도 회사 역할 신청 섹션으로 이동할 수 있게 한다 | request schema fallback role settings CTA | source grep, browser click, typecheck, lint, build, staging smoke |
 | P198.1 request fallback CTA density | 완료 | fallback CTA 추가가 아니라 요청자 화면에서 같은 회사 역할 신청 CTA가 과하게 반복되지 않도록 밀도를 줄인다 | request fallback CTA density | browser density, typecheck, lint, build, staging smoke |
 | P199.1 operations schema fallback health CTA | 완료 | 사용자 요청 화면이 아니라 운영 요청 패널에서 스키마 미준비 상태를 운영 DB 스키마 점검으로 바로 연결한다 | operations schema fallback health CTA | unit, typecheck, lint, build, staging smoke |
+| P200.1 optional operations smoke routes | 완료 | 운영 화면 CTA가 아니라 운영자 계정이 있을 때 `/operations/*` 주요 화면을 production smoke에 선택적으로 포함한다 | optional operations smoke routes | node check, lint, build, staging smoke |
 
 #### P109 다음 병목 선정
 

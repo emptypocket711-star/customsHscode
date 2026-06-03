@@ -4,6 +4,23 @@
 
 ## 2026-06-03
 
+### optional operations smoke routes
+
+- 이전 작업은 P199 운영 요청 패널의 스키마 fallback CTA를 추가한 것이고, 이번 작업은 P200 운영 화면 변경을 앞으로 smoke에서 검증할 수 있게 조건을 추가한 작업이다.
+- `scripts/smoke_production_routes.mjs`에 선택적 운영자 smoke 라우트를 추가했다.
+- `SMOKE_OPERATIONS_EMAIL`과 `SMOKE_OPERATIONS_PASSWORD`가 있을 때만 별도 운영자 세션으로 `/operations/users`, `/operations/health`, `/operations/notices`를 검사한다.
+- 운영자 env가 없으면 기존 기본 smoke는 그대로 9개 인증 라우트만 검사하며 `operationsRoutes=false`를 출력한다.
+- 최신 staging preview는 `https://customs-hscode-zvbakhz15-koo-apps.vercel.app`다.
+- 현재 운영자/developer 테스트 계정은 `tmp/test-accounts.json`에 없으므로 운영자 route 실제 통과는 확인하지 못했다. 대신 문법 검사, lint/build, 기본 smoke에서 기존 동작 유지와 운영자 route 비활성 상태를 확인했다.
+- 다음 작업은 P201 운영자 테스트 계정 seed 가능성 점검이다. 이번 P200이 smoke 조건을 추가한 것이라면, P201은 실제 운영자 계정을 안전하게 만들거나 연결할 수 있는 seed/권한 경로를 확인하는 작업이다.
+
+검증:
+
+- `node --check scripts/smoke_production_routes.mjs`
+- `npm run lint`
+- `npm run build`
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-zvbakhz15-koo-apps.vercel.app`: 9/9 통과, `operationsRoutes=false`
+
 ### operations schema fallback health CTA
 
 - 이전 작업은 P198 사용자 요청 화면의 fallback CTA 밀도를 줄인 것이고, 이번 작업은 P199 운영 요청 패널에서 스키마 미준비 상태를 봤을 때 운영자가 바로 점검 위치로 이동할 수 있게 한 작업이다.
