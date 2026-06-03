@@ -46,6 +46,29 @@ const unverifiedRoleApprovalRequest = {
 const blockedRoleApprovalRequest = {
   id: "75000000-0000-4000-8000-000000000409"
 };
+const checkGroups = new Map([
+  ["no-company-user-cannot-publish-freight-request", "requester-auth-boundary"],
+  ["requester-direct-service-request-workflow-update", "requester-state-transition"],
+  ["publish-freight-requires-origin-destination-transport", "publish-input-guard"],
+  ["blocked-requester-company-cannot-publish-freight-request", "company-state-guard"],
+  ["zero-match-freight-publish-remains-open-with-audit", "matching-audit-contract"],
+  ["notification-disabled-partner-still-matched-but-initial-delivery-skipped", "notification-policy"],
+  ["forwarder-cannot-submit-freight-bid-to-clearance-request", "partner-rpc-boundary"],
+  ["forwarder-cannot-submit-freight-bid-after-deadline", "partner-rpc-boundary"],
+  ["freight-bid-sql-value-constraints-block-invalid-inputs", "bid-data-integrity"],
+  ["service-role-cannot-attach-bid-details-to-wrong-bid-type", "bid-data-integrity"],
+  ["freight-bid-submission-audit-includes-structured-summary", "bid-audit-contract"],
+  ["marketplace-notification-claims-are-idempotent-per-kind", "notification-policy"],
+  ["requester-cannot-update-published-freight-details", "requester-state-transition"],
+  ["forwarder-cannot-create-clearance-preference", "partner-preference-boundary"],
+  ["broker-cannot-create-freight-preference", "partner-preference-boundary"],
+  ["requester-cannot-read-partner-notification-delivery", "notification-privacy"],
+  ["authenticated-cannot-claim-marketplace-notification-delivery", "service-role-boundary"],
+  ["requester-cannot-self-escalate-profile-privilege-fields", "profile-privilege-boundary"],
+  ["service-role-role-review-rejects-non-developer-actor", "role-review-boundary"],
+  ["developer-cannot-approve-forwarder-role-for-unverified-company", "role-approval-eligibility"],
+  ["developer-cannot-approve-marketplace-role-for-blocked-company", "role-approval-eligibility"]
+]);
 
 function assert(condition, message, details = {}) {
   if (condition) return;
@@ -59,6 +82,30 @@ function blockedByRls(result) {
   if (result.error) return true;
   if (Array.isArray(result.data)) return result.data.length === 0;
   return result.data === null || result.data === undefined;
+}
+
+function summarizeCheckGroups(checks) {
+  const summary = new Map();
+  const unmapped = [];
+
+  for (const check of checks) {
+    const group = checkGroups.get(check.label);
+    if (!group) {
+      unmapped.push(check.label);
+      continue;
+    }
+
+    summary.set(group, (summary.get(group) ?? 0) + 1);
+  }
+
+  if (unmapped.length > 0) {
+    throw new Error(`RLS negative check group mapping missing: ${unmapped.join(", ")}`);
+  }
+
+  return [...summary.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([group, count]) => `${group}:${count}`)
+    .join(",");
 }
 
 function freightBidInput(requestId) {
@@ -1259,19 +1306,22 @@ async function main() {
     supabaseUrl,
     testPassword
   });
+  const groupSummary = summarizeCheckGroups(checks);
 
   for (const check of checks) {
-    console.log(`${check.ok ? "ok" : "fail"} ${check.label} reason=${JSON.stringify(check.reason)}`);
+    console.log(
+      `${check.ok ? "ok" : "fail"} ${check.label} group=${checkGroups.get(check.label)} reason=${JSON.stringify(check.reason)}`
+    );
   }
 
   const failed = checks.filter((check) => !check.ok);
   if (failed.length > 0) {
-    console.log(`result=blocked failed=${failed.length}`);
+    console.log(`result=blocked failed=${failed.length} groups=${groupSummary}`);
     process.exitCode = 1;
     return;
   }
 
-  console.log(`result=ok checks=${checks.length}`);
+  console.log(`result=ok checks=${checks.length} groups=${groupSummary}`);
 }
 
 try {

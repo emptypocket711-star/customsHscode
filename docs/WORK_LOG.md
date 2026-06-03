@@ -4,6 +4,19 @@
 
 ## 2026-06-03
 
+### marketplace RLS negative suite grouping
+
+- 이전 작업은 P272에서 역할 승인 대상 회사 상태 guard를 확인한 것이고, 이번 작업은 개별 guard 추가가 아니라 전체 marketplace DB/RLS negative suite의 커버리지 영역을 반복 실행 결과에 드러나게 한 작업이다.
+- `scripts/check_marketplace_rls_negative.mjs`에 21개 negative check 라벨별 그룹 매핑을 추가했다.
+- 새 check가 그룹 없이 추가되면 `RLS negative check group mapping missing`으로 suite가 실패하도록 고정했다.
+- 각 ok 라인에 `group=...`을 출력하고, 최종 결과에 `groups=bid-audit-contract:1,...` 형태의 그룹별 통계를 출력하게 했다.
+- 다음 작업은 P274 operations zero-match developer smoke다. 이번 P273이 DB/RLS suite의 coverage 출력 계약이라면, P274는 zero-match 운영 상세 브라우저 검증이 developer storage state 부재로 skip되지 않게 만드는 작업이다.
+
+검증:
+
+- `node --check scripts/check_marketplace_rls_negative.mjs`
+- `vercel env run -e preview -- sh -c 'E2E_ALLOW_REMOTE_MARKETPLACE_TRANSACTION=true node scripts/seed_marketplace_transaction_fixture.mjs && E2E_ALLOW_REMOTE_MARKETPLACE_RLS_NEGATIVE=true npm run smoke:marketplace-rls-negative'`
+
 ### role approval company eligibility
 
 - 이전 작업은 P271에서 역할 신청 검토 RPC의 actor가 실제 developer인지 확인한 것이고, 이번 작업은 검토자가 맞더라도 승인 대상 회사 상태가 포워더·관세사 역할 승인 조건을 만족하는지 확인한 작업이다.
