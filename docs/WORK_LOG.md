@@ -4,6 +4,23 @@
 
 ## 2026-06-03
 
+### product candidate result copy
+
+- 이전 작업은 P183 HS 직접조회 안전 문구 체계 회귀 점검이고, 이번 작업은 P184 품명 AI 결과 카드 문구 개선이다.
+- `가장 가까운 HS CODE`를 `우선 검토 후보`로 바꿔 AI 결과가 확정 HS처럼 보이지 않게 했다.
+- `이 코드로 조회`를 `이 후보로 상세 조회`로 바꾸고, `추가 보완 없이 조회 가능한 코드입니다.`를 `현재 정보로 상세 조회 가능한 후보입니다.`로 조정했다.
+- 비교 후보 설명도 `GPT 점수순으로 함께 확인할 코드`에서 `GPT 점수순으로 함께 검토할 후보`로 낮췄다.
+- 최신 staging preview는 `https://customs-hscode-3sdrkbb0g-koo-apps.vercel.app`다.
+- 다음 작업은 P185 품명 AI 보완질문/재조회 입력 흐름 회귀 점검이다. 이번 P184가 후보 카드 문구라면, P185는 보완질문 답변 입력과 재조회 버튼 흐름이 실제로 작동하는지 보는 작업이다.
+
+검증:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- Playwright staging browser: 품명 `사탕` 결과 화면에서 `우선 검토 후보`, `이 후보로 상세 조회` 확인 및 이전 문구 미노출 확인
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-3sdrkbb0g-koo-apps.vercel.app`: 9/9 통과
+
 ### HS direct safety copy regression
 
 - 이전 작업은 P182 요건 후보가 있는 복사 안내문 개선이고, 이번 작업은 P183 HS 직접조회 안전 문구 체계 회귀 점검이다.
