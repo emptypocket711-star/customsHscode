@@ -4,6 +4,27 @@
 
 ## 2026-06-03
 
+### request fallback CTA density
+
+- 이전 작업은 P197 스키마 미준비 fallback 상태에 회사 역할 신청 CTA를 추가한 것이고, 이번 작업은 P198 같은 요청자 화면에서 CTA가 두 번 보이는 밀도 문제를 정리한 작업이다.
+- 기본 요청자 화면에서는 초안 작성 fallback에만 `회사 역할 신청 확인` CTA를 남겼다.
+- 내 요청 목록 fallback은 계정 문제가 아니라는 상태 설명만 유지해 같은 CTA 반복을 줄였다.
+- 포워더/관세사 입찰 탭 fallback에는 해당 역할 확인이 필요할 수 있으므로 CTA를 유지했다.
+- staging에서 운송/통관 요청자 화면의 visible CTA가 각각 1개인지 확인했다.
+- staging에서 운송 포워더 탭과 통관 관세사 탭의 visible CTA도 각각 1개인지 확인했다.
+- CTA 클릭 시 회사 설정의 `플랫폼 역할 신청` 섹션으로 이동하고 hash가 `#platform-role-request`로 유지되는지 확인했다.
+- 최신 staging preview는 `https://customs-hscode-bgixg3k1b-koo-apps.vercel.app`다.
+- 다음 작업은 P199 운영 요청 스키마 미준비 안내 점검이다. 이번 P198이 사용자 요청 화면의 CTA 밀도라면, P199는 운영자/관리자 화면에서 같은 스키마 미준비 상태를 보고 무엇을 조치해야 하는지 안내가 충분한지 보는 작업이다.
+
+검증:
+
+- `npx vitest run features/service-requests/request-draft-readiness.test.ts features/company-verification/company-role-request-panel.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- Playwright staging browser: 운송/통관 요청자 화면 CTA 1개, 파트너 탭 CTA 1개, 클릭 후 `/settings/members#platform-role-request` 이동 확인
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-bgixg3k1b-koo-apps.vercel.app`: 9/9 통과
+
 ### request schema fallback role settings CTA
 
 - 이전 작업은 P196 초안 저장 오류 CTA가 역할 신청 섹션으로 바로 이동하게 한 것이고, 이번 작업은 P197 오류 action까지 도달하지 못하는 스키마 미준비 fallback 상태에서도 이동 경로를 제공한 작업이다.
