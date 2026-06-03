@@ -4,6 +4,26 @@
 
 ## 2026-06-03
 
+### hs direct detail density review
+
+- 이전 작업은 P173 staging 인증 스모크이고, 이번 작업은 원래 대기 중이던 P171 HS 10자리 직접조회 상세 화면 밀도 점검이다.
+- staging에서 `3304.99-1000`, `1704.90-9000` 직접조회 화면을 확인했고, 10자리 요약은 상단에 잘 보이지만 `세율 적용순서`가 모든 FTA/특혜 세율 행을 기본으로 펼쳐 화면을 과하게 차지하는 것을 확인했다.
+- 네비게이터 들여쓰기나 색상 구조는 다시 건드리지 않고, `ImportTariffCountryFilter`에서 세율표 기본 노출을 주요 8건으로 제한했다.
+- 나머지 세율은 `나머지 N건 펼치기` 버튼으로 볼 수 있게 해 데이터는 유지하고 기본 화면 밀도만 낮췄다.
+- 국가 필터를 바꾸면 펼침 상태를 초기화해 새 국가의 주요 세율부터 보이게 했다.
+- 최신 staging preview는 `https://customs-hscode-l86odu24x-koo-apps.vercel.app`다.
+- 다음 작업은 P174 HS 직접조회 상세의 관세율 행 라벨 품질 점검이다. 이번 P171이 세율표 노출량을 줄인 작업이라면, P174는 `관세율구분 R`, `관세율구분 FEF1`처럼 사용자에게 의미가 약한 라벨을 더 읽기 쉬운 한글명으로 보완하는 작업이다.
+
+검증:
+
+- `npx vitest run features/hs/import-tariff-country-filter.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- Playwright staging browser: `3304.99-1000`, `1704.90-9000`에서 `주요 8건 먼저 표시`, `나머지 N건 펼치기` 확인
+- Playwright staging browser: 펼치기 후 `전체 32건 표시`, `주요 세율만 보기` 확인
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-l86odu24x-koo-apps.vercel.app`: 9/9 통과
+
 ### staging authenticated smoke
 
 - 이전 작업은 P172 staging 개발 기준 생성이고, 이번 작업은 staging 보호 우회 후 실제 테스트 계정 로그인과 보호 화면 본문을 검증한 P173이다.
