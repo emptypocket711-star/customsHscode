@@ -24,7 +24,7 @@ export default async function CompanyMembersPage() {
         <p className="text-sm font-semibold text-blue-700">회사 설정</p>
         <h1 className="mt-2 text-2xl font-semibold tracking-normal text-slate-950">회사 검증 및 구성원</h1>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-          플랫폼 매칭에 사용할 회사 검증 상태와 제출 증빙을 관리합니다.
+          플랫폼 매칭에 사용할 회사 정보, 화주·포워더·관세사무소 역할 신청, 검증 상태와 제출 증빙을 관리합니다.
         </p>
       </div>
       <CompanyPlatformOverviewPanel partnerPreferences={partnerPreferencesDashboard} verification={dashboard} />

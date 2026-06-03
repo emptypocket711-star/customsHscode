@@ -27,7 +27,9 @@ function roleLabel(role: string) {
 }
 
 function nextAction(verification: CompanyVerificationDashboard, preferences: PartnerPreferencesDashboard) {
+  const hasRequesterRole = preferences.partyTypes.some((role) => role === "domestic_shipper" || role === "exporter_importer" || role === "foreign_shipper" || role === "overseas_partner");
   if (verification.companyRole !== "admin") return "회사 관리자에게 검증 증빙 또는 파트너 조건 수정을 요청합니다.";
+  if (!hasRequesterRole) return "플랫폼 역할 신청에서 국내 수출입 화주 또는 해외 수출입 파트너 역할을 신청하거나 승인 상태를 확인합니다.";
   if (!activeVerificationStatuses.has(verification.verificationStatus)) return "회사 검증 증빙을 제출하거나 운영자 검토 결과를 기다립니다.";
   if (preferences.preferences.some((preference) => !preference.id)) return "포워더 또는 관세사무소 역할에 맞는 관심 조건을 저장합니다.";
   return "대시보드에서 요청 공개 또는 입찰 확인으로 이동합니다.";
