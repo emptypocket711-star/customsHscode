@@ -7989,3 +7989,18 @@
 - Playwright developer `/operations/users`에서 `user-management` detail이 기본으로 닫혀 있는지 확인
 - `npm run typecheck`
 - `npm run lint`
+
+### operations health fallback next request refresh
+
+- 이전 작업은 `/operations/users` 세부 패널 기본 노출을 줄인 P159.1이고, 이번 작업은 `/operations/health`의 정상 fallback 복사용 문구가 이미 끝난 사용자 관리가 아니라 다음 대상인 공지 관리로 이어지게 한 P160.1이다.
+- 운영 점검에 실제 수정 후보가 없을 때 표시되는 `현재 우선 수정 없음` 카드의 요청 문구를 갱신했다.
+- 상세 설명도 사용자 관리가 아니라 공지 관리 UX 정리로 넘어가면 된다고 맞췄다.
+- 현재 local 운영 점검 화면에는 실제 수정 후보가 있어 fallback 카드가 화면에 노출되지 않으므로, 해당 경로는 소스 검증으로 확인했다.
+- 새 migration, RLS 변경은 없다.
+- 로컬 파일만 수정했고 원격 푸시, 배포는 하지 않았다.
+
+검증:
+
+- source check: 기존 `사용자 관리 화면을 대표용으로 더 단순화` 문구 비존재, 새 `공지 관리 화면을 대표용으로 더 단순화` 문구 존재 확인
+- `npm run typecheck`
+- `npm run lint`

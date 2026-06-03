@@ -1027,8 +1027,8 @@ export default async function OperationsHealthPage({
         href: "#lookup-quality",
         label: "현재 우선 수정 없음",
         status: "정상 범위",
-        request: "운영 점검 화면은 정상 범위입니다. 다음 개선 작업으로 사용자 관리 화면을 대표용으로 더 단순화해줘.",
-        detail: "장애 징후가 없을 때는 다음 UX 정리 작업을 진행하면 됩니다.",
+        request: "운영 점검 화면은 정상 범위입니다. 다음 개선 작업으로 공지 관리 화면을 대표용으로 더 단순화해줘.",
+        detail: "장애 징후가 없을 때는 사용자 관리가 아니라 공지 관리 UX 정리 작업으로 넘어가면 됩니다.",
         tone: "success" as const
       }];
 
