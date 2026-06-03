@@ -4,6 +4,25 @@
 
 ## 2026-06-03
 
+### preferential duty summary copy
+
+- 이전 작업은 P175 수입국 필터 안내 의미 보강이고, 이번 작업은 P176 HS 직접조회 상단 `FTA/특혜 세율` 요약 카드 문구 개선이다.
+- `ALL` 상태의 상단 카드 문구를 `수입국 선택 시 확인`에서 `수입국·원산지 선택 후 확인`으로 바꿔 원산지와 협정 요건 맥락을 함께 보이게 했다.
+- 특정 국가에서 FTA 세율이 표시될 때 `요건 충족 시 ...`로 출력해 자동 적용 세율처럼 보이지 않게 했다.
+- 표시할 FTA 행이 없을 때는 `표시 가능한 FTA 없음` 대신 `협정세율 표시 없음`을 사용해 FTA 부재를 단정하지 않게 했다.
+- 최신 staging preview는 `https://customs-hscode-752wv1ip0-koo-apps.vercel.app`다.
+- 다음 작업은 P177 HS 직접조회 상단 수입요건 요약 카드 문구 점검이다. 이번 P176이 `FTA/특혜 세율` 카드의 조건부 표현을 다룬 작업이라면, P177은 `수입요건` 카드의 `세관장확인 조회 없음` 문구가 “요건이 없다”처럼 오해되지 않는지 보는 작업이다.
+
+검증:
+
+- `npx vitest run features/hs/preferential-duty-summary.test.ts features/hs/import-tariff-country-filter.test.ts features/hs/import-tariff-display.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- Playwright staging browser: `ALL` 상태에서 `수입국·원산지 선택 후 확인`, `원산지증명`, `협정 요건` 안내 확인
+- Playwright staging browser: 중국 선택 후 `요건 충족 시 한-중 FTA 관세율 0%`, `자동 적용 세율이 아닙니다` 안내 확인
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-752wv1ip0-koo-apps.vercel.app`: 9/9 통과
+
 ### import tariff country filter guidance
 
 - 이전 작업은 P174 세율표 라벨 품질 개선이고, 이번 작업은 P175 수입국 필터 안내 의미 보강이다.

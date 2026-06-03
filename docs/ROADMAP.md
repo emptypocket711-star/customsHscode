@@ -464,6 +464,7 @@
 | P173.1 staging authenticated smoke | 완료 | staging 배포 생성이 아니라 보호 우회와 테스트 계정 로그인 후 핵심 보호 화면 본문이 렌더링되는지 확인한다 | staging login, authenticated smoke, timeout calibration | browser login, smoke, typecheck, lint |
 | P174.1 import tariff label clarity | 완료 | 세율표 노출량 조정이 아니라 `관세율구분 R/FEF1` 같은 원시 코드 라벨을 사용자용 협정·특혜 관세명으로 바꾼다 | EFTA/LDC/North Korea labels | unit, browser, typecheck, lint, build, staging smoke |
 | P175.1 import tariff country filter guidance | 완료 | 세율 행 이름 개선이 아니라 `ALL` 상태와 특정 수입국 선택 상태의 의미를 사용자가 혼동하지 않게 안내한다 | ALL candidate notice, selected country FTA caution | unit, browser, typecheck, lint, build, staging smoke |
+| P176.1 preferential duty summary copy | 완료 | 세율표 필터 안내가 아니라 HS 직접조회 상단 `FTA/특혜 세율` 요약 카드가 자동 적용처럼 보이지 않게 조건부 문구로 바꾼다 | conditional preferential summary, no hard FTA absence claim | unit, browser, typecheck, lint, build, staging smoke |
 
 #### P109 다음 병목 선정
 
