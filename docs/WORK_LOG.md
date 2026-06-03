@@ -4,6 +4,19 @@
 
 ## 2026-06-03
 
+### role approval company eligibility
+
+- 이전 작업은 P271에서 역할 신청 검토 RPC의 actor가 실제 developer인지 확인한 것이고, 이번 작업은 검토자가 맞더라도 승인 대상 회사 상태가 포워더·관세사 역할 승인 조건을 만족하는지 확인한 작업이다.
+- Preview DB negative suite에 developer 검토자 fixture를 추가하고, 미검증 회사의 포워더 역할 승인 시도를 `포워더 또는 관세사무소 역할은 회사 검증 승인 후 반영할 수 있습니다.`로 차단하는지 확인했다.
+- 차단 상태 회사의 관세사 역할 승인 시도도 `숨김·정지 또는 차단 상태의 회사에는 플랫폼 역할을 승인할 수 없습니다.`로 막히는지 확인했다.
+- 기존 RPC가 회사 검증 상태와 정지/차단 상태를 DB에서 검증하고 있어 추가 SQL 수정 없이 negative suite에 고정했다.
+- 다음 작업은 P273 marketplace RLS negative suite다. 이번 P272가 역할 승인 회사 상태 guard라면, P273은 지금까지의 개별 requester/partner/staff 권한 우회 검사를 운영자가 반복 실행할 수 있는 통합 suite 성격으로 정리하는 작업이다.
+
+검증:
+
+- `node --check scripts/check_marketplace_rls_negative.mjs`
+- `vercel env run -e preview -- sh -c 'E2E_ALLOW_REMOTE_MARKETPLACE_TRANSACTION=true node scripts/seed_marketplace_transaction_fixture.mjs && E2E_ALLOW_REMOTE_MARKETPLACE_RLS_NEGATIVE=true npm run smoke:marketplace-rls-negative'`
+
 ### role review RPC actor validation
 
 - 이전 작업은 P270에서 일반 사용자가 profile 권한 필드를 직접 바꾸지 못하게 확인한 것이고, 이번 작업은 service-role로 역할 검토 RPC를 호출해도 actor가 실제 developer인지 DB에서 검증하는지 확인한 작업이다.

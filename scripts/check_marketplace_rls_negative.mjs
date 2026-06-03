@@ -15,6 +15,10 @@ const noCompanyUser = {
   email: "marketplace-rls-no-company@example.test",
   fullName: "marketplace rls no company"
 };
+const roleReviewDeveloperUser = {
+  email: "marketplace-rls-role-reviewer@example.test",
+  fullName: "marketplace rls role reviewer"
+};
 const invalidPublishDraft = {
   id: "75000000-0000-4000-8000-000000000401"
 };
@@ -35,6 +39,12 @@ const auditSnapshotFreightBidRequest = {
 };
 const notificationIdempotencyRequest = {
   id: "75000000-0000-4000-8000-000000000407"
+};
+const unverifiedRoleApprovalRequest = {
+  id: "75000000-0000-4000-8000-000000000408"
+};
+const blockedRoleApprovalRequest = {
+  id: "75000000-0000-4000-8000-000000000409"
 };
 
 function assert(condition, message, details = {}) {
@@ -108,6 +118,19 @@ async function cleanupWrongBidDetailRows(serviceRoleClient) {
     .from("freight_bid_details")
     .delete()
     .eq("bid_id", fixture.bids.clearance.id);
+}
+
+async function cleanupRoleApprovalRequests(serviceRoleClient) {
+  await serviceRoleClient
+    .from("company_party_type_requests")
+    .delete()
+    .in("id", [unverifiedRoleApprovalRequest.id, blockedRoleApprovalRequest.id]);
+
+  await serviceRoleClient
+    .from("company_party_types")
+    .delete()
+    .eq("company_id", fixture.companies.requester.id)
+    .in("party_type", ["forwarder", "customs_broker"]);
 }
 
 async function cleanupInvalidPublishDraft(serviceRoleClient) {
@@ -209,6 +232,43 @@ async function ensureNoCompanyUser(client, testPassword) {
     }, { onConflict: "id" });
 
   if (error) throw new Error(`no-company profile prepare failed: ${error.message}`);
+  return user.data.user;
+}
+
+async function ensureRoleReviewDeveloperUser(client, testPassword) {
+  const existing = await findUserByEmail(client, roleReviewDeveloperUser.email);
+  const user = existing
+    ? await client.auth.admin.updateUserById(existing.id, {
+      email_confirm: true,
+      password: testPassword,
+      user_metadata: {
+        full_name: roleReviewDeveloperUser.fullName
+      }
+    })
+    : await client.auth.admin.createUser({
+      email: roleReviewDeveloperUser.email,
+      email_confirm: true,
+      password: testPassword,
+      user_metadata: {
+        full_name: roleReviewDeveloperUser.fullName
+      }
+    });
+
+  if (user.error) throw new Error(`auth role-review developer prepare failed: ${user.error.message}`);
+
+  const { error } = await client
+    .from("profiles")
+    .upsert({
+      company_id: null,
+      company_role: "member",
+      email: roleReviewDeveloperUser.email,
+      full_name: roleReviewDeveloperUser.fullName,
+      id: user.data.user.id,
+      preferred_locale: "ko-KR",
+      role: "developer"
+    }, { onConflict: "id" });
+
+  if (error) throw new Error(`role-review developer profile prepare failed: ${error.message}`);
   return user.data.user;
 }
 
@@ -604,6 +664,38 @@ async function seedNotificationIdempotencyRequest(serviceRoleClient) {
   if (matchError) throw new Error(`notification idempotency match insert failed: ${matchError.message}`);
 }
 
+async function seedRoleApprovalRequest(serviceRoleClient, input) {
+  const profile = await requesterProfile(serviceRoleClient);
+  const now = new Date().toISOString();
+
+  const { error: companyError } = await serviceRoleClient
+    .from("companies")
+    .update({
+      blocked_at: input.verificationStatus === "blocked" ? now : null,
+      suspended_at: null,
+      verification_status: input.verificationStatus,
+      verified_at: null
+    })
+    .eq("id", profile.company_id);
+
+  if (companyError) throw new Error(`role approval company setup failed: ${companyError.message}`);
+
+  const { error: requestError } = await serviceRoleClient
+    .from("company_party_type_requests")
+    .insert({
+      company_id: profile.company_id,
+      created_at: now,
+      id: input.requestId,
+      reason: input.reason,
+      requested_by: profile.id,
+      requested_party_types: input.requestedPartyTypes,
+      status: "submitted",
+      updated_at: now
+    });
+
+  if (requestError) throw new Error(`role approval request insert failed: ${requestError.message}`);
+}
+
 async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPassword }) {
   const serviceRoleClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: {
@@ -613,8 +705,10 @@ async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPas
   });
   await cleanupUnexpectedPreferenceRows(serviceRoleClient);
   await cleanupWrongBidDetailRows(serviceRoleClient);
+  await cleanupRoleApprovalRequests(serviceRoleClient);
   await restoreForwarderFreightPreference(serviceRoleClient);
   await ensureNoCompanyUser(serviceRoleClient, testPassword);
+  const roleReviewDeveloper = await ensureRoleReviewDeveloperUser(serviceRoleClient, testPassword);
   await seedInvalidPublishDraft(serviceRoleClient);
 
   const requester = await signedClient({
@@ -1095,8 +1189,46 @@ async function runNegativeChecks({ anonKey, serviceRoleKey, supabaseUrl, testPas
     reason: requesterAsRoleReviewer.error?.message ?? "rpc returned without error"
   });
 
+  await seedRoleApprovalRequest(serviceRoleClient, {
+    reason: "P272 unverified company role approval negative check",
+    requestedPartyTypes: ["forwarder"],
+    requestId: unverifiedRoleApprovalRequest.id,
+    verificationStatus: "email_verified"
+  });
+  const unverifiedCompanyRoleApproval = await serviceRoleClient.rpc("review_company_party_type_request", {
+    p_actor_id: roleReviewDeveloper.id,
+    p_decision: "approved",
+    p_request_id: unverifiedRoleApprovalRequest.id,
+    p_review_note: "P272 unverified company negative check"
+  });
+  checks.push({
+    label: "developer-cannot-approve-forwarder-role-for-unverified-company",
+    ok: Boolean(unverifiedCompanyRoleApproval.error?.message?.includes("포워더 또는 관세사무소 역할은 회사 검증 승인 후 반영할 수 있습니다.")),
+    reason: unverifiedCompanyRoleApproval.error?.message ?? "rpc returned without error"
+  });
+
+  await cleanupRoleApprovalRequests(serviceRoleClient);
+  await seedRoleApprovalRequest(serviceRoleClient, {
+    reason: "P272 blocked company role approval negative check",
+    requestedPartyTypes: ["customs_broker"],
+    requestId: blockedRoleApprovalRequest.id,
+    verificationStatus: "blocked"
+  });
+  const blockedCompanyRoleApproval = await serviceRoleClient.rpc("review_company_party_type_request", {
+    p_actor_id: roleReviewDeveloper.id,
+    p_decision: "approved",
+    p_request_id: blockedRoleApprovalRequest.id,
+    p_review_note: "P272 blocked company negative check"
+  });
+  checks.push({
+    label: "developer-cannot-approve-marketplace-role-for-blocked-company",
+    ok: Boolean(blockedCompanyRoleApproval.error?.message?.includes("숨김·정지 또는 차단 상태의 회사에는 플랫폼 역할을 승인할 수 없습니다.")),
+    reason: blockedCompanyRoleApproval.error?.message ?? "rpc returned without error"
+  });
+
   await cleanupUnexpectedPreferenceRows(serviceRoleClient);
   await cleanupWrongBidDetailRows(serviceRoleClient);
+  await cleanupRoleApprovalRequests(serviceRoleClient);
   await restoreForwarderFreightPreference(serviceRoleClient);
   await cleanupInvalidPublishDraft(serviceRoleClient);
   return checks;
