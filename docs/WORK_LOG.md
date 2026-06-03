@@ -8021,3 +8021,19 @@
 - Playwright developer `/operations/notices`에서 `위험 작업`을 펼친 뒤 `공지 삭제` 버튼 노출 확인
 - `npm run typecheck`
 - `npm run lint`
+
+### operations management regression
+
+- 이전 작업은 공지 관리의 삭제 위험 작업을 접힘 영역으로 분리한 P161.1이고, 이번 작업은 운영 사용자·점검·공지 화면이 함께 정상 렌더링되고 접힘 정책이 유지되는지 확인한 P162.1이다.
+- developer 계정으로 `/operations/users`, `/operations/health`, `/operations/notices`를 순서대로 열어 주요 heading과 핵심 문구를 확인했다.
+- `/operations/users`에서 사용자 상세 관리가 기본으로 닫혀 있고, 역할 신청·검증·업체 상태 세부 패널 중 기본 open 패널이 1개 이하인지 확인했다.
+- `/operations/notices`에서 공지 삭제 버튼이 기본으로 노출되지 않는지 확인했다.
+- 새 코드 변경은 없고, 문서 상태만 완료로 갱신했다.
+- 로컬 파일만 수정했고 원격 푸시, 배포는 하지 않았다.
+
+검증:
+
+- Playwright developer `/operations/users`, `/operations/health`, `/operations/notices` render smoke
+- Playwright developer operations detail collapse checks
+- `npm run typecheck`
+- `npm run lint`
