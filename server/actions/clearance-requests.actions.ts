@@ -503,7 +503,7 @@ export async function createClearanceRequestDraftAction(
 
     return {
       status: "success",
-      message: "통관 의뢰 요청 초안을 저장했습니다. 다음 단계에서 서류 첨부와 관세사무소 공개를 진행합니다.",
+      message: "통관 의뢰 요청 초안을 저장했습니다. 아래 내 요청 목록에서 상세 화면으로 들어가 서류 첨부와 관세사무소 공개를 진행해 주세요.",
       requestId
     };
   } catch {

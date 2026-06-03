@@ -508,7 +508,7 @@ export async function createFreightRequestDraftAction(
 
     return {
       status: "success",
-      message: "운송 견적 요청 초안을 저장했습니다. 다음 단계에서 서류 첨부와 공개 모집을 진행합니다.",
+      message: "운송 견적 요청 초안을 저장했습니다. 아래 내 요청 목록에서 상세 화면으로 들어가 서류 첨부와 포워더 공개 모집을 진행해 주세요.",
       requestId
     };
   } catch {
