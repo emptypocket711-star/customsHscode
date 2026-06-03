@@ -1406,9 +1406,14 @@ export function ClearanceRequestDraftPanel({
             </div>
 
             {state.message ? (
-              <p className={state.status === "success" ? "rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800" : "rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800"}>
-                {state.message}
-              </p>
+              <div className={state.status === "success" ? "rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800" : "grid gap-3 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800"}>
+                <p>{state.message}</p>
+                {state.status === "error" ? (
+                  <Link className="focus-ring inline-flex h-9 w-fit items-center justify-center rounded-md bg-white px-3 text-xs font-semibold text-red-800 ring-1 ring-red-200 hover:bg-red-100" data-navigation-progress="회사 설정" href="/settings/members">
+                    회사 설정 확인
+                  </Link>
+                ) : null}
+              </div>
             ) : null}
           </form>
         </CardBody>
