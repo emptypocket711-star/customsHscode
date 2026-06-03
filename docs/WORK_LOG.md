@@ -4,6 +4,25 @@
 
 ## 2026-06-03
 
+### product classification flow copy regression
+
+- 이전 작업은 P186 질문별 답변 영역 하단 재조회 버튼 보강이고, 이번 작업은 P187 품명 AI 결과 화면 전체 문구 회귀 점검이다.
+- AI 분류 흐름 요약의 `가장 유력`, `가장 가까운 코드` 표현을 `우선 검토`, `우선 검토 후보`로 바꿨다.
+- staging에서 품명 `사탕` 결과 화면을 확인해 `우선 검토 후보`, `점수 N점`, `보완사항 입력`, `이 후보로 상세 조회`가 함께 보이는지 확인했다.
+- 처음에는 `사탕`이 단일 후보가 아니라 보완 필요 상태로 나와 `우선 검토할 HS 후보입니다` 조건이 맞지 않았고, 비교 후보가 없을 때 `GPT 점수순...` 문구도 없었다. 이후 검증 기준을 후보 수 변동에 맞춰 점수 배지와 핵심 흐름 확인으로 조정했다.
+- 예전 문구 `가장 유력`, `가장 가까운 코드`, `이 코드로 조회`, `추가 보완 없이 조회 가능한 코드입니다.`가 화면에 남지 않았는지 확인했다.
+- 최신 staging preview는 `https://customs-hscode-crob1vm89-koo-apps.vercel.app`다.
+- 다음 작업은 P188 품명 AI 복사문/클립보드 회귀 점검이다. 이번 P187이 화면에 보이는 결과 문구라면, P188은 사용자가 복사해서 외부에 전달하는 텍스트가 같은 안전 표현을 유지하는지 보는 작업이다.
+
+검증:
+
+- `rg -n "가장 유력|가장 가까운 코드|가장 가까운 HS CODE|이 코드로 조회|추가 보완 없이|예비 후보" features/hs/hs-direct-lookup-panel.tsx features/hs/product-supplement-research-form.tsx lib/i18n/hs-direct.ts -S`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- Playwright staging browser: 품명 `사탕` 결과 화면의 후보, 점수, 보완사항, 상세조회 링크, AI 흐름 요약 문구 확인
+- `VERCEL_AUTOMATION_BYPASS_SECRET=... SMOKE_REQUIRE_AUTHENTICATED=true npm run smoke:production -- https://customs-hscode-crob1vm89-koo-apps.vercel.app`: 9/9 통과
+
 ### product supplement question rerun action
 
 - 이전 작업은 P185 품명 AI 간단 보완사항 재조회 흐름 검증이고, 이번 작업은 P186 질문별 답변 영역 하단 재조회 버튼 보강이다.
